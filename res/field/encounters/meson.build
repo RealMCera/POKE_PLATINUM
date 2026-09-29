@@ -276,9 +276,12 @@ zukan_enc_platinum_srcs += encdata_ex_trophy_garden_src
 zukan_enc_platinum_srcs += encdata_ex_great_marsh_src
 zukan_enc_platinum_srcs += pl_enc_data_srcs
 
+town_map_data_src = files('../../town_map/town_map_data.json')
+
 pokedex_enc_platinum_narc = custom_target('zukan_enc_platinum.narc',
     output: 'zukan_enc_platinum.narc',
     input: zukan_enc_platinum_srcs,
+    depend_files: town_map_data_src,
     env: jsoncnv_env,
     depends: [ py_consts_generators ],
     command: [
@@ -291,6 +294,7 @@ pokedex_enc_platinum_narc = custom_target('zukan_enc_platinum.narc',
         '--honey-file', '@INPUT1@',
         '--trophy-file', '@INPUT2@',
         '--marsh-file', '@INPUT3@',
+        '--town-map-file', town_map_data_src,
         zukan_enc_platinum_srcs
     ]
 )
