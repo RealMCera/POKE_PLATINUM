@@ -9,12 +9,12 @@
 
 void MapObject_InitMove(MapObject *mapObj);
 void MapObject_Move(MapObject *mapObj);
-u32 sub_02063E18(const MapObject *mapObj, const VecFx32 *pos, int x, int y, int z, int dir);
-u32 sub_02063E94(const MapObject *mapObj, int x, int y, int z, int dir);
-u32 sub_02063EBC(const MapObject *mapObj, int dir);
-int sub_02063F00(const MapObject *mapObj, int x, int y, int z);
+u32 MapObject_CheckCollisionAtPos(const MapObject *mapObj, const VecFx32 *pos, int x, int y, int z, int dir);
+u32 MapObject_CheckCollisionAtCoords(const MapObject *mapObj, int x, int y, int z, int dir);
+u32 MapObject_CheckCollisionInDir(const MapObject *mapObj, int dir);
+int MapObject_IsTileOccupiedByOtherObject(const MapObject *mapObj, int x, int y, int z);
 int MapObject_IsOutOfRange(const MapObject *mapObj, int x, int y, int z);
-int sub_02064004(const MapObject *mapObj, int x, int z, int dir);
+int MapObject_IsMovementBlockedInDir(const MapObject *mapObj, int x, int z, int dir);
 int MapObject_IsOnWater(MapObject *mapObj, u32 tileBehavior);
 int MapObject_IsOnSand(MapObject *mapObj, u32 tileBehavior);
 int MapObject_IsOnSnow(MapObject *mapObj, u32 tileBehavior);
@@ -33,7 +33,7 @@ int MapObject_RecalculateObjectHeight(MapObject *mapObj);
 int MapObject_SetTileBehaviors(MapObject *mapObj);
 void VecFx32_StepDirection(int param0, VecFx32 *vec, fx32 val);
 void VecFx32_SetPosFromMapCoords(int x, int z, VecFx32 *outVec);
-void sub_02064464(MapObject *mapObj);
+void MapObject_UpdateDisguiseMovement(MapObject *mapObj);
 int Direction_GetOpposite(int param0);
 int GetDirectionBetweenPoints(int xSrc, int zSrc, int xDst, int zDst);
 int MapObject_RecalculatePositionHeight(FieldSystem *fieldSystem, VecFx32 *pos);

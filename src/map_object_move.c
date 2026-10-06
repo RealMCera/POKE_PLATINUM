@@ -29,76 +29,97 @@
 #include "unk_020655F4.h"
 #include "unk_020673B8.h"
 
+// Movement for map objects and their interaction with the tile they occupy.
+// Each frame MapObject_Move runs the object's movement action and then reacts
+// to the tile it moved onto: sinking into soft terrain, rustling grass,
+// leaving footprints and splashes, and updating its shadow and reflection. It
+// also answers the collision queries used to decide whether a step is legal.
+//
+// The terrain-effect helpers below share a uniform signature (object, current
+// tile behavior, previous tile behavior, gfx render details) so the movement
+// dispatchers can invoke them as a sequence.
+
+// Vertical sprite offsets, in pixels, applied while standing in soft terrain
+// so the sprite appears to sink into snow or mud.
 #define sinkInDeepSnowDistance    -12
 #define sinkInDeeperSnowDistance  -14
 #define sinkInDeepestSnowDistance -16
 #define sinkInMudDistance         -12
 #define sinkInDeepMudDistance     -14
 
-static int sub_02063478(const MapObject *mapObj);
-static void sub_020634DC(MapObject *mapObj);
-static void sub_020634F4(MapObject *mapObj);
+static int MapObject_ShouldUpdateMovement(const MapObject *mapObj);
+static void MapObject_RecalculateHeightIfFlagged(MapObject *mapObj);
+static void MapObject_StartMovementIfTileBehaviorValid(MapObject *mapObj);
 static void MapObject_StartMove(MapObject *mapObj);
-static void sub_0206353C(MapObject *mapObj);
+static void MapObject_ProcessMovementFlags(MapObject *mapObj);
 static void MapObject_EndMove(MapObject *mapObj);
-static void sub_020635AC(MapObject *mapObj);
-static void sub_0206363C(MapObject *mapObj);
-static void sub_020636F0(MapObject *mapObj);
-static void sub_0206375C(MapObject *mapObj);
-static void sub_020637D4(MapObject *mapObj);
+static void MapObject_ApplyMoveInitEffects(MapObject *mapObj);
+static void MapObject_ApplyStepStartEffects(MapObject *mapObj);
+static void MapObject_ApplyJumpStartEffects(MapObject *mapObj);
+static void MapObject_ApplyStepEndEffects(MapObject *mapObj);
+static void MapObject_ApplyJumpEndEffects(MapObject *mapObj);
 static void MapObject_SinkIntoTerrain(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063964(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_0206397C(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063994(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063A30(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063A64(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063A70(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063A78(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063B20(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063BB4(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063C00(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063C18(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063C30(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063C48(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063C60(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063C94(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063CC8(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063CFC(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063D30(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
-static void sub_02063DA8(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_BendTallGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_RustleTallGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_LeaveFootprints(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_UpdateShallowWaterEffect(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_ClearShallowWaterEffect(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_UpdateShadowOnMoveStart(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_UpdateMovementShadow(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_RestoreMovementShadow(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_ShowLandingDust(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_BendVeryTallGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_RustleVeryTallGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_BendMudWithGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_RustleMudWithGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_CreatePuddleRippleAtPrevPos(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_CreatePuddleRippleAtPos(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_CreateMudSplashAtPrevPos(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_CreateMudSplashAtPos(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_InitReflection(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
+static void MapObject_UpdateReflection(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
 static void MapObject_DetermineElevatedBridgeStatus(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
 static void MapObject_EmptyFunction(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails);
 
-static BOOL (*const Unk_020EE76C[4])(u8);
-static BOOL (*const Unk_020EE77C[4])(u8);
+// Direction-indexed predicates over a tile behavior: whether it blocks
+// movement heading in `dir`, and whether it blocks movement arriving from
+// `dir` (i.e. blocking the opposite direction).
+static BOOL (*const sTileBehaviorBlocksMovementInDir[4])(u8);
+static BOOL (*const sTileBehaviorBlocksMovementAgainstDir[4])(u8);
 
 void MapObject_InitMove(MapObject *mapObj)
 {
     MapObject_CallMovementInit(mapObj);
-    sub_020673B8(mapObj);
+    TrainerFacing_Init(mapObj);
 }
 
+// Advances the object's movement by one frame and applies the terrain effects
+// for any movement transition requested during the frame.
 void MapObject_Move(MapObject *mapObj)
 {
     if (MapObject_CheckManagerStatus(mapObj, 1 << 1)) {
         return;
     }
 
-    sub_020634DC(mapObj);
-    sub_020634F4(mapObj);
+    MapObject_RecalculateHeightIfFlagged(mapObj);
+    MapObject_StartMovementIfTileBehaviorValid(mapObj);
     MapObject_StartMove(mapObj);
 
     if (MapObject_CheckStatus(mapObj, MAP_OBJ_STATUS_4)) {
         MapObject_DoMovementAction(mapObj);
-    } else if (MapObject_IsMovementPaused(mapObj) == FALSE && sub_02063478(mapObj) == TRUE && sub_020673C0(mapObj) == FALSE) {
+    } else if (MapObject_IsMovementPaused(mapObj) == FALSE && MapObject_ShouldUpdateMovement(mapObj) == TRUE && TrainerFacing_Update(mapObj) == FALSE) {
         MapObject_CallMovementUpdate(mapObj);
     }
 
-    sub_0206353C(mapObj);
+    MapObject_ProcessMovementFlags(mapObj);
     MapObject_EndMove(mapObj);
 }
 
-static BOOL sub_02063478(const MapObject *mapObj)
+// Decides whether the movement action may run this frame. A pending height
+// recalculation (STATUS_12) or an unresolved tile behavior (STATUS_11) blocks
+// movement until it is fixed, unless the object is already mid-step or is the
+// player's partner follower (MOVEMENT_TYPE_FOLLOW_PARTNER_TRAINER, 0x32).
+static BOOL MapObject_ShouldUpdateMovement(const MapObject *mapObj)
 {
     if (MapObject_IsMoving(mapObj) == TRUE) {
         return TRUE;
@@ -123,52 +144,64 @@ static BOOL sub_02063478(const MapObject *mapObj)
     return TRUE;
 }
 
-static void sub_020634DC(MapObject *mapObj)
+// If a deferred height recalculation is pending, immediately recompute the
+// object's height from the terrain.
+static void MapObject_RecalculateHeightIfFlagged(MapObject *mapObj)
 {
     if (MapObject_CheckStatus(mapObj, MAP_OBJ_STATUS_12)) {
         MapObject_RecalculateObjectHeight(mapObj);
     }
 }
 
-static void sub_020634F4(MapObject *mapObj)
+// If the object was left without a valid tile behavior (STATUS_11), re-sample
+// it and request a movement start once the tile becomes valid again.
+static void MapObject_StartMovementIfTileBehaviorValid(MapObject *mapObj)
 {
     if (MapObject_CheckStatus(mapObj, MAP_OBJ_STATUS_11) && MapObject_SetTileBehaviors(mapObj) == TRUE) {
         MapObject_SetStartMovement(mapObj);
     }
 }
 
+// Consumes a pending START_MOVEMENT flag and applies the matching terrain
+// effects before the movement action runs.
 static void MapObject_StartMove(MapObject *mapObj)
 {
     if (MapObject_CheckStatus(mapObj, MAP_OBJ_STATUS_START_MOVEMENT)) {
-        sub_020635AC(mapObj);
+        MapObject_ApplyMoveInitEffects(mapObj);
     }
 
     MapObject_SetStatusFlagOff(mapObj, MAP_OBJ_STATUS_START_MOVEMENT | MAP_OBJ_STATUS_START_JUMP);
 }
 
-static void sub_0206353C(MapObject *mapObj)
+// Applies jump/movement start effects for transitions requested by the
+// movement action during this frame, and clears the corresponding flags.
+static void MapObject_ProcessMovementFlags(MapObject *mapObj)
 {
     if (MapObject_CheckStatus(mapObj, MAP_OBJ_STATUS_START_JUMP)) {
-        sub_020636F0(mapObj);
+        MapObject_ApplyJumpStartEffects(mapObj);
     } else if (MapObject_CheckStatus(mapObj, MAP_OBJ_STATUS_START_MOVEMENT)) {
-        sub_0206363C(mapObj);
+        MapObject_ApplyStepStartEffects(mapObj);
     }
 
     MapObject_SetStatusFlagOff(mapObj, MAP_OBJ_STATUS_START_MOVEMENT | MAP_OBJ_STATUS_START_JUMP);
 }
 
+// Applies jump/movement end effects and clears the corresponding flags.
 static void MapObject_EndMove(MapObject *mapObj)
 {
     if (MapObject_CheckStatus(mapObj, MAP_OBJ_STATUS_END_JUMP)) {
-        sub_020637D4(mapObj);
+        MapObject_ApplyJumpEndEffects(mapObj);
     } else if (MapObject_CheckStatus(mapObj, MAP_OBJ_STATUS_END_MOVEMENT)) {
-        sub_0206375C(mapObj);
+        MapObject_ApplyStepEndEffects(mapObj);
     }
 
     MapObject_SetStatusFlagOff(mapObj, MAP_OBJ_STATUS_END_MOVEMENT | MAP_OBJ_STATUS_END_JUMP);
 }
 
-static void sub_020635AC(MapObject *mapObj)
+// Terrain effects for a movement start that does not itself change the tile
+// (SetStartMovement), e.g. turning in place: grass is bent without the full
+// rustle and no footprints are left.
+static void MapObject_ApplyMoveInitEffects(MapObject *mapObj)
 {
     MapObject_SetTileBehaviors(mapObj);
 
@@ -178,17 +211,20 @@ static void sub_020635AC(MapObject *mapObj)
         const ObjectEventGfxRenderDetailsEntry *v2 = ov5_021ECD04(mapObj);
 
         MapObject_DetermineElevatedBridgeStatus(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063964(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063A30(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063A70(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_BendTallGrass(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_UpdateShallowWaterEffect(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_UpdateShadowOnMoveStart(mapObj, currTileBehavior, prevTileBehavior, v2);
         MapObject_SinkIntoTerrain(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063C00(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063C30(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063D30(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_BendVeryTallGrass(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_BendMudWithGrass(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_InitReflection(mapObj, currTileBehavior, prevTileBehavior, v2);
     }
 }
 
-static void sub_0206363C(MapObject *mapObj)
+// Terrain effects at the start of a tile-to-tile step. The movement action has
+// already advanced the object, so the departed tile is still in the "previous"
+// coordinates: that is where footprints and splashes belong.
+static void MapObject_ApplyStepStartEffects(MapObject *mapObj)
 {
     MapObject_SetTileBehaviors(mapObj);
 
@@ -198,21 +234,22 @@ static void sub_0206363C(MapObject *mapObj)
         const ObjectEventGfxRenderDetailsEntry *v2 = ov5_021ECD04(mapObj);
 
         MapObject_DetermineElevatedBridgeStatus(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_0206397C(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063994(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063A30(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063A78(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063C18(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063C48(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063C60(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063CC8(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063D30(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_RustleTallGrass(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_LeaveFootprints(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_UpdateShallowWaterEffect(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_UpdateMovementShadow(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_RustleVeryTallGrass(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_RustleMudWithGrass(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_CreatePuddleRippleAtPrevPos(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_CreateMudSplashAtPrevPos(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_InitReflection(mapObj, currTileBehavior, prevTileBehavior, v2);
 
         MapObject_EmptyFunction(mapObj, currTileBehavior, prevTileBehavior, v2);
     }
 }
 
-static void sub_020636F0(MapObject *mapObj)
+// Terrain effects when a jump leaves the ground.
+static void MapObject_ApplyJumpStartEffects(MapObject *mapObj)
 {
     MapObject_SetTileBehaviors(mapObj);
 
@@ -222,14 +259,16 @@ static void sub_020636F0(MapObject *mapObj)
         const ObjectEventGfxRenderDetailsEntry *v2 = ov5_021ECD04(mapObj);
 
         MapObject_DetermineElevatedBridgeStatus(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063A78(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063D30(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063A64(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_UpdateMovementShadow(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_InitReflection(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_ClearShallowWaterEffect(mapObj, currTileBehavior, prevTileBehavior, v2);
         MapObject_EmptyFunction(mapObj, currTileBehavior, prevTileBehavior, v2);
     }
 }
 
-static void sub_0206375C(MapObject *mapObj)
+// Terrain effects when a tile-to-tile step finishes; the object has arrived at
+// the new tile, so the effects use the current coordinates.
+static void MapObject_ApplyStepEndEffects(MapObject *mapObj)
 {
     MapObject_SetTileBehaviors(mapObj);
 
@@ -239,15 +278,16 @@ static void sub_0206375C(MapObject *mapObj)
         const ObjectEventGfxRenderDetailsEntry *v2 = ov5_021ECD04(mapObj);
 
         MapObject_SinkIntoTerrain(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063C94(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063CFC(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063A30(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063DA8(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063B20(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_CreatePuddleRippleAtPos(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_CreateMudSplashAtPos(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_UpdateShallowWaterEffect(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_UpdateReflection(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_RestoreMovementShadow(mapObj, currTileBehavior, prevTileBehavior, v2);
     }
 }
 
-static void sub_020637D4(MapObject *mapObj)
+// Terrain effects when a jump lands.
+static void MapObject_ApplyJumpEndEffects(MapObject *mapObj)
 {
     MapObject_SetTileBehaviors(mapObj);
 
@@ -257,16 +297,18 @@ static void sub_020637D4(MapObject *mapObj)
         const ObjectEventGfxRenderDetailsEntry *v2 = ov5_021ECD04(mapObj);
 
         MapObject_SinkIntoTerrain(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063C94(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063CFC(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063A30(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063DA8(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063B20(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_0206397C(mapObj, currTileBehavior, prevTileBehavior, v2);
-        sub_02063BB4(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_CreatePuddleRippleAtPos(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_CreateMudSplashAtPos(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_UpdateShallowWaterEffect(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_UpdateReflection(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_RestoreMovementShadow(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_RustleTallGrass(mapObj, currTileBehavior, prevTileBehavior, v2);
+        MapObject_ShowLandingDust(mapObj, currTileBehavior, prevTileBehavior, v2);
     }
 }
 
+// Offsets the sprite downward when standing on soft terrain; the deeper the
+// snow or mud layer, the further it sinks. Any other tile resets the offset.
 static void MapObject_SinkIntoTerrain(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (MapObject_CheckFlagDoNotSinkIntoTerrain(mapObj) == FALSE) {
@@ -310,21 +352,27 @@ static void MapObject_SinkIntoTerrain(MapObject *mapObj, u8 currTileBehavior, u8
     MapObject_SetSpriteTerrainOffset(mapObj, &spriteOffset);
 }
 
-static void sub_02063964(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Bends the tall grass without replaying its rustle (the object is already
+// standing on the tile).
+static void MapObject_BendTallGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsTallGrass(currTileBehavior) == TRUE) {
         ov5_021F2EA4(mapObj, 0);
     }
 }
 
-static void sub_0206397C(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Plays the full tall grass rustle as the object steps through the tile.
+static void MapObject_RustleTallGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsTallGrass(currTileBehavior) == TRUE) {
         ov5_021F2EA4(mapObj, 1);
     }
 }
 
-static void sub_02063994(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Leaves the object's tracks on the tile it is leaving, choosing the effect
+// from that tile's behavior and the object's track type (footsteps vs. bike
+// line). Objects with no track type leave nothing.
+static void MapObject_LeaveFootprints(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (renderDetails->trackType == 0) {
         return;
@@ -360,7 +408,9 @@ static void sub_02063994(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBeha
     }
 }
 
-static void sub_02063A30(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Creates the shallow-water ripple once when the object enters shallow water,
+// and clears the associated status when it leaves.
+static void MapObject_UpdateShallowWaterEffect(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsShallowWater(currTileBehavior) == TRUE) {
         if (MapObject_CheckStatus26(mapObj) == FALSE) {
@@ -372,17 +422,22 @@ static void sub_02063A30(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBeha
     }
 }
 
-static void sub_02063A64(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+static void MapObject_ClearShallowWaterEffect(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     MapObject_SetStatus26(mapObj, 0);
 }
 
-static void sub_02063A70(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Wrapper for MapObject_UpdateMovementShadow, kept separate because the move
+// start sequence references it directly.
+static void MapObject_UpdateShadowOnMoveStart(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
-    sub_02063A78(mapObj, currTileBehavior, prevTileBehavior, renderDetails);
+    MapObject_UpdateMovementShadow(mapObj, currTileBehavior, prevTileBehavior, renderDetails);
 }
 
-static void sub_02063A78(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Hides the object's shadow on surfaces that should not receive one (grass,
+// water, snow, mud, reflective tiles); otherwise creates the shadow if it is
+// not already present.
+static void MapObject_UpdateMovementShadow(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     const MapObjectManager *mapObjMan = MapObject_MapObjectManager(mapObj);
 
@@ -412,7 +467,9 @@ static void sub_02063A78(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBeha
     }
 }
 
-static void sub_02063B20(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Same surface test as MapObject_UpdateMovementShadow, but only toggles the
+// hide-shadow status; it never creates a new shadow.
+static void MapObject_RestoreMovementShadow(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     const MapObjectManager *mapObjMan = MapObject_MapObjectManager(mapObj);
 
@@ -439,7 +496,9 @@ static void sub_02063B20(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBeha
     }
 }
 
-static void sub_02063BB4(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Spawns a landing puff when a jump ends on solid ground, but not on water,
+// ice, mud, or snow (those surfaces have their own effects).
+static void MapObject_ShowLandingDust(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (MapObject_IsOnWater(mapObj, currTileBehavior) == TRUE
         || TileBehavior_IsShallowWater(currTileBehavior) == TRUE
@@ -453,63 +512,73 @@ static void sub_02063BB4(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBeha
     ov5_021F3638(mapObj);
 }
 
-static void sub_02063C00(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Immediate (Bend) and fully animated (Rustle) variants of the very tall
+// grass effect, mirroring the tall grass pair above.
+static void MapObject_BendVeryTallGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsVeryTallGrass(currTileBehavior) == TRUE) {
         ov5_021F3844(mapObj, 0);
     }
 }
 
-static void sub_02063C18(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+static void MapObject_RustleVeryTallGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsVeryTallGrass(currTileBehavior) == TRUE) {
         ov5_021F3844(mapObj, 1);
     }
 }
 
-static void sub_02063C30(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Immediate (Bend) and fully animated (Rustle) variants of the mud-with-grass
+// effect.
+static void MapObject_BendMudWithGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsMudWithGrass(currTileBehavior) == TRUE) {
         ov5_021F3AEC(mapObj, 0);
     }
 }
 
-static void sub_02063C48(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+static void MapObject_RustleMudWithGrass(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsMudWithGrass(currTileBehavior) == TRUE) {
         ov5_021F3AEC(mapObj, 1);
     }
 }
 
-static void sub_02063C60(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Puddle and mud splash effects, spawned either at the tile just left
+// (PrevPos) or the tile just reached (Pos) depending on the movement phase.
+static void MapObject_CreatePuddleRippleAtPrevPos(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsPuddle(prevTileBehavior) == TRUE) {
         ov5_021F2AE4(mapObj, MapObject_GetXPrev(mapObj), MapObject_GetYPrev(mapObj), MapObject_GetZPrev(mapObj));
     }
 }
 
-static void sub_02063C94(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+static void MapObject_CreatePuddleRippleAtPos(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsPuddle(currTileBehavior) == TRUE) {
         ov5_021F2AE4(mapObj, MapObject_GetX(mapObj), MapObject_GetY(mapObj), MapObject_GetZ(mapObj));
     }
 }
 
-static void sub_02063CC8(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+static void MapObject_CreateMudSplashAtPrevPos(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsMud(prevTileBehavior) == TRUE) {
         ov5_021F2C38(mapObj, MapObject_GetXPrev(mapObj), MapObject_GetYPrev(mapObj), MapObject_GetZPrev(mapObj));
     }
 }
 
-static void sub_02063CFC(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+static void MapObject_CreateMudSplashAtPos(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsMud(currTileBehavior) == TRUE) {
         ov5_021F2C38(mapObj, MapObject_GetX(mapObj), MapObject_GetY(mapObj), MapObject_GetZ(mapObj));
     }
 }
 
-static void sub_02063D30(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Sets up the object's water reflection. A reflective surface is looked for on
+// the current tile, then immediately south of it (where the object is drawn).
+// `v2` selects the reflection style: 2 = fully reflective, 1 = shallow/other,
+// 0 = puddle.
+static void MapObject_InitReflection(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (renderDetails->hasReflection == 0) {
         return;
@@ -546,7 +615,9 @@ static void sub_02063D30(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBeha
     }
 }
 
-static void sub_02063DA8(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
+// Drops the reflection once the tile south of the object is no longer
+// reflective.
+static void MapObject_UpdateReflection(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (renderDetails->hasReflection == 0 || MapObject_CheckStatus24(mapObj) == FALSE) {
         return;
@@ -559,6 +630,8 @@ static void sub_02063DA8(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBeha
     }
 }
 
+// Tracks whether the object is on an elevated bridge so that bridge-over-
+// water/sand/snow tiles count as solid ground instead of the surface below.
 static void MapObject_DetermineElevatedBridgeStatus(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     if (TileBehavior_IsBridgeStart(currTileBehavior) == TRUE) {
@@ -568,12 +641,17 @@ static void MapObject_DetermineElevatedBridgeStatus(MapObject *mapObj, u8 currTi
     }
 }
 
+// Placeholder kept in the effect sequences; does nothing.
 static void MapObject_EmptyFunction(MapObject *mapObj, u8 currTileBehavior, u8 prevTileBehavior, const ObjectEventGfxRenderDetailsEntry *renderDetails)
 {
     return;
 }
 
-u32 sub_02063E18(const MapObject *mapObj, const VecFx32 *pos, int x, int y, int z, int dir)
+// Builds the collision flags for moving to (x, y, z) in direction `dir`: out
+// of the object's movement range, blocked by terrain, or blocked by another
+// map object. `pos` is the object's current world position, needed by the
+// terrain height-change lookup.
+u32 MapObject_CheckCollisionAtPos(const MapObject *mapObj, const VecFx32 *pos, int x, int y, int z, int dir)
 {
     u32 collisionFlag = MAP_OBJ_COLLISION_NONE;
 
@@ -592,35 +670,38 @@ u32 sub_02063E18(const MapObject *mapObj, const VecFx32 *pos, int x, int y, int 
         }
     }
 
-    if (sub_02064004(mapObj, x, z, dir) == TRUE) {
+    if (MapObject_IsMovementBlockedInDir(mapObj, x, z, dir) == TRUE) {
         collisionFlag |= MAP_OBJ_COLLISION_WILL_COLLIDE;
     }
 
-    if (sub_02063F00(mapObj, x, y, z) == TRUE) {
+    if (MapObject_IsTileOccupiedByOtherObject(mapObj, x, y, z) == TRUE) {
         collisionFlag |= MAP_OBJ_COLLISION_2;
     }
 
     return collisionFlag;
 }
 
-u32 sub_02063E94(const MapObject *mapObj, int x, int y, int z, int dir)
+u32 MapObject_CheckCollisionAtCoords(const MapObject *mapObj, int x, int y, int z, int dir)
 {
     VecFx32 pos;
 
     MapObject_GetPosPtr(mapObj, &pos);
-    return sub_02063E18(mapObj, &pos, x, y, z, dir);
+    return MapObject_CheckCollisionAtPos(mapObj, &pos, x, y, z, dir);
 }
 
-u32 sub_02063EBC(const MapObject *mapObj, int dir)
+u32 MapObject_CheckCollisionInDir(const MapObject *mapObj, int dir)
 {
     int x = MapObject_GetX(mapObj) + MapObject_GetDxFromDir(dir);
     int y = MapObject_GetY(mapObj);
     int z = MapObject_GetZ(mapObj) + MapObject_GetDzFromDir(dir);
 
-    return sub_02063E94(mapObj, x, y, z, dir);
+    return MapObject_CheckCollisionAtCoords(mapObj, x, y, z, dir);
 }
 
-int sub_02063F00(const MapObject *mapObj, int x, int y, int z)
+// TRUE if another active, non-hidden object is standing on (x, z) at a height
+// within one tile of y. Both the other object's current and previous positions
+// are checked so that two objects stepping through each other still collide.
+int MapObject_IsTileOccupiedByOtherObject(const MapObject *mapObj, int x, int y, int z)
 {
     int maxObjects, objX, objZ;
     const MapObjectManager *mapObjMan = MapObject_MapObjectManager(mapObj);
@@ -703,7 +784,10 @@ int MapObject_IsOutOfRange(const MapObject *mapObj, int x, int y, int z)
     return FALSE;
 }
 
-int sub_02064004(const MapObject *mapObj, int x, int z, int dir)
+// Checks whether the tile behavior blocks stepping from (x, z) in `dir`: the
+// current tile must not block movement in that direction, and the destination
+// tile must not block movement arriving from it.
+int MapObject_IsMovementBlockedInDir(const MapObject *mapObj, int x, int z, int dir)
 {
     if (MapObject_CheckFlags2Bit2(mapObj) == FALSE) {
         FieldSystem *fieldSystem = MapObject_FieldSystem(mapObj);
@@ -714,7 +798,7 @@ int sub_02064004(const MapObject *mapObj, int x, int z, int dir)
             return TRUE;
         }
 
-        if (Unk_020EE76C[dir](v1) == TRUE || Unk_020EE77C[dir](v2) == TRUE) {
+        if (sTileBehaviorBlocksMovementInDir[dir](v1) == TRUE || sTileBehaviorBlocksMovementAgainstDir[dir](v2) == TRUE) {
             return TRUE;
         }
     }
@@ -722,14 +806,14 @@ int sub_02064004(const MapObject *mapObj, int x, int z, int dir)
     return FALSE;
 }
 
-static BOOL (*const Unk_020EE76C[4])(u8) = {
+static BOOL (*const sTileBehaviorBlocksMovementInDir[4])(u8) = {
     TileBehavior_BlocksMovementNorthward,
     TileBehavior_BlocksMovementSouthward,
     TileBehavior_BlocksMovementWestward,
     TileBehavior_BlocksMovementEastward
 };
 
-static BOOL (*const Unk_020EE77C[4])(u8) = {
+static BOOL (*const sTileBehaviorBlocksMovementAgainstDir[4])(u8) = {
     TileBehavior_BlocksMovementSouthward,
     TileBehavior_BlocksMovementNorthward,
     TileBehavior_BlocksMovementEastward,
@@ -911,6 +995,10 @@ void MapObject_MovePosInDir(MapObject *mapObj, int dir, fx32 distance)
     MapObject_SetPos(mapObj, &pos);
 }
 
+// Recomputes the object's world height from the terrain and, on success,
+// refreshes its cached integer y coordinate. If the terrain provides no height
+// (or dynamic heights are disabled), STATUS_12 stays set so the recalculation
+// is retried on a later frame.
 int MapObject_RecalculateObjectHeight(MapObject *mapObj)
 {
     VecFx32 pos, updatedPos;
@@ -940,6 +1028,11 @@ int MapObject_RecalculateObjectHeight(MapObject *mapObj)
     return heightUpdated;
 }
 
+// Re-samples the tile behaviors under the object's previous and current map
+// coordinates. Objects that ignore terrain (flags2 bit 2, e.g. on distortion
+// world platforms) are left with null behaviors. Returns FALSE and flags
+// STATUS_11 when the current tile has no behavior, i.e. the object is not yet
+// standing on a valid tile.
 int MapObject_SetTileBehaviors(MapObject *mapObj)
 {
     u8 prevTileBehavior = GetNullTileBehaviorID();
@@ -992,7 +1085,9 @@ void VecFx32_SetPosFromMapCoords(int x, int z, VecFx32 *outVec)
     outVec->z = MAP_OBJECT_COORD_CENTER_TO_FX32(z);
 }
 
-void sub_02064464(MapObject *mapObj)
+// Disguised objects (snowman, sand pile, rock, grass tuft) immediately run a
+// movement update so the disguise is applied as soon as it is spawned.
+void MapObject_UpdateDisguiseMovement(MapObject *mapObj)
 {
     int movementType = MapObject_GetMovementType(mapObj);
 

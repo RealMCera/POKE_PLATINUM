@@ -2245,7 +2245,7 @@ static BOOL sub_02041004(ScriptContext *ctx)
     }
 
     if (inline_020410F4_1(1 << 3)) {
-        MapObject *v4 = sub_02069EB8(*v1);
+        MapObject *v4 = MapObjectMovement_FindPartnerTrainer(*v1);
 
         if (!MapObject_IsMoving(v4)) {
             MapObject_SetPauseMovementOn(v4);
@@ -2279,7 +2279,7 @@ static BOOL ScrCmd_LockLastTalked(ScriptContext *ctx)
     MapObject **v1 = FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_MANAGER_TARGET_OBJECT);
     MapObject *player = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
     MapObject *v3 = MapObjMan_GetLocalMapObjByMovementType(fieldSystem->mapObjMan, MOVEMENT_TYPE_FOLLOW_PLAYER);
-    MapObject *v4 = sub_02069EB8(*v1);
+    MapObject *v4 = MapObjectMovement_FindPartnerTrainer(*v1);
     MapObjectManager *mapObjMan = fieldSystem->mapObjMan;
 
     inline_020410F4();

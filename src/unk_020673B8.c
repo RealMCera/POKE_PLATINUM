@@ -11,176 +11,201 @@
 #include "map_object.h"
 #include "unk_020655F4.h"
 
+// Per-trainer-type idle "look around" behaviour. Trainer types that face or
+// rotate (TRAINER_TYPE_FACE_SIDES, TRAINER_TYPE_FACE_COUNTERCLOCKWISE and
+// TRAINER_TYPE_FACE_CLOCKWISE) walk for a number of steps and then pause to
+// turn through a set of directions before resuming. The three callback tables
+// at the bottom of this file are indexed by trainer type; every other trainer
+// type uses the no-op entries.
+
+// State for the "face sides" trainer behaviour (TRAINER_TYPE_FACE_SIDES).
+// After every stepTarget movement steps the trainer pauses and turns to face
+// the two directions perpendicular to the axis it was originally facing.
 typedef struct {
-    u8 unk_00;
-    u8 unk_01;
-    s8 unk_02;
-    s8 unk_03;
-    s8 unk_04;
-    s8 unk_05;
-    s8 unk_06;
-    s8 unk_07;
-    s8 unk_08;
-} UnkStruct_020674AC;
+    u8 moveState; // Movement state machine: 0 wait for a step, 1 count steps, 2 wait for movement to end, 3 done
+    u8 faceState; // Facing state machine: 0 record facing, 1 start turn, 2 wait for turn, 3 hold and repeat
+    s8 stepCount; // Movement steps taken in the current cycle
+    s8 stepTarget; // Movement steps to take before facing (object event data[1])
+    s8 originalDir; // Facing direction to restore once the facing cycle ends
+    s8 axis; // Axis of the original facing: 0 = north/south, 1 = west/east
+    s8 sideIndex; // Which of the two perpendicular directions is currently being faced
+    s8 faceCount; // Facing turns completed in the current cycle
+    s8 frameCount; // Frames spent holding the current facing direction
+} TrainerFacingSidesData;
 
+// State for the rotating trainer behaviours (TRAINER_TYPE_FACE_COUNTERCLOCKWISE
+// and TRAINER_TYPE_FACE_CLOCKWISE). Layout is identical to
+// TrainerFacingSidesData; only the meaning of axis/sideIndex differs.
 typedef struct {
-    u8 unk_00;
-    u8 unk_01;
-    s8 unk_02;
-    s8 unk_03;
-    s8 unk_04;
-    s8 unk_05;
-    s8 unk_06;
-    s8 unk_07;
-    s8 unk_08;
-} UnkStruct_0206762C;
+    u8 moveState; // Movement state machine: 0 wait for a step, 1 count steps, 2 wait for movement to end, 3 done
+    u8 faceState; // Facing state machine: 0 record facing, 1 start turn, 2 wait for turn, 3 hold and repeat
+    s8 stepCount; // Movement steps taken in the current cycle
+    s8 stepTarget; // Movement steps to take before facing (object event data[1])
+    s8 originalDir; // Facing direction to restore once the rotation ends
+    s8 rotationDir; // Rotation direction: 0 = counterclockwise, 1 = clockwise
+    s8 rotationIndex; // Position within the rotation sequence
+    s8 faceCount; // Facing turns completed in the current cycle
+    s8 frameCount; // Frames spent holding the current facing direction
+} TrainerFacingRotateData;
 
-static void sub_020673E4(MapObject *param0);
-static int sub_02067400(MapObject *param0);
-static int sub_0206741C(MapObject *param0);
-static int sub_02067438(MapObject *param0);
-static int sub_0206746C(MapObject *param0);
-static void sub_020674A0(MapObject *param0);
-static int sub_020674A4(MapObject *param0);
-static int sub_020674A8(MapObject *param0);
-static void sub_020674AC(MapObject *param0);
-static int sub_020674C4(MapObject *param0);
-static int sub_02067540(MapObject *param0);
-static void sub_0206762C(MapObject *param0);
-static int sub_02067658(MapObject *param0);
-static int sub_020676D4(MapObject *param0);
+static void TrainerFacing_CallInit(MapObject *mapObj);
+static int TrainerFacing_CallUpdate(MapObject *mapObj);
+static int TrainerFacing_CallFace(MapObject *mapObj);
+static int TrainerFacing_HasMoved(MapObject *mapObj);
+static int TrainerFacing_HasStopped(MapObject *mapObj);
+static void TrainerFacing_NoOpInit(MapObject *mapObj);
+static int TrainerFacing_NoOpUpdate(MapObject *mapObj);
+static int TrainerFacing_NoOpFace(MapObject *mapObj);
+static void TrainerFacingSides_Init(MapObject *mapObj);
+static int TrainerFacingSides_Update(MapObject *mapObj);
+static int TrainerFacingSides_Face(MapObject *mapObj);
+static void TrainerFacingRotate_Init(MapObject *mapObj);
+static int TrainerFacingRotate_Update(MapObject *mapObj);
+static int TrainerFacingRotate_Face(MapObject *mapObj);
 
-void (*const Unk_020EF630[])(MapObject *);
-int (*const Unk_020EF660[])(MapObject *);
-int (*const Unk_020EF690[])(MapObject *);
+void (*const sTrainerFacingInitFuncs[])(MapObject *);
+int (*const sTrainerFacingUpdateFuncs[])(MapObject *);
+int (*const sTrainerFacingFaceFuncs[])(MapObject *);
 
-void sub_020673B8(MapObject *param0)
+// Called when a map object's movement is initialised. Dispatches to the
+// per-trainer-type init callback.
+void TrainerFacing_Init(MapObject *mapObj)
 {
-    sub_020673E4(param0);
+    TrainerFacing_CallInit(mapObj);
 }
 
-int sub_020673C0(MapObject *param0)
+// Called every frame while the object is not performing a movement action.
+// Returns TRUE while the post-movement facing animation is running, which
+// suppresses the object's normal movement update.
+int TrainerFacing_Update(MapObject *mapObj)
 {
-    if (sub_02067400(param0) == 0) {
+    if (TrainerFacing_CallUpdate(mapObj) == 0) {
         return 0;
     }
 
-    if (sub_0206741C(param0) == 0) {
+    if (TrainerFacing_CallFace(mapObj) == 0) {
         return 0;
     }
 
     return 1;
 }
 
-static void sub_020673E4(MapObject *param0)
+// Dispatch helpers: look up the callback for the object's trainer type.
+static void TrainerFacing_CallInit(MapObject *mapObj)
 {
-    int v0 = MapObject_GetTrainerType(param0);
+    int trainerType = MapObject_GetTrainerType(mapObj);
 
-    Unk_020EF630[v0](param0);
+    sTrainerFacingInitFuncs[trainerType](mapObj);
 }
 
-static int sub_02067400(MapObject *param0)
+static int TrainerFacing_CallUpdate(MapObject *mapObj)
 {
-    int v0 = MapObject_GetTrainerType(param0);
-    return Unk_020EF660[v0](param0);
+    int trainerType = MapObject_GetTrainerType(mapObj);
+    return sTrainerFacingUpdateFuncs[trainerType](mapObj);
 }
 
-static int sub_0206741C(MapObject *param0)
+static int TrainerFacing_CallFace(MapObject *mapObj)
 {
-    int v0 = MapObject_GetTrainerType(param0);
-    return Unk_020EF690[v0](param0);
+    int trainerType = MapObject_GetTrainerType(mapObj);
+    return sTrainerFacingFaceFuncs[trainerType](mapObj);
 }
 
-static int sub_02067438(MapObject *param0)
+// TRUE if the object's tile position changed since the previous frame.
+static int TrainerFacing_HasMoved(MapObject *mapObj)
 {
-    int v0 = MapObject_GetX(param0);
-    int v1 = MapObject_GetXPrev(param0);
+    int coord = MapObject_GetX(mapObj);
+    int prevCoord = MapObject_GetXPrev(mapObj);
 
-    if (v0 != v1) {
+    if (coord != prevCoord) {
         return 1;
     }
 
-    v0 = MapObject_GetZ(param0);
-    v1 = MapObject_GetZPrev(param0);
+    coord = MapObject_GetZ(mapObj);
+    prevCoord = MapObject_GetZPrev(mapObj);
 
-    if (v0 != v1) {
+    if (coord != prevCoord) {
         return 1;
     }
 
     return 0;
 }
 
-static int sub_0206746C(MapObject *param0)
+// TRUE if the object's tile position is unchanged since the previous frame.
+static int TrainerFacing_HasStopped(MapObject *mapObj)
 {
-    int v0 = MapObject_GetX(param0);
-    int v1 = MapObject_GetXPrev(param0);
+    int coord = MapObject_GetX(mapObj);
+    int prevCoord = MapObject_GetXPrev(mapObj);
 
-    if (v0 != v1) {
+    if (coord != prevCoord) {
         return 0;
     }
 
-    v0 = MapObject_GetZ(param0);
-    v1 = MapObject_GetZPrev(param0);
+    coord = MapObject_GetZ(mapObj);
+    prevCoord = MapObject_GetZPrev(mapObj);
 
-    if (v0 != v1) {
+    if (coord != prevCoord) {
         return 0;
     }
 
     return 1;
 }
 
-static void sub_020674A0(MapObject *param0)
+// No-op callbacks used by trainer types without facing behaviour.
+static void TrainerFacing_NoOpInit(MapObject *mapObj)
 {
     return;
 }
 
-static int sub_020674A4(MapObject *param0)
+static int TrainerFacing_NoOpUpdate(MapObject *mapObj)
 {
     return 0;
 }
 
-static int sub_020674A8(MapObject *param0)
+static int TrainerFacing_NoOpFace(MapObject *mapObj)
 {
     return 0;
 }
 
-static void sub_020674AC(MapObject *param0)
+// Allocates the facing state and reads the step count from object event data[1].
+static void TrainerFacingSides_Init(MapObject *mapObj)
 {
-    UnkStruct_020674AC *v0 = MapObject_InitUnkE8(param0, (sizeof(UnkStruct_020674AC)));
-    v0->unk_03 = MapObject_GetDataAt(param0, 1);
+    TrainerFacingSidesData *state = MapObject_InitUnkE8(mapObj, (sizeof(TrainerFacingSidesData)));
+    state->stepTarget = MapObject_GetDataAt(mapObj, 1);
 }
 
-static int sub_020674C4(MapObject *param0)
+// Counts movement steps. Once stepTarget steps have been taken and the object
+// has stopped, returns TRUE so the facing animation can begin.
+static int TrainerFacingSides_Update(MapObject *mapObj)
 {
-    UnkStruct_020674AC *v0 = MapObject_GetUnkE8(param0);
+    TrainerFacingSidesData *state = MapObject_GetUnkE8(mapObj);
 
-    switch (v0->unk_00) {
+    switch (state->moveState) {
     case 0:
-        if (sub_02067438(param0) == 1) {
-            v0->unk_00++;
+        if (TrainerFacing_HasMoved(mapObj) == 1) {
+            state->moveState++;
         }
         break;
     case 1:
-        if (sub_0206746C(param0) == 0) {
+        if (TrainerFacing_HasStopped(mapObj) == 0) {
             break;
         }
 
-        v0->unk_02++;
+        state->stepCount++;
 
-        if (v0->unk_02 < v0->unk_03) {
-            v0->unk_00 = 0;
+        if (state->stepCount < state->stepTarget) {
+            state->moveState = 0;
             break;
         }
 
-        v0->unk_00++;
+        state->moveState++;
     case 2:
-        if (MapObject_IsMoving(param0) == 1) {
+        if (MapObject_IsMoving(mapObj) == 1) {
             break;
         }
 
-        v0->unk_00++;
-        v0->unk_02 = 0;
-        v0->unk_01 = 0;
+        state->moveState++;
+        state->stepCount = 0;
+        state->faceState = 0;
     case 3:
         return 1;
     }
@@ -188,113 +213,120 @@ static int sub_020674C4(MapObject *param0)
     return 0;
 }
 
-static int sub_02067540(MapObject *param0)
+// Turns the trainer to face the two directions perpendicular to its original
+// axis (north/south -> west/east and vice versa), holding each for 8 frames,
+// then restores the original facing and restarts the movement cycle.
+static int TrainerFacingSides_Face(MapObject *mapObj)
 {
-    UnkStruct_020674AC *v0 = MapObject_GetUnkE8(param0);
+    TrainerFacingSidesData *state = MapObject_GetUnkE8(mapObj);
 
-    switch (v0->unk_01) {
+    switch (state->faceState) {
     case 0: {
-        int v1[4] = { 0, 0, 1, 1 };
-        int v2 = MapObject_GetFacingDir(param0);
+        int axisByDir[4] = { 0, 0, 1, 1 };
+        int facingDir = MapObject_GetFacingDir(mapObj);
 
-        v0->unk_04 = v2;
-        v0->unk_05 = v1[v2];
-        v0->unk_01++;
+        state->originalDir = facingDir;
+        state->axis = axisByDir[facingDir];
+        state->faceState++;
     }
     case 1: {
-        int v3[2][2] = {
+        int dirsByAxis[2][2] = {
             { 2, 3 },
             { 0, 1 },
         };
-        int v4 = v3[v0->unk_05][v0->unk_06];
-        int v5 = MovementAction_TurnActionTowardsDir(v4, MOVEMENT_ACTION_FACE_NORTH);
+        int targetDir = dirsByAxis[state->axis][state->sideIndex];
+        int movementAction = MovementAction_TurnActionTowardsDir(targetDir, MOVEMENT_ACTION_FACE_NORTH);
 
-        sub_02065668(param0, v5);
-        v0->unk_01++;
+        sub_02065668(mapObj, movementAction);
+        state->faceState++;
     }
     case 2: {
-        if (sub_020658DC(param0) == 0) {
+        if (sub_020658DC(mapObj) == 0) {
             return 1;
         }
 
-        v0->unk_01++;
+        state->faceState++;
     }
     case 3: {
-        v0->unk_08++;
+        state->frameCount++;
 
-        if (v0->unk_08 < 8) {
+        if (state->frameCount < 8) {
             return 1;
         }
 
-        v0->unk_08 = 0;
-        v0->unk_07++;
+        state->frameCount = 0;
+        state->faceCount++;
 
-        if (v0->unk_07 < 4) {
-            v0->unk_06 = (v0->unk_06 + 1) & 0x1;
-            v0->unk_01 = 1;
+        if (state->faceCount < 4) {
+            state->sideIndex = (state->sideIndex + 1) & 0x1;
+            state->faceState = 1;
             return 1;
         }
 
-        MapObject_TryFace(param0, v0->unk_04);
+        MapObject_TryFace(mapObj, state->originalDir);
 
-        v0->unk_01++;
-        v0->unk_07 = 0;
-        v0->unk_00 = 0;
+        state->faceState++;
+        state->faceCount = 0;
+        state->moveState = 0;
     }
     }
 
     return 0;
 }
 
-static void sub_0206762C(MapObject *param0)
+// Allocates the rotation state, reads the step count from object event data[1]
+// and picks the rotation direction from the trainer type.
+static void TrainerFacingRotate_Init(MapObject *mapObj)
 {
-    int v0;
-    UnkStruct_0206762C *v1 = MapObject_InitUnkE8(param0, (sizeof(UnkStruct_0206762C)));
-    v1->unk_03 = MapObject_GetDataAt(param0, 1);
+    int trainerType;
+    TrainerFacingRotateData *state = MapObject_InitUnkE8(mapObj, (sizeof(TrainerFacingRotateData)));
+    state->stepTarget = MapObject_GetDataAt(mapObj, 1);
 
-    v0 = MapObject_GetTrainerType(param0);
+    trainerType = MapObject_GetTrainerType(mapObj);
 
-    if (v0 == 0x5) {
-        v0 = 0;
+    if (trainerType == 0x5) {
+        trainerType = 0;
     } else {
-        v0 = 1;
+        trainerType = 1;
     }
 
-    v1->unk_05 = v0;
+    state->rotationDir = trainerType;
 }
 
-static int sub_02067658(MapObject *param0)
+// Counts movement steps. Once stepTarget steps have been taken and the object
+// has stopped, returns TRUE so the rotation animation can begin.
+static int TrainerFacingRotate_Update(MapObject *mapObj)
 {
-    UnkStruct_0206762C *v0 = MapObject_GetUnkE8(param0);
+    TrainerFacingRotateData *state = MapObject_GetUnkE8(mapObj);
 
-    switch (v0->unk_00) {
+    switch (state->moveState) {
     case 0:
-        if (sub_02067438(param0) == 1) {
-            v0->unk_00++;
+        if (TrainerFacing_HasMoved(mapObj) == 1) {
+            state->moveState++;
         }
 
         break;
     case 1:
-        if (sub_0206746C(param0) == 0) {
+        if (TrainerFacing_HasStopped(mapObj) == 0) {
             break;
         }
 
-        v0->unk_02++;
+        state->stepCount++;
 
-        if (v0->unk_02 < v0->unk_03) {
-            v0->unk_00 = 0;
+        if (state->stepCount < state->stepTarget) {
+            state->moveState = 0;
             break;
         }
 
-        v0->unk_00++;
+        state->moveState++;
     case 2:
-        if (MapObject_IsMoving(param0) == 1) {
+        if (MapObject_IsMoving(mapObj) == 1) {
             break;
         }
 
-        v0->unk_00++;
-        v0->unk_02 = 0;
-        v0->unk_01 = 0;
+        state->moveState++;
+        state->stepCount = 0;
+        state->faceState = 0;
     case 3:
         return 1;
     }
@@ -302,111 +334,116 @@ static int sub_02067658(MapObject *param0)
     return 0;
 }
 
-static int sub_020676D4(MapObject *param0)
+// Rotates the trainer through all four directions (counterclockwise for
+// TRAINER_TYPE_FACE_COUNTERCLOCKWISE, clockwise otherwise), holding each for
+// 8 frames, then restores the original facing and restarts the movement cycle.
+static int TrainerFacingRotate_Face(MapObject *mapObj)
 {
-    UnkStruct_020674AC *v0;
-    int v1[2][4] = {
+    TrainerFacingRotateData *state;
+    int rotationOrder[2][4] = {
         { 0, 2, 1, 3 },
         { 0, 3, 1, 2 },
     };
 
-    v0 = MapObject_GetUnkE8(param0);
+    state = MapObject_GetUnkE8(mapObj);
 
-    switch (v0->unk_01) {
+    switch (state->faceState) {
     case 0: {
-        int v2, v3 = MapObject_GetFacingDir(param0);
+        int index, facingDir = MapObject_GetFacingDir(mapObj);
 
-        for (v2 = 0; (v2 < 4 && v3 != v1[v0->unk_05][v2]); v2++) {
+        for (index = 0; (index < 4 && facingDir != rotationOrder[state->rotationDir][index]); index++) {
             (void)0;
         }
 
-        GF_ASSERT(v2 < 4);
+        GF_ASSERT(index < 4);
 
-        v0->unk_04 = v3;
-        v0->unk_06 = (v2 + 1) % 4;
-        v0->unk_01++;
+        state->originalDir = facingDir;
+        state->rotationIndex = (index + 1) % 4;
+        state->faceState++;
     }
     case 1: {
-        int v4 = v1[v0->unk_05][v0->unk_06];
-        int v5 = MovementAction_TurnActionTowardsDir(v4, MOVEMENT_ACTION_FACE_NORTH);
+        int targetDir = rotationOrder[state->rotationDir][state->rotationIndex];
+        int movementAction = MovementAction_TurnActionTowardsDir(targetDir, MOVEMENT_ACTION_FACE_NORTH);
 
-        sub_02065668(param0, v5);
-        v0->unk_01++;
+        sub_02065668(mapObj, movementAction);
+        state->faceState++;
     }
     case 2: {
-        if (sub_020658DC(param0) == 0) {
+        if (sub_020658DC(mapObj) == 0) {
             return 1;
         }
 
-        v0->unk_01++;
+        state->faceState++;
     }
     case 3: {
-        v0->unk_08++;
+        state->frameCount++;
 
-        if (v0->unk_08 < 8) {
+        if (state->frameCount < 8) {
             return 1;
         }
 
-        v0->unk_08 = 0;
-        v0->unk_07++;
+        state->frameCount = 0;
+        state->faceCount++;
 
-        if (v0->unk_07 < 4) {
-            v0->unk_06 = (v0->unk_06 + 1) % 4;
-            v0->unk_01 = 1;
+        if (state->faceCount < 4) {
+            state->rotationIndex = (state->rotationIndex + 1) % 4;
+            state->faceState = 1;
             return 1;
         }
 
-        MapObject_TryFace(param0, v0->unk_04);
-        v0->unk_01++;
-        v0->unk_07 = 0;
-        v0->unk_00 = 0;
+        MapObject_TryFace(mapObj, state->originalDir);
+        state->faceState++;
+        state->faceCount = 0;
+        state->moveState = 0;
     }
     }
 
     return 0;
 }
 
-static void (*const Unk_020EF630[])(MapObject *) = {
-    sub_020674A0,
-    sub_020674A0,
-    sub_020674A0,
-    sub_020674A0,
-    sub_020674AC,
-    sub_0206762C,
-    sub_0206762C,
-    sub_020674A0,
-    sub_020674A0,
-    sub_020674A0,
-    sub_020674A0,
-    sub_020674A0
+// Callbacks indexed by trainer type. Only FACE_SIDES (4) and the two rotating
+// types (5, 6) have non-trivial entries.
+static void (*const sTrainerFacingInitFuncs[])(MapObject *) = {
+    TrainerFacing_NoOpInit,
+    TrainerFacing_NoOpInit,
+    TrainerFacing_NoOpInit,
+    TrainerFacing_NoOpInit,
+    TrainerFacingSides_Init,
+    TrainerFacingRotate_Init,
+    TrainerFacingRotate_Init,
+    TrainerFacing_NoOpInit,
+    TrainerFacing_NoOpInit,
+    TrainerFacing_NoOpInit,
+    TrainerFacing_NoOpInit,
+    TrainerFacing_NoOpInit
 };
 
-static int (*const Unk_020EF660[])(MapObject *) = {
-    sub_020674A4,
-    sub_020674A4,
-    sub_020674A4,
-    sub_020674A4,
-    sub_020674C4,
-    sub_02067658,
-    sub_02067658,
-    sub_020674A4,
-    sub_020674A4,
-    sub_020674A4,
-    sub_020674A4,
-    sub_020674A4
+static int (*const sTrainerFacingUpdateFuncs[])(MapObject *) = {
+    TrainerFacing_NoOpUpdate,
+    TrainerFacing_NoOpUpdate,
+    TrainerFacing_NoOpUpdate,
+    TrainerFacing_NoOpUpdate,
+    TrainerFacingSides_Update,
+    TrainerFacingRotate_Update,
+    TrainerFacingRotate_Update,
+    TrainerFacing_NoOpUpdate,
+    TrainerFacing_NoOpUpdate,
+    TrainerFacing_NoOpUpdate,
+    TrainerFacing_NoOpUpdate,
+    TrainerFacing_NoOpUpdate
 };
 
-static int (*const Unk_020EF690[])(MapObject *) = {
-    sub_020674A8,
-    sub_020674A8,
-    sub_020674A8,
-    sub_020674A8,
-    sub_02067540,
-    sub_020676D4,
-    sub_020676D4,
-    sub_020674A8,
-    sub_020674A8,
-    sub_020674A8,
-    sub_020674A8,
-    sub_020674A8
+static int (*const sTrainerFacingFaceFuncs[])(MapObject *) = {
+    TrainerFacing_NoOpFace,
+    TrainerFacing_NoOpFace,
+    TrainerFacing_NoOpFace,
+    TrainerFacing_NoOpFace,
+    TrainerFacingSides_Face,
+    TrainerFacingRotate_Face,
+    TrainerFacingRotate_Face,
+    TrainerFacing_NoOpFace,
+    TrainerFacing_NoOpFace,
+    TrainerFacing_NoOpFace,
+    TrainerFacing_NoOpFace,
+    TrainerFacing_NoOpFace
 };

@@ -1,9 +1,9 @@
-#ifndef POKEPLATINUM_UNK_020673B8_H
-#define POKEPLATINUM_UNK_020673B8_H
+#ifndef POKEPLATINUM_TRAINER_FACING_H
+#define POKEPLATINUM_TRAINER_FACING_H
 
 #include "struct_decls/map_object.h"
 
-void sub_020673B8(MapObject *param0);
-int sub_020673C0(MapObject *param0);
+void TrainerFacing_Init(MapObject *mapObj);
+int TrainerFacing_Update(MapObject *mapObj);
 
-#endif // POKEPLATINUM_UNK_020673B8_H
+#endif // POKEPLATINUM_TRAINER_FACING_H

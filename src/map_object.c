@@ -432,7 +432,7 @@ void MapObjectMan_LoadAllRenderers(MapObjectManager *mapObjMan)
             }
 
             MapObject_StartMovementAndResetShadow(mapObj);
-            sub_02064464(mapObj);
+            MapObject_UpdateDisguiseMovement(mapObj);
         }
 
         mapObj++;

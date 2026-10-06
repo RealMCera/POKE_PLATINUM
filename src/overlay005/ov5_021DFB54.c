@@ -519,7 +519,7 @@ static int ov5_021DFF1C(FieldSystem *fieldSystem, PlayerAvatar *playerAvatar, in
         }
 
         {
-            u32 v2 = sub_02063EBC(mapObj, param2);
+            u32 v2 = MapObject_CheckCollisionInDir(mapObj, param2);
 
             v2 &= ~(1 << 0);
 

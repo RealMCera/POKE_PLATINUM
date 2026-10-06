@@ -322,7 +322,7 @@ static BOOL IsPathInterrupted(const MapObject *mapObj, int direction, int distan
     targetZ += MapObject_GetDzFromDir(direction);
 
     for (int distCovered = 0; distCovered < (distance - 1); distCovered++) {
-        collisionFlags = sub_02063E94(mapObj, targetX, targetY, targetZ, direction);
+        collisionFlags = MapObject_CheckCollisionAtCoords(mapObj, targetX, targetY, targetZ, direction);
         collisionFlags &= ~(1 << 0);
 
         if (collisionFlags) {
@@ -333,7 +333,7 @@ static BOOL IsPathInterrupted(const MapObject *mapObj, int direction, int distan
         targetZ += MapObject_GetDzFromDir(direction);
     }
 
-    collisionFlags = sub_02063E94(mapObj, targetX, targetY, targetZ, direction);
+    collisionFlags = MapObject_CheckCollisionAtCoords(mapObj, targetX, targetY, targetZ, direction);
     collisionFlags &= ~(1 << 0);
 
     if (collisionFlags == (1 << 2)) {

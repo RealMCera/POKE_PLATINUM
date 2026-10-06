@@ -414,144 +414,144 @@ static const UnkStruct_020EDF0C Unk_020EDE30 = {
 
 static const UnkStruct_020EDF0C Unk_020EDF48 = {
     0x3,
-    sub_02069BE0,
-    sub_02069C0C,
-    sub_02069C44,
+    MapObjectMovement_FollowPlayer_Init,
+    MapObjectMovement_FollowPlayer_Update,
+    MapObjectMovement_FollowPlayer_Load,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EDE44 = {
     0x3,
-    sub_02069DF4,
-    sub_02069E1C,
-    sub_02069E4C,
-    sub_02069E50
+    MapObjectMovement_FollowPartnerTrainer_Init,
+    MapObjectMovement_FollowPartnerTrainer_Update,
+    MapObjectMovement_FollowPartnerTrainer_Free,
+    MapObjectMovement_FollowPartnerTrainer_Load
 };
 
 static const UnkStruct_020EDF0C Unk_020EDF20 = {
     0x33,
-    sub_0206A104,
-    sub_0206A134,
-    sub_0206A158,
-    sub_0206A168
+    MapObjectMovement_DisguiseSnow_Init,
+    MapObjectMovement_Disguise_Update,
+    MapObjectMovement_Disguise_Free,
+    MapObjectMovement_Disguise_Load
 };
 
 static const UnkStruct_020EDF0C Unk_020EDE6C = {
     0x34,
-    sub_0206A110,
-    sub_0206A134,
-    sub_0206A158,
-    sub_0206A168
+    MapObjectMovement_DisguiseSand_Init,
+    MapObjectMovement_Disguise_Update,
+    MapObjectMovement_Disguise_Free,
+    MapObjectMovement_Disguise_Load
 };
 
 static const UnkStruct_020EDF0C Unk_020EDEF8 = {
     0x35,
-    sub_0206A11C,
-    sub_0206A134,
-    sub_0206A158,
-    sub_0206A168
+    MapObjectMovement_DisguiseRock_Init,
+    MapObjectMovement_Disguise_Update,
+    MapObjectMovement_Disguise_Free,
+    MapObjectMovement_Disguise_Load
 };
 
 static const UnkStruct_020EDF0C Unk_020EDE80 = {
     0x36,
-    sub_0206A128,
-    sub_0206A134,
-    sub_0206A158,
-    sub_0206A168
+    MapObjectMovement_DisguiseGrass_Init,
+    MapObjectMovement_Disguise_Update,
+    MapObjectMovement_Disguise_Free,
+    MapObjectMovement_Disguise_Load
 };
 
 static const UnkStruct_020EDF0C Unk_020EDEA8 = {
     0x37,
-    sub_0206A25C,
-    sub_0206A2BC,
+    MapObjectMovement_WalkWithPlayer_Init,
+    MapObjectMovement_WalkWithPlayer_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EDF34 = {
     0x38,
-    sub_0206A268,
-    sub_0206A2BC,
+    MapObjectMovement_WalkWithPlayer_Init056,
+    MapObjectMovement_WalkWithPlayer_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EDF5C = {
     0x39,
-    sub_0206A274,
-    sub_0206A2BC,
+    MapObjectMovement_WalkWithPlayer_Init057,
+    MapObjectMovement_WalkWithPlayer_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EDF84 = {
     0x3A,
-    sub_0206A280,
-    sub_0206A2BC,
+    MapObjectMovement_WalkWithPlayer_Init058,
+    MapObjectMovement_WalkWithPlayer_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EDFAC = {
     0x3B,
-    sub_0206A28C,
-    sub_0206A2BC,
+    MapObjectMovement_WalkWithPlayerTallGrass_Init,
+    MapObjectMovement_WalkWithPlayer_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EDFFC = {
     0x3C,
-    sub_0206A298,
-    sub_0206A2BC,
+    MapObjectMovement_WalkWithPlayerTallGrass_Init060,
+    MapObjectMovement_WalkWithPlayer_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EE010 = {
     0x3D,
-    sub_0206A2A4,
-    sub_0206A2BC,
+    MapObjectMovement_WalkWithPlayerTallGrass_Init061,
+    MapObjectMovement_WalkWithPlayer_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EE038 = {
     0x3E,
-    sub_0206A2B0,
-    sub_0206A2BC,
+    MapObjectMovement_WalkWithPlayerTallGrass_Init062,
+    MapObjectMovement_WalkWithPlayer_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EE04C = {
     0x3f,
-    sub_0206A490,
-    sub_0206A4C0,
+    MapObjectMovement_WanderAvoidObstacles_Init,
+    MapObjectMovement_WanderAvoidObstacles_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EE088 = {
     0x40,
-    sub_0206A49C,
-    sub_0206A4C0,
+    MapObjectMovement_WanderAvoidObstacles_Init064,
+    MapObjectMovement_WanderAvoidObstacles_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EE09C = {
     0x41,
-    sub_0206A4A8,
-    sub_0206A4C0,
+    MapObjectMovement_WanderAvoidObstacles_Init065,
+    MapObjectMovement_WanderAvoidObstacles_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };
 
 static const UnkStruct_020EDF0C Unk_020EE0D8 = {
     0x42,
-    sub_0206A4B4,
-    sub_0206A4C0,
+    MapObjectMovement_WanderAvoidObstacles_Init066,
+    MapObjectMovement_WanderAvoidObstacles_Update,
     MapObjectMovement_NoOp3,
     MapObjectMovement_NoOp4
 };

@@ -135,7 +135,7 @@ static void ov5_021F3E30(OverworldAnimManager *param0, void *param1)
     MapObject *v1 = v0->unk_10.unk_0C;
 
     if (MapObject_MatchesLocalIDAndMap(v1, v0->unk_08, v0->unk_0C) == 1) {
-        sub_0206A218(v1, NULL);
+        Disguise_SetAnimManager(v1, NULL);
     }
 }
 

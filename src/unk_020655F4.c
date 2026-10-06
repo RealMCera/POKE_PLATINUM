@@ -1388,7 +1388,7 @@ static BOOL MovementAction_RevealTrainer_Step0(MapObject *mapObj)
 {
     RevealTrainerMovementData *data = MapObject_InitMovementData(mapObj, sizeof(RevealTrainerMovementData));
 
-    OverworldAnimManager *v1 = sub_0206A224(mapObj);
+    OverworldAnimManager *v1 = Disguise_GetAnimManager(mapObj);
 
     if (v1 != NULL) {
         OverworldAnimManager_Finish(v1);
@@ -1425,7 +1425,7 @@ static BOOL MovementAction_RevealTrainer_Step1(MapObject *mapObj)
 
     MapObject_SetSpriteJumpOffset(mapObj, &v2);
     MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_END_MOVEMENT | MAP_OBJ_STATUS_END_JUMP | MAP_OBJ_STATUS_5);
-    sub_0206A230(mapObj);
+    Disguise_MarkRevealed(mapObj);
     MapObject_AdvanceMovementStep(mapObj);
 
     return TRUE;

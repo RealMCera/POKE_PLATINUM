@@ -1937,11 +1937,11 @@ static u32 PlayerAvatar_CheckMapObjCollision(PlayerAvatar *playerAvatar, MapObje
         }
     }
 
-    if (sub_02064004(mapObj, x, z, dir) == TRUE) {
+    if (MapObject_IsMovementBlockedInDir(mapObj, x, z, dir) == TRUE) {
         collisionFlag |= MAP_OBJ_COLLISION_WILL_COLLIDE;
     }
 
-    if (sub_02063F00(mapObj, x, y, z) == TRUE) {
+    if (MapObject_IsTileOccupiedByOtherObject(mapObj, x, y, z) == TRUE) {
         collisionFlag |= MAP_OBJ_COLLISION_2;
     }
 
@@ -2226,7 +2226,7 @@ static int PlayerAvatar_CheckDistortionMapObjectCollision(PlayerAvatar *playerAv
 
         y *= 2;
 
-        if (sub_02063F00(mapObj, x, y, z) == TRUE) {
+        if (MapObject_IsTileOccupiedByOtherObject(mapObj, x, y, z) == TRUE) {
             collision |= MAP_OBJ_COLLISION_2;
         }
     }

@@ -325,7 +325,7 @@ void sub_02064690(MapObject *mapObj)
         }
 
         {
-            u32 v2 = sub_02063EBC(mapObj, v0);
+            u32 v2 = MapObject_CheckCollisionInDir(mapObj, v0);
 
             if (v2 != 0) {
                 if (v1->unk_04 == 2) {
@@ -768,12 +768,12 @@ static int sub_02064CA8(MapObject *mapObj, UnkStruct_02064C28 *param1)
         u32 v7;
 
         v5 = MapObject_GetMovingDir(mapObj);
-        v7 = sub_02063EBC(mapObj, v5);
+        v7 = MapObject_CheckCollisionInDir(mapObj, v5);
 
         if (v7 & (1 << 0)) {
             param1->unk_02 = 1;
             v5 = Direction_GetOpposite(v5);
-            v7 = sub_02063EBC(mapObj, v5);
+            v7 = MapObject_CheckCollisionInDir(mapObj, v5);
         }
 
         v6 = 0xc;
@@ -963,7 +963,7 @@ static int sub_02064EEC(MapObject *mapObj, UnkStruct_02064D98 *param1)
             MapObject_TryFace(mapObj, v9);
         }
 
-        v11 = sub_02063EBC(mapObj, v9);
+        v11 = MapObject_CheckCollisionInDir(mapObj, v9);
 
         if (v11 & (1 << 0)) {
             param1->unk_01++;
@@ -975,7 +975,7 @@ static int sub_02064EEC(MapObject *mapObj, UnkStruct_02064D98 *param1)
                 MapObject_TryFace(mapObj, v9);
             }
 
-            v11 = sub_02063EBC(mapObj, v9);
+            v11 = MapObject_CheckCollisionInDir(mapObj, v9);
         }
 
         v10 = 0xc;
@@ -1172,7 +1172,7 @@ static int sub_020651A4(MapObject *mapObj, UnkStruct_0206502C *param1)
             MapObject_TryFace(mapObj, v9);
         }
 
-        v11 = sub_02063EBC(mapObj, v9);
+        v11 = MapObject_CheckCollisionInDir(mapObj, v9);
 
         if (v11 & (1 << 0)) {
             sub_02065100(param1);
@@ -1184,7 +1184,7 @@ static int sub_020651A4(MapObject *mapObj, UnkStruct_0206502C *param1)
                 MapObject_TryFace(mapObj, v9);
             }
 
-            v11 = sub_02063EBC(mapObj, v9);
+            v11 = MapObject_CheckCollisionInDir(mapObj, v9);
         }
 
         v10 = 0xc;
