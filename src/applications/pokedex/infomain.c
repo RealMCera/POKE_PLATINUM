@@ -33,7 +33,7 @@
 #include "sprite_util.h"
 #include "string_gf.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/graphics/pokedex/zukan.naix"
 #include "res/text/bank/pokedex.h"
@@ -954,7 +954,7 @@ static void SetXluMode(InfoMainGraphics *graphicsStruct)
     }
 
     Sprite_SetExplicitOAMMode(graphicsStruct->categoryBoxSprite, GX_OAM_MODE_XLU);
-    sub_02012AF0(graphicsStruct->categoryTextData->fontOAM, GX_OAM_MODE_XLU);
+    FontOAM_SetExplicitOAMMode(graphicsStruct->categoryTextData->fontOAM, GX_OAM_MODE_XLU);
 }
 
 static void SetNormalMode(InfoMainGraphics *graphicsStruct)
@@ -968,7 +968,7 @@ static void SetNormalMode(InfoMainGraphics *graphicsStruct)
     }
 
     Sprite_SetExplicitOAMMode(graphicsStruct->categoryBoxSprite, GX_OAM_MODE_NORMAL);
-    sub_02012AF0(graphicsStruct->categoryTextData->fontOAM, GX_OAM_MODE_NORMAL);
+    FontOAM_SetExplicitOAMMode(graphicsStruct->categoryTextData->fontOAM, GX_OAM_MODE_NORMAL);
 }
 
 static void BlendPokemonSprite(PokedexGraphicData **graphicsData)

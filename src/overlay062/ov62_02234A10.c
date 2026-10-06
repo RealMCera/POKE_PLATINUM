@@ -24,7 +24,7 @@
 #include "string_gf.h"
 #include "text.h"
 #include "touch_screen.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0208B284.h"
 
 static void ov62_02234A10(UnkStruct_0208C06C *param0);
@@ -298,7 +298,7 @@ BOOL ov62_02235008(UnkStruct_0208C06C *param0)
                 ManagedSprite_GetPositionFxXY(param0->unk_534.unk_C8[v1].unk_00, &v0->unk_00[v1].unk_0C, &v2);
                 ManagedSprite_SetPositionFxXY(param0->unk_534.unk_C8[v1].unk_00, v0->unk_00[v1].unk_0C, (25 + (36 * (5 - 1)) + (16 * (5 - (param0->unk_534.unk_1AC)))) * FX32_ONE);
                 FontOAM_SetXY(param0->unk_534.unk_C8[v1].unk_14, 36, -8);
-                sub_020129D0(param0->unk_534.unk_C8[v1].unk_14, 1);
+                FontOAM_SetDrawFlag(param0->unk_534.unk_C8[v1].unk_14, 1);
             }
 
             param0->unk_08++;

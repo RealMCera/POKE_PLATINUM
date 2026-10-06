@@ -50,7 +50,7 @@ typedef struct UnkStruct_ov117_02261280_t {
     StringTemplate *unk_84;
     String *unk_88;
     PaletteData *unk_8C;
-    UnkStruct_02012744 *unk_90;
+    FontOAMManager *unk_90;
     SysTask *unk_94;
     G3DPipelineBuffers *unk_98;
     Camera *camera1;

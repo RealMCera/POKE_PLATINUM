@@ -27,7 +27,7 @@
 #include "sprite_resource.h"
 #include "sprite_transfer.h"
 #include "sprite_util.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/graphics/pokedex/zukan.naix"
 #include "res/text/bank/pokedex.h"
@@ -642,7 +642,7 @@ static void SetSpriteOAMModesXLU(FormDisplayBox *formDisplayBox)
     Sprite_SetExplicitOAMMode(formDisplayBox->arrowSprite, GX_OAM_MODE_XLU);
 
     for (i = 0; i < 2; i++) {
-        sub_02012AF0(formDisplayBox->textData[i]->fontOAM, GX_OAM_MODE_XLU);
+        FontOAM_SetExplicitOAMMode(formDisplayBox->textData[i]->fontOAM, GX_OAM_MODE_XLU);
     }
 }
 
@@ -657,7 +657,7 @@ static void SetSpriteOAMModesNormal(FormDisplayBox *formDisplayBox)
     Sprite_SetExplicitOAMMode(formDisplayBox->arrowSprite, GX_OAM_MODE_NORMAL);
 
     for (i = 0; i < 2; i++) {
-        sub_02012AF0(formDisplayBox->textData[i]->fontOAM, GX_OAM_MODE_NORMAL);
+        FontOAM_SetExplicitOAMMode(formDisplayBox->textData[i]->fontOAM, GX_OAM_MODE_NORMAL);
     }
 }
 
@@ -689,7 +689,7 @@ static BOOL AdvanceBoxTransform(FormDisplayBox *formDisplayBox, FormMainGraphics
     }
 
     for (i = 0; i < 2; i++) {
-        sub_02012938(formDisplayBox->textData[i]->fontOAM);
+        FontOAM_UpdatePosition(formDisplayBox->textData[i]->fontOAM);
     }
 
     return transformComplete;
@@ -1022,7 +1022,7 @@ static void DisplayFormText(FormDisplayBox *formDisplayBox, FormMainGraphics *fo
 
     formDisplayBox->textData[textIndex] = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(formDisplayBox->textData[textIndex]->fontOAM, plttOffset);
+    FontOAM_SetExplicitPalette(formDisplayBox->textData[textIndex]->fontOAM, plttOffset);
     PokedexTextManager_FreeWindow(window);
 }
 

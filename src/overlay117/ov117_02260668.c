@@ -49,7 +49,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "trainer_info.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202419C.h"
 #include "unk_020363E8.h"
 #include "vram_transfer.h"
@@ -227,7 +227,7 @@ int ov117_02260668(ApplicationManager *appMan, int *param1)
     v0->unk_80 = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_UNK_0009, HEAP_ID_110);
     v0->unk_84 = StringTemplate_Default(HEAP_ID_110);
     v0->unk_88 = String_Init(2 * 160, HEAP_ID_110);
-    v0->unk_90 = sub_02012744(2 * 6 + 6 + 1, HEAP_ID_110);
+    v0->unk_90 = FontOAMManager_New(2 * 6 + 6 + 1, HEAP_ID_110);
 
     ov117_02265210(v0, &v0->unk_1468);
 
@@ -449,7 +449,7 @@ int ov117_02260C10(ApplicationManager *appMan, int *param1)
     Bg_FreeTilemapBuffer(v0->unk_2C, BG_LAYER_SUB_1);
     Bg_FreeTilemapBuffer(v0->unk_2C, BG_LAYER_SUB_2);
     Bg_FreeTilemapBuffer(v0->unk_2C, BG_LAYER_SUB_3);
-    sub_020127BC(v0->unk_90);
+    FontOAMManager_Free(v0->unk_90);
     SpriteSystem_FreeResourcesAndManager(v0->unk_24, v0->unk_28);
     SpriteSystem_Free(v0->unk_24);
     VramTransfer_Free();

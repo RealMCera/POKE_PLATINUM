@@ -31,7 +31,7 @@
 #include "system.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/graphics/pokedex/zukan.naix"
 #include "res/text/bank/pokedex.h"
@@ -695,10 +695,10 @@ static void ov21_021D8018(UnkStruct_ov21_021D7C64 *param0, PokedexGraphicData **
     displayBox.sprite = param0->unk_00[0];
     param0->unk_0C[0] = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(param0->unk_0C[0]->fontOAM, v4 + 3);
+    FontOAM_SetExplicitPalette(param0->unk_0C[0]->fontOAM, v4 + 3);
 
     if (param2->unk_1C->unk_04->unk_1740 == 1) {
-        sub_020129D0(param0->unk_0C[0]->fontOAM, 0);
+        FontOAM_SetDrawFlag(param0->unk_0C[0]->fontOAM, 0);
     }
 
     PokedexTextManager_FreeWindow(v0);
@@ -709,10 +709,10 @@ static void ov21_021D8018(UnkStruct_ov21_021D7C64 *param0, PokedexGraphicData **
     displayBox.sprite = param0->unk_00[1];
     param0->unk_0C[1] = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(param0->unk_0C[1]->fontOAM, v4 + 3);
+    FontOAM_SetExplicitPalette(param0->unk_0C[1]->fontOAM, v4 + 3);
 
     if ((ov21_021D36A4(param2->unk_1C->unk_04, 1) == 0) || (param2->unk_1C->unk_04->unk_1740 == 1)) {
-        sub_020129D0(param0->unk_0C[1]->fontOAM, 0);
+        FontOAM_SetDrawFlag(param0->unk_0C[1]->fontOAM, 0);
     }
 
     PokedexTextManager_FreeWindow(v0);
@@ -723,7 +723,7 @@ static void ov21_021D8018(UnkStruct_ov21_021D7C64 *param0, PokedexGraphicData **
     displayBox.sprite = param0->unk_00[2];
     param0->unk_0C[2] = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(param0->unk_0C[2]->fontOAM, v4 + 2);
+    FontOAM_SetExplicitPalette(param0->unk_0C[2]->fontOAM, v4 + 2);
     PokedexTextManager_FreeWindow(v0);
 
     v0 = PokedexTextManager_NewWindow(v3->textMan, 14, 2);
@@ -740,7 +740,7 @@ static void ov21_021D8018(UnkStruct_ov21_021D7C64 *param0, PokedexGraphicData **
     displayBox.y = -8;
     param0->unk_24 = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(param0->unk_24->fontOAM, v4 + 1);
+    FontOAM_SetExplicitPalette(param0->unk_24->fontOAM, v4 + 1);
     PokedexTextManager_FreeWindow(v0);
 }
 

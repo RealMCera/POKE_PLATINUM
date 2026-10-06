@@ -50,7 +50,7 @@
 #include "text.h"
 #include "trainer_data.h"
 #include "trainer_info.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202419C.h"
 #include "unk_0202F1D4.h"
 #include "unk_020363E8.h"
@@ -91,7 +91,7 @@ typedef struct UnkStruct_ov10_0221FB28_t {
     u16 unk_418[96];
     u16 unk_4D8[48];
     u16 unk_538[2][384];
-    UnkStruct_02012744 *unk_B38;
+    FontOAMManager *unk_B38;
     FontOAM *unk_B3C[4];
     G3DPipelineBuffers *unk_B4C;
     ParticleSystem *unk_B50;
@@ -1562,15 +1562,15 @@ static void ov10_0222130C(UnkStruct_ov10_0221FB28 *param0, u32 param1, String *p
     v1.unk_28 = NNS_G2D_VRAM_TYPE_2DMAIN;
     v1.heapID = param0->trainerIntroData->heapID;
 
-    param0->unk_B3C[param1] = sub_020127E8(&v1);
+    param0->unk_B3C[param1] = FontOAM_New(&v1);
 
-    sub_02012A60(param0->unk_B3C[param1], 0);
+    FontOAM_SetExplicitPalette(param0->unk_B3C[param1], 0);
     Window_Remove(v0);
 }
 
 static void ov10_022213B8(UnkStruct_ov10_0221FB28 *param0)
 {
-    param0->unk_B38 = sub_02012744(8, param0->trainerIntroData->heapID);
+    param0->unk_B38 = FontOAMManager_New(8, param0->trainerIntroData->heapID);
 
     ov10_0222130C(param0, 0, param0->trainerIntroData->trainerNames[0]);
     ov10_0222130C(param0, 2, param0->trainerIntroData->trainerNames[1]);
@@ -1582,8 +1582,8 @@ static void ov10_022213B8(UnkStruct_ov10_0221FB28 *param0)
         ov10_0222130C(param0, 1, param0->trainerIntroData->trainerNames[0]);
         ov10_0222130C(param0, 3, param0->trainerIntroData->trainerNames[1]);
 
-        sub_020129D0(param0->unk_B3C[1], 0);
-        sub_020129D0(param0->unk_B3C[3], 0);
+        FontOAM_SetDrawFlag(param0->unk_B3C[1], 0);
+        FontOAM_SetDrawFlag(param0->unk_B3C[3], 0);
     }
 }
 
@@ -1601,10 +1601,10 @@ static void ov10_0222146C(UnkStruct_ov10_0221FB28 *param0)
     }
 
     for (v0 = 0; v0 < 4; v0++) {
-        sub_02012870(param0->unk_B3C[v0]);
+        FontOAM_Free(param0->unk_B3C[v0]);
     }
 
-    sub_020127BC(param0->unk_B38);
+    FontOAMManager_Free(param0->unk_B38);
 }
 
 static void ov10_022214A0(UnkStruct_ov10_0221FB28 *param0, int param1, int param2)

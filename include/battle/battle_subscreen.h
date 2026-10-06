@@ -187,9 +187,9 @@ typedef struct BattleSubscreen {
     u16 *speedUpMovePalBuf;
     SysTask *speedUpPaletteTask;
     MoveDisplayData moveDisplayData[MAX_BATTLERS];
-    UnkStruct_02012744 *fontOAMManager;
+    FontOAMManager *fontOAMManager;
     FontOAMEntry fontOAMEntry[13];
-    UnkStruct_02012B20 *unused_5B8;
+    FontOAMWindow *unused_5B8;
     ManagedSprite *playerPartyBallSprites[MAX_PARTY_SIZE];
     ManagedSprite *opponentPartyBallSprites[MAX_PARTY_SIZE];
     ManagedSprite *moveSelectSprites[LEARNED_MOVES_MAX];

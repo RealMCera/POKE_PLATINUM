@@ -12,19 +12,28 @@
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
 
+// Graphics resources and touch-screen state for the number-entry screen.
 typedef struct {
-    NARC *unk_00;
-    SpriteSystem *unk_04;
-    SpriteManager *unk_08;
-    BgConfig *unk_0C;
-    PaletteData *unk_10;
-    TouchScreenActions *unk_14;
-    TouchScreenRect unk_18[28];
-    BOOL unk_88;
-    UnkStruct_02012744 *unk_8C;
-    FontOAM *unk_90[2];
-    CharTransferAllocation unk_98[2];
-    Window unk_B0;
-} UnkStruct_02089688_sub1;
+    NARC *narc;
+    SpriteSystem *spriteSystem;
+    SpriteManager *spriteManager;
+    BgConfig *bgConfig;
+    PaletteData *paletteData;
+    TouchScreenActions *touchScreenActions;
+    // Touch rectangles for the digit slots (0-15) and the BACK/OK buttons
+    // (26/27).
+    TouchScreenRect touchRects[28];
+    // TRUE while the screen is in touch-input mode: the OK button is hidden and
+    // the first key press only leaves touch mode.
+    BOOL touchMode;
+    // Font manager used to draw the BACK/OK button labels.
+    FontOAMManager *fontManager;
+    // Font OAMs for the BACK (0) and OK (1) button labels.
+    FontOAM *buttonLabelOAMs[2];
+    // Character-transfer allocations backing the button labels.
+    CharTransferAllocation buttonLabelAllocs[2];
+    // Window holding the prompt message at the bottom of the screen.
+    Window messageWindow;
+} NumberEntryScreen_Graphics;
 
 #endif // POKEPLATINUM_STRUCT_02089688_SUB1_H

@@ -30,7 +30,7 @@
 #include "sprite_util.h"
 #include "string_gf.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/graphics/pokedex/zukan.naix"
 #include "res/text/bank/pokedex.h"
@@ -728,13 +728,13 @@ static BOOL UpdatePositionMode(PokedexEntryDisplayGraphics *graphicsStruct, Poke
 static void SetXluMode(PokedexEntryDisplayGraphics *graphicsStruct)
 {
     Sprite_SetExplicitOAMMode(graphicsStruct->displayedIconSprite, GX_OAM_MODE_XLU);
-    sub_02012AF0(graphicsStruct->textData->fontOAM, GX_OAM_MODE_XLU);
+    FontOAM_SetExplicitOAMMode(graphicsStruct->textData->fontOAM, GX_OAM_MODE_XLU);
 }
 
 static void SetNormalMode(PokedexEntryDisplayGraphics *graphicsStruct)
 {
     Sprite_SetExplicitOAMMode(graphicsStruct->displayedIconSprite, GX_OAM_MODE_NORMAL);
-    sub_02012AF0(graphicsStruct->textData->fontOAM, GX_OAM_MODE_NORMAL);
+    FontOAM_SetExplicitOAMMode(graphicsStruct->textData->fontOAM, GX_OAM_MODE_NORMAL);
 }
 
 static void BlendPokemonSprite(PokedexGraphicData **graphicsData)

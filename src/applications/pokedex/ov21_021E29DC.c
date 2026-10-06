@@ -34,7 +34,7 @@
 #include "system.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/graphics/pokedex/zukan.naix"
 #include "res/text/bank/pokedex.h"
@@ -713,8 +713,8 @@ static void ov21_021E3270(PokedexGraphicData **param0, UnkStruct_ov21_021E326C *
         displayBox.window = v0;
         param1->unk_04[v4] = PokedexTextManager_NextTextData(&displayBox);
 
-        sub_02012A60(param1->unk_04[v4]->fontOAM, v3);
-        sub_020129D0(param1->unk_04[v4]->fontOAM, 0);
+        FontOAM_SetExplicitPalette(param1->unk_04[v4]->fontOAM, v3);
+        FontOAM_SetDrawFlag(param1->unk_04[v4]->fontOAM, 0);
 
         PokedexTextManager_FreeWindow(v0);
     }
@@ -1313,7 +1313,7 @@ static void ov21_021E3BE0(UnkStruct_ov21_021E326C *param0)
     int v0;
 
     for (v0 = 0; v0 < 5; v0++) {
-        sub_02012AF0(param0->unk_04[v0]->fontOAM, GX_OAM_MODE_XLU);
+        FontOAM_SetExplicitOAMMode(param0->unk_04[v0]->fontOAM, GX_OAM_MODE_XLU);
     }
 }
 
@@ -1322,7 +1322,7 @@ static void ov21_021E3BFC(UnkStruct_ov21_021E326C *param0)
     int v0;
 
     for (v0 = 0; v0 < 5; v0++) {
-        sub_02012AF0(param0->unk_04[v0]->fontOAM, GX_OAM_MODE_NORMAL);
+        FontOAM_SetExplicitOAMMode(param0->unk_04[v0]->fontOAM, GX_OAM_MODE_NORMAL);
     }
 }
 
@@ -1565,8 +1565,8 @@ static BOOL ov21_021E3F98(PokedexGraphicData **param0, BOOL param1)
 
 static void ov21_021E3FC0(UnkStruct_ov21_021E326C *param0, int param1, int param2)
 {
-    sub_020129D0(param0->unk_04[param2]->fontOAM, 0);
-    sub_020129D0(param0->unk_04[param1]->fontOAM, 1);
+    FontOAM_SetDrawFlag(param0->unk_04[param2]->fontOAM, 0);
+    FontOAM_SetDrawFlag(param0->unk_04[param1]->fontOAM, 1);
 }
 
 static void ov21_021E3FE4(UnkStruct_ov21_021E3900 *param0, const UnkStruct_ov21_021E342C *param1)

@@ -51,7 +51,7 @@ struct UnkStruct_ov65_0222EBE0_t {
     SpriteList *unk_18C;
     G2dRenderer unk_190;
     SpriteResourceCollection *unk_31C[4];
-    UnkStruct_02012744 *unk_32C;
+    FontOAMManager *unk_32C;
     Window unk_330;
     Window unk_340;
     Window unk_350;

@@ -24,7 +24,7 @@
 #include "sprite_system.h"
 #include "system_vars.h"
 #include "touch_screen.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_02030A80.h"
 #include "unk_0208B284.h"
 #include "vars_flags.h"
@@ -108,7 +108,7 @@ static void ov62_02236D48(UnkStruct_0208C06C *param0)
 
     ManagedSprite_SetPositionXY(v0->unk_9C[1].unk_08, 128, 232);
     FontOAM_SetXY(v0->unk_9C[1].unk_0C, 36, -8);
-    sub_020129D0(v0->unk_9C[1].unk_0C, 1);
+    FontOAM_SetDrawFlag(v0->unk_9C[1].unk_0C, 1);
 
     v0->unk_94[1] = ov62_022313E0(param0, NNS_G2D_VRAM_TYPE_2DSUB);
 

@@ -51,7 +51,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_02094EDC.h"
 
 #include "res/text/bank/contest_dance_competition.h"
@@ -639,13 +639,13 @@ void ov17_0224A674(UnkStruct_ov17_0224A1EC *param0)
 
     for (v0 = 0; v0 < 3; v0++) {
         ov17_0223F1E8(HEAP_ID_23, param0->unk_60, param0->unk_5C, param0->unk_94, &param0->unk_96C[0][v0], excellent, FONT_SYSTEM, TEXT_COLOR(0xb, 0xc, 0), 0, 33001, 0, 0, 1, 1, 12);
-        sub_020129D0(param0->unk_96C[0][v0].unk_00, 0);
+        FontOAM_SetDrawFlag(param0->unk_96C[0][v0].unk_00, 0);
 
         ov17_0223F1E8(HEAP_ID_23, param0->unk_60, param0->unk_5C, param0->unk_94, &param0->unk_96C[1][v0], good, FONT_SYSTEM, TEXT_COLOR(0xb, 0xc, 0), 0, 33001, 0, 0, 1, 1, 12);
-        sub_020129D0(param0->unk_96C[1][v0].unk_00, 0);
+        FontOAM_SetDrawFlag(param0->unk_96C[1][v0].unk_00, 0);
 
         ov17_0223F1E8(HEAP_ID_23, param0->unk_60, param0->unk_5C, param0->unk_94, &param0->unk_96C[2][v0], miss, FONT_SYSTEM, TEXT_COLOR(0xb, 0xc, 0), 0, 33001, 0, 0, 1, 1, 12);
-        sub_020129D0(param0->unk_96C[2][v0].unk_00, 0);
+        FontOAM_SetDrawFlag(param0->unk_96C[2][v0].unk_00, 0);
     }
 
     String_Free(excellent);
@@ -691,13 +691,13 @@ void ov17_0224A7E0(UnkStruct_ov17_0224A1EC *param0, SpriteSystem *param1, Sprite
     ManagedSprite_SetDrawFlag(v5->unk_00, 1);
 
     for (v1 = 0; v1 < 3; v1++) {
-        sub_020129D0(param0->unk_96C[v1][v4].unk_00, 0);
+        FontOAM_SetDrawFlag(param0->unk_96C[v1][v4].unk_00, 0);
     }
 
     v5->unk_04 = &param0->unk_96C[param3][v4];
 
     ov17_0223F2F8(v5->unk_04, v2, v3, 1);
-    sub_020129D0(v5->unk_04->unk_00, 1);
+    FontOAM_SetDrawFlag(v5->unk_04->unk_00, 1);
 
     v5->unk_08 = SysTask_Start(ov17_0224A8D4, v5, ((30000 + 10000) + 200));
 }
@@ -730,7 +730,7 @@ static void ov17_0224A8D4(SysTask *param0, void *param1)
         }
         break;
     default:
-        sub_020129D0(v0->unk_04->unk_00, 0);
+        FontOAM_SetDrawFlag(v0->unk_04->unk_00, 0);
         ManagedSprite_SetDrawFlag(v0->unk_00, 0);
         v0->unk_08 = NULL;
         SysTask_Done(param0);

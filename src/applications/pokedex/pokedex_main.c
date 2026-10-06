@@ -56,7 +56,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "touch_screen.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202419C.h"
 #include "vram_transfer.h"
 
@@ -544,9 +544,9 @@ void ov21_021D1524(Sprite *param0, PokedexTextData *textData, int param2, int pa
     v0 = Sprite_GetAnimFrame(param0);
 
     if (v0 < 2) {
-        sub_02012AC0(textData->fontOAM, param3);
+        FontOAM_SetExplicitPaletteOffsetAutoAdjust(textData->fontOAM, param3);
     } else {
-        sub_02012AC0(textData->fontOAM, param4);
+        FontOAM_SetExplicitPaletteOffsetAutoAdjust(textData->fontOAM, param4);
     }
 }
 
@@ -719,7 +719,7 @@ void ov21_021D1858(PokedexSpeciesLabel *pokedexSpeciesLabel, int param1, int par
     Sprite_SetPosition(pokedexSpeciesLabel->caughtIcon, &v0);
 
     if (pokedexSpeciesLabel->textData->fontOAM) {
-        sub_02012938(pokedexSpeciesLabel->textData->fontOAM);
+        FontOAM_UpdatePosition(pokedexSpeciesLabel->textData->fontOAM);
     }
 }
 

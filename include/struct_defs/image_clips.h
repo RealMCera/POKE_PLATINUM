@@ -7,9 +7,11 @@
 
 #define SAVED_PHOTOS_COUNT 11
 
+// The player's saved Image Clips: dress-up photos, one contest photo per
+// contest type, and the fashion case holding collected accessories/backdrops.
 typedef struct ImageClips {
     DressUpPhoto savedPhotos[SAVED_PHOTOS_COUNT];
-    UnkStruct_02029C88 unk_4C8[5];
+    ContestPhoto contestPhotos[5]; // indexed by contest type
     FashionCase fashionCase;
 } ImageClips;
 

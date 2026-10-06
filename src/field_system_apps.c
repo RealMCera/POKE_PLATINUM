@@ -118,7 +118,7 @@
 #include "trainer_info.h"
 #include "tv_segment.h"
 #include "unk_02017498.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "unk_02038FFC.h"
 #include "unk_020559DC.h"
 #include "union_room.h"

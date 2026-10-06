@@ -26,7 +26,7 @@
 #include "pokemon_sprite.h"
 #include "render_text.h"
 #include "string_gf.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 
 #include "res/text/bank/contest_effects.h"
 #include "res/text/bank/contest_text.h"
@@ -597,15 +597,15 @@ void sub_020951B0(Contest *contest, enum HeapID heapID)
 
         v3 = &v2[v5];
 
-        sub_0202A25C(contest->unk_00.unk_E8[i]);
-        sub_0202A3B0(contest->unk_00.unk_E8[i], contest->unk_00.contestMons[i], v3->unk_51);
+        ContestPhoto_Init(contest->unk_00.unk_E8[i]);
+        ContestPhoto_SetPhotoMonFromMon(contest->unk_00.unk_E8[i], contest->unk_00.contestMons[i], v3->unk_51);
 
         for (v1 = 0; v1 < v3->unk_50; v1++) {
-            sub_0202A3EC(contest->unk_00.unk_E8[i], v1, v3->unk_00[v1].unk_00, v3->unk_00[v1].unk_01, v3->unk_00[v1].unk_02, v3->unk_00[v1].unk_03);
+            ContestPhoto_AddAccessoryWithData(contest->unk_00.unk_E8[i], v1, v3->unk_00[v1].unk_00, v3->unk_00[v1].unk_01, v3->unk_00[v1].unk_02, v3->unk_00[v1].unk_03);
         }
 
-        sub_0202A35C(contest->unk_00.unk_E8[i], v3->unk_52);
-        sub_0202A378(contest->unk_00.unk_E8[i], contest->unk_00.contestRank);
+        ContestPhoto_SetBackdrop(contest->unk_00.unk_E8[i], v3->unk_52);
+        ContestPhoto_SetContestRank(contest->unk_00.unk_E8[i], contest->unk_00.contestRank);
     }
 
     Heap_Free(v2);
@@ -616,10 +616,10 @@ void sub_02095338(Contest *contest)
     int i;
 
     for (i = 0; i < CONTEST_NUM_PARTICIPANTS; i++) {
-        sub_0202A25C(contest->unk_00.unk_E8[i]);
-        sub_0202A3B0(contest->unk_00.unk_E8[i], contest->unk_00.contestMons[i], -1);
-        sub_0202A35C(contest->unk_00.unk_E8[i], 0);
-        sub_0202A378(contest->unk_00.unk_E8[i], contest->unk_00.contestRank);
+        ContestPhoto_Init(contest->unk_00.unk_E8[i]);
+        ContestPhoto_SetPhotoMonFromMon(contest->unk_00.unk_E8[i], contest->unk_00.contestMons[i], -1);
+        ContestPhoto_SetBackdrop(contest->unk_00.unk_E8[i], 0);
+        ContestPhoto_SetContestRank(contest->unk_00.unk_E8[i], contest->unk_00.contestRank);
     }
 }
 

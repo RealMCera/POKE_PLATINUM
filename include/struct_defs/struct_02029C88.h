@@ -4,13 +4,16 @@
 #include "struct_defs/photo_accessory.h"
 #include "struct_defs/photo_pokemon.h"
 
-typedef struct UnkStruct_02029C88_t {
-    u32 integrity;
-    u32 unk_04;
+// A photo taken during a Pokemon Contest, saved per contest type in
+// ImageClips. Unlike DressUpPhoto it has no title or language; the contest
+// rank and backdrop are stored instead.
+typedef struct ContestPhoto {
+    u32 integrity; // PHOTO_EMPTY_MAGIC or PHOTO_FULL_MAGIC
+    u32 contestRank;
     PhotoPokemon photoMon;
-    u32 unk_40;
+    u32 accessoryFlags; // bit i is set when accessories[i] holds an accessory
     PhotoAccessory accessories[20];
-    u8 unk_94;
-} UnkStruct_02029C88;
+    u8 backdrop;
+} ContestPhoto;
 
 #endif // POKEPLATINUM_STRUCT_02029C88_DECL_H

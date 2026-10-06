@@ -16,17 +16,17 @@
 #include "pc_boxes.h"
 #include "savedata.h"
 #include "string_gf.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 
 void ov61_0222AE60(SaveData *saveData, const DressUpPhoto *photo, UnkStruct_ov61_0222AE80 *param2)
 {
-    sub_0202A75C(photo, param2);
+    DressUpPhoto_Serialize(photo, param2);
     param2->unk_5C.unk_00 = SaveData_CalculateChecksum(saveData, param2, sizeof(UnkStruct_ov61_0222AE80) - (sizeof(UnkStruct_ov62_02239DA4_sub1)));
 }
 
 void ov61_0222AE80(const UnkStruct_ov61_0222AE80 *param0, DressUpPhoto *photo)
 {
-    sub_0202A824(param0, photo);
+    DressUpPhoto_Deserialize(param0, photo);
 }
 
 void ov61_0222AE88(SaveData *saveData, const PCBoxes *pcBoxes, int boxID, UnkStruct_ov62_02239DA4 *param3, enum HeapID heapID)

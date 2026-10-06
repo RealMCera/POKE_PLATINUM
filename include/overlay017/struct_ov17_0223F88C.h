@@ -32,7 +32,7 @@ typedef struct {
     StringTemplate *unk_48;
     String *unk_4C;
     PaletteData *unk_50;
-    UnkStruct_02012744 *unk_54;
+    FontOAMManager *unk_54;
     PokemonSpriteData pokemonSpriteDataArray[CONTEST_NUM_PARTICIPANTS];
     PokemonSpriteData pokemonSpriteData;
     ManagedSprite *unk_A8[3];

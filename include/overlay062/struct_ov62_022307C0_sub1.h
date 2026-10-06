@@ -14,7 +14,7 @@ typedef struct {
     BOOL unk_0C;
     TouchScreenRect *unk_10;
     FontOAM *unk_14;
-    UnkStruct_02012B20 *unk_18;
+    FontOAMWindow *unk_18;
     CharTransferAllocation unk_1C;
 } UnkStruct_ov62_022307C0_sub1;
 

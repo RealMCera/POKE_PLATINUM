@@ -23,7 +23,7 @@
 #include "string_list.h"
 #include "system.h"
 #include "text.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 
 #include "res/graphics/shop_menu/shop_gra.naix"
 #include "res/text/bank/flower_shop.h"

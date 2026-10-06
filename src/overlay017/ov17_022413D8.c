@@ -40,7 +40,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0208C098.h"
 #include "unk_02094EDC.h"
 
@@ -1218,10 +1218,10 @@ static void ov17_0224262C(UnkStruct_ov17_02246F24 *param0, GXOamMode param1, int
             ManagedSprite_SetDrawFlag(param0->unk_0C.unk_160[v0], v2);
         }
 
-        sub_02012AF0(param0->unk_0C.unk_180[v0].unk_00, param1);
-        sub_02012AF0(param0->unk_0C.unk_1C8[v0].unk_00, param1);
-        sub_020129D0(param0->unk_0C.unk_180[v0].unk_00, v3);
-        sub_020129D0(param0->unk_0C.unk_1C8[v0].unk_00, v3);
+        FontOAM_SetExplicitOAMMode(param0->unk_0C.unk_180[v0].unk_00, param1);
+        FontOAM_SetExplicitOAMMode(param0->unk_0C.unk_1C8[v0].unk_00, param1);
+        FontOAM_SetDrawFlag(param0->unk_0C.unk_180[v0].unk_00, v3);
+        FontOAM_SetDrawFlag(param0->unk_0C.unk_1C8[v0].unk_00, v3);
     }
 }
 

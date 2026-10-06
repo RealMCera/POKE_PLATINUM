@@ -196,7 +196,7 @@
 #include "trainer_info.h"
 #include "tv_segment.h"
 #include "underground.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "unk_02038FFC.h"
@@ -2939,7 +2939,7 @@ static BOOL ImageClipsSlotHasData(FieldSystem *fieldSystem, int param1, int slot
             return FALSE;
         }
     } else {
-        if (!sub_02029D2C(imageClips, slot)) {
+        if (!ImageClips_ContestPhotoHasData(imageClips, slot)) {
             return FALSE;
         }
     }

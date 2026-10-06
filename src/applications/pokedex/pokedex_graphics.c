@@ -9,7 +9,7 @@
 #include "software_sprite.h"
 #include "sprite_transfer.h"
 #include "sys_task.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/graphics/pokedex/zukan.naix"
 
@@ -209,7 +209,7 @@ void PokedexGraphics_UpdatePokedexSpeciesLabel(PokedexGraphicData *pokedexGraphi
 void PokedexGraphics_UpdateSpeciesLabel(PokedexSpeciesLabel *pokedexSpeciesLabel, PokedexDisplayBox *displayBox, int size, enum Species species, BOOL isNationalDex)
 {
     if (species == pokedexSpeciesLabel->species && isNationalDex == pokedexSpeciesLabel->isNationalDex) {
-        sub_020129D0(pokedexSpeciesLabel->textData->fontOAM, TRUE);
+        FontOAM_SetDrawFlag(pokedexSpeciesLabel->textData->fontOAM, TRUE);
         return;
     } else {
         pokedexSpeciesLabel->species = species;
@@ -237,14 +237,14 @@ void PokedexGraphics_SetSpeciesLabelGXOamMode(const PokedexGraphicData *pokedexG
 {
     Sprite_SetExplicitOAMMode(pokedexGraphicData->pokedexSpeciesLabel.nameTag, mode);
     Sprite_SetExplicitOAMMode(pokedexGraphicData->pokedexSpeciesLabel.caughtIcon, mode);
-    sub_02012AF0(pokedexGraphicData->pokedexSpeciesLabel.textData->fontOAM, mode);
+    FontOAM_SetExplicitOAMMode(pokedexGraphicData->pokedexSpeciesLabel.textData->fontOAM, mode);
 }
 
 void PokedexGraphics_SetSpeciesLabelPriority(const PokedexGraphicData *pokedexGraphicData, int priority)
 {
     Sprite_SetExplicitPriority(pokedexGraphicData->pokedexSpeciesLabel.nameTag, priority);
     Sprite_SetExplicitPriority(pokedexGraphicData->pokedexSpeciesLabel.caughtIcon, priority);
-    sub_02012A00(pokedexGraphicData->pokedexSpeciesLabel.textData->fontOAM, priority);
+    FontOAM_SetExplicitPriority(pokedexGraphicData->pokedexSpeciesLabel.textData->fontOAM, priority);
 }
 
 void PokedexGraphics_SetPokedexSpeciesLabelDraw(const PokedexGraphicData *pokedexGraphicData, BOOL draw)
@@ -258,7 +258,7 @@ void PokedexGraphics_SetPokedexSpeciesLabelDraw(const PokedexGraphicData *pokede
     }
 
     if (pokedexGraphicData->pokedexSpeciesLabel.textData->fontOAM) {
-        sub_020129D0(pokedexGraphicData->pokedexSpeciesLabel.textData->fontOAM, draw);
+        FontOAM_SetDrawFlag(pokedexGraphicData->pokedexSpeciesLabel.textData->fontOAM, draw);
     }
 }
 
@@ -885,7 +885,7 @@ void PokedexGraphics_SetSpeciesLabelDraw(PokedexSpeciesLabel *pokedexSpeciesLabe
     }
 
     if (pokedexSpeciesLabel->textData->fontOAM) {
-        sub_020129D0(pokedexSpeciesLabel->textData->fontOAM, draw);
+        FontOAM_SetDrawFlag(pokedexSpeciesLabel->textData->fontOAM, draw);
     }
 }
 

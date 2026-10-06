@@ -69,7 +69,7 @@
 #include "touch_screen.h"
 #include "trainer_data.h"
 #include "trainer_info.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0201567C.h"
 #include "unk_0208C098.h"
 
@@ -11989,7 +11989,7 @@ static void BattleScript_LoadPartyLevelUpIcon(BattleSystem *battleSys, BattleScr
     Sprite_SetExplicitPaletteOffsetAutoAdjust(data->sprites[1]->sprite, Pokemon_IconPaletteIndex(mon));
     ManagedSprite_TickFrame(data->sprites[1]);
 
-    data->tmpPtr[0] = sub_02012744(1, HEAP_ID_BATTLE);
+    data->tmpPtr[0] = FontOAMManager_New(1, HEAP_ID_BATTLE);
 
     if (Pokemon_GetValue(mon, MON_DATA_NO_PRINT_GENDER, NULL) == FALSE) {
         gender = GENDER_NONE;
@@ -12013,7 +12013,7 @@ static void BattleScript_LoadPartyLevelUpIcon(BattleSystem *battleSys, BattleScr
     Window_AddToTopLeftCorner(bgConfig, &window, 12, 4, 0, 0);
     Text_AddPrinterWithParamsAndColor(&window, FONT_SYSTEM, msgBuffer, 0, 0, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
 
-    size = sub_02012898(&window, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_BATTLE);
+    size = FontOAM_GetWindowSize(&window, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_BATTLE);
     CharTransfer_AllocRange(size, 1, NNS_G2D_VRAM_TYPE_2DMAIN, &charTransferAllocation);
 
     v12.unk_00 = data->tmpPtr[0];
@@ -12029,10 +12029,10 @@ static void BattleScript_LoadPartyLevelUpIcon(BattleSystem *battleSys, BattleScr
     v12.unk_28 = NNS_G2D_VRAM_TYPE_2DMAIN;
     v12.heapID = HEAP_ID_BATTLE;
 
-    data->fontOAM = sub_020127E8(&v12);
+    data->fontOAM = FontOAM_New(&v12);
     data->charTransferAllocation = charTransferAllocation;
 
-    sub_02012AC0(data->fontOAM, 1);
+    FontOAM_SetExplicitPaletteOffsetAutoAdjust(data->fontOAM, 1);
     Window_Remove(&window);
 }
 
@@ -12042,7 +12042,7 @@ static void BattleScript_FreePartyLevelUpIcon(BattleSystem *battleSys, BattleScr
 
     Sprite_DeleteAndFreeResources(data->sprites[0]);
     Sprite_DeleteAndFreeResources(data->sprites[1]);
-    sub_02012870(data->fontOAM);
+    FontOAM_Free(data->fontOAM);
     CharTransfer_ClearRange(&data->charTransferAllocation);
     SpriteManager_UnloadCharObjById(spriteMan, 20021);
     SpriteManager_UnloadPlttObjById(spriteMan, 20016);
@@ -12052,7 +12052,7 @@ static void BattleScript_FreePartyLevelUpIcon(BattleSystem *battleSys, BattleScr
     SpriteManager_UnloadPlttObjById(spriteMan, 20017);
     SpriteManager_UnloadCellObjById(spriteMan, 20014);
     SpriteManager_UnloadAnimObjById(spriteMan, 20014);
-    sub_020127BC(data->tmpPtr[0]);
+    FontOAMManager_Free(data->tmpPtr[0]);
 }
 
 /**

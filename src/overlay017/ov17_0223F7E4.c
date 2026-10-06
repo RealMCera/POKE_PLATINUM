@@ -37,7 +37,7 @@
 #include "system.h"
 #include "text.h"
 #include "touch_screen.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_02094EDC.h"
 
 #include "res/text/bank/contest_text.h"
@@ -123,7 +123,7 @@ typedef struct UnkStruct_ov17_0223F7E4_t {
     UnkStruct_ov17_0223F7E4_sub1 unk_18;
     u16 *unk_20[5];
     u16 *unk_34[2];
-    UnkStruct_02012744 *unk_3C;
+    FontOAMManager *unk_3C;
     UnkStruct_ov17_02240138 unk_40[12];
     ManagedSprite *unk_118[4];
     ManagedSprite *unk_128;
@@ -617,7 +617,7 @@ void *ov17_0223F88C(Contest *param0, UnkStruct_ov17_0223F88C *param1, UnkStruct_
     v0->unk_00 = param0;
     v0->unk_04 = param1;
     v0->unk_08 = param2;
-    v0->unk_3C = sub_02012744(12, HEAP_ID_21);
+    v0->unk_3C = FontOAMManager_New(12, HEAP_ID_21);
 
     v1 = NARC_ctor(NARC_INDEX_CONTEST__GRAPHIC__CONTEST_BG, HEAP_ID_21);
 
@@ -659,7 +659,7 @@ void ov17_0223F960(UnkStruct_ov17_0223F7E4 *param0)
     int v0;
 
     ov17_022404B0(param0);
-    sub_020127BC(param0->unk_3C);
+    FontOAMManager_Free(param0->unk_3C);
     ov17_02252B20(param0->unk_04->unk_1C, 33021, 33009, 33016, 33016);
     ov17_02252BCC(param0->unk_2FC);
 
@@ -834,9 +834,9 @@ static void ov17_0223FCAC(UnkStruct_ov17_0223F7E4 *param0, int param1, int param
         ov17_02240138(param0, &param0->unk_40[8 + i], NULL, FONT_SYSTEM, TEXT_COLOR(1, 2, 0), 0, 33008, Unk_ov17_02253314[i][1][0], Unk_ov17_02253314[i][1][1], 0, &v8->unk_A0[i]);
 
         if (moveList[i] == MOVE_NONE) {
-            sub_020129D0(param0->unk_40[0 + i].unk_00, 0);
-            sub_020129D0(param0->unk_40[4 + i].unk_00, 0);
-            sub_020129D0(param0->unk_40[8 + i].unk_00, 0);
+            FontOAM_SetDrawFlag(param0->unk_40[0 + i].unk_00, 0);
+            FontOAM_SetDrawFlag(param0->unk_40[4 + i].unk_00, 0);
+            FontOAM_SetDrawFlag(param0->unk_40[8 + i].unk_00, 0);
         }
     }
 
@@ -1013,7 +1013,7 @@ static void ov17_02240138(UnkStruct_ov17_0223F7E4 *param0, UnkStruct_ov17_022401
         window = param10->unk_00;
     }
 
-    v3 = sub_02012898(&window, NNS_G2D_VRAM_TYPE_2DSUB, HEAP_ID_21);
+    v3 = FontOAM_GetWindowSize(&window, NNS_G2D_VRAM_TYPE_2DSUB, HEAP_ID_21);
     CharTransfer_AllocRange(v3, 1, NNS_G2D_VRAM_TYPE_2DSUB, &v2);
 
     if (param9 == 1) {
@@ -1035,9 +1035,9 @@ static void ov17_02240138(UnkStruct_ov17_0223F7E4 *param0, UnkStruct_ov17_022401
     v0.unk_28 = NNS_G2D_VRAM_TYPE_2DSUB;
     v0.heapID = HEAP_ID_21;
 
-    v4 = sub_020127E8(&v0);
+    v4 = FontOAM_New(&v0);
 
-    sub_02012AC0(v4, param5);
+    FontOAM_SetExplicitPaletteOffsetAutoAdjust(v4, param5);
     FontOAM_SetXY(v4, x, y);
 
     if (param10 == NULL) {
@@ -1055,7 +1055,7 @@ static void ov17_02240260(UnkStruct_ov17_0223F7E4 *param0)
 
     for (v0 = 0; v0 < 12; v0++) {
         if (param0->unk_40[v0].unk_00 != NULL) {
-            sub_02012870(param0->unk_40[v0].unk_00);
+            FontOAM_Free(param0->unk_40[v0].unk_00);
             CharTransfer_ClearRange(&param0->unk_40[v0].unk_04);
             param0->unk_40[v0].unk_00 = NULL;
         }

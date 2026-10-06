@@ -38,7 +38,7 @@
 #include "system.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "vram_transfer.h"
 #include "yes_no_touch_menu.h"
 

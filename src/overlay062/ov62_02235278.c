@@ -22,7 +22,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "touch_screen.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0208B284.h"
 
 static BOOL ov62_02235278(UnkStruct_0208C06C *param0);
@@ -303,7 +303,7 @@ static BOOL ov62_02235580(UnkStruct_0208C06C *param0)
 
                             ManagedSprite_SetAnim(param0->unk_534.unk_00[v4].unk_00, param0->unk_818[param0->unk_534.unk_1B0].unk_0C);
                             ov62_02230FC8(param0, &param0->unk_534.unk_00[param0->unk_534.unk_1A4], param0->unk_818[param0->unk_534.unk_1B0].unk_08, &param0->unk_818[param0->unk_534.unk_1B0]);
-                            sub_020129D0(param0->unk_534.unk_00[param0->unk_534.unk_1A4].unk_14, 1);
+                            FontOAM_SetDrawFlag(param0->unk_534.unk_00[param0->unk_534.unk_1A4].unk_14, 1);
                             ManagedSprite_SetDrawFlag(param0->unk_534.unk_00[v4].unk_00, 1);
                         } else {
                             v5->unk_04 = v5->unk_00 - 4;

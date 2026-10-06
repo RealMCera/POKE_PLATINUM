@@ -59,7 +59,7 @@
 #include "string_template.h"
 #include "system_flags.h"
 #include "trainer_info.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "unk_0202E2CC.h"
 #include "unk_02054884.h"
 #include "unk_0205DFC4.h"

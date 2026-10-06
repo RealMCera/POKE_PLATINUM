@@ -28,7 +28,7 @@
 #include "sys_task_extensions.h"
 #include "sys_task_manager.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/text/bank/npc_trainer_names.h"
 #include "res/trainers/classes/field_encounteffect.naix"
@@ -108,7 +108,7 @@ typedef struct FrontierBrainEncounterEffect {
     s16 xAnchor;
     s16 yAnchor;
     u8 facility;
-    UnkStruct_02012744 *unk_30;
+    FontOAMManager *unk_30;
     SysTask *vBlankCallback;
     int bannerPaletteTimer;
     int bannerPaletteIdx;
@@ -317,14 +317,14 @@ static BOOL FrontierBrainEncounterEffect_MainLoop(FrontierBrainEncounterEffect *
         int plttOffset = SpriteSystem_LoadPaletteBufferFromOpenNarc(encEffect->currentBannerPalette, PLTTBUF_MAIN_OBJ, encEffect->spriteSys, encEffect->spriteMan, encEffect->narc, _shared_enc_fade_NCLR, 0, TRUE, NNS_G2D_VRAM_TYPE_2DMAIN, ID_NAME_PLTT);
 
         encEffect->plttOffsets |= 1 << plttOffset;
-        encEffect->unk_30 = sub_02012744(4, HEAP_ID_94);
+        encEffect->unk_30 = FontOAMManager_New(4, HEAP_ID_94);
 
         MessageLoader *msgLoader = MessageLoader_Init(MSG_LOADER_LOAD_ON_DEMAND, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_NPC_TRAINER_NAMES, heapID);
         String *nameStr = MessageLoader_GetNewString(msgLoader, encounterParams->name);
 
         CreateFrontierBrainNameObject(encEffect, &anims->brainName, nameStr, FONT_SYSTEM, TEXT_COLOR(1, 2, 0), 0, ID_NAME_PLTT, 208 + -92 + encEffect->xAnchor, 11 * 8 + encEffect->yAnchor, 0, NULL);
 
-        sub_020129D0(anims->brainName.fontOAM, FALSE);
+        FontOAM_SetDrawFlag(anims->brainName.fontOAM, FALSE);
         String_Free(nameStr);
         MessageLoader_Free(msgLoader);
 
@@ -416,7 +416,7 @@ static BOOL FrontierBrainEncounterEffect_MainLoop(FrontierBrainEncounterEffect *
             PaletteData_BlendMulti(encEffect->currentBannerPalette, PLTTBUF_MAIN_OBJ, encEffect->plttOffsets ^ 0x3fff, 14, 0);
             PaletteData_Blend(encEffect->currentBannerPalette, PLTTBUF_MAIN_OBJ, encEffect->mugshotPlttOffset * 16, 16, 0, GX_RGB(0, 0, 0));
             BrightnessController_SetScreenBrightness(-14, GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 | GX_BLEND_PLANEMASK_BD, BRIGHTNESS_MAIN_SCREEN);
-            sub_020129D0(anims->brainName.fontOAM, TRUE);
+            FontOAM_SetDrawFlag(anims->brainName.fontOAM, TRUE);
             encEffect->state++;
         }
         break;
@@ -455,7 +455,7 @@ static BOOL FrontierBrainEncounterEffect_MainLoop(FrontierBrainEncounterEffect *
 
         FreeFrontierBrainNameObject(&anims->brainName);
 
-        sub_020127BC(encEffect->unk_30);
+        FontOAMManager_Free(encEffect->unk_30);
         Sprite_DeleteAndFreeResources(anims->mugshotSprite);
 
         FreeVsSprites(&anims->vsSpriteAnimation);
@@ -492,7 +492,7 @@ static void CreateFrontierBrainNameObject(FrontierBrainEncounterEffect *encEffec
     }
 
     CharTransferAllocation charTransferAllocation;
-    int size = sub_02012898(&window, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_94);
+    int size = FontOAM_GetWindowSize(&window, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_94);
     CharTransfer_AllocRange(size, TRUE, NNS_G2D_VRAM_TYPE_2DMAIN, &charTransferAllocation);
 
     if (center == TRUE) {
@@ -514,9 +514,9 @@ static void CreateFrontierBrainNameObject(FrontierBrainEncounterEffect *encEffec
     v0.unk_28 = NNS_G2D_VRAM_TYPE_2DMAIN;
     v0.heapID = HEAP_ID_94;
 
-    FontOAM *fontOAM = sub_020127E8(&v0);
+    FontOAM *fontOAM = FontOAM_New(&v0);
 
-    sub_02012AC0(fontOAM, plttOffset);
+    FontOAM_SetExplicitPaletteOffsetAutoAdjust(fontOAM, plttOffset);
     FontOAM_SetXY(fontOAM, x, y);
 
     if (textWindow == NULL) {
@@ -530,7 +530,7 @@ static void CreateFrontierBrainNameObject(FrontierBrainEncounterEffect *encEffec
 
 static void FreeFrontierBrainNameObject(FrontierBrainNameObject *brainName)
 {
-    sub_02012870(brainName->fontOAM);
+    FontOAM_Free(brainName->fontOAM);
     CharTransfer_ClearRange(&brainName->charTransferAllocation);
 }
 

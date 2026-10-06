@@ -49,7 +49,7 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202F1D4.h"
 #include "unk_02030A80.h"
 #include "unk_0208B284.h"
@@ -3031,7 +3031,7 @@ static void ov62_022448E0(UnkStruct_ov62_022312B0 *param0, UnkStruct_0208C06C *p
     Window_Init(&v2);
     Window_AddToTopLeftCorner(param1->unk_14.unk_10, &v2, 20, 2, 0, 0);
     Text_AddPrinterWithParamsAndColor(&v2, FONT_SYSTEM, v0, 0, 0, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(14, 13, 0), NULL);
-    sub_02012BE0(param0->unk_0C, param0->unk_10, &v2, HEAP_ID_102);
+    FontOAMWindow_UploadToVRAM(param0->unk_0C, param0->unk_10, &v2, HEAP_ID_102);
     String_Free(v0);
     Window_Remove(&v2);
 }
@@ -3148,7 +3148,7 @@ static void ov62_02244BE4(UnkStruct_0208C06C *param0)
         ManagedSprite_SetPositionXY(v0->unk_10[v1].unk_08, 42 + 8, (25 + (36 * (v1)) + (16 * (5 - 4))) + 64);
         ManagedSprite_SetAnim(v0->unk_10[v1].unk_08, v3[v1]);
         FontOAM_SetXY(v0->unk_10[v1].unk_0C, 36, -8);
-        sub_020129D0(v0->unk_10[v1].unk_0C, 1);
+        FontOAM_SetDrawFlag(v0->unk_10[v1].unk_0C, 1);
     }
 }
 
@@ -3916,11 +3916,11 @@ static void ov62_02245AC8(UnkStruct_0208C06C *param0, int param1)
 
     if (param1 == 0) {
         ManagedSprite_SetDrawFlag(v0->unk_10[0].unk_08, 1);
-        sub_020129D0(v0->unk_10[0].unk_0C, 1);
+        FontOAM_SetDrawFlag(v0->unk_10[0].unk_0C, 1);
         ManagedSprite_SetPositionXY(v0->unk_10[1].unk_08, 128, 232 - 64);
     } else {
         ManagedSprite_SetDrawFlag(v0->unk_10[0].unk_08, 0);
-        sub_020129D0(v0->unk_10[0].unk_0C, 0);
+        FontOAM_SetDrawFlag(v0->unk_10[0].unk_0C, 0);
         ManagedSprite_SetPositionXY(v0->unk_10[1].unk_08, 80, 232 - 64);
     }
 
@@ -3946,8 +3946,8 @@ static void ov62_02245B24(UnkStruct_0208C06C *param0)
     ManagedSprite_SetPositionXY(v0->unk_10[1].unk_08, 128, 232 - 64);
     FontOAM_SetXY(v0->unk_10[0].unk_0C, 36, -8);
     FontOAM_SetXY(v0->unk_10[1].unk_0C, 36, -8);
-    sub_020129D0(v0->unk_10[0].unk_0C, 1);
-    sub_020129D0(v0->unk_10[1].unk_0C, 1);
+    FontOAM_SetDrawFlag(v0->unk_10[0].unk_0C, 1);
+    FontOAM_SetDrawFlag(v0->unk_10[1].unk_0C, 1);
     ManagedSprite_SetAnim(v0->unk_10[0].unk_08, 0);
     ManagedSprite_SetAnim(v0->unk_10[1].unk_08, 1);
 
@@ -3973,11 +3973,11 @@ static void ov62_02245C08(UnkStruct_0208C06C *param0, int param1)
 
     if (param1 == 0) {
         ManagedSprite_SetDrawFlag(v0->unk_10[1].unk_08, 1);
-        sub_020129D0(v0->unk_10[1].unk_0C, 1);
+        FontOAM_SetDrawFlag(v0->unk_10[1].unk_0C, 1);
         ManagedSprite_SetPositionXY(v0->unk_10[0].unk_08, 32, 232);
     } else {
         ManagedSprite_SetDrawFlag(v0->unk_10[1].unk_08, 0);
-        sub_020129D0(v0->unk_10[1].unk_0C, 0);
+        FontOAM_SetDrawFlag(v0->unk_10[1].unk_0C, 0);
         ManagedSprite_SetPositionXY(v0->unk_10[0].unk_08, 80, 232);
     }
 
@@ -4013,8 +4013,8 @@ static void ov62_02245C64(UnkStruct_0208C06C *param0)
     ManagedSprite_SetPositionXY(v0->unk_10[1].unk_08, 128, 232);
     FontOAM_SetXY(v0->unk_10[0].unk_0C, 36, -8);
     FontOAM_SetXY(v0->unk_10[1].unk_0C, 36, -8);
-    sub_020129D0(v0->unk_10[0].unk_0C, 1);
-    sub_020129D0(v0->unk_10[1].unk_0C, 1);
+    FontOAM_SetDrawFlag(v0->unk_10[0].unk_0C, 1);
+    FontOAM_SetDrawFlag(v0->unk_10[1].unk_0C, 1);
 
     ov62_02245C08(param0, 0);
 }

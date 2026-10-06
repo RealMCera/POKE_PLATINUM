@@ -8,7 +8,7 @@
 #include "font.h"
 #include "message.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 static BOOL FontExists(PokedexTextData *textData);
 static PokedexTextData *NextEmptyText(PokedexTextManager *textMan);
@@ -20,7 +20,7 @@ PokedexTextManager *PokedexTextManager_New(const PokedexTextManagerTemplate *tex
     GF_ASSERT(textMan);
     memset(textMan, 0, sizeof(PokedexTextManager));
 
-    textMan->unk_00 = sub_02012744(textManTemplate->numTextData, textManTemplate->heapID);
+    textMan->unk_00 = FontOAMManager_New(textManTemplate->numTextData, textManTemplate->heapID);
     textMan->textData = Heap_Alloc(textManTemplate->heapID, sizeof(PokedexTextData) * textManTemplate->numTextData);
 
     GF_ASSERT(textMan->textData);
@@ -40,7 +40,7 @@ void PokedexTextManager_Free(PokedexTextManager *textMan)
 
     PokedexTextManager_FreeAllTextData(textMan);
     Heap_Free(textMan->textData);
-    sub_020127BC(textMan->unk_00);
+    FontOAMManager_Free(textMan->unk_00);
 
     memset(textMan, 0, sizeof(PokedexTextManager));
 
@@ -49,7 +49,7 @@ void PokedexTextManager_Free(PokedexTextManager *textMan)
 
 PokedexTextData *PokedexTextManager_NextTextData(const PokedexDisplayBox *displayBox)
 {
-    int size = sub_02012898(displayBox->window, displayBox->vramType, displayBox->heapID);
+    int size = FontOAM_GetWindowSize(displayBox->window, displayBox->vramType, displayBox->heapID);
     return PokedexTextManager_NextTextDataNew(displayBox, size);
 }
 
@@ -74,14 +74,14 @@ PokedexTextData *PokedexTextManager_NextTextDataNew(const PokedexDisplayBox *dis
     v0.unk_28 = displayBox->vramType;
     v0.heapID = displayBox->heapID;
 
-    textData->fontOAM = sub_020127E8(&v0);
+    textData->fontOAM = FontOAM_New(&v0);
 
     return textData;
 }
 
 void PokedexTextManager_FreeTextData(PokedexTextData *textData)
 {
-    sub_02012870(textData->fontOAM);
+    FontOAM_Free(textData->fontOAM);
     CharTransfer_ClearRange(&textData->allocation);
 
     memset(textData, 0, sizeof(PokedexTextData));

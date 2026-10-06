@@ -39,7 +39,7 @@
 #include "touch_screen.h"
 #include "trainer_case.h"
 #include "trainer_case_save_data.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "vram_transfer.h"
 #include "yes_no_touch_menu.h"
 
@@ -603,7 +603,7 @@ static void SignatureApp_InitWindows(SignatureApp *signatureApp, ApplicationMana
     DC_FlushRange(pixels, TILE_SIZE_4BPP * DONE_BUTTON_WIDTH * DONE_BUTTON_HEIGHT);
 
     for (int i = 0; i < 2; i++) {
-        sub_02012C60(&signatureApp->buttonWindow, DONE_BUTTON_WIDTH / 2, DONE_BUTTON_HEIGHT, (DONE_BUTTON_WIDTH / 2) * i, 0, (char *)signatureApp->buttonPixelBuffer);
+        FontOAM_CopyWindowRect(&signatureApp->buttonWindow, DONE_BUTTON_WIDTH / 2, DONE_BUTTON_HEIGHT, (DONE_BUTTON_WIDTH / 2) * i, 0, (char *)signatureApp->buttonPixelBuffer);
         DC_FlushRange(signatureApp->buttonPixelBuffer, TILE_SIZE_4BPP * (DONE_BUTTON_WIDTH / 2) * DONE_BUTTON_HEIGHT);
         GX_LoadOBJ(signatureApp->buttonPixelBuffer, i * TILE_SIZE_4BPP * (DONE_BUTTON_WIDTH / 2) * DONE_BUTTON_HEIGHT, TILE_SIZE_4BPP * (DONE_BUTTON_WIDTH / 2) * DONE_BUTTON_HEIGHT);
     }

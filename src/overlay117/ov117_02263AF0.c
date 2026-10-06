@@ -42,7 +42,7 @@
 #include "sprite_system.h"
 #include "string_gf.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 typedef struct {
     u16 unk_00;
@@ -1998,7 +1998,7 @@ static BOOL ov117_02265C3C(UnkStruct_ov117_02265C3C *param0, UnkStruct_ov117_022
     return 1;
 }
 
-void ov117_02265DB8(BgConfig *param0, SpriteManager *param1, UnkStruct_02012744 *param2, UnkStruct_ov117_02265EB0 *param3, const String *param4, enum Font param5, TextColor param6, int param7, int param8, int param9, int param10, int param11, int param12, int param13, int param14)
+void ov117_02265DB8(BgConfig *param0, SpriteManager *param1, FontOAMManager *param2, UnkStruct_ov117_02265EB0 *param3, const String *param4, enum Font param5, TextColor param6, int param7, int param8, int param9, int param10, int param11, int param12, int param13, int param14)
 {
     UnkStruct_020127E8 v0;
     Window v1;
@@ -2023,7 +2023,7 @@ void ov117_02265DB8(BgConfig *param0, SpriteManager *param1, UnkStruct_02012744 
         Text_AddPrinterWithParamsColorAndSpacing(&v1, param5, param4, 0, 0, TEXT_SPEED_NO_TRANSFER, param6, v7, 0, NULL);
     }
 
-    v3 = sub_02012898(&v1, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_110);
+    v3 = FontOAM_GetWindowSize(&v1, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_110);
     CharTransfer_AllocRange(v3, 1, NNS_G2D_VRAM_TYPE_2DMAIN, &v2);
 
     if (param11 == 1) {
@@ -2045,10 +2045,10 @@ void ov117_02265DB8(BgConfig *param0, SpriteManager *param1, UnkStruct_02012744 
     v0.unk_28 = NNS_G2D_VRAM_TYPE_2DMAIN;
     v0.heapID = HEAP_ID_110;
 
-    v4 = sub_020127E8(&v0);
+    v4 = FontOAM_New(&v0);
 
     if (param7 != 0) {
-        sub_02012A90(v4, param7);
+        FontOAM_SetExplicitPaletteOffset(v4, param7);
     }
 
     FontOAM_SetXY(v4, param9, param10);
@@ -2061,7 +2061,7 @@ void ov117_02265DB8(BgConfig *param0, SpriteManager *param1, UnkStruct_02012744 
 
 void ov117_02265EB0(UnkStruct_ov117_02265EB0 *param0)
 {
-    sub_02012870(param0->unk_00);
+    FontOAM_Free(param0->unk_00);
     CharTransfer_ClearRange(&param0->unk_04);
     param0->unk_00 = NULL;
 }

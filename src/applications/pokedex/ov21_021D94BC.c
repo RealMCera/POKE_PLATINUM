@@ -29,7 +29,7 @@
 #include "system.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/graphics/pokedex/zukan.naix"
 #include "res/text/bank/pokedex.h"
@@ -2749,7 +2749,7 @@ static void ov21_021DBEC8(UnkStruct_ov21_021DC96C *param0, PokedexDisplayBox *di
     displayBox->y = -6;
     param0->unk_18[1] = PokedexTextManager_NextTextData(displayBox);
 
-    sub_02012A60(param0->unk_18[1]->fontOAM, v1 + 3);
+    FontOAM_SetExplicitPalette(param0->unk_18[1]->fontOAM, v1 + 3);
     PokedexTextManager_FreeWindow(v0);
 
     v0 = PokedexTextManager_NewWindow(textMan, 8, 2);
@@ -2761,7 +2761,7 @@ static void ov21_021DBEC8(UnkStruct_ov21_021DC96C *param0, PokedexDisplayBox *di
     displayBox->y = -6;
     param0->unk_18[2] = PokedexTextManager_NextTextData(displayBox);
 
-    sub_02012A60(param0->unk_18[2]->fontOAM, v1 + 3);
+    FontOAM_SetExplicitPalette(param0->unk_18[2]->fontOAM, v1 + 3);
     PokedexTextManager_FreeWindow(v0);
 
     v0 = PokedexTextManager_NewWindow(textMan, 8, 2);
@@ -2773,7 +2773,7 @@ static void ov21_021DBEC8(UnkStruct_ov21_021DC96C *param0, PokedexDisplayBox *di
     displayBox->y = -6;
     param0->unk_18[3] = PokedexTextManager_NextTextData(displayBox);
 
-    sub_02012A60(param0->unk_18[3]->fontOAM, v1 + 3);
+    FontOAM_SetExplicitPalette(param0->unk_18[3]->fontOAM, v1 + 3);
     PokedexTextManager_FreeWindow(v0);
 
     v0 = PokedexTextManager_NewWindow(textMan, 8, 2);
@@ -2785,7 +2785,7 @@ static void ov21_021DBEC8(UnkStruct_ov21_021DC96C *param0, PokedexDisplayBox *di
     displayBox->y = -6;
     param0->unk_18[4] = PokedexTextManager_NextTextData(displayBox);
 
-    sub_02012A60(param0->unk_18[4]->fontOAM, v1 + 3);
+    FontOAM_SetExplicitPalette(param0->unk_18[4]->fontOAM, v1 + 3);
     PokedexTextManager_FreeWindow(v0);
 
     v0 = PokedexTextManager_NewWindow(textMan, 8, 2);
@@ -2797,7 +2797,7 @@ static void ov21_021DBEC8(UnkStruct_ov21_021DC96C *param0, PokedexDisplayBox *di
     displayBox->y = -6;
     param0->unk_18[5] = PokedexTextManager_NextTextData(displayBox);
 
-    sub_02012A60(param0->unk_18[5]->fontOAM, v1 + 1);
+    FontOAM_SetExplicitPalette(param0->unk_18[5]->fontOAM, v1 + 1);
     PokedexTextManager_FreeWindow(v0);
 }
 
@@ -2866,7 +2866,7 @@ static void ov21_021DC088(UnkStruct_ov21_021DC96C *param0, PokedexDisplayBox *di
         displayBox->y = -6;
         param0->unk_6C[v2] = PokedexTextManager_NextTextData(displayBox);
 
-        sub_02012A60(param0->unk_6C[v2]->fontOAM, v1 + 0xB);
+        FontOAM_SetExplicitPalette(param0->unk_6C[v2]->fontOAM, v1 + 0xB);
         PokedexTextManager_FreeWindow(v0);
     }
 }
@@ -2925,7 +2925,7 @@ static void ov21_021DC12C(UnkStruct_ov21_021DC96C *param0, PokedexDisplayBox *di
         displayBox->y = -6;
         param0->unk_6C[v2] = PokedexTextManager_NextTextData(displayBox);
 
-        sub_02012A60(param0->unk_6C[v2]->fontOAM, v1 + 0xB);
+        FontOAM_SetExplicitPalette(param0->unk_6C[v2]->fontOAM, v1 + 0xB);
         PokedexTextManager_FreeWindow(v0);
     }
 }
@@ -2984,7 +2984,7 @@ static void ov21_021DC1E8(UnkStruct_ov21_021DC96C *param0, PokedexDisplayBox *di
         displayBox->y = -6;
         param0->unk_6C[v2] = PokedexTextManager_NextTextData(displayBox);
 
-        sub_02012A60(param0->unk_6C[v2]->fontOAM, v1 + 0xB);
+        FontOAM_SetExplicitPalette(param0->unk_6C[v2]->fontOAM, v1 + 0xB);
         PokedexTextManager_FreeWindow(v0);
     }
 }
@@ -3040,7 +3040,7 @@ static void ov21_021DC2A4(UnkStruct_ov21_021DC96C *param0, PokedexDisplayBox *di
         displayBox->y = -6;
         param0->unk_6C[v2] = PokedexTextManager_NextTextData(displayBox);
 
-        sub_02012A60(param0->unk_6C[v2]->fontOAM, v1 + 0xB);
+        FontOAM_SetExplicitPalette(param0->unk_6C[v2]->fontOAM, v1 + 0xB);
         PokedexTextManager_FreeWindow(v0);
     }
 }
@@ -3475,7 +3475,7 @@ static void ov21_021DC8D0(UnkStruct_ov21_021DC96C *param0, int param1)
         }
 
         if (param0->unk_6C[v0]) {
-            sub_02012AF0(param0->unk_6C[v0]->fontOAM, param1);
+            FontOAM_SetExplicitOAMMode(param0->unk_6C[v0]->fontOAM, param1);
         }
 
         if (param0->unk_A8[v0]) {
@@ -3495,7 +3495,7 @@ static void ov21_021DC90C(UnkStruct_ov21_021DC96C *param0, int param1)
             }
 
             if (param0->unk_6C[v0]) {
-                sub_02012AF0(param0->unk_6C[v0]->fontOAM, param1);
+                FontOAM_SetExplicitOAMMode(param0->unk_6C[v0]->fontOAM, param1);
             }
         }
     }
@@ -3512,7 +3512,7 @@ static void ov21_021DC93C(UnkStruct_ov21_021DC96C *param0, int param1)
             }
 
             if (param0->unk_6C[v0]) {
-                sub_02012AF0(param0->unk_6C[v0]->fontOAM, param1);
+                FontOAM_SetExplicitOAMMode(param0->unk_6C[v0]->fontOAM, param1);
             }
         }
     }

@@ -20,7 +20,7 @@ typedef struct PokedexTextData {
 } PokedexTextData;
 
 typedef struct PokedexTextManager {
-    UnkStruct_02012744 *unk_00;
+    FontOAMManager *unk_00;
     SpriteList *spriteList;
     BgConfig *bgConfig;
     PokedexTextData *textData;

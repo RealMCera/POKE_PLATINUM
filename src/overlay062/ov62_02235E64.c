@@ -25,7 +25,7 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202F1D4.h"
 #include "unk_0208BA78.h"
 
@@ -740,7 +740,7 @@ static void ov62_02236C20(UnkStruct_0208C06C *param0)
     ManagedSprite_SetAnim(v0->unk_158[0].unk_08, 0);
     ManagedSprite_SetPositionXY(v0->unk_158[0].unk_08, 80, 232);
     FontOAM_SetXY(v0->unk_158[0].unk_0C, 36, -8);
-    sub_020129D0(v0->unk_158[0].unk_0C, 1);
+    FontOAM_SetDrawFlag(v0->unk_158[0].unk_0C, 1);
 }
 
 static void ov62_02236C94(UnkStruct_0208C06C *param0)

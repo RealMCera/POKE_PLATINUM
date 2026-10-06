@@ -23,7 +23,7 @@
 #include "string_template.h"
 #include "system_flags.h"
 #include "trainer_info.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "vars_flags.h"
 
 static BOOL ResumeWhenContestSynced(ScriptContext *ctx);

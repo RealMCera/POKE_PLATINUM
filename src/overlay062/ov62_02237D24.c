@@ -44,9 +44,9 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202419C.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "unk_02030A80.h"
 #include "unk_0208B284.h"
 #include "vram_transfer.h"
@@ -1302,11 +1302,11 @@ static void ov62_0223958C(UnkStruct_0208C06C *param0, int param1)
 
     if (param1 == 0) {
         ManagedSprite_SetDrawFlag(v0->unk_198[1].unk_08, 1);
-        sub_020129D0(v0->unk_198[1].unk_0C, 1);
+        FontOAM_SetDrawFlag(v0->unk_198[1].unk_0C, 1);
         ManagedSprite_SetPositionXY(v0->unk_198[0].unk_08, 32, 232);
     } else {
         ManagedSprite_SetDrawFlag(v0->unk_198[1].unk_08, 0);
-        sub_020129D0(v0->unk_198[1].unk_0C, 0);
+        FontOAM_SetDrawFlag(v0->unk_198[1].unk_0C, 0);
         ManagedSprite_SetPositionXY(v0->unk_198[0].unk_08, 80, 232);
     }
 
@@ -1334,8 +1334,8 @@ static void ov62_02239608(UnkStruct_0208C06C *param0)
     ManagedSprite_SetPositionXY(v0->unk_198[1].unk_08, 128, 232);
     FontOAM_SetXY(v0->unk_198[0].unk_0C, 36, -8);
     FontOAM_SetXY(v0->unk_198[1].unk_0C, 36, -8);
-    sub_020129D0(v0->unk_198[0].unk_0C, 1);
-    sub_020129D0(v0->unk_198[1].unk_0C, 1);
+    FontOAM_SetDrawFlag(v0->unk_198[0].unk_0C, 1);
+    FontOAM_SetDrawFlag(v0->unk_198[1].unk_0C, 1);
 
     ov62_0223958C(param0, 0);
 }

@@ -30,7 +30,7 @@
 #include "string_gf.h"
 #include "system.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/graphics/pokedex/zukan.naix"
 #include "res/text/bank/pokedex.h"
@@ -1167,10 +1167,10 @@ static void ov21_021D6C44(UnkStruct_ov21_021D71A8 *param0, PokedexGraphicData *p
 
             v5 = Sprite_GetPriority(param0->unk_00[v4]);
             v5--;
-            sub_02012A30(param0->unk_28[v4]->fontOAM, v5);
+            FontOAM_SetPriority(param0->unk_28[v4]->fontOAM, v5);
 
             v6 = Sprite_GetExplicitPaletteOffset(param0->unk_00[v4]);
-            sub_02012A90(param0->unk_28[v4]->fontOAM, v6);
+            FontOAM_SetExplicitPaletteOffset(param0->unk_28[v4]->fontOAM, v6);
         }
 
         v4 = (v4 + 1) % 9;
@@ -1436,7 +1436,7 @@ static int ov21_021D70C0(PokedexGraphicData *param0, enum HeapID heapID)
     int v1;
 
     v0 = PokedexTextManager_NewWindow(param0->textMan, 15, 2);
-    v1 = sub_02012898(v0, NNS_G2D_VRAM_TYPE_2DMAIN, heapID);
+    v1 = FontOAM_GetWindowSize(v0, NNS_G2D_VRAM_TYPE_2DMAIN, heapID);
 
     PokedexTextManager_FreeWindow(v0);
 
@@ -1454,7 +1454,7 @@ static void ov21_021D70E8(UnkStruct_ov21_021D71A8 *param0)
         Sprite_SetExplicitOAMMode(param0->unk_50[v0], GX_OAM_MODE_XLU);
 
         if (param0->unk_28[v0]) {
-            sub_02012AF0(param0->unk_28[v0]->fontOAM, GX_OAM_MODE_XLU);
+            FontOAM_SetExplicitOAMMode(param0->unk_28[v0]->fontOAM, GX_OAM_MODE_XLU);
         }
     }
 }
@@ -1470,7 +1470,7 @@ static void ov21_021D7124(UnkStruct_ov21_021D71A8 *param0)
         Sprite_SetExplicitOAMMode(param0->unk_50[v0], GX_OAM_MODE_NORMAL);
 
         if (param0->unk_28[v0]) {
-            sub_02012AF0(param0->unk_28[v0]->fontOAM, GX_OAM_MODE_NORMAL);
+            FontOAM_SetExplicitOAMMode(param0->unk_28[v0]->fontOAM, GX_OAM_MODE_NORMAL);
         }
     }
 }

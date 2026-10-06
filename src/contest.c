@@ -55,7 +55,7 @@
 #include "system_flags.h"
 #include "trainer_info.h"
 #include "tv_segment.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "unk_020363E8.h"
 #include "unk_02094EDC.h"
 #include "unk_02095AF0.h"
@@ -432,7 +432,7 @@ Contest *Contest_Init(const PlayerMonContestDTO *playerMonContestDTO)
 
     int i;
     for (i = 0; i < 4; i++) {
-        contest->unk_00.unk_E8[i] = sub_02029C88(HEAP_ID_20);
+        contest->unk_00.unk_E8[i] = ContestPhoto_New(HEAP_ID_20);
     }
 
     sub_020954F0(contest, HEAP_ID_FIELD2, contest->unk_00.unk_10E, contest->unk_00.contestType, contest->unk_00.contestRank);
@@ -583,7 +583,7 @@ void Contest_GetVisualCompetitionAppArgs(Contest *contest)
 {
     VisualCompetitionAppArgs *appArgs;
 
-    sub_0202A25C(contest->unk_00.unk_E8[contest->unk_00.playerContestantID]);
+    ContestPhoto_Init(contest->unk_00.unk_E8[contest->unk_00.playerContestantID]);
 
     appArgs = Heap_Alloc(HEAP_ID_20, sizeof(VisualCompetitionAppArgs));
     MI_CpuClear8(appArgs, sizeof(VisualCompetitionAppArgs));
@@ -1606,11 +1606,11 @@ void Contest_EndContest(Contest *contest, SaveData *saveData, u32 mapID, Journal
 
     if (Contest_GetPlayerContestPlacement(contest) == 0) {
         ImageClips *imageClips = SaveData_GetImageClips(contest->saveData);
-        UnkStruct_02029C88 *v12 = sub_02029CD0(imageClips, contest->unk_00.contestType);
+        ContestPhoto *v12 = ImageClips_GetContestPhoto(imageClips, contest->unk_00.contestType);
 
-        sub_0202A25C(v12);
-        sub_0202A390(v12, contest->unk_00.unk_E8[contest->unk_00.playerContestantID]);
-        sub_0202A240(v12);
+        ContestPhoto_Init(v12);
+        ContestPhoto_Copy(v12, contest->unk_00.unk_E8[contest->unk_00.playerContestantID]);
+        ContestPhoto_SetFullMagic(v12);
     }
 
     if (Contest_GetPlayerContestPlacement(contest) == 0) {

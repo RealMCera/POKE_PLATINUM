@@ -32,7 +32,7 @@
 #include "system.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/pokedex/zukan.naix"
@@ -799,7 +799,7 @@ static void ov21_021E2478(UnkStruct_ov21_021E2588 *param0, PokedexGraphicData **
 
     param0->unk_20[0] = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(param0->unk_20[0]->fontOAM, v4 + 4);
+    FontOAM_SetExplicitPalette(param0->unk_20[0]->fontOAM, v4 + 4);
     PokedexTextManager_FreeWindow(v0);
 
     v0 = PokedexTextManager_NewWindow(v3->textMan, 8, 4);
@@ -814,7 +814,7 @@ static void ov21_021E2478(UnkStruct_ov21_021E2588 *param0, PokedexGraphicData **
 
     param0->unk_20[1] = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(param0->unk_20[1]->fontOAM, v4 + 4);
+    FontOAM_SetExplicitPalette(param0->unk_20[1]->fontOAM, v4 + 4);
     PokedexTextManager_FreeWindow(v0);
 
     for (v5 = 2; v5 < 8; v5++) {
@@ -841,7 +841,7 @@ static void ov21_021E2588(UnkStruct_ov21_021E2588 *param0)
         Sprite_SetExplicitOAMMode(param0->unk_00[v0], GX_OAM_MODE_XLU);
 
         if (param0->unk_20[v0]) {
-            sub_02012AF0(param0->unk_20[v0]->fontOAM, GX_OAM_MODE_XLU);
+            FontOAM_SetExplicitOAMMode(param0->unk_20[v0]->fontOAM, GX_OAM_MODE_XLU);
         }
 
         if (param0->unk_50[v0]) {
@@ -858,7 +858,7 @@ static void ov21_021E25C0(UnkStruct_ov21_021E2588 *param0)
         Sprite_SetExplicitOAMMode(param0->unk_00[v0], GX_OAM_MODE_NORMAL);
 
         if (param0->unk_20[v0]) {
-            sub_02012AF0(param0->unk_20[v0]->fontOAM, GX_OAM_MODE_NORMAL);
+            FontOAM_SetExplicitOAMMode(param0->unk_20[v0]->fontOAM, GX_OAM_MODE_NORMAL);
         }
 
         if (param0->unk_50[v0]) {

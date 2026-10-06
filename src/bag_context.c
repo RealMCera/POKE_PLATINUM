@@ -19,7 +19,7 @@
 #include "string_gf.h"
 #include "string_template.h"
 #include "trainer_info.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "wifi_battle_tower_save.h"
 
 #include "res/text/bank/bag.h"

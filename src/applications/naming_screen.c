@@ -44,7 +44,7 @@
 #include "sys_task_manager.h"
 #include "system.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0201567C.h"
 #include "vram_transfer.h"
 
@@ -2733,7 +2733,7 @@ static void NamingScreen_PrintCharOnWindowAndOBJ(
     DC_FlushRange(ptr, 0x20 * 4 * 16);
 
     for (i = 0; i < 4; i++) {
-        sub_02012C60(&windows[3], 4, 2, 4 * i, 0, (char *)pixelBuf);
+        FontOAM_CopyWindowRect(&windows[3], 4, 2, 4 * i, 0, (char *)pixelBuf);
         DC_FlushRange(pixelBuf, 0x20 * 4 * 2);
         GXS_LoadOBJ(pixelBuf, sUnkGXObjOffsets1[i] * 0x20, 0x20 * 4 * 2);
     }

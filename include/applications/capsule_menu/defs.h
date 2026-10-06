@@ -92,7 +92,7 @@ typedef struct CapsuleGraphicsManager {
     BallCapsuleSealEffect *sealEffect;
     BallRotation *ballRotation;
     G3DPipelineBuffers *pipelineBuffers;
-    UnkStruct_02012744 *fontOAMManager;
+    FontOAMManager *fontOAMManager;
     FontOAM *fontOAM[2];
     CharTransferAllocation charTransfer[2];
     BOOL graphicsTaskResult;

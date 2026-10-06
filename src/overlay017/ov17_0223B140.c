@@ -47,7 +47,7 @@
 #include "sys_task_manager.h"
 #include "system.h"
 #include "touch_pad.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_02094EDC.h"
 #include "vram_transfer.h"
 
@@ -205,7 +205,7 @@ int ActingCompetition_Init(ApplicationManager *appMan, int *param1)
     v0->unk_0C.contestOpponentNames = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_CONTEST_OPPONENT_NAMES, HEAP_ID_21);
     v0->unk_0C.contestEffectMessages = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_CONTEST_EFFECTS, HEAP_ID_21);
     v0->unk_0C.contestActingCompetitionMessages = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_CONTEST_ACTING_COMPETITION, HEAP_ID_21);
-    v0->unk_0C.unk_54 = sub_02012744(2 * 4, HEAP_ID_21);
+    v0->unk_0C.unk_54 = FontOAMManager_New(2 * 4, HEAP_ID_21);
     v0->unk_0C.unk_48 = StringTemplate_Default(HEAP_ID_21);
     v0->unk_0C.unk_4C = String_Init(3 * 160, HEAP_ID_21);
 
@@ -344,7 +344,7 @@ int ActingCompetition_Exit(ApplicationManager *appMan, int *param1)
 
     PokemonSpriteManager_Free(v0->unk_0C.unk_04);
     Font_Free(FONT_SUBSCREEN);
-    sub_020127BC(v0->unk_0C.unk_54);
+    FontOAMManager_Free(v0->unk_0C.unk_54);
 
     PaletteData_FreeBuffer(v0->unk_0C.unk_50, PLTTBUF_MAIN_BG);
     PaletteData_FreeBuffer(v0->unk_0C.unk_50, PLTTBUF_SUB_BG);

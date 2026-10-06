@@ -12,396 +12,448 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 
+// Per-fade-type state machines for the screen fade system. screen_fade.c owns
+// the ScreenFadeManager and dispatches to one of the ScreenFade_* functions
+// below (indexed by enum FadeType) once per frame; each function advances its
+// own state machine and returns TRUE once the fade has finished.
+//
+// Most fades animate a hardware window: the window's inside/outside plane
+// masks select which graphics layers are visible, so moving or resizing the
+// window reveals or hides the backdrop. A few fades instead drive the master
+// brightness register directly (BrightnessOut/BrightnessIn).
+
+// State for a master-brightness fade. Brightness is tracked scaled by 128 so
+// it can be interpolated with the same fixed-point helpers as the window fades.
 typedef struct {
-    int unk_00;
-    int unk_04;
-    int unk_08;
-    int unk_0C;
-    int unk_10;
-    int unk_14;
+    int stepsRemaining;
+    int framesPerStep;
+    int frameCounter;
+    int currentBrightness;
+    int targetBrightness;
+    int brightnessDelta;
     enum DSScreen screen;
-} UnkStruct_02010318;
+} ScreenFadeBrightness;
 
+// A hardware-window bounding box in 1/128-pixel units. The extra precision
+// avoids rounding drift while interpolating between two ScreenFadeRects.
 typedef struct {
-    int unk_00;
-    int unk_04;
-    int unk_08;
-    int unk_0C;
-} UnkStruct_020101B0;
+    int left;
+    int top;
+    int right;
+    int bottom;
+} WindowRect;
 
+// A hardware-window bounding box in whole pixels, as authored in the fade
+// parameter tables below.
 typedef struct {
-    u8 unk_00;
-    u8 unk_01;
-    u8 unk_02;
-    u8 unk_03;
-} UnkStruct_0200FD8C;
+    u8 left;
+    u8 top;
+    u8 right;
+    u8 bottom;
+} ScreenFadeRect;
 
+// Animates a single hardware window from one ScreenFadeRect to another.
 typedef struct {
-    UnkStruct_020101B0 unk_00;
-    UnkStruct_020101B0 unk_10;
-    UnkStruct_020101B0 unk_20;
+    WindowRect current;
+    WindowRect delta;
+    WindowRect target;
     enum DSScreen screen;
-    int unk_34;
-    int unk_38;
-    int unk_3C;
-    int unk_40;
-    int unk_44;
-    HardwareWindowSettings *unk_48;
-} UnkStruct_02010EA4;
+    int windowID;
+    int stepsRemaining;
+    int framesPerStep;
+    int frameCounter;
+    int flag;
+    HardwareWindowSettings *hwSettings;
+} WindowFade;
 
+// Parameters for a single-window fade: the start/end rectangles and the
+// window's plane masks. `flag` selects immediate vs. VBlank-deferred updates.
 typedef struct {
-    UnkStruct_0200FD8C unk_00;
-    UnkStruct_0200FD8C unk_04;
-    u8 unk_08;
-    u8 unk_09;
-    u8 unk_0A;
-    u8 unk_0B;
-} UnkStruct_0200F980;
+    ScreenFadeRect start;
+    ScreenFadeRect end;
+    u8 windowID;
+    u8 insideMask;
+    u8 outsideMask;
+    u8 flag;
+} WindowFadeParams;
 
+// Two WindowFades animated together (used by the split fades).
 typedef struct {
-    UnkStruct_02010EA4 unk_00;
-    UnkStruct_02010EA4 unk_4C;
-} UnkStruct_02010D94;
+    WindowFade first;
+    WindowFade second;
+} WindowFadePair;
 
+// Per-scanline window edges for one hardware window. `current` is what the
+// HBlank callback reads; `next` is built by the fade and copied over after
+// VBlank so the callback never sees a half-updated table.
 typedef struct {
-    short unk_00[2][192];
-    short unk_300[2][192];
-    int unk_600;
-} UnkStruct_02010FC0;
+    short current[2][192];
+    short next[2][192];
+    int windowID;
+} WindowData;
 
+// Owns one or two WindowData buffers and the screen they apply to.
 typedef struct {
-    UnkStruct_02010FC0 *unk_00;
-    int unk_04;
+    WindowData *data;
+    int count;
     enum DSScreen screen;
-} UnkStruct_02010588;
+} WindowDataManager;
 
+// Expanding/contracting circle fade. The window is rebuilt each step as a
+// circle of `currentRadius` centred on (centerX, centerY).
 typedef struct {
-    UnkStruct_02010588 unk_00;
-    int unk_0C;
-    int unk_10;
-    int unk_14;
-    int unk_18;
-    int unk_1C;
-    int unk_20;
-    int unk_24;
+    WindowDataManager windowData;
+    int currentRadius;
+    int centerX;
+    int centerY;
+    int radiusDelta;
+    int stepsRemaining;
+    int framesPerStep;
+    int frameCounter;
     enum HeapID heapID;
-    int unk_2C;
-    HardwareWindowSettings *unk_30;
-    ScreenFadeHBlanks *unk_34;
-} UnkStruct_0201109C;
+    int flag;
+    HardwareWindowSettings *hwSettings;
+    ScreenFadeHBlanks *hblanks;
+} CircleFade;
 
 typedef struct {
-    s16 unk_00;
-    s16 unk_02;
-    s16 unk_04;
-    s16 unk_06;
-    u8 unk_08;
-    u8 unk_09;
-    u8 unk_0A;
-    u8 unk_0B;
-} UnkStruct_0200FB7C;
+    s16 startRadius;
+    s16 endRadius;
+    s16 centerX;
+    s16 centerY;
+    u8 windowID;
+    u8 insideMask;
+    u8 outsideMask;
+    u8 flag;
+} CircleFadeParams;
 
+// Wedge (triangle) fade: the window's left and right edges are lines of slope
+// tan(currentAngle) meeting at the horizontal centre.
 typedef struct {
-    UnkStruct_02010588 unk_00;
-    int unk_0C;
-    int unk_10;
-    int unk_14;
-    int unk_18;
-    int unk_1C;
-    int unk_20;
-    HardwareWindowSettings *unk_24;
-    ScreenFadeHBlanks *unk_28;
+    WindowDataManager windowData;
+    int currentAngle;
+    int angleDelta;
+    int stepsRemaining;
+    int framesPerStep;
+    int frameCounter;
+    int flag;
+    HardwareWindowSettings *hwSettings;
+    ScreenFadeHBlanks *hblanks;
     enum HeapID heapID;
-} UnkStruct_02011360;
+} WedgeFade;
 
 typedef struct {
-    u16 unk_00;
-    u16 unk_02;
-    u8 unk_04;
-    u8 unk_05;
-    u8 unk_06;
-    u8 unk_07;
-} UnkStruct_0200FC2C;
+    u16 startAngle;
+    u16 endAngle;
+    u8 windowID;
+    u8 insideMask;
+    u8 outsideMask;
+    u8 flag;
+} WedgeFadeParams;
 
+// Curved fade whose window is wide at the top and bottom and narrow in the
+// middle; `radius` scales the sine that drives the half-width.
 typedef struct {
-    UnkStruct_02010588 unk_00;
-    int unk_0C;
-    int unk_10;
-    int unk_14;
-    int unk_18;
-    int unk_1C;
-    int unk_20;
-    int unk_24;
-    HardwareWindowSettings *unk_28;
-    ScreenFadeHBlanks *unk_2C;
+    WindowDataManager windowData;
+    int radius;
+    int currentAngle;
+    int angleDelta;
+    int stepsRemaining;
+    int framesPerStep;
+    int frameCounter;
+    int flag;
+    HardwareWindowSettings *hwSettings;
+    ScreenFadeHBlanks *hblanks;
     enum HeapID heapID;
-} UnkStruct_02011568;
+} HourglassFade;
 
 typedef struct {
-    u16 unk_00;
-    u16 unk_02;
-    u8 unk_04;
-    u8 unk_05;
-    u8 unk_06;
-    u8 unk_07;
-} UnkStruct_0200FD34;
+    u16 startAngle;
+    u16 endAngle;
+    u8 windowID;
+    u8 insideMask;
+    u8 outsideMask;
+    u8 flag;
+} HourglassFadeParams;
 
+// One horizontal band of an interlace fade.
 typedef struct {
-    UnkStruct_020101B0 unk_00;
-    UnkStruct_020101B0 unk_10;
-    UnkStruct_020101B0 unk_20;
-} UnkStruct_0201184C_sub1;
+    WindowRect current;
+    WindowRect delta;
+    WindowRect target;
+} InterlaceBand;
 
+// Fade that animates several horizontal bands at once, alternating between
+// collapsing to the left and to the right.
 typedef struct {
-    UnkStruct_02010588 unk_00;
-    UnkStruct_0201184C_sub1 *unk_0C;
-    int unk_10;
-    int unk_14;
-    int unk_18;
-    int unk_1C;
-    int unk_20;
-    HardwareWindowSettings *unk_24;
-    ScreenFadeHBlanks *unk_28;
+    WindowDataManager windowData;
+    InterlaceBand *bands;
+    int bandCount;
+    int stepsRemaining;
+    int framesPerStep;
+    int frameCounter;
+    int flag;
+    HardwareWindowSettings *hwSettings;
+    ScreenFadeHBlanks *hblanks;
     enum HeapID heapID;
-} UnkStruct_0201184C;
+} InterlaceFade;
 
 typedef struct {
-    const UnkStruct_0200FD8C *unk_00;
-    const UnkStruct_0200FD8C *unk_04;
-    u16 unk_08;
-    u16 unk_0A;
-    u8 unk_0C;
-    u8 unk_0D;
-    u16 unk_0E;
-} UnkStruct_02011738;
+    const ScreenFadeRect *startRects;
+    const ScreenFadeRect *endRects;
+    u16 count;
+    u16 windowID;
+    u8 insideMask;
+    u8 outsideMask;
+    u16 flag;
+} InterlaceFadeParams;
 
+// Interpolates an angle from `start` over `range` as a fade progresses.
 typedef struct {
-    int unk_00;
-    int unk_04;
-    int unk_08;
-} UnkStruct_02011C7C;
+    int current;
+    int start;
+    int range;
+} DiagonalAngleAnim;
 
+// Diagonal wipe: two windows tile the screen along a moving diagonal boundary.
 typedef struct {
-    UnkStruct_02010588 unk_00;
-    UnkStruct_02011C7C unk_0C;
-    int unk_18;
-    int unk_1C;
-    int unk_20;
-    int unk_24;
-    int unk_28;
+    WindowDataManager windowData;
+    DiagonalAngleAnim angle;
+    int steps;
+    int stepCounter;
+    int framesPerStep;
+    int frameCounter;
+    int flag;
     enum HeapID heapID;
-    HardwareWindowSettings *unk_30;
-    ScreenFadeHBlanks *unk_34;
-} UnkStruct_02011AFC;
+    HardwareWindowSettings *hwSettings;
+    ScreenFadeHBlanks *hblanks;
+} DiagonalFade;
 
 typedef struct {
-    u16 unk_00;
-    u16 unk_02;
-    u8 unk_04;
-    u8 unk_05;
-    u16 unk_06;
-} UnkStruct_0200FEA4;
+    u16 startAngle;
+    u16 endAngle;
+    u8 insideMask;
+    u8 outsideMask;
+    u16 flag;
+} DiagonalFadeParams;
 
+// Interpolates an angle from `start` over `range` as a fade progresses.
 typedef struct {
-    int unk_00;
-    int unk_04;
-    int unk_08;
-} UnkStruct_02011F2C;
+    int current;
+    int start;
+    int range;
+} BowtieAngleAnim;
 
+// Bowtie fade: two windows shrink to points at the centre, leaving an
+// hourglass-shaped region of content.
 typedef struct {
-    UnkStruct_02010588 unk_00;
-    UnkStruct_02011F2C unk_0C;
-    int unk_18;
-    int unk_1C;
-    int unk_20;
-    int unk_24;
-    int unk_28;
+    WindowDataManager windowData;
+    BowtieAngleAnim angle;
+    int steps;
+    int stepCounter;
+    int framesPerStep;
+    int frameCounter;
+    int flag;
     enum HeapID heapID;
-    HardwareWindowSettings *unk_30;
-    ScreenFadeHBlanks *unk_34;
-} UnkStruct_02011E04;
+    HardwareWindowSettings *hwSettings;
+    ScreenFadeHBlanks *hblanks;
+} BowtieFade;
 
 typedef struct {
-    u16 unk_00;
-    u16 unk_02;
-    u8 unk_04;
-    u8 unk_05;
-    u16 unk_06;
-} UnkStruct_0200FF30;
+    u16 startAngle;
+    u16 endAngle;
+    u8 insideMask;
+    u8 outsideMask;
+    u16 flag;
+} BowtieFadeParams;
 
+// Per-scanline visibility mask for one window. `next` is built by the fade;
+// `current` is what the HBlank callback reads.
 typedef struct {
-    u8 unk_00[192];
-    u8 unk_C0[192];
-    int unk_180;
-} UnkStruct_02012174;
+    u8 next[192];
+    u8 current[192];
+    int windowID;
+} WipeBuffer;
 
+// One or two WipeBuffers plus the screen they apply to.
 typedef struct {
-    UnkStruct_02012174 unk_00[2];
-    u8 unk_308;
+    WipeBuffer buffers[2];
+    u8 count;
     u8 screen;
-} UnkStruct_0201076C;
+} HBlankWindow;
 
+// A moving boundary: scanlines between `start` and `end` are filled with
+// `fill`, toggling at the boundary's current position.
 typedef struct {
-    u8 unk_00;
-    u8 unk_01;
-    u16 unk_02;
-} UnkStruct_0200F898;
+    u8 start;
+    u8 end;
+    u16 fill;
+} ScreenFadeWipe;
 
+// Fade that fills the screen with backdrop using one or more moving
+// boundaries.
 typedef struct {
-    UnkStruct_0201076C unk_00;
-    const UnkStruct_0200F898 *unk_30C;
-    int unk_310;
-    int unk_314;
-    int unk_318;
-    int unk_31C;
-    int unk_320;
-    int unk_324;
+    HBlankWindow hblankWindow;
+    const ScreenFadeWipe *wipes;
+    int wipeCount;
+    int steps;
+    int stepCounter;
+    int framesPerStep;
+    int frameCounter;
+    int flag;
     enum HeapID heapID;
-    HardwareWindowSettings *unk_32C;
-    ScreenFadeHBlanks *unk_330;
-} UnkStruct_020120D4;
+    HardwareWindowSettings *hwSettings;
+    ScreenFadeHBlanks *hblanks;
+} WipeFade;
 
 typedef struct {
-    const UnkStruct_0200F898 *unk_00;
-    u16 unk_04;
-    u16 unk_06;
-} UnkStruct_0200FE6C;
+    const ScreenFadeWipe *wipes;
+    u16 count;
+    u16 flag;
+} WipeFadeParams;
 
+// Parameters for the two-phase clamp fade: a window fade followed by a wipe.
+// `splitRatio` is the fraction of the total steps given to the window phase.
 typedef struct {
-    UnkStruct_0200F980 unk_00;
-    UnkStruct_0200FE6C unk_0C;
-    fx32 unk_14;
-} UnkStruct_0201006C;
+    WindowFadeParams window;
+    WipeFadeParams wipe;
+    fx32 splitRatio;
+} ClampFadeParams;
 
+// Two-phase clamp fade. `secondPhaseSteps` is the number of steps left for the
+// wipe after the window phase; `phase` tracks which phase is running.
 typedef struct {
-    UnkStruct_02010EA4 unk_00;
-    UnkStruct_020120D4 unk_4C;
-    UnkStruct_0201006C *unk_380;
-    u8 unk_384;
-    u8 unk_385;
-    u8 unk_386;
+    WindowFade windowFade;
+    WipeFade wipeFade;
+    ClampFadeParams *params;
+    u8 secondPhaseSteps;
+    u8 phase;
+    u8 flag;
     u8 unk_387;
-} UnkStruct_02012290;
+} ClampFade;
 
-static fx32 sub_020100E0(int param0);
-static int sub_020100FC(int param0, int param1);
-static void sub_02010124(int param0, int *param1, int param2, int param3);
-static int sub_02010178(int param0, int param1);
-static int sub_02010190(int param0, int param1, int param2);
-static int sub_020101A0(int param0, int param1);
-static void sub_020101B0(UnkStruct_020101B0 *param0, UnkStruct_020101B0 *param1);
-static void sub_020101D4(UnkStruct_020101B0 *param0, UnkStruct_020101B0 *param1, UnkStruct_020101B0 *param2, const UnkStruct_0200FD8C *param3, const UnkStruct_0200FD8C *param4, int param5);
-static void sub_02010658(int param0, HardwareWindowSettings *param1, enum DSScreen screen);
-static void sub_0201035C(void *param0);
-static void sub_020105EC(UnkStruct_02010588 *param0);
-static void sub_020105F4(UnkStruct_02010588 *param0);
-static UnkStruct_02010FC0 *sub_02010604(UnkStruct_02010588 *param0, int param1);
-static void sub_02010624(SysTask *param0, void *param1);
-static void sub_0201076C(UnkStruct_0201076C *param0);
-static void sub_02010784(ScreenFadeHBlanks *param0, UnkStruct_0201076C *param1, u32 heapID);
-static void sub_0201079C(ScreenFadeHBlanks *param0, UnkStruct_0201076C *param1, u32 param2);
-static void sub_020107AC(SysTask *param0, void *param1);
-static void sub_020107D8(void *param0);
-static void sub_02010238(ScreenFade *param0, int param1);
-static BOOL sub_020102D8(ScreenFade *param0);
-static BOOL sub_02010318(UnkStruct_02010318 *param0);
-static void sub_02010CF4(ScreenFade *param0, const UnkStruct_0200F980 *param1);
-static BOOL sub_02010D44(ScreenFade *param0);
-static void sub_02010D94(ScreenFade *param0, const UnkStruct_0200F980 *param1, const UnkStruct_0200F980 *param2);
-static BOOL sub_02010DEC(ScreenFade *param0);
-static void sub_02010E48(UnkStruct_02010EA4 *param0, const UnkStruct_0200F980 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5);
-static BOOL sub_02010EA4(UnkStruct_02010EA4 *param0);
-static void sub_02010F2C(ScreenFade *param0, const UnkStruct_0200FB7C *param1);
-static BOOL sub_02010F64(ScreenFade *param0);
-static void sub_02010FC0(UnkStruct_0201109C *param0, const UnkStruct_0200FB7C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
-static BOOL sub_0201109C(UnkStruct_0201109C *param0);
-static void sub_02011180(UnkStruct_0201109C *param0);
-static void sub_02011204(ScreenFade *param0, const UnkStruct_0200FC2C *param1);
-static BOOL sub_0201123C(ScreenFade *param0);
-static void sub_02011298(UnkStruct_02011360 *param0, const UnkStruct_0200FC2C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
-static BOOL sub_02011360(UnkStruct_02011360 *param0);
-static void sub_020113B0(UnkStruct_02011360 *param0);
-static void sub_02011408(ScreenFade *param0, const UnkStruct_0200FD34 *param1);
-static BOOL sub_02011440(ScreenFade *param0);
-static void sub_02011494(UnkStruct_02011568 *param0, const UnkStruct_0200FD34 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
-static BOOL sub_02011568(UnkStruct_02011568 *param0);
-static void sub_020115B8(UnkStruct_02011568 *param0);
-static void sub_020116A0(ScreenFade *param0, const UnkStruct_02011738 *param1);
-static BOOL sub_020116D8(ScreenFade *param0);
-static BOOL sub_0201184C(UnkStruct_0201184C *param0);
-static void sub_02011738(UnkStruct_0201184C *param0, const UnkStruct_02011738 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
-static void sub_0201189C(UnkStruct_0201184C *param0);
-static void sub_020118AC(UnkStruct_0201184C *param0);
-static void sub_02011938(UnkStruct_0201184C *param0);
-static void sub_020118E0(UnkStruct_02010588 *param0, UnkStruct_020101B0 *param1);
-static void sub_02011960(ScreenFade *param0, UnkStruct_0200FEA4 *param1);
-static BOOL sub_020119A0(ScreenFade *param0);
-static void sub_02011A00(UnkStruct_02011AFC *param0, UnkStruct_0200FEA4 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
-static BOOL sub_02011AFC(UnkStruct_02011AFC *param0);
-static void sub_02011B54(UnkStruct_02011AFC *param0);
-static void sub_02011B58(UnkStruct_02011AFC *param0);
-static void sub_02011C7C(UnkStruct_02011C7C *param0, int param1, int param2);
-static void sub_02011C94(ScreenFade *param0, UnkStruct_0200FF30 *param1);
-static BOOL sub_02011CD4(ScreenFade *param0);
-static void sub_02011D34(UnkStruct_02011E04 *param0, UnkStruct_0200FF30 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
-static BOOL sub_02011E04(UnkStruct_02011E04 *param0);
-static void sub_02011E5C(UnkStruct_02011E04 *param0);
-static void sub_02011E60(UnkStruct_02011E04 *param0);
-static void sub_02011F2C(UnkStruct_02011F2C *param0, int param1, int param2);
-static void sub_02011F44(ScreenFade *param0, UnkStruct_0200FE6C *param1);
-static BOOL sub_02011F88(ScreenFade *param0);
-static void sub_02011FE8(UnkStruct_020120D4 *param0, UnkStruct_0200FE6C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
-static BOOL sub_020120D4(UnkStruct_020120D4 *param0);
-static void sub_02012134(UnkStruct_020120D4 *param0);
-static void sub_02012138(UnkStruct_020120D4 *param0);
-static void sub_02012174(const UnkStruct_0200F898 *param0, UnkStruct_02012174 *param1, int param2, int param3);
-static void sub_020121C4(ScreenFade *param0, UnkStruct_0201006C *param1);
-static BOOL sub_02012228(ScreenFade *param0);
-static void sub_02012290(UnkStruct_02012290 *param0, UnkStruct_0201006C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, int param7);
-static BOOL sub_02012310(UnkStruct_02012290 *param0, ScreenFade *param1);
-static void sub_02012384(UnkStruct_02012290 *param0, UnkStruct_0201006C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
-static BOOL sub_020123F4(UnkStruct_02012290 *param0, ScreenFade *param1);
+static fx32 TanIdx(int param0);
+static int TanIdxMul(int param0, int param1);
+static void FillTanTable(int param0, int *param1, int param2, int param3);
+static int HalfWidthOverTan(int param0, int param1);
+static int DeltaPerStep(int param0, int param1, int param2);
+static int AddClampedToByte(int param0, int param1);
+static void WindowRect_Add(WindowRect *param0, WindowRect *param1);
+static void WindowRect_InitAnimation(WindowRect *param0, WindowRect *param1, WindowRect *param2, const ScreenFadeRect *param3, const ScreenFadeRect *param4, int param5);
+static void HardwareWindow_Reset(int param0, HardwareWindowSettings *param1, enum DSScreen screen);
+static void WindowData_ApplyHBlank(void *param0);
+static void WindowData_Free(WindowDataManager *param0);
+static void WindowData_FreeInternal(WindowDataManager *param0);
+static WindowData *WindowData_Get(WindowDataManager *param0, int param1);
+static void WindowData_CopyNextToCurrent(SysTask *param0, void *param1);
+static void HBlankWindow_RequestCopy(HBlankWindow *param0);
+static void HBlankWindow_Enable(ScreenFadeHBlanks *param0, HBlankWindow *param1, u32 heapID);
+static void HBlankWindow_Disable(ScreenFadeHBlanks *param0, HBlankWindow *param1, u32 param2);
+static void HBlankWindow_CopyNextToCurrent(SysTask *param0, void *param1);
+static void HBlankWindow_ApplyHBlank(void *param0);
+static void BrightnessFade_Start(ScreenFade *param0, int param1);
+static BOOL BrightnessFade_Update(ScreenFade *param0);
+static BOOL BrightnessFade_Step(ScreenFadeBrightness *param0);
+static void WindowFade_Start(ScreenFade *param0, const WindowFadeParams *param1);
+static BOOL WindowFade_Update(ScreenFade *param0);
+static void WindowFadePair_Start(ScreenFade *param0, const WindowFadeParams *param1, const WindowFadeParams *param2);
+static BOOL WindowFadePair_Update(ScreenFade *param0);
+static void WindowFade_Init(WindowFade *param0, const WindowFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5);
+static BOOL WindowFade_Step(WindowFade *param0);
+static void CircleFade_Start(ScreenFade *param0, const CircleFadeParams *param1);
+static BOOL CircleFade_Update(ScreenFade *param0);
+static void CircleFade_Init(CircleFade *param0, const CircleFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
+static BOOL CircleFade_Step(CircleFade *param0);
+static void CircleFade_BuildTable(CircleFade *param0);
+static void WedgeFade_Start(ScreenFade *param0, const WedgeFadeParams *param1);
+static BOOL WedgeFade_Update(ScreenFade *param0);
+static void WedgeFade_Init(WedgeFade *param0, const WedgeFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
+static BOOL WedgeFade_Step(WedgeFade *param0);
+static void WedgeFade_BuildTable(WedgeFade *param0);
+static void HourglassFade_Start(ScreenFade *param0, const HourglassFadeParams *param1);
+static BOOL HourglassFade_Update(ScreenFade *param0);
+static void HourglassFade_Init(HourglassFade *param0, const HourglassFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
+static BOOL HourglassFade_Step(HourglassFade *param0);
+static void HourglassFade_BuildTable(HourglassFade *param0);
+static void InterlaceFade_Start(ScreenFade *param0, const InterlaceFadeParams *param1);
+static BOOL InterlaceFade_Update(ScreenFade *param0);
+static BOOL InterlaceFade_Step(InterlaceFade *param0);
+static void InterlaceFade_Init(InterlaceFade *param0, const InterlaceFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
+static void InterlaceFade_Free(InterlaceFade *param0);
+static void InterlaceFade_BuildTable(InterlaceFade *param0);
+static void InterlaceFade_AdvanceBands(InterlaceFade *param0);
+static void InterlaceFade_DrawBand(WindowDataManager *param0, WindowRect *param1);
+static void DiagonalFade_Start(ScreenFade *param0, DiagonalFadeParams *param1);
+static BOOL DiagonalFade_Update(ScreenFade *param0);
+static void DiagonalFade_Init(DiagonalFade *param0, DiagonalFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
+static BOOL DiagonalFade_Step(DiagonalFade *param0);
+static void DiagonalFade_Free(DiagonalFade *param0);
+static void DiagonalFade_BuildTable(DiagonalFade *param0);
+static void DiagonalAngleAnim_Update(DiagonalAngleAnim *param0, int param1, int param2);
+static void BowtieFade_Start(ScreenFade *param0, BowtieFadeParams *param1);
+static BOOL BowtieFade_Update(ScreenFade *param0);
+static void BowtieFade_Init(BowtieFade *param0, BowtieFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
+static BOOL BowtieFade_Step(BowtieFade *param0);
+static void BowtieFade_Free(BowtieFade *param0);
+static void BowtieFade_BuildTable(BowtieFade *param0);
+static void BowtieAngleAnim_Update(BowtieAngleAnim *param0, int param1, int param2);
+static void WipeFade_Start(ScreenFade *param0, WipeFadeParams *param1);
+static BOOL WipeFade_Update(ScreenFade *param0);
+static void WipeFade_Init(WipeFade *param0, WipeFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
+static BOOL WipeFade_Step(WipeFade *param0);
+static void WipeFade_Free(WipeFade *param0);
+static void WipeFade_BuildTable(WipeFade *param0);
+static void WipeFade_DrawWipe(const ScreenFadeWipe *param0, WipeBuffer *param1, int param2, int param3);
+static void ClampFade_Start(ScreenFade *param0, ClampFadeParams *param1);
+static BOOL ClampFade_Update(ScreenFade *param0);
+static void ClampFade_InitOut(ClampFade *param0, ClampFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, int param7);
+static BOOL ClampFade_StepOut(ClampFade *param0, ScreenFade *param1);
+static void ClampFade_InitIn(ClampFade *param0, ClampFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID);
+static BOOL ClampFade_StepIn(ClampFade *param0, ScreenFade *param1);
 
-BOOL sub_0200F85C(ScreenFade *param0)
+// Fades the screen to the fade colour by ramping the master brightness register.
+BOOL ScreenFade_BrightnessOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_BRIGHTNESS;
 
-        sub_02010238(param0, 1);
+        BrightnessFade_Start(param0, 1);
         return 0;
     }
 
-    return sub_020102D8(param0);
+    return BrightnessFade_Update(param0);
 }
 
-BOOL sub_0200F878(ScreenFade *param0)
+// Fades the screen in from the fade colour by ramping the master brightness register.
+BOOL ScreenFade_BrightnessIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
         param0->direction = FADE_IN;
         param0->method = FADE_BY_BRIGHTNESS;
 
-        sub_02010238(param0, 0);
+        BrightnessFade_Start(param0, 0);
         return 0;
     }
 
-    return sub_020102D8(param0);
+    return BrightnessFade_Update(param0);
 }
 
-BOOL sub_0200F898(ScreenFade *param0)
+// Backdrop sweeps down from the top.
+BOOL ScreenFade_DownwardOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0 = {
+        static const ScreenFadeWipe v0 = {
             0, 192, 1
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL, 1, 1
         };
 
-        v1.unk_00 = &v0;
+        v1.wipes = &v0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -409,23 +461,24 @@ BOOL sub_0200F898(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200F8D4(ScreenFade *param0)
+// Content sweeps down from the top.
+BOOL ScreenFade_DownwardIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0 = {
+        static const ScreenFadeWipe v0 = {
             0, 192, 0
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL, 1, 0
         };
 
-        v1.unk_00 = &v0;
+        v1.wipes = &v0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -433,27 +486,28 @@ BOOL sub_0200F8D4(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200F90C(ScreenFade *param0)
+// Backdrop sweeps up from the bottom.
+BOOL ScreenFade_UpwardOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0 = {
+        static const ScreenFadeWipe v0 = {
             192,
             0,
             1
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL,
             1,
             1
         };
 
-        v1.unk_00 = &v0;
+        v1.wipes = &v0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -461,27 +515,28 @@ BOOL sub_0200F90C(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200F948(ScreenFade *param0)
+// Content sweeps up from the bottom.
+BOOL ScreenFade_UpwardIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0 = {
+        static const ScreenFadeWipe v0 = {
             192,
             0,
             0
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL,
             1,
             0
         };
 
-        v1.unk_00 = &v0;
+        v1.wipes = &v0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -489,13 +544,14 @@ BOOL sub_0200F948(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200F980(ScreenFade *param0)
+// Content collapses to the left edge.
+BOOL ScreenFade_CloseToLeftOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 0, 0, 255, 192 },
             { 0, 0, 0, 192 },
             0,
@@ -505,20 +561,21 @@ BOOL sub_0200F980(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_0200F9AC(ScreenFade *param0)
+// Content opens from the left edge.
+BOOL ScreenFade_OpenFromLeftIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 0, 0, 0, 192 },
             { 0, 0, 255, 192 },
             0,
@@ -528,7 +585,7 @@ BOOL sub_0200F9AC(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -536,25 +593,26 @@ BOOL sub_0200F9AC(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_0200F9D8(ScreenFade *param0)
+// Camera-shutter close: backdrop closes in from the top and bottom to the middle.
+BOOL ScreenFade_ShutterOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0[2] = {
+        static const ScreenFadeWipe v0[2] = {
             { 0, 96, 1 },
             { 192, 96, 1 }
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL,
             2,
             1
         };
 
-        v1.unk_00 = v0;
+        v1.wipes = v0;
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -562,26 +620,27 @@ BOOL sub_0200F9D8(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200FA14(ScreenFade *param0)
+// Camera-shutter open: content opens from the middle to the top and bottom.
+BOOL ScreenFade_ShutterIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0[2] = {
+        static const ScreenFadeWipe v0[2] = {
             { 96, 0, 0 },
             { 96, 192, 0 }
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL,
             2,
             0
         };
 
-        v1.unk_00 = v0;
+        v1.wipes = v0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -589,26 +648,27 @@ BOOL sub_0200FA14(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200FA4C(ScreenFade *param0)
+// Backdrop opens outward from the middle, so content disappears to the top and bottom.
+BOOL ScreenFade_ShutterOpenOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0[2] = {
+        static const ScreenFadeWipe v0[2] = {
             { 96, 0, 1 },
             { 96, 192, 1 }
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL,
             2,
             1
         };
 
-        v1.unk_00 = v0;
+        v1.wipes = v0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -616,26 +676,27 @@ BOOL sub_0200FA4C(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200FA88(ScreenFade *param0)
+// Content closes in from the top and bottom toward the middle.
+BOOL ScreenFade_ShutterCloseIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0[2] = {
+        static const ScreenFadeWipe v0[2] = {
             { 0, 96, 0 },
             { 192, 96, 0 }
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL,
             2,
             0
         };
 
-        v1.unk_00 = v0;
+        v1.wipes = v0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -643,13 +704,14 @@ BOOL sub_0200FA88(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200FAC0(ScreenFade *param0)
+// Content collapses to the vertical centre line.
+BOOL ScreenFade_HorizontalCloseOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 0, 0, 255, 192 },
             { 128, 0, 128, 192 },
             0,
@@ -659,7 +721,7 @@ BOOL sub_0200FAC0(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -667,13 +729,14 @@ BOOL sub_0200FAC0(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_0200FAEC(ScreenFade *param0)
+// Content opens from the vertical centre line.
+BOOL ScreenFade_HorizontalOpenIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 128, 0, 128, 192 },
             { 0, 0, 255, 192 },
             0,
@@ -683,20 +746,21 @@ BOOL sub_0200FAEC(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_0200FB18(ScreenFade *param0)
+// Backdrop grows outward from the centre, splitting the content.
+BOOL ScreenFade_SplitOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 128, 0, 128, 192 },
             { 0, 0, 128, 192 },
             0,
@@ -704,7 +768,7 @@ BOOL sub_0200FB18(ScreenFade *param0)
             GX_BLEND_ALL,
             1
         };
-        static const UnkStruct_0200F980 v1 = {
+        static const WindowFadeParams v1 = {
             { 128, 0, 128, 192 },
             { 128, 0, 255, 192 },
             1,
@@ -714,7 +778,7 @@ BOOL sub_0200FB18(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010D94(param0, &v0, &v1);
+        WindowFadePair_Start(param0, &v0, &v1);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -722,13 +786,14 @@ BOOL sub_0200FB18(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010DEC(param0);
+    return WindowFadePair_Update(param0);
 }
 
-BOOL sub_0200FB4C(ScreenFade *param0)
+// Content closes in from the edges toward the centre.
+BOOL ScreenFade_SplitIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 0, 0, 128, 192 },
             { 128, 0, 128, 192 },
             0,
@@ -736,7 +801,7 @@ BOOL sub_0200FB4C(ScreenFade *param0)
             GX_BLEND_ALL,
             0
         };
-        static const UnkStruct_0200F980 v1 = {
+        static const WindowFadeParams v1 = {
             { 128, 0, 255, 192 },
             { 128, 0, 128, 192 },
             1,
@@ -746,7 +811,7 @@ BOOL sub_0200FB4C(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010D94(param0, &v0, &v1);
+        WindowFadePair_Start(param0, &v0, &v1);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -754,13 +819,14 @@ BOOL sub_0200FB4C(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010DEC(param0);
+    return WindowFadePair_Update(param0);
 }
 
-BOOL sub_0200FB7C(ScreenFade *param0)
+// Content circle shrinks to nothing.
+BOOL ScreenFade_CircleOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FB7C v0 = {
+        static const CircleFadeParams v0 = {
             256,
             0,
             128,
@@ -772,7 +838,7 @@ BOOL sub_0200FB7C(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010F2C(param0, &v0);
+        CircleFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -780,13 +846,14 @@ BOOL sub_0200FB7C(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010F64(param0);
+    return CircleFade_Update(param0);
 }
 
-BOOL sub_0200FBA8(ScreenFade *param0)
+// Content circle grows to fill the screen.
+BOOL ScreenFade_CircleIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FB7C v0 = {
+        static const CircleFadeParams v0 = {
             0,
             256,
             128,
@@ -798,7 +865,7 @@ BOOL sub_0200FBA8(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010F2C(param0, &v0);
+        CircleFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -806,13 +873,14 @@ BOOL sub_0200FBA8(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010F64(param0);
+    return CircleFade_Update(param0);
 }
 
-BOOL sub_0200FBD4(ScreenFade *param0)
+// Circle centred below the screen shrinks, so the content disappears upward.
+BOOL ScreenFade_TopHalfCircleOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FB7C v0 = {
+        static const CircleFadeParams v0 = {
             512,
             0,
             128,
@@ -824,7 +892,7 @@ BOOL sub_0200FBD4(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010F2C(param0, &v0);
+        CircleFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -832,13 +900,14 @@ BOOL sub_0200FBD4(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010F64(param0);
+    return CircleFade_Update(param0);
 }
 
-BOOL sub_0200FC00(ScreenFade *param0)
+// Circle centred below the screen grows, so the content appears from the top.
+BOOL ScreenFade_TopHalfCircleIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FB7C v0 = {
+        static const CircleFadeParams v0 = {
             0,
             512,
             128,
@@ -850,7 +919,7 @@ BOOL sub_0200FC00(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010F2C(param0, &v0);
+        CircleFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -858,13 +927,14 @@ BOOL sub_0200FC00(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010F64(param0);
+    return CircleFade_Update(param0);
 }
 
-BOOL sub_0200FC2C(ScreenFade *param0)
+// Wedge-shaped content shrinks to the vertical centre line.
+BOOL ScreenFade_WedgeOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FC2C v0 = {
+        static const WedgeFadeParams v0 = {
             ((0xffff * 90) / 360),
             0,
             0,
@@ -874,7 +944,7 @@ BOOL sub_0200FC2C(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011204(param0, &v0);
+        WedgeFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -882,13 +952,14 @@ BOOL sub_0200FC2C(ScreenFade *param0)
         return 0;
     }
 
-    return sub_0201123C(param0);
+    return WedgeFade_Update(param0);
 }
 
-BOOL sub_0200FC58(ScreenFade *param0)
+// Wedge-shaped content opens from the vertical centre line.
+BOOL ScreenFade_WedgeIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FC2C v0 = {
+        static const WedgeFadeParams v0 = {
             0,
             ((0xffff * 90) / 360),
             0,
@@ -898,7 +969,7 @@ BOOL sub_0200FC58(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011204(param0, &v0);
+        WedgeFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -906,18 +977,19 @@ BOOL sub_0200FC58(ScreenFade *param0)
         return 0;
     }
 
-    return sub_0201123C(param0);
+    return WedgeFade_Update(param0);
 }
 
-BOOL sub_0200FC84(ScreenFade *param0)
+// Content collapses to the centre point.
+BOOL ScreenFade_CloseToCenterOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 0, 0, 255, 192 }, { 128, 96, 128, 96 }, 0, GX_BLEND_ALL, GX_BLEND_PLANEMASK_BD, 1
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -925,18 +997,19 @@ BOOL sub_0200FC84(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_0200FCB0(ScreenFade *param0)
+// Content opens from the centre point.
+BOOL ScreenFade_OpenFromCenterIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 128, 96, 128, 96 }, { 0, 0, 255, 192 }, 0, GX_BLEND_ALL, GX_BLEND_PLANEMASK_BD, 0
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -944,18 +1017,19 @@ BOOL sub_0200FCB0(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_0200FCDC(ScreenFade *param0)
+// Backdrop grows outward from the centre point.
+BOOL ScreenFade_BackdropFromCenterOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 128, 96, 128, 96 }, { 0, 0, 255, 192 }, 0, GX_BLEND_PLANEMASK_BD, GX_BLEND_ALL, 1
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -963,18 +1037,19 @@ BOOL sub_0200FCDC(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_0200FD08(ScreenFade *param0)
+// Backdrop shrinks to the centre point.
+BOOL ScreenFade_BackdropToCenterIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 0, 0, 255, 192 }, { 128, 96, 128, 96 }, 0, GX_BLEND_PLANEMASK_BD, GX_BLEND_ALL, 0
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -982,13 +1057,14 @@ BOOL sub_0200FD08(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_0200FD34(ScreenFade *param0)
+// Hourglass-shaped content shrinks.
+BOOL ScreenFade_HourglassOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FD34 v0 = {
+        static const HourglassFadeParams v0 = {
             ((0xffff * 90) / 360),
             ((0xffff * 0) / 360),
             0,
@@ -998,20 +1074,21 @@ BOOL sub_0200FD34(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011408(param0, &v0);
+        HourglassFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02011440(param0);
+    return HourglassFade_Update(param0);
 }
 
-BOOL sub_0200FD60(ScreenFade *param0)
+// Hourglass-shaped content grows.
+BOOL ScreenFade_HourglassIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FD34 v0 = {
+        static const HourglassFadeParams v0 = {
             ((0xffff * 0) / 360),
             ((0xffff * 90) / 360),
             0,
@@ -1021,7 +1098,7 @@ BOOL sub_0200FD60(ScreenFade *param0)
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011408(param0, &v0);
+        HourglassFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -1029,90 +1106,93 @@ BOOL sub_0200FD60(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011440(param0);
+    return HourglassFade_Update(param0);
 }
 
-BOOL sub_0200FD8C(ScreenFade *param0)
+// Alternating horizontal bands collapse left and right.
+BOOL ScreenFade_InterlaceOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FD8C v0[] = {
+        static const ScreenFadeRect v0[] = {
             { 0, 0, 255, 48 },
             { 0, 47, 255, 96 },
             { 0, 96, 255, 144 },
             { 0, 144, 255, 192 }
         };
-        static const UnkStruct_0200FD8C v1[] = {
+        static const ScreenFadeRect v1[] = {
             { 0, 0, 0, 48 },
             { 255, 47, 255, 96 },
             { 0, 96, 0, 144 },
             { 255, 144, 255, 192 }
         };
-        UnkStruct_02011738 v2;
+        InterlaceFadeParams v2;
 
-        v2.unk_00 = v0;
-        v2.unk_04 = v1;
-        v2.unk_08 = 4;
-        v2.unk_0A = 0;
-        v2.unk_0C = GX_BLEND_ALL;
-        v2.unk_0D = GX_BLEND_PLANEMASK_BD;
-        v2.unk_0E = 1;
+        v2.startRects = v0;
+        v2.endRects = v1;
+        v2.count = 4;
+        v2.windowID = 0;
+        v2.insideMask = GX_BLEND_ALL;
+        v2.outsideMask = GX_BLEND_PLANEMASK_BD;
+        v2.flag = 1;
 
         SetScreenBackgroundColor(param0->color);
-        sub_020116A0(param0, &v2);
+        InterlaceFade_Start(param0, &v2);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_020116D8(param0);
+    return InterlaceFade_Update(param0);
 }
 
-BOOL sub_0200FDE0(ScreenFade *param0)
+// Alternating horizontal bands open from left and right.
+BOOL ScreenFade_InterlaceIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FD8C v0[] = {
+        static const ScreenFadeRect v0[] = {
             { 255, 0, 255, 48 }, { 0, 47, 0, 96 }, { 255, 96, 255, 144 }, { 0, 144, 0, 192 }
         };
-        static const UnkStruct_0200FD8C v1[] = {
+        static const ScreenFadeRect v1[] = {
             { 0, 0, 255, 48 }, { 0, 47, 255, 96 }, { 0, 96, 255, 144 }, { 0, 144, 255, 192 }
         };
-        UnkStruct_02011738 v2;
+        InterlaceFadeParams v2;
 
-        v2.unk_00 = v0;
-        v2.unk_04 = v1;
-        v2.unk_08 = 4;
-        v2.unk_0A = 0;
-        v2.unk_0C = GX_BLEND_ALL;
-        v2.unk_0D = GX_BLEND_PLANEMASK_BD;
-        v2.unk_0E = 0;
+        v2.startRects = v0;
+        v2.endRects = v1;
+        v2.count = 4;
+        v2.windowID = 0;
+        v2.insideMask = GX_BLEND_ALL;
+        v2.outsideMask = GX_BLEND_PLANEMASK_BD;
+        v2.flag = 0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_020116A0(param0, &v2);
+        InterlaceFade_Start(param0, &v2);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_020116D8(param0);
+    return InterlaceFade_Update(param0);
 }
 
-BOOL sub_0200FE30(ScreenFade *param0)
+// Three horizontal bands sweep the backdrop downward.
+BOOL ScreenFade_DownwardBandsOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0[3] = {
+        static const ScreenFadeWipe v0[3] = {
             { 0, 64, 1 },
             { 64, 128, 1 },
             { 128, 192, 1 },
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL, 3, 1
         };
 
-        v1.unk_00 = v0;
+        v1.wipes = v0;
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
@@ -1120,24 +1200,25 @@ BOOL sub_0200FE30(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200FE6C(ScreenFade *param0)
+// Three horizontal bands sweep the content upward.
+BOOL ScreenFade_UpwardBandsIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0[3] = {
+        static const ScreenFadeWipe v0[3] = {
             { 64, 0, 0 },
             { 128, 64, 0 },
             { 192, 128, 0 },
         };
-        static UnkStruct_0200FE6C v1 = {
+        static WipeFadeParams v1 = {
             NULL, 3, 0
         };
 
-        v1.unk_00 = v0;
+        v1.wipes = v0;
         SetScreenBackgroundColor(param0->color);
-        sub_02011F44(param0, &v1);
+        WipeFade_Start(param0, &v1);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -1145,161 +1226,170 @@ BOOL sub_0200FE6C(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02011F88(param0);
+    return WipeFade_Update(param0);
 }
 
-BOOL sub_0200FEA4(ScreenFade *param0)
+// Content collapses along a diagonal boundary.
+BOOL ScreenFade_DiagonalOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        UnkStruct_0200FEA4 v0 = {
+        DiagonalFadeParams v0 = {
             ((0 * 0xffff) / 360), ((179 * 0xffff) / 360), GX_BLEND_PLANEMASK_BD, GX_BLEND_ALL, 1
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011960(param0, &v0);
+        DiagonalFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_020119A0(param0);
+    return DiagonalFade_Update(param0);
 }
 
-BOOL sub_0200FEEC(ScreenFade *param0)
+// Content opens along a diagonal boundary.
+BOOL ScreenFade_DiagonalIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        UnkStruct_0200FEA4 v0 = {
+        DiagonalFadeParams v0 = {
             ((0 * 0xffff) / 360), ((179 * 0xffff) / 360), GX_BLEND_ALL, GX_BLEND_PLANEMASK_BD, 0
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011960(param0, &v0);
+        DiagonalFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_020119A0(param0);
+    return DiagonalFade_Update(param0);
 }
 
-BOOL sub_0200FF30(ScreenFade *param0)
+// Two windows shrink to points at the centre, leaving a bowtie of content.
+BOOL ScreenFade_BowtieOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        UnkStruct_0200FF30 v0 = {
+        BowtieFadeParams v0 = {
             ((0 * 0xffff) / 360), ((45 * 0xffff) / 360), GX_BLEND_ALL, GX_BLEND_PLANEMASK_BD, 1
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011C94(param0, &v0);
+        BowtieFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02011CD4(param0);
+    return BowtieFade_Update(param0);
 }
 
-BOOL sub_0200FF78(ScreenFade *param0)
+// Two windows grow from points at the centre.
+BOOL ScreenFade_BowtieIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        UnkStruct_0200FF30 v0 = {
+        BowtieFadeParams v0 = {
             ((0 * 0xffff) / 360), ((45 * 0xffff) / 360), GX_BLEND_PLANEMASK_BD, GX_BLEND_ALL, 0
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02011C94(param0, &v0);
+        BowtieFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02011CD4(param0);
+    return BowtieFade_Update(param0);
 }
 
-BOOL sub_0200FFBC(ScreenFade *param0)
+// Circle centred above the screen shrinks, so the content disappears downward.
+BOOL ScreenFade_BottomHalfCircleOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FB7C v0 = {
+        static const CircleFadeParams v0 = {
             512, 0, 128, -80, 0, GX_BLEND_ALL, GX_BLEND_PLANEMASK_BD, 1
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010F2C(param0, &v0);
+        CircleFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02010F64(param0);
+    return CircleFade_Update(param0);
 }
 
-BOOL sub_0200FFE8(ScreenFade *param0)
+// Circle centred above the screen grows, so the content appears from the bottom.
+BOOL ScreenFade_BottomHalfCircleIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200FB7C v0 = {
+        static const CircleFadeParams v0 = {
             0, 512, 128, -80, 0, GX_BLEND_ALL, GX_BLEND_PLANEMASK_BD, 0
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010F2C(param0, &v0);
+        CircleFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02010F64(param0);
+    return CircleFade_Update(param0);
 }
 
-BOOL sub_02010014(ScreenFade *param0)
+// Backdrop sweeps in from the left.
+BOOL ScreenFade_BackdropFromLeftOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 0, 0, 0, 192 }, { 0, 0, 255, 192 }, 0, GX_BLEND_PLANEMASK_BD, GX_BLEND_ALL, 1
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_02010040(ScreenFade *param0)
+// Backdrop recedes to the left.
+BOOL ScreenFade_BackdropToLeftIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F980 v0 = {
+        static const WindowFadeParams v0 = {
             { 0, 0, 255, 192 }, { 0, 0, 0, 192 }, 0, GX_BLEND_PLANEMASK_BD, GX_BLEND_ALL, 0
         };
 
         SetScreenBackgroundColor(param0->color);
-        sub_02010CF4(param0, &v0);
+        WindowFade_Start(param0, &v0);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02010D44(param0);
+    return WindowFade_Update(param0);
 }
 
-BOOL sub_0201006C(ScreenFade *param0)
+// Two-phase fade out: a window collapse followed by a wipe.
+BOOL ScreenFade_ClampOut(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0[2] = {
+        static const ScreenFadeWipe v0[2] = {
             { 0, 94, 1 },
             { 192, 98, 1 },
         };
-        static UnkStruct_0201006C v1 = {
+        static ClampFadeParams v1 = {
             {
                 { 0, 94, 255, 98 },
                 { 128, 96, 128, 96 },
@@ -1316,27 +1406,28 @@ BOOL sub_0201006C(ScreenFade *param0)
             FX32_CONST(0.70f),
         };
 
-        v1.unk_0C.unk_00 = v0;
+        v1.wipe.wipes = v0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_020121C4(param0, &v1);
+        ClampFade_Start(param0, &v1);
 
         param0->direction = FADE_OUT;
         param0->method = FADE_BY_WINDOW;
         return 0;
     }
 
-    return sub_02012228(param0);
+    return ClampFade_Update(param0);
 }
 
-BOOL sub_020100A8(ScreenFade *param0)
+// Two-phase fade in: a wipe followed by a window opening.
+BOOL ScreenFade_ClampIn(ScreenFade *param0)
 {
     if (param0->state == 0) {
-        static const UnkStruct_0200F898 v0[2] = {
+        static const ScreenFadeWipe v0[2] = {
             { 94, 0, 0 },
             { 98, 192, 0 },
         };
-        static UnkStruct_0201006C v1 = {
+        static ClampFadeParams v1 = {
             {
                 { 128, 96, 128, 96 },
                 { 0, 94, 255, 98 },
@@ -1353,10 +1444,10 @@ BOOL sub_020100A8(ScreenFade *param0)
             FX32_CONST(0.70f),
         };
 
-        v1.unk_0C.unk_00 = v0;
+        v1.wipe.wipes = v0;
 
         SetScreenBackgroundColor(param0->color);
-        sub_020121C4(param0, &v1);
+        ClampFade_Start(param0, &v1);
 
         param0->direction = FADE_IN;
         param0->method = FADE_BY_WINDOW;
@@ -1364,20 +1455,22 @@ BOOL sub_020100A8(ScreenFade *param0)
         return 0;
     }
 
-    return sub_02012228(param0);
+    return ClampFade_Update(param0);
 }
 
-static fx32 sub_020100E0(int param0)
+// Tangent of an angle expressed as an FX index (0x10000 == 360 degrees).
+static fx32 TanIdx(int param0)
 {
     return FX_Div(FX_SinIdx(param0), FX_CosIdx(param0));
 }
 
-static int sub_020100FC(int param0, int param1)
+// tan(angle) * value, returned as an integer.
+static int TanIdxMul(int param0, int param1)
 {
     fx32 v0;
     fx32 v1;
 
-    v0 = sub_020100E0(param0);
+    v0 = TanIdx(param0);
 
     v1 = FX_Mul(v0, param1 << FX32_SHIFT);
     v1 >>= FX32_SHIFT;
@@ -1385,14 +1478,16 @@ static int sub_020100FC(int param0, int param1)
     return v1;
 }
 
-static void sub_02010124(int param0, int *param1, int param2, int param3)
+// Fills param1[param3..param2) with tan(angle) * i. Used to build the sloped
+// window edges of the wedge and hourglass fades.
+static void FillTanTable(int param0, int *param1, int param2, int param3)
 {
     int v0;
     fx32 v1;
     fx32 v2, v3;
     int v4, v5;
 
-    v1 = sub_020100E0(param0);
+    v1 = TanIdx(param0);
 
     for (v0 = param3; v0 < param2; v0++) {
         v3 = v0 << FX32_SHIFT;
@@ -1402,20 +1497,24 @@ static void sub_02010124(int param0, int *param1, int param2, int param3)
     }
 }
 
-static int sub_02010178(int param0, int param1)
+// The distance from the centre at which a line of slope tan(angle) reaches
+// half of param1. Used to find how far the hourglass's curved edge extends.
+static int HalfWidthOverTan(int param0, int param1)
 {
     fx32 v0;
     fx32 v1;
     int v2;
 
-    v0 = sub_020100E0(param0);
+    v0 = TanIdx(param0);
     v1 = (param1 / 2) << FX32_SHIFT;
     v2 = FX_Div(v1, v0);
 
     return v2;
 }
 
-static int sub_02010190(int param0, int param1, int param2)
+// Per-step change from param0 to param1 over param2 steps, scaled by 128 to
+// match the WindowRect's sub-pixel precision.
+static int DeltaPerStep(int param0, int param1, int param2)
 {
     int v0 = param1 - param0;
     v0 *= 128;
@@ -1424,7 +1523,8 @@ static int sub_02010190(int param0, int param1, int param2)
     return v0;
 }
 
-static int sub_020101A0(int param0, int param1)
+// param0 + param1, clamped to the 0..255 range of a window coordinate.
+static int AddClampedToByte(int param0, int param1)
 {
     int v0 = param0 + param1;
 
@@ -1439,39 +1539,46 @@ static int sub_020101A0(int param0, int param1)
     return v0;
 }
 
-static void sub_020101B0(UnkStruct_020101B0 *param0, UnkStruct_020101B0 *param1)
+static void WindowRect_Add(WindowRect *param0, WindowRect *param1)
 {
-    param0->unk_00 += param1->unk_00;
-    param0->unk_04 += param1->unk_04;
-    param0->unk_08 += param1->unk_08;
-    param0->unk_0C += param1->unk_0C;
+    param0->left += param1->left;
+    param0->top += param1->top;
+    param0->right += param1->right;
+    param0->bottom += param1->bottom;
 }
 
-static void sub_020101D4(UnkStruct_020101B0 *param0, UnkStruct_020101B0 *param1, UnkStruct_020101B0 *param2, const UnkStruct_0200FD8C *param3, const UnkStruct_0200FD8C *param4, int param5)
+// Sets up a window-rectangle animation: param0 is the current rectangle
+// (start, scaled by 128), param1 the target (end) and param2 the per-step
+// delta over param5 steps.
+static void WindowRect_InitAnimation(WindowRect *param0, WindowRect *param1, WindowRect *param2, const ScreenFadeRect *param3, const ScreenFadeRect *param4, int param5)
 {
-    param0->unk_00 = param3->unk_00 * 128;
-    param0->unk_04 = param3->unk_01 * 128;
-    param0->unk_08 = param3->unk_02 * 128;
-    param0->unk_0C = param3->unk_03 * 128;
+    param0->left = param3->left * 128;
+    param0->top = param3->top * 128;
+    param0->right = param3->right * 128;
+    param0->bottom = param3->bottom * 128;
 
-    param1->unk_00 = param4->unk_00;
-    param1->unk_04 = param4->unk_01;
-    param1->unk_08 = param4->unk_02;
-    param1->unk_0C = param4->unk_03;
+    param1->left = param4->left;
+    param1->top = param4->top;
+    param1->right = param4->right;
+    param1->bottom = param4->bottom;
 
-    param2->unk_00 = sub_02010190(param3->unk_00, param4->unk_00, param5);
-    param2->unk_04 = sub_02010190(param3->unk_01, param4->unk_01, param5);
-    param2->unk_08 = sub_02010190(param3->unk_02, param4->unk_02, param5);
-    param2->unk_0C = sub_02010190(param3->unk_03, param4->unk_03, param5);
+    param2->left = DeltaPerStep(param3->left, param4->left, param5);
+    param2->top = DeltaPerStep(param3->top, param4->top, param5);
+    param2->right = DeltaPerStep(param3->right, param4->right, param5);
+    param2->bottom = DeltaPerStep(param3->bottom, param4->bottom, param5);
 }
 
-static void sub_02010238(ScreenFade *param0, int param1)
+// param1 is 0 for a fade in and 1 for a fade out. The master brightness
+// register ranges over -16..16; white (0x7fff) fades toward +16 and black
+// (0x0) toward -16, so a fade in starts at the extreme and a fade out ends
+// there.
+static void BrightnessFade_Start(ScreenFade *param0, int param1)
 {
     int v0, v1;
-    UnkStruct_02010318 *v2;
+    ScreenFadeBrightness *v2;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_02010318));
-    memset(param0->data, 0, sizeof(UnkStruct_02010318));
+    param0->data = Heap_Alloc(param0->heapID, sizeof(ScreenFadeBrightness));
+    memset(param0->data, 0, sizeof(ScreenFadeBrightness));
     v2 = param0->data;
 
     if (param1 == 0) {
@@ -1504,26 +1611,26 @@ static void sub_02010238(ScreenFade *param0, int param1)
 
     SetScreenMasterBrightness(param0->screen, v0);
 
-    v2->unk_00 = param0->steps;
-    v2->unk_04 = param0->framesPerStep;
-    v2->unk_08 = 0;
-    v2->unk_0C = v0 * 128;
-    v2->unk_10 = v1 * 128;
-    v2->unk_14 = sub_02010190(v0, v1, param0->steps);
+    v2->stepsRemaining = param0->steps;
+    v2->framesPerStep = param0->framesPerStep;
+    v2->frameCounter = 0;
+    v2->currentBrightness = v0 * 128;
+    v2->targetBrightness = v1 * 128;
+    v2->brightnessDelta = DeltaPerStep(v0, v1, param0->steps);
     v2->screen = param0->screen;
 
     param0->state++;
 }
 
-static BOOL sub_020102D8(ScreenFade *param0)
+static BOOL BrightnessFade_Update(ScreenFade *param0)
 {
-    UnkStruct_02010318 *v0 = param0->data;
+    ScreenFadeBrightness *v0 = param0->data;
     BOOL v1;
     BOOL v2 = 0;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_02010318(v0);
+        v1 = BrightnessFade_Step(v0);
 
         if (v1 == 1) {
             param0->state++;
@@ -1545,31 +1652,31 @@ static BOOL sub_020102D8(ScreenFade *param0)
     return v2;
 }
 
-static BOOL sub_02010318(UnkStruct_02010318 *param0)
+static BOOL BrightnessFade_Step(ScreenFadeBrightness *param0)
 {
     BOOL v0 = 0;
 
-    param0->unk_08++;
+    param0->frameCounter++;
 
-    if (param0->unk_08 >= param0->unk_04) {
-        param0->unk_08 = 0;
+    if (param0->frameCounter >= param0->framesPerStep) {
+        param0->frameCounter = 0;
 
-        if ((param0->unk_00 - 1) > 0) {
-            param0->unk_00--;
+        if ((param0->stepsRemaining - 1) > 0) {
+            param0->stepsRemaining--;
 
-            param0->unk_0C += param0->unk_14;
+            param0->currentBrightness += param0->brightnessDelta;
         } else {
-            param0->unk_0C = param0->unk_10;
+            param0->currentBrightness = param0->targetBrightness;
             v0 = 1;
         }
 
-        SetScreenMasterBrightness(param0->screen, param0->unk_0C / 128);
+        SetScreenMasterBrightness(param0->screen, param0->currentBrightness / 128);
     }
 
     return v0;
 }
 
-static inline void inline_0201035C_sub(int param0, int param1, int param2, int param3, int param4, enum DSScreen screen)
+static inline void WindowData_SetWindowPosition(int param0, int param1, int param2, int param3, int param4, enum DSScreen screen)
 {
     if (param4 == 0) {
         if (screen == DS_SCREEN_MAIN) {
@@ -1594,15 +1701,18 @@ static inline void inline_0201035C_sub(int param0, int param1, int param2, int p
     }
 }
 
-static inline void inline_0201035C(UnkStruct_02010588 *param0, int param1, int param2)
+static inline void WindowData_ApplyScanline(WindowDataManager *param0, int param1, int param2)
 {
-    UnkStruct_02010FC0 *v0 = sub_02010604(param0, param2);
-    inline_0201035C_sub(v0->unk_00[0][param1], 0, v0->unk_00[1][param1], 192, v0->unk_600, param0->screen);
+    WindowData *v0 = WindowData_Get(param0, param2);
+    WindowData_SetWindowPosition(v0->current[0][param1], 0, v0->current[1][param1], 192, v0->windowID, param0->screen);
 }
 
-static void sub_0201035C(void *param0)
+// HBlank callback: applies the per-scanline window edges for the next
+// scanline. The window spans the full height, so only its left/right edges
+// change per line.
+static void WindowData_ApplyHBlank(void *param0)
 {
-    UnkStruct_02010588 *v0 = (UnkStruct_02010588 *)param0;
+    WindowDataManager *v0 = (WindowDataManager *)param0;
     int v1;
     int v2;
 
@@ -1617,34 +1727,36 @@ static void sub_0201035C(void *param0)
             v1 -= 192;
         }
 
-        if (v0->unk_04 == 1) {
-            inline_0201035C(v0, v1, 0);
+        if (v0->count == 1) {
+            WindowData_ApplyScanline(v0, v1, 0);
         } else {
-            inline_0201035C(v0, v1, 0);
-            inline_0201035C(v0, v1, 1);
+            WindowData_ApplyScanline(v0, v1, 0);
+            WindowData_ApplyScanline(v0, v1, 1);
         }
     }
 }
 
-static void sub_02010588(UnkStruct_02010588 *param0, int param1, enum DSScreen screen, enum HeapID heapID)
+// Allocates one WindowData for a single window (param1 0/1 selects WND0/WND1)
+// or two for a pair.
+static void WindowData_Init(WindowDataManager *param0, int param1, enum DSScreen screen, enum HeapID heapID)
 {
     switch (param1) {
     case 0:
     case 1:
-        param0->unk_00 = Heap_Alloc(heapID, sizeof(UnkStruct_02010FC0));
-        param0->unk_04 = 1;
+        param0->data = Heap_Alloc(heapID, sizeof(WindowData));
+        param0->count = 1;
         param0->screen = screen;
-        param0->unk_00->unk_600 = param1;
+        param0->data->windowID = param1;
         break;
     case 2: {
         int v0;
 
-        param0->unk_00 = Heap_Alloc(heapID, sizeof(UnkStruct_02010FC0) * 2);
-        param0->unk_04 = 2;
+        param0->data = Heap_Alloc(heapID, sizeof(WindowData) * 2);
+        param0->count = 2;
         param0->screen = screen;
 
         for (v0 = 0; v0 < 2; v0++) {
-            param0->unk_00[v0].unk_600 = v0;
+            param0->data[v0].windowID = v0;
         }
     } break;
     default:
@@ -1652,38 +1764,42 @@ static void sub_02010588(UnkStruct_02010588 *param0, int param1, enum DSScreen s
     }
 }
 
-static void sub_020105EC(UnkStruct_02010588 *param0)
+static void WindowData_Free(WindowDataManager *param0)
 {
-    sub_020105F4(param0);
+    WindowData_FreeInternal(param0);
 }
 
-static void sub_020105F4(UnkStruct_02010588 *param0)
+static void WindowData_FreeInternal(WindowDataManager *param0)
 {
-    Heap_Free(param0->unk_00);
-    param0->unk_00 = NULL;
+    Heap_Free(param0->data);
+    param0->data = NULL;
 }
 
-static UnkStruct_02010FC0 *sub_02010604(UnkStruct_02010588 *param0, int param1)
+static WindowData *WindowData_Get(WindowDataManager *param0, int param1)
 {
-    GF_ASSERT(param0->unk_04 > param1);
-    return param0->unk_00 + param1;
+    GF_ASSERT(param0->count > param1);
+    return param0->data + param1;
 }
 
-static void sub_02010624(SysTask *param0, void *param1)
+// SysTask run after VBlank: publishes the freshly built per-scanline edges so
+// the HBlank callback never reads a half-updated table.
+static void WindowData_CopyNextToCurrent(SysTask *param0, void *param1)
 {
-    UnkStruct_02010588 *v0 = (UnkStruct_02010588 *)param1;
-    UnkStruct_02010FC0 *v1;
+    WindowDataManager *v0 = (WindowDataManager *)param1;
+    WindowData *v1;
     int v2;
 
-    for (v2 = 0; v2 < v0->unk_04; v2++) {
-        v1 = sub_02010604(v0, v2);
-        memcpy(v1->unk_00, v1->unk_300, sizeof(short) * 2 * 192);
+    for (v2 = 0; v2 < v0->count; v2++) {
+        v1 = WindowData_Get(v0, v2);
+        memcpy(v1->current, v1->next, sizeof(short) * 2 * 192);
     }
 
     SysTask_Done(param0);
 }
 
-static void sub_02010658(int param0, HardwareWindowSettings *param1, enum DSScreen screen)
+// Restores the default window state: no window at all, or WND0 covering the
+// whole screen with all planes visible inside and only the backdrop outside.
+static void HardwareWindow_Reset(int param0, HardwareWindowSettings *param1, enum DSScreen screen)
 {
     if (param0 == 0) {
         RequestVisibleHardwareWindows(param1, GX_WNDMASK_NONE, screen);
@@ -1695,7 +1811,9 @@ static void sub_02010658(int param0, HardwareWindowSettings *param1, enum DSScre
     }
 }
 
-static void sub_020106A8(HardwareWindowSettings *param0, int param1, int param2, int param3, enum DSScreen screen, int param5, int param6, int param7, int param8, int param9)
+// Applies (param9 == 0) or defers to VBlank (param9 != 0) a window's inside/
+// outside plane masks and its bounding box.
+static void HardwareWindow_Setup(HardwareWindowSettings *param0, int param1, int param2, int param3, enum DSScreen screen, int param5, int param6, int param7, int param8, int param9)
 {
     if (param9 == 0) {
         SetHardwareWindowMaskInsidePlane(param1, 0, param3, screen);
@@ -1708,7 +1826,8 @@ static void sub_020106A8(HardwareWindowSettings *param0, int param1, int param2,
     }
 }
 
-static void sub_02010710(HardwareWindowSettings *param0, int param1, enum DSScreen screen, int param3)
+// Applies or defers the mask selecting which hardware windows are visible.
+static void HardwareWindow_SetVisible(HardwareWindowSettings *param0, int param1, enum DSScreen screen, int param3)
 {
     if (param3 == 0) {
         SetVisibleHardwareWindows(param1, screen);
@@ -1717,50 +1836,52 @@ static void sub_02010710(HardwareWindowSettings *param0, int param1, enum DSScre
     }
 }
 
-static void sub_02010728(UnkStruct_0201076C *param0, enum DSScreen screen, int param2, int param3, int param4)
+// Sets up one or two per-scanline visibility buffers, each bound to a window.
+static void HBlankWindow_Init(HBlankWindow *param0, enum DSScreen screen, int param2, int param3, int param4)
 {
-    memset(param0, 0, sizeof(UnkStruct_0201076C));
+    memset(param0, 0, sizeof(HBlankWindow));
 
     if (param2 == 1) {
-        param0->unk_00[0].unk_180 = param3;
-        param0->unk_308 = param2;
+        param0->buffers[0].windowID = param3;
+        param0->count = param2;
         param0->screen = screen;
     } else {
-        param0->unk_00[0].unk_180 = param3;
-        param0->unk_00[1].unk_180 = param4;
-        param0->unk_308 = param2;
+        param0->buffers[0].windowID = param3;
+        param0->buffers[1].windowID = param4;
+        param0->count = param2;
         param0->screen = screen;
     }
 }
 
-static void sub_0201076C(UnkStruct_0201076C *param0)
+static void HBlankWindow_RequestCopy(HBlankWindow *param0)
 {
-    SysTask_ExecuteAfterVBlank(sub_020107AC, param0, 1023);
+    SysTask_ExecuteAfterVBlank(HBlankWindow_CopyNextToCurrent, param0, 1023);
 }
 
-static void sub_02010784(ScreenFadeHBlanks *param0, UnkStruct_0201076C *param1, u32 heapID)
+static void HBlankWindow_Enable(ScreenFadeHBlanks *param0, HBlankWindow *param1, u32 heapID)
 {
-    RequestEnableScreenHBlank(param0, param1, sub_020107D8, param1->screen, heapID);
+    RequestEnableScreenHBlank(param0, param1, HBlankWindow_ApplyHBlank, param1->screen, heapID);
 }
 
-static void sub_0201079C(ScreenFadeHBlanks *param0, UnkStruct_0201076C *param1, u32 heapID)
+static void HBlankWindow_Disable(ScreenFadeHBlanks *param0, HBlankWindow *param1, u32 heapID)
 {
     RequestDisableScreenHBlank(param0, param1->screen, heapID);
 }
 
-static void sub_020107AC(SysTask *param0, void *param1)
+// SysTask run after VBlank: publishes the freshly built visibility masks.
+static void HBlankWindow_CopyNextToCurrent(SysTask *param0, void *param1)
 {
-    UnkStruct_0201076C *v0 = param1;
+    HBlankWindow *v0 = param1;
     int v1;
 
     for (v1 = 0; v1 < 2; v1++) {
-        memcpy(v0->unk_00[v1].unk_C0, v0->unk_00[v1].unk_00, sizeof(u8) * 192);
+        memcpy(v0->buffers[v1].current, v0->buffers[v1].next, sizeof(u8) * 192);
     }
 
     SysTask_Done(param0);
 }
 
-static inline void inline_020107D8_sub(int param0, BOOL param1, enum DSScreen screen)
+static inline void HBlankWindow_SetOutsidePlane(int param0, BOOL param1, enum DSScreen screen)
 {
     if (screen == DS_SCREEN_MAIN) {
         if (GX_IsHBlank()) {
@@ -1773,7 +1894,7 @@ static inline void inline_020107D8_sub(int param0, BOOL param1, enum DSScreen sc
     }
 }
 
-static inline void inline_020107D8_sub_1(int param0, BOOL param1, int param4, enum DSScreen screen)
+static inline void HBlankWindow_SetInsidePlane(int param0, BOOL param1, int param4, enum DSScreen screen)
 {
     if (param4 == 0) {
         if (screen == DS_SCREEN_MAIN) {
@@ -1798,22 +1919,26 @@ static inline void inline_020107D8_sub_1(int param0, BOOL param1, int param4, en
     }
 }
 
-static inline void inline_020107D8(UnkStruct_0201076C *param0, int param1, int param2)
+// A mask byte of 0 shows content outside the (zero-size) window; 1 shows the
+// backdrop instead.
+static inline void HBlankWindow_ApplyScanline(HBlankWindow *param0, int param1, int param2)
 {
-    UnkStruct_02012174 *v0 = &param0->unk_00[param2];
+    WipeBuffer *v0 = &param0->buffers[param2];
 
-    if (v0->unk_C0[param1] == 0) {
-        inline_020107D8_sub(GX_BLEND_ALL, 1, param0->screen);
-        inline_020107D8_sub_1(GX_BLEND_PLANEMASK_BD, 1, v0->unk_180, param0->screen);
+    if (v0->current[param1] == 0) {
+        HBlankWindow_SetOutsidePlane(GX_BLEND_ALL, 1, param0->screen);
+        HBlankWindow_SetInsidePlane(GX_BLEND_PLANEMASK_BD, 1, v0->windowID, param0->screen);
     } else {
-        inline_020107D8_sub(GX_BLEND_PLANEMASK_BD, 1, param0->screen);
-        inline_020107D8_sub_1(GX_BLEND_ALL, 1, v0->unk_180, param0->screen);
+        HBlankWindow_SetOutsidePlane(GX_BLEND_PLANEMASK_BD, 1, param0->screen);
+        HBlankWindow_SetInsidePlane(GX_BLEND_ALL, 1, v0->windowID, param0->screen);
     }
 }
 
-static void sub_020107D8(void *param0)
+// HBlank callback: applies the per-scanline visibility masks for the next
+// scanline.
+static void HBlankWindow_ApplyHBlank(void *param0)
 {
-    UnkStruct_0201076C *v0 = (UnkStruct_0201076C *)param0;
+    HBlankWindow *v0 = (HBlankWindow *)param0;
     int v1;
     int v2;
 
@@ -1828,48 +1953,48 @@ static void sub_020107D8(void *param0)
             v1 -= 192;
         }
 
-        if (v0->unk_308 == 1) {
-            inline_020107D8(v0, v1, 0);
+        if (v0->count == 1) {
+            HBlankWindow_ApplyScanline(v0, v1, 0);
         } else {
-            inline_020107D8(v0, v1, 0);
-            inline_020107D8(v0, v1, 1);
+            HBlankWindow_ApplyScanline(v0, v1, 0);
+            HBlankWindow_ApplyScanline(v0, v1, 1);
         }
     }
 }
 
-static void sub_02010CF4(ScreenFade *param0, const UnkStruct_0200F980 *param1)
+static void WindowFade_Start(ScreenFade *param0, const WindowFadeParams *param1)
 {
-    UnkStruct_02010EA4 *v0;
+    WindowFade *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_02010EA4));
+    param0->data = Heap_Alloc(param0->heapID, sizeof(WindowFade));
 
-    v0 = (UnkStruct_02010EA4 *)param0->data;
+    v0 = (WindowFade *)param0->data;
 
-    sub_02010E48(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings);
+    WindowFade_Init(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings);
 
-    if (param1->unk_08 == 0) {
-        sub_02010710(param0->hwSettings, GX_WNDMASK_W0, v0->screen, v0->unk_44);
+    if (param1->windowID == 0) {
+        HardwareWindow_SetVisible(param0->hwSettings, GX_WNDMASK_W0, v0->screen, v0->flag);
     } else {
-        sub_02010710(param0->hwSettings, GX_WNDMASK_W1, v0->screen, v0->unk_44);
+        HardwareWindow_SetVisible(param0->hwSettings, GX_WNDMASK_W1, v0->screen, v0->flag);
     }
 
     param0->state++;
 }
 
-static BOOL sub_02010D44(ScreenFade *param0)
+static BOOL WindowFade_Update(ScreenFade *param0)
 {
-    UnkStruct_02010EA4 *v0;
+    WindowFade *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_02010EA4 *)param0->data;
+    v0 = (WindowFade *)param0->data;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_02010EA4(v0);
+        v1 = WindowFade_Step(v0);
 
         if (v1 == 1) {
-            sub_02010658(v0->unk_44, param0->hwSettings, param0->screen);
+            HardwareWindow_Reset(v0->flag, param0->hwSettings, param0->screen);
             param0->state++;
         }
         break;
@@ -1891,35 +2016,35 @@ static BOOL sub_02010D44(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02010D94(ScreenFade *param0, const UnkStruct_0200F980 *param1, const UnkStruct_0200F980 *param2)
+static void WindowFadePair_Start(ScreenFade *param0, const WindowFadeParams *param1, const WindowFadeParams *param2)
 {
-    UnkStruct_02010D94 *v0;
+    WindowFadePair *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_02010D94));
-    v0 = (UnkStruct_02010D94 *)param0->data;
+    param0->data = Heap_Alloc(param0->heapID, sizeof(WindowFadePair));
+    v0 = (WindowFadePair *)param0->data;
 
-    sub_02010E48(&v0->unk_00, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings);
-    sub_02010E48(&v0->unk_4C, param2, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings);
-    sub_02010710(param0->hwSettings, GX_WNDMASK_W0 | GX_WNDMASK_W1, param0->screen, v0->unk_00.unk_44);
+    WindowFade_Init(&v0->first, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings);
+    WindowFade_Init(&v0->second, param2, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings);
+    HardwareWindow_SetVisible(param0->hwSettings, GX_WNDMASK_W0 | GX_WNDMASK_W1, param0->screen, v0->first.flag);
 
     param0->state++;
 }
 
-static BOOL sub_02010DEC(ScreenFade *param0)
+static BOOL WindowFadePair_Update(ScreenFade *param0)
 {
-    UnkStruct_02010D94 *v0;
+    WindowFadePair *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_02010D94 *)param0->data;
+    v0 = (WindowFadePair *)param0->data;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_02010EA4(&v0->unk_00);
-        v1 += sub_02010EA4(&v0->unk_4C);
+        v1 = WindowFade_Step(&v0->first);
+        v1 += WindowFade_Step(&v0->second);
 
         if (v1 == 2) {
-            sub_02010658(v0->unk_00.unk_44, param0->hwSettings, param0->screen);
+            HardwareWindow_Reset(v0->first.flag, param0->hwSettings, param0->screen);
 
             param0->state++;
         }
@@ -1938,73 +2063,73 @@ static BOOL sub_02010DEC(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02010E48(UnkStruct_02010EA4 *param0, const UnkStruct_0200F980 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5)
+static void WindowFade_Init(WindowFade *param0, const WindowFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5)
 {
-    sub_020101D4(&param0->unk_00, &param0->unk_20, &param0->unk_10, &param1->unk_00, &param1->unk_04, param2);
+    WindowRect_InitAnimation(&param0->current, &param0->target, &param0->delta, &param1->start, &param1->end, param2);
 
     param0->screen = screen;
-    param0->unk_34 = param1->unk_08;
-    param0->unk_38 = param2;
-    param0->unk_3C = param3;
-    param0->unk_40 = 0;
-    param0->unk_48 = param5;
-    param0->unk_44 = param1->unk_0B;
+    param0->windowID = param1->windowID;
+    param0->stepsRemaining = param2;
+    param0->framesPerStep = param3;
+    param0->frameCounter = 0;
+    param0->hwSettings = param5;
+    param0->flag = param1->flag;
 
-    sub_020106A8(param5, param1->unk_09, param1->unk_0A, param1->unk_08, screen, param1->unk_00.unk_00, param1->unk_00.unk_01, param1->unk_00.unk_02, param1->unk_00.unk_03, param0->unk_44);
+    HardwareWindow_Setup(param5, param1->insideMask, param1->outsideMask, param1->windowID, screen, param1->start.left, param1->start.top, param1->start.right, param1->start.bottom, param0->flag);
 }
 
-static BOOL sub_02010EA4(UnkStruct_02010EA4 *param0)
+static BOOL WindowFade_Step(WindowFade *param0)
 {
-    param0->unk_40++;
+    param0->frameCounter++;
 
-    if (param0->unk_40 >= param0->unk_3C) {
-        param0->unk_40 = 0;
+    if (param0->frameCounter >= param0->framesPerStep) {
+        param0->frameCounter = 0;
 
-        if ((param0->unk_38 - 1) > 0) {
-            param0->unk_38--;
-            sub_020101B0(&param0->unk_00, &param0->unk_10);
+        if ((param0->stepsRemaining - 1) > 0) {
+            param0->stepsRemaining--;
+            WindowRect_Add(&param0->current, &param0->delta);
         } else {
-            RequestHardwareWindowDimensions(param0->unk_48, param0->unk_20.unk_00, param0->unk_20.unk_04, param0->unk_20.unk_08, param0->unk_20.unk_0C, param0->unk_34, param0->screen);
+            RequestHardwareWindowDimensions(param0->hwSettings, param0->target.left, param0->target.top, param0->target.right, param0->target.bottom, param0->windowID, param0->screen);
             return 1;
         }
 
-        RequestHardwareWindowDimensions(param0->unk_48, param0->unk_00.unk_00 / 128, param0->unk_00.unk_04 / 128, param0->unk_00.unk_08 / 128, param0->unk_00.unk_0C / 128, param0->unk_34, param0->screen);
+        RequestHardwareWindowDimensions(param0->hwSettings, param0->current.left / 128, param0->current.top / 128, param0->current.right / 128, param0->current.bottom / 128, param0->windowID, param0->screen);
     }
 
     return 0;
 }
 
-static void sub_02010F2C(ScreenFade *param0, const UnkStruct_0200FB7C *param1)
+static void CircleFade_Start(ScreenFade *param0, const CircleFadeParams *param1)
 {
-    UnkStruct_0201109C *v0;
+    CircleFade *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_0201109C));
-    v0 = (UnkStruct_0201109C *)param0->data;
+    param0->data = Heap_Alloc(param0->heapID, sizeof(CircleFade));
+    v0 = (CircleFade *)param0->data;
 
-    sub_02010FC0(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
+    CircleFade_Init(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
 
     param0->state++;
 }
 
-static BOOL sub_02010F64(ScreenFade *param0)
+static BOOL CircleFade_Update(ScreenFade *param0)
 {
-    UnkStruct_0201109C *v0;
+    CircleFade *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_0201109C *)param0->data;
+    v0 = (CircleFade *)param0->data;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_0201109C(v0);
+        v1 = CircleFade_Step(v0);
 
         if (v1 == 1) {
-            sub_02010658(v0->unk_2C, v0->unk_30, param0->screen);
+            HardwareWindow_Reset(v0->flag, v0->hwSettings, param0->screen);
             param0->state++;
         }
         break;
     case 2:
-        sub_020105EC(&v0->unk_00);
+        WindowData_Free(&v0->windowData);
         Heap_Free(param0->data);
         param0->data = NULL;
         param0->state++;
@@ -2021,55 +2146,55 @@ static BOOL sub_02010F64(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02010FC0(UnkStruct_0201109C *param0, const UnkStruct_0200FB7C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
+static void CircleFade_Init(CircleFade *param0, const CircleFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
 {
     int v0;
-    UnkStruct_02010FC0 *v1;
+    WindowData *v1;
 
-    v0 = sub_02010190(param1->unk_00, param1->unk_02, param2);
-    sub_02010588(&param0->unk_00, param1->unk_08, screen, heapID);
+    v0 = DeltaPerStep(param1->startRadius, param1->endRadius, param2);
+    WindowData_Init(&param0->windowData, param1->windowID, screen, heapID);
 
-    param0->unk_0C = param1->unk_00 * 128;
-    param0->unk_10 = param1->unk_04;
-    param0->unk_14 = param1->unk_06;
-    param0->unk_18 = v0;
-    param0->unk_1C = param2;
-    param0->unk_20 = param3;
-    param0->unk_24 = 0;
-    param0->unk_30 = param5;
-    param0->unk_34 = param6;
+    param0->currentRadius = param1->startRadius * 128;
+    param0->centerX = param1->centerX;
+    param0->centerY = param1->centerY;
+    param0->radiusDelta = v0;
+    param0->stepsRemaining = param2;
+    param0->framesPerStep = param3;
+    param0->frameCounter = 0;
+    param0->hwSettings = param5;
+    param0->hblanks = param6;
     param0->heapID = heapID;
-    param0->unk_2C = param1->unk_0B;
+    param0->flag = param1->flag;
 
-    sub_02011180(param0);
-    SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+    CircleFade_BuildTable(param0);
+    SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
 
-    v1 = sub_02010604(&param0->unk_00, 0);
-    sub_020106A8(param5, param1->unk_09, param1->unk_0A, param1->unk_08, screen, v1->unk_300[0][0], 0, v1->unk_300[1][0], 192, param0->unk_2C);
+    v1 = WindowData_Get(&param0->windowData, 0);
+    HardwareWindow_Setup(param5, param1->insideMask, param1->outsideMask, param1->windowID, screen, v1->next[0][0], 0, v1->next[1][0], 192, param0->flag);
 
-    if (param1->unk_08 == 0) {
-        sub_02010710(param5, GX_WNDMASK_W0, screen, param0->unk_2C);
+    if (param1->windowID == 0) {
+        HardwareWindow_SetVisible(param5, GX_WNDMASK_W0, screen, param0->flag);
     } else {
-        sub_02010710(param5, GX_WNDMASK_W1, screen, param0->unk_2C);
+        HardwareWindow_SetVisible(param5, GX_WNDMASK_W1, screen, param0->flag);
     }
 
-    RequestEnableScreenHBlank(param0->unk_34, &param0->unk_00, sub_0201035C, screen, heapID);
+    RequestEnableScreenHBlank(param0->hblanks, &param0->windowData, WindowData_ApplyHBlank, screen, heapID);
 }
 
-static BOOL sub_0201109C(UnkStruct_0201109C *param0)
+static BOOL CircleFade_Step(CircleFade *param0)
 {
-    param0->unk_24++;
+    param0->frameCounter++;
 
-    if (param0->unk_24 >= param0->unk_20) {
-        param0->unk_24 = 0;
+    if (param0->frameCounter >= param0->framesPerStep) {
+        param0->frameCounter = 0;
 
-        if ((param0->unk_1C - 1) > 0) {
-            param0->unk_1C--;
-            param0->unk_0C += param0->unk_18;
-            sub_02011180(param0);
-            SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+        if ((param0->stepsRemaining - 1) > 0) {
+            param0->stepsRemaining--;
+            param0->currentRadius += param0->radiusDelta;
+            CircleFade_BuildTable(param0);
+            SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
         } else {
-            RequestDisableScreenHBlank(param0->unk_34, param0->unk_00.screen, param0->heapID);
+            RequestDisableScreenHBlank(param0->hblanks, param0->windowData.screen, param0->heapID);
             return 1;
         }
     }
@@ -2077,7 +2202,10 @@ static BOOL sub_0201109C(UnkStruct_0201109C *param0)
     return 0;
 }
 
-static void sub_020110EC(int param0, int param1, int param2, int param3, int *param4, int *param5)
+// Computes the horizontal span of a circle of radius param0 centred at
+// (param1, param2) on scanline param3, writing the left/right edges to
+// param4/param5. Scanlines outside the circle produce an empty span.
+static void CircleFade_ComputeSpan(int param0, int param1, int param2, int param3, int *param4, int *param5)
 {
     fx32 v0;
     fx32 v1;
@@ -2113,62 +2241,64 @@ static void sub_020110EC(int param0, int param1, int param2, int param3, int *pa
     }
 }
 
-static void sub_02011180(UnkStruct_0201109C *param0)
+// Builds the per-scanline circle edges. Scanlines below the centre mirror the
+// ones above it, so only the upper half is computed directly.
+static void CircleFade_BuildTable(CircleFade *param0)
 {
-    UnkStruct_02010588 *v0 = &param0->unk_00;
+    WindowDataManager *v0 = &param0->windowData;
     int v1;
     int v2;
     int v3;
     int v4;
-    UnkStruct_02010FC0 *v5 = sub_02010604(v0, 0);
+    WindowData *v5 = WindowData_Get(v0, 0);
 
     for (v1 = 0; v1 < 192; v1++) {
-        if (v1 <= param0->unk_14) {
-            sub_020110EC(param0->unk_0C, param0->unk_10, param0->unk_14, v1, &v2, &v3);
+        if (v1 <= param0->centerY) {
+            CircleFade_ComputeSpan(param0->currentRadius, param0->centerX, param0->centerY, v1, &v2, &v3);
         } else {
-            if (v1 <= (param0->unk_14 * 2)) {
-                v2 = v5->unk_300[0][(param0->unk_14 * 2) - v1];
-                v3 = v5->unk_300[1][(param0->unk_14 * 2) - v1];
+            if (v1 <= (param0->centerY * 2)) {
+                v2 = v5->next[0][(param0->centerY * 2) - v1];
+                v3 = v5->next[1][(param0->centerY * 2) - v1];
             } else {
-                sub_020110EC(param0->unk_0C, param0->unk_10, param0->unk_14, v1, &v2, &v3);
+                CircleFade_ComputeSpan(param0->currentRadius, param0->centerX, param0->centerY, v1, &v2, &v3);
             }
         }
 
-        v5->unk_300[0][v1] = v2;
-        v5->unk_300[1][v1] = v3;
+        v5->next[0][v1] = v2;
+        v5->next[1][v1] = v3;
     }
 }
 
-static void sub_02011204(ScreenFade *param0, const UnkStruct_0200FC2C *param1)
+static void WedgeFade_Start(ScreenFade *param0, const WedgeFadeParams *param1)
 {
-    UnkStruct_02011360 *v0;
+    WedgeFade *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_02011360));
-    v0 = (UnkStruct_02011360 *)param0->data;
+    param0->data = Heap_Alloc(param0->heapID, sizeof(WedgeFade));
+    v0 = (WedgeFade *)param0->data;
 
-    sub_02011298(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
+    WedgeFade_Init(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
     param0->state++;
 }
 
-static BOOL sub_0201123C(ScreenFade *param0)
+static BOOL WedgeFade_Update(ScreenFade *param0)
 {
-    UnkStruct_02011360 *v0;
+    WedgeFade *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_02011360 *)param0->data;
+    v0 = (WedgeFade *)param0->data;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_02011360(v0);
+        v1 = WedgeFade_Step(v0);
 
         if (v1 == 1) {
-            sub_02010658(v0->unk_20, v0->unk_24, param0->screen);
+            HardwareWindow_Reset(v0->flag, v0->hwSettings, param0->screen);
             param0->state++;
         }
         break;
     case 2:
-        sub_020105EC(&v0->unk_00);
+        WindowData_Free(&v0->windowData);
         Heap_Free(param0->data);
         param0->data = NULL;
         param0->state++;
@@ -2185,51 +2315,51 @@ static BOOL sub_0201123C(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02011298(UnkStruct_02011360 *param0, const UnkStruct_0200FC2C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
+static void WedgeFade_Init(WedgeFade *param0, const WedgeFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
 {
-    UnkStruct_02010FC0 *v0;
+    WindowData *v0;
 
-    param0->unk_10 = sub_02010190(param1->unk_00, param1->unk_02, param2);
-    sub_02010588(&param0->unk_00, param1->unk_04, screen, heapID);
+    param0->angleDelta = DeltaPerStep(param1->startAngle, param1->endAngle, param2);
+    WindowData_Init(&param0->windowData, param1->windowID, screen, heapID);
 
-    param0->unk_0C = param1->unk_00 * 128;
-    param0->unk_14 = param2;
-    param0->unk_18 = param3;
-    param0->unk_1C = 0;
-    param0->unk_24 = param5;
-    param0->unk_28 = param6;
+    param0->currentAngle = param1->startAngle * 128;
+    param0->stepsRemaining = param2;
+    param0->framesPerStep = param3;
+    param0->frameCounter = 0;
+    param0->hwSettings = param5;
+    param0->hblanks = param6;
     param0->heapID = heapID;
-    param0->unk_20 = param1->unk_07;
+    param0->flag = param1->flag;
 
-    sub_020113B0(param0);
-    SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+    WedgeFade_BuildTable(param0);
+    SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
 
-    v0 = sub_02010604(&param0->unk_00, 0);
-    sub_020106A8(param5, param1->unk_05, param1->unk_06, param1->unk_04, screen, v0->unk_300[0][0], 0, v0->unk_300[1][0], 192, param0->unk_20);
+    v0 = WindowData_Get(&param0->windowData, 0);
+    HardwareWindow_Setup(param5, param1->insideMask, param1->outsideMask, param1->windowID, screen, v0->next[0][0], 0, v0->next[1][0], 192, param0->flag);
 
-    if (param1->unk_04 == 0) {
-        sub_02010710(param5, GX_WNDMASK_W0, screen, param0->unk_20);
+    if (param1->windowID == 0) {
+        HardwareWindow_SetVisible(param5, GX_WNDMASK_W0, screen, param0->flag);
     } else {
-        sub_02010710(param5, GX_WNDMASK_W1, screen, param0->unk_20);
+        HardwareWindow_SetVisible(param5, GX_WNDMASK_W1, screen, param0->flag);
     }
 
-    RequestEnableScreenHBlank(param0->unk_28, &param0->unk_00, sub_0201035C, screen, heapID);
+    RequestEnableScreenHBlank(param0->hblanks, &param0->windowData, WindowData_ApplyHBlank, screen, heapID);
 }
 
-static BOOL sub_02011360(UnkStruct_02011360 *param0)
+static BOOL WedgeFade_Step(WedgeFade *param0)
 {
-    param0->unk_1C++;
+    param0->frameCounter++;
 
-    if (param0->unk_1C >= param0->unk_18) {
-        param0->unk_1C = 0;
+    if (param0->frameCounter >= param0->framesPerStep) {
+        param0->frameCounter = 0;
 
-        if ((param0->unk_14 - 1) > 0) {
-            param0->unk_14--;
-            param0->unk_0C += param0->unk_10;
-            sub_020113B0(param0);
-            SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+        if ((param0->stepsRemaining - 1) > 0) {
+            param0->stepsRemaining--;
+            param0->currentAngle += param0->angleDelta;
+            WedgeFade_BuildTable(param0);
+            SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
         } else {
-            RequestDisableScreenHBlank(param0->unk_28, param0->unk_00.screen, param0->heapID);
+            RequestDisableScreenHBlank(param0->hblanks, param0->windowData.screen, param0->heapID);
             return 1;
         }
     }
@@ -2237,50 +2367,52 @@ static BOOL sub_02011360(UnkStruct_02011360 *param0)
     return 0;
 }
 
-static void sub_020113B0(UnkStruct_02011360 *param0)
+// Builds a wedge whose left and right edges are lines of slope tan(angle)
+// meeting at the horizontal centre (x = 128).
+static void WedgeFade_BuildTable(WedgeFade *param0)
 {
     int v0;
     int v1, v2;
     int v3[192];
-    UnkStruct_02010FC0 *v4 = sub_02010604(&param0->unk_00, 0);
-    sub_02010124(param0->unk_0C / 128, v3, 192, 0);
+    WindowData *v4 = WindowData_Get(&param0->windowData, 0);
+    FillTanTable(param0->currentAngle / 128, v3, 192, 0);
 
     for (v0 = 0; v0 < 192; v0++) {
-        v4->unk_300[0][v0] = sub_020101A0(128, -v3[v0]);
-        v4->unk_300[1][v0] = sub_020101A0(128, v3[v0]);
+        v4->next[0][v0] = AddClampedToByte(128, -v3[v0]);
+        v4->next[1][v0] = AddClampedToByte(128, v3[v0]);
     }
 }
 
-static void sub_02011408(ScreenFade *param0, const UnkStruct_0200FD34 *param1)
+static void HourglassFade_Start(ScreenFade *param0, const HourglassFadeParams *param1)
 {
-    UnkStruct_02011568 *v0;
+    HourglassFade *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_02011568));
-    v0 = (UnkStruct_02011568 *)param0->data;
+    param0->data = Heap_Alloc(param0->heapID, sizeof(HourglassFade));
+    v0 = (HourglassFade *)param0->data;
 
-    sub_02011494(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
+    HourglassFade_Init(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
     param0->state++;
 }
 
-static BOOL sub_02011440(ScreenFade *param0)
+static BOOL HourglassFade_Update(ScreenFade *param0)
 {
-    UnkStruct_02011568 *v0;
+    HourglassFade *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_02011568 *)param0->data;
+    v0 = (HourglassFade *)param0->data;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_02011568(v0);
+        v1 = HourglassFade_Step(v0);
 
         if (v1 == 1) {
-            sub_02010658(v0->unk_24, v0->unk_28, param0->screen);
+            HardwareWindow_Reset(v0->flag, v0->hwSettings, param0->screen);
             param0->state++;
         }
         break;
     case 2:
-        sub_020105EC(&v0->unk_00);
+        WindowData_Free(&v0->windowData);
         Heap_Free(param0->data);
         param0->data = NULL;
         param0->state++;
@@ -2294,56 +2426,56 @@ static BOOL sub_02011440(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02011494(UnkStruct_02011568 *param0, const UnkStruct_0200FD34 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
+static void HourglassFade_Init(HourglassFade *param0, const HourglassFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
 {
     int v0;
-    UnkStruct_02010FC0 *v1;
+    WindowData *v1;
 
-    v0 = (param1->unk_02 - param1->unk_00);
+    v0 = (param1->endAngle - param1->startAngle);
     v0 /= param2;
 
-    sub_02010588(&param0->unk_00, param1->unk_04, screen, heapID);
+    WindowData_Init(&param0->windowData, param1->windowID, screen, heapID);
 
-    param0->unk_0C = 128 * FX32_ONE;
-    param0->unk_10 = param1->unk_00;
-    param0->unk_14 = v0;
-    param0->unk_18 = param2;
-    param0->unk_1C = param3;
-    param0->unk_20 = 0;
-    param0->unk_28 = param5;
-    param0->unk_2C = param6;
+    param0->radius = 128 * FX32_ONE;
+    param0->currentAngle = param1->startAngle;
+    param0->angleDelta = v0;
+    param0->stepsRemaining = param2;
+    param0->framesPerStep = param3;
+    param0->frameCounter = 0;
+    param0->hwSettings = param5;
+    param0->hblanks = param6;
     param0->heapID = heapID;
-    param0->unk_24 = param1->unk_07;
+    param0->flag = param1->flag;
 
-    sub_020115B8(param0);
-    SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+    HourglassFade_BuildTable(param0);
+    SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
 
-    v1 = sub_02010604(&param0->unk_00, 0);
-    sub_020106A8(param5, param1->unk_05, param1->unk_06, param1->unk_04, screen, v1->unk_300[0][96], 0, v1->unk_300[1][96], 192, param0->unk_24);
+    v1 = WindowData_Get(&param0->windowData, 0);
+    HardwareWindow_Setup(param5, param1->insideMask, param1->outsideMask, param1->windowID, screen, v1->next[0][96], 0, v1->next[1][96], 192, param0->flag);
 
-    if (param1->unk_04 == 0) {
-        sub_02010710(param5, GX_WNDMASK_W0, screen, param0->unk_24);
+    if (param1->windowID == 0) {
+        HardwareWindow_SetVisible(param5, GX_WNDMASK_W0, screen, param0->flag);
     } else {
-        sub_02010710(param5, GX_WNDMASK_W1, screen, param0->unk_24);
+        HardwareWindow_SetVisible(param5, GX_WNDMASK_W1, screen, param0->flag);
     }
 
-    RequestEnableScreenHBlank(param0->unk_2C, &param0->unk_00, sub_0201035C, screen, heapID);
+    RequestEnableScreenHBlank(param0->hblanks, &param0->windowData, WindowData_ApplyHBlank, screen, heapID);
 }
 
-static BOOL sub_02011568(UnkStruct_02011568 *param0)
+static BOOL HourglassFade_Step(HourglassFade *param0)
 {
-    param0->unk_20++;
+    param0->frameCounter++;
 
-    if (param0->unk_20 >= param0->unk_1C) {
-        param0->unk_20 = 0;
+    if (param0->frameCounter >= param0->framesPerStep) {
+        param0->frameCounter = 0;
 
-        if ((param0->unk_18 - 1) > 0) {
-            param0->unk_18--;
-            param0->unk_10 += param0->unk_14;
-            sub_020115B8(param0);
-            SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+        if ((param0->stepsRemaining - 1) > 0) {
+            param0->stepsRemaining--;
+            param0->currentAngle += param0->angleDelta;
+            HourglassFade_BuildTable(param0);
+            SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
         } else {
-            RequestDisableScreenHBlank(param0->unk_2C, param0->unk_00.screen, param0->heapID);
+            RequestDisableScreenHBlank(param0->hblanks, param0->windowData.screen, param0->heapID);
             return 1;
         }
     }
@@ -2351,7 +2483,10 @@ static BOOL sub_02011568(UnkStruct_02011568 *param0)
     return 0;
 }
 
-static void sub_020115B8(UnkStruct_02011568 *param0)
+// Builds the hourglass edges. The half-width at the centre is sin(angle) * 128;
+// the curved caps are lines of slope tan(v2) that meet the centre width at
+// scanline v1. The top half is mirrored onto the bottom half.
+static void HourglassFade_BuildTable(HourglassFade *param0)
 {
     int v0;
     int v1;
@@ -2361,8 +2496,8 @@ static void sub_020115B8(UnkStruct_02011568 *param0)
     int v5;
     int v6;
     int v7, v8;
-    UnkStruct_02010FC0 *v9 = sub_02010604(&param0->unk_00, 0);
-    v5 = FX_Mul(FX_SinIdx(param0->unk_10), param0->unk_0C);
+    WindowData *v9 = WindowData_Get(&param0->windowData, 0);
+    v5 = FX_Mul(FX_SinIdx(param0->currentAngle), param0->radius);
 
     v5 >>= FX32_SHIFT;
 
@@ -2372,12 +2507,12 @@ static void sub_020115B8(UnkStruct_02011568 *param0)
     v2 = 180 - (v2 * 2);
     v2 = ((0xffff * (v2)) / 360);
     v2 /= 2;
-    v1 = sub_02010178(v2, 256);
+    v1 = HalfWidthOverTan(v2, 256);
     v1 >>= FX32_SHIFT;
 
     GF_ASSERT(v1 < 192);
 
-    sub_02010124(v2, v3, v1, 0);
+    FillTanTable(v2, v3, v1, 0);
 
     for (v0 = 0; v0 < 96; v0++) {
         v4 = v1 - (v0 + 1);
@@ -2389,47 +2524,47 @@ static void sub_020115B8(UnkStruct_02011568 *param0)
             }
         }
 
-        v7 = sub_020101A0(128, -v6);
-        v8 = sub_020101A0(128, v6);
+        v7 = AddClampedToByte(128, -v6);
+        v8 = AddClampedToByte(128, v6);
 
-        v9->unk_300[0][v0] = v7;
-        v9->unk_300[1][v0] = v8;
-        v9->unk_300[0][191 - v0] = v7;
-        v9->unk_300[1][191 - v0] = v8;
+        v9->next[0][v0] = v7;
+        v9->next[1][v0] = v8;
+        v9->next[0][191 - v0] = v7;
+        v9->next[1][191 - v0] = v8;
     }
 }
 
-static void sub_020116A0(ScreenFade *param0, const UnkStruct_02011738 *param1)
+static void InterlaceFade_Start(ScreenFade *param0, const InterlaceFadeParams *param1)
 {
-    UnkStruct_0201184C *v0;
+    InterlaceFade *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_0201184C));
-    v0 = (UnkStruct_0201184C *)param0->data;
+    param0->data = Heap_Alloc(param0->heapID, sizeof(InterlaceFade));
+    v0 = (InterlaceFade *)param0->data;
 
-    sub_02011738(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
+    InterlaceFade_Init(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
     param0->state++;
 }
 
-static BOOL sub_020116D8(ScreenFade *param0)
+static BOOL InterlaceFade_Update(ScreenFade *param0)
 {
-    UnkStruct_0201184C *v0;
+    InterlaceFade *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_0201184C *)param0->data;
+    v0 = (InterlaceFade *)param0->data;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_0201184C(v0);
+        v1 = InterlaceFade_Step(v0);
 
         if (v1 == 1) {
-            sub_02010658(v0->unk_20, v0->unk_24, param0->screen);
+            HardwareWindow_Reset(v0->flag, v0->hwSettings, param0->screen);
             param0->state++;
         }
         break;
     case 2:
-        sub_0201189C(v0);
-        sub_020105EC(&v0->unk_00);
+        InterlaceFade_Free(v0);
+        WindowData_Free(&v0->windowData);
         Heap_Free(param0->data);
         param0->data = NULL;
         param0->state++;
@@ -2446,58 +2581,58 @@ static BOOL sub_020116D8(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02011738(UnkStruct_0201184C *param0, const UnkStruct_02011738 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
+static void InterlaceFade_Init(InterlaceFade *param0, const InterlaceFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
 {
     int v0;
-    UnkStruct_02010FC0 *v1;
+    WindowData *v1;
 
-    param0->unk_0C = Heap_Alloc(heapID, sizeof(UnkStruct_0201184C_sub1) * param1->unk_08);
-    GF_ASSERT(param0->unk_0C != NULL);
-    param0->unk_10 = param1->unk_08;
+    param0->bands = Heap_Alloc(heapID, sizeof(InterlaceBand) * param1->count);
+    GF_ASSERT(param0->bands != NULL);
+    param0->bandCount = param1->count;
 
-    for (v0 = 0; v0 < param1->unk_08; v0++) {
-        sub_020101D4(&param0->unk_0C[v0].unk_00, &param0->unk_0C[v0].unk_20, &param0->unk_0C[v0].unk_10, (param1->unk_00 + v0), (param1->unk_04 + v0), param2);
+    for (v0 = 0; v0 < param1->count; v0++) {
+        WindowRect_InitAnimation(&param0->bands[v0].current, &param0->bands[v0].target, &param0->bands[v0].delta, (param1->startRects + v0), (param1->endRects + v0), param2);
     }
 
-    sub_02010588(&param0->unk_00, param1->unk_0A, screen, heapID);
+    WindowData_Init(&param0->windowData, param1->windowID, screen, heapID);
 
-    param0->unk_14 = param2;
-    param0->unk_18 = param3;
-    param0->unk_1C = 0;
-    param0->unk_24 = param5;
-    param0->unk_28 = param6;
+    param0->stepsRemaining = param2;
+    param0->framesPerStep = param3;
+    param0->frameCounter = 0;
+    param0->hwSettings = param5;
+    param0->hblanks = param6;
     param0->heapID = heapID;
-    param0->unk_20 = param1->unk_0E;
+    param0->flag = param1->flag;
 
-    sub_020118AC(param0);
-    SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+    InterlaceFade_BuildTable(param0);
+    SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
 
-    v1 = sub_02010604(&param0->unk_00, 0);
-    sub_020106A8(param5, param1->unk_0C, param1->unk_0D, param1->unk_0A, screen, v1->unk_300[0][0], 0, v1->unk_300[1][0], 192, param0->unk_20);
+    v1 = WindowData_Get(&param0->windowData, 0);
+    HardwareWindow_Setup(param5, param1->insideMask, param1->outsideMask, param1->windowID, screen, v1->next[0][0], 0, v1->next[1][0], 192, param0->flag);
 
-    if (param1->unk_0A == 0) {
-        sub_02010710(param0->unk_24, GX_WNDMASK_W0, screen, param0->unk_20);
+    if (param1->windowID == 0) {
+        HardwareWindow_SetVisible(param0->hwSettings, GX_WNDMASK_W0, screen, param0->flag);
     } else {
-        sub_02010710(param0->unk_24, GX_WNDMASK_W1, screen, param0->unk_20);
+        HardwareWindow_SetVisible(param0->hwSettings, GX_WNDMASK_W1, screen, param0->flag);
     }
 
-    RequestEnableScreenHBlank(param0->unk_28, &param0->unk_00, sub_0201035C, screen, heapID);
+    RequestEnableScreenHBlank(param0->hblanks, &param0->windowData, WindowData_ApplyHBlank, screen, heapID);
 }
 
-static BOOL sub_0201184C(UnkStruct_0201184C *param0)
+static BOOL InterlaceFade_Step(InterlaceFade *param0)
 {
-    param0->unk_1C++;
+    param0->frameCounter++;
 
-    if (param0->unk_1C >= param0->unk_18) {
-        param0->unk_1C = 0;
+    if (param0->frameCounter >= param0->framesPerStep) {
+        param0->frameCounter = 0;
 
-        if ((param0->unk_14 - 1) > 0) {
-            param0->unk_14--;
-            sub_02011938(param0);
-            sub_020118AC(param0);
-            SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+        if ((param0->stepsRemaining - 1) > 0) {
+            param0->stepsRemaining--;
+            InterlaceFade_AdvanceBands(param0);
+            InterlaceFade_BuildTable(param0);
+            SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
         } else {
-            RequestDisableScreenHBlank(param0->unk_28, param0->unk_00.screen, param0->heapID);
+            RequestDisableScreenHBlank(param0->hblanks, param0->windowData.screen, param0->heapID);
             return 1;
         }
     }
@@ -2505,84 +2640,88 @@ static BOOL sub_0201184C(UnkStruct_0201184C *param0)
     return 0;
 }
 
-static void sub_0201189C(UnkStruct_0201184C *param0)
+static void InterlaceFade_Free(InterlaceFade *param0)
 {
-    Heap_Free(param0->unk_0C);
-    param0->unk_0C = NULL;
+    Heap_Free(param0->bands);
+    param0->bands = NULL;
 }
 
-static void sub_020118AC(UnkStruct_0201184C *param0)
+// Clears the table, then draws each band back-to-front so earlier bands win
+// where they overlap.
+static void InterlaceFade_BuildTable(InterlaceFade *param0)
 {
     int v0;
-    UnkStruct_02010FC0 *v1 = sub_02010604(&param0->unk_00, 0);
-    memset(v1->unk_300, 0, 768);
+    WindowData *v1 = WindowData_Get(&param0->windowData, 0);
+    memset(v1->next, 0, 768);
 
-    for (v0 = (param0->unk_10 - 1); v0 >= 0; v0--) {
-        sub_020118E0(&param0->unk_00, &param0->unk_0C[v0].unk_00);
+    for (v0 = (param0->bandCount - 1); v0 >= 0; v0--) {
+        InterlaceFade_DrawBand(&param0->windowData, &param0->bands[v0].current);
     }
 }
 
-static void sub_020118E0(UnkStruct_02010588 *param0, UnkStruct_020101B0 *param1)
+// Writes one band's left/right edges into the scanlines it covers.
+static void InterlaceFade_DrawBand(WindowDataManager *param0, WindowRect *param1)
 {
     int v0;
-    UnkStruct_02010FC0 *v1;
-    UnkStruct_020101B0 v2;
+    WindowData *v1;
+    WindowRect v2;
 
-    v1 = sub_02010604(param0, 0);
+    v1 = WindowData_Get(param0, 0);
 
-    v2.unk_00 = param1->unk_00 / 128;
-    v2.unk_04 = param1->unk_04 / 128;
-    v2.unk_08 = param1->unk_08 / 128;
-    v2.unk_0C = param1->unk_0C / 128;
+    v2.left = param1->left / 128;
+    v2.top = param1->top / 128;
+    v2.right = param1->right / 128;
+    v2.bottom = param1->bottom / 128;
 
-    for (v0 = v2.unk_04; v0 < v2.unk_0C; v0++) {
-        v1->unk_300[0][v0] = v2.unk_00;
-        v1->unk_300[1][v0] = v2.unk_08;
+    for (v0 = v2.top; v0 < v2.bottom; v0++) {
+        v1->next[0][v0] = v2.left;
+        v1->next[1][v0] = v2.right;
     }
 }
 
-static void sub_02011938(UnkStruct_0201184C *param0)
+// Advances every band's current rectangle by its per-step delta.
+static void InterlaceFade_AdvanceBands(InterlaceFade *param0)
 {
     int v0;
 
-    for (v0 = 0; v0 < param0->unk_10; v0++) {
-        sub_020101B0(&param0->unk_0C[v0].unk_00, &param0->unk_0C[v0].unk_10);
+    for (v0 = 0; v0 < param0->bandCount; v0++) {
+        WindowRect_Add(&param0->bands[v0].current, &param0->bands[v0].delta);
     }
 }
 
-static void sub_02011960(ScreenFade *param0, UnkStruct_0200FEA4 *param1)
+static void DiagonalFade_Start(ScreenFade *param0, DiagonalFadeParams *param1)
 {
-    UnkStruct_02011AFC *v0;
+    DiagonalFade *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_02011AFC));
-    memset(param0->data, 0, sizeof(UnkStruct_02011AFC));
+    param0->data = Heap_Alloc(param0->heapID, sizeof(DiagonalFade));
+    memset(param0->data, 0, sizeof(DiagonalFade));
 
     v0 = param0->data;
-    sub_02011A00(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
+    DiagonalFade_Init(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
 
     param0->state++;
 }
 
-static BOOL sub_020119A0(ScreenFade *param0)
+static BOOL DiagonalFade_Update(ScreenFade *param0)
 {
-    UnkStruct_02011AFC *v0;
+    DiagonalFade *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_02011AFC *)param0->data;
+    v0 = (DiagonalFade *)param0->data;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_02011AFC(v0);
+        v1 = DiagonalFade_Step(v0);
 
         if (v1 == 1) {
-            sub_02010658(v0->unk_28, v0->unk_30, param0->screen);
+            HardwareWindow_Reset(v0->flag, v0->hwSettings, param0->screen);
             param0->state++;
         }
         break;
     case 2:
-        sub_02011B54(v0);
-        sub_020105EC(&v0->unk_00);
+        DiagonalFade_Free(v0);
+        WindowData_Free(&v0->windowData);
         Heap_Free(param0->data);
         param0->data = NULL;
         param0->state++;
@@ -2599,54 +2738,54 @@ static BOOL sub_020119A0(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02011A00(UnkStruct_02011AFC *param0, UnkStruct_0200FEA4 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
+static void DiagonalFade_Init(DiagonalFade *param0, DiagonalFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
 {
-    UnkStruct_02010FC0 *v0;
-    UnkStruct_02010FC0 *v1;
+    WindowData *v0;
+    WindowData *v1;
 
-    param0->unk_0C.unk_00 = 0;
-    param0->unk_0C.unk_04 = param1->unk_00;
-    param0->unk_0C.unk_08 = param1->unk_02 - param1->unk_00;
+    param0->angle.current = 0;
+    param0->angle.start = param1->startAngle;
+    param0->angle.range = param1->endAngle - param1->startAngle;
 
-    sub_02010588(&param0->unk_00, 2, screen, heapID);
+    WindowData_Init(&param0->windowData, 2, screen, heapID);
 
-    param0->unk_18 = param2;
-    param0->unk_1C = 0;
-    param0->unk_20 = param3;
-    param0->unk_24 = 0;
-    param0->unk_30 = param5;
-    param0->unk_34 = param6;
+    param0->steps = param2;
+    param0->stepCounter = 0;
+    param0->framesPerStep = param3;
+    param0->frameCounter = 0;
+    param0->hwSettings = param5;
+    param0->hblanks = param6;
     param0->heapID = heapID;
-    param0->unk_28 = param1->unk_06;
+    param0->flag = param1->flag;
 
-    sub_02011C7C(&param0->unk_0C, param0->unk_1C, param0->unk_18);
-    sub_02011B58(param0);
-    SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+    DiagonalAngleAnim_Update(&param0->angle, param0->stepCounter, param0->steps);
+    DiagonalFade_BuildTable(param0);
+    SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
 
-    v0 = sub_02010604(&param0->unk_00, 0);
-    v1 = sub_02010604(&param0->unk_00, 1);
+    v0 = WindowData_Get(&param0->windowData, 0);
+    v1 = WindowData_Get(&param0->windowData, 1);
 
-    sub_020106A8(param5, param1->unk_04, param1->unk_05, 0, screen, v0->unk_300[0][0], 0, v0->unk_300[1][0], 192, param0->unk_28);
-    sub_020106A8(param5, param1->unk_04, param1->unk_05, 1, screen, v1->unk_300[0][0], 0, v1->unk_300[1][0], 192, param0->unk_28);
-    sub_02010710(param5, GX_WNDMASK_W0 | GX_WNDMASK_W1, screen, param0->unk_28);
-    RequestEnableScreenHBlank(param0->unk_34, &param0->unk_00, sub_0201035C, screen, heapID);
+    HardwareWindow_Setup(param5, param1->insideMask, param1->outsideMask, 0, screen, v0->next[0][0], 0, v0->next[1][0], 192, param0->flag);
+    HardwareWindow_Setup(param5, param1->insideMask, param1->outsideMask, 1, screen, v1->next[0][0], 0, v1->next[1][0], 192, param0->flag);
+    HardwareWindow_SetVisible(param5, GX_WNDMASK_W0 | GX_WNDMASK_W1, screen, param0->flag);
+    RequestEnableScreenHBlank(param0->hblanks, &param0->windowData, WindowData_ApplyHBlank, screen, heapID);
 }
 
-static BOOL sub_02011AFC(UnkStruct_02011AFC *param0)
+static BOOL DiagonalFade_Step(DiagonalFade *param0)
 {
-    param0->unk_24++;
+    param0->frameCounter++;
 
-    if (param0->unk_24 >= param0->unk_20) {
-        param0->unk_24 = 0;
+    if (param0->frameCounter >= param0->framesPerStep) {
+        param0->frameCounter = 0;
 
-        if ((param0->unk_1C + 1) <= param0->unk_18) {
-            param0->unk_1C++;
+        if ((param0->stepCounter + 1) <= param0->steps) {
+            param0->stepCounter++;
 
-            sub_02011C7C(&param0->unk_0C, param0->unk_1C, param0->unk_18);
-            sub_02011B58(param0);
-            SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+            DiagonalAngleAnim_Update(&param0->angle, param0->stepCounter, param0->steps);
+            DiagonalFade_BuildTable(param0);
+            SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
         } else {
-            RequestDisableScreenHBlank(param0->unk_34, param0->unk_00.screen, param0->heapID);
+            RequestDisableScreenHBlank(param0->hblanks, param0->windowData.screen, param0->heapID);
             return 1;
         }
     }
@@ -2654,110 +2793,114 @@ static BOOL sub_02011AFC(UnkStruct_02011AFC *param0)
     return 0;
 }
 
-static void sub_02011B54(UnkStruct_02011AFC *param0)
+static void DiagonalFade_Free(DiagonalFade *param0)
 {
     return;
 }
 
-static void sub_02011B58(UnkStruct_02011AFC *param0)
+// Builds the two windows that tile the screen along a diagonal boundary of
+// slope tan(angle). The boundary is mirrored across the screen centre, so the
+// two halves use complementary angles.
+static void DiagonalFade_BuildTable(DiagonalFade *param0)
 {
-    UnkStruct_02010FC0 *v0;
-    UnkStruct_02010FC0 *v1;
+    WindowData *v0;
+    WindowData *v1;
     u16 v2;
     int v3, v4;
     int v5;
 
-    v2 = param0->unk_0C.unk_00 % ((90 * 0xffff) / 360);
-    v0 = sub_02010604(&param0->unk_00, 0);
-    v1 = sub_02010604(&param0->unk_00, 1);
+    v2 = param0->angle.current % ((90 * 0xffff) / 360);
+    v0 = WindowData_Get(&param0->windowData, 0);
+    v1 = WindowData_Get(&param0->windowData, 1);
 
     for (v5 = 0; v5 < 96; v5++) {
-        if (param0->unk_0C.unk_00 < ((90 * 0xffff) / 360)) {
+        if (param0->angle.current < ((90 * 0xffff) / 360)) {
             v3 = 128;
-            v4 = sub_020100FC(v2, (96 - v5));
+            v4 = TanIdxMul(v2, (96 - v5));
 
             if (v4 > 127) {
                 v4 = 127;
             }
 
-            v0->unk_300[0][191 - v5] = v3 - v4;
-            v0->unk_300[1][191 - v5] = v3;
+            v0->next[0][191 - v5] = v3 - v4;
+            v0->next[1][191 - v5] = v3;
 
-            v1->unk_300[0][v5] = v3;
-            v1->unk_300[1][v5] = v3 + v4;
+            v1->next[0][v5] = v3;
+            v1->next[1][v5] = v3 + v4;
         } else {
-            v0->unk_300[0][191 - v5] = 0;
-            v0->unk_300[1][191 - v5] = 128;
+            v0->next[0][191 - v5] = 0;
+            v0->next[1][191 - v5] = 128;
 
-            v1->unk_300[0][v5] = 128;
-            v1->unk_300[1][v5] = 255;
+            v1->next[0][v5] = 128;
+            v1->next[1][v5] = 255;
         }
     }
 
     for (v5 = 96; v5 < 192; v5++) {
-        if (param0->unk_0C.unk_00 < ((90 * 0xffff) / 360)) {
-            v0->unk_300[0][191 - v5] = 128;
-            v0->unk_300[1][191 - v5] = 128;
+        if (param0->angle.current < ((90 * 0xffff) / 360)) {
+            v0->next[0][191 - v5] = 128;
+            v0->next[1][191 - v5] = 128;
 
-            v1->unk_300[0][v5] = 128;
-            v1->unk_300[1][v5] = 128;
+            v1->next[0][v5] = 128;
+            v1->next[1][v5] = 128;
         } else {
-            v3 = sub_020100FC(((90 * 0xffff) / 360) - v2, (v5 - 96));
+            v3 = TanIdxMul(((90 * 0xffff) / 360) - v2, (v5 - 96));
 
             if (v3 > 127) {
                 v3 = 127;
             }
 
-            v0->unk_300[0][191 - v5] = 0;
-            v0->unk_300[1][191 - v5] = 128 - v3;
+            v0->next[0][191 - v5] = 0;
+            v0->next[1][191 - v5] = 128 - v3;
 
-            v1->unk_300[0][v5] = 128 + v3;
-            v1->unk_300[1][v5] = 255;
+            v1->next[0][v5] = 128 + v3;
+            v1->next[1][v5] = 255;
         }
     }
 }
 
-static void sub_02011C7C(UnkStruct_02011C7C *param0, int param1, int param2)
+// Interpolates the angle from `start` over `range` for step param1 of param2.
+static void DiagonalAngleAnim_Update(DiagonalAngleAnim *param0, int param1, int param2)
 {
-    int v0 = param0->unk_08 * param1;
+    int v0 = param0->range * param1;
     v0 = v0 / param2;
 
-    param0->unk_00 = v0 + param0->unk_04;
+    param0->current = v0 + param0->start;
 }
 
-static void sub_02011C94(ScreenFade *param0, UnkStruct_0200FF30 *param1)
+static void BowtieFade_Start(ScreenFade *param0, BowtieFadeParams *param1)
 {
-    UnkStruct_02011E04 *v0;
+    BowtieFade *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_02011E04));
-    memset(param0->data, 0, sizeof(UnkStruct_02011E04));
+    param0->data = Heap_Alloc(param0->heapID, sizeof(BowtieFade));
+    memset(param0->data, 0, sizeof(BowtieFade));
 
     v0 = param0->data;
-    sub_02011D34(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
+    BowtieFade_Init(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
 
     param0->state++;
 }
 
-static BOOL sub_02011CD4(ScreenFade *param0)
+static BOOL BowtieFade_Update(ScreenFade *param0)
 {
-    UnkStruct_02011E04 *v0;
+    BowtieFade *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_02011E04 *)param0->data;
+    v0 = (BowtieFade *)param0->data;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_02011E04(v0);
+        v1 = BowtieFade_Step(v0);
 
         if (v1 == 1) {
-            sub_02010658(v0->unk_28, v0->unk_30, param0->screen);
+            HardwareWindow_Reset(v0->flag, v0->hwSettings, param0->screen);
             param0->state++;
         }
         break;
     case 2:
-        sub_02011E5C(v0);
-        sub_020105EC(&v0->unk_00);
+        BowtieFade_Free(v0);
+        WindowData_Free(&v0->windowData);
         Heap_Free(param0->data);
         param0->data = NULL;
         param0->state++;
@@ -2774,53 +2917,53 @@ static BOOL sub_02011CD4(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02011D34(UnkStruct_02011E04 *param0, UnkStruct_0200FF30 *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
+static void BowtieFade_Init(BowtieFade *param0, BowtieFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
 {
-    UnkStruct_02010FC0 *v0;
-    UnkStruct_02010FC0 *v1;
+    WindowData *v0;
+    WindowData *v1;
 
-    param0->unk_0C.unk_00 = param1->unk_00;
-    param0->unk_0C.unk_04 = param1->unk_00;
-    param0->unk_0C.unk_08 = param1->unk_02 - param1->unk_00;
+    param0->angle.current = param1->startAngle;
+    param0->angle.start = param1->startAngle;
+    param0->angle.range = param1->endAngle - param1->startAngle;
 
-    sub_02010588(&param0->unk_00, 2, screen, heapID);
+    WindowData_Init(&param0->windowData, 2, screen, heapID);
 
-    param0->unk_18 = param2;
-    param0->unk_1C = 0;
-    param0->unk_20 = param3;
-    param0->unk_24 = 0;
-    param0->unk_30 = param5;
-    param0->unk_34 = param6;
+    param0->steps = param2;
+    param0->stepCounter = 0;
+    param0->framesPerStep = param3;
+    param0->frameCounter = 0;
+    param0->hwSettings = param5;
+    param0->hblanks = param6;
     param0->heapID = heapID;
-    param0->unk_28 = param1->unk_06;
+    param0->flag = param1->flag;
 
-    sub_02011E60(param0);
-    SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+    BowtieFade_BuildTable(param0);
+    SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
 
-    v0 = sub_02010604(&param0->unk_00, 0);
-    v1 = sub_02010604(&param0->unk_00, 1);
+    v0 = WindowData_Get(&param0->windowData, 0);
+    v1 = WindowData_Get(&param0->windowData, 1);
 
-    sub_020106A8(param5, param1->unk_04, param1->unk_05, 0, screen, 0, 0, 255, 192, param0->unk_28);
-    sub_020106A8(param5, param1->unk_04, param1->unk_05, 1, screen, 0, 0, 255, 192, param0->unk_28);
-    sub_02010710(param5, GX_WNDMASK_W0 | GX_WNDMASK_W1, screen, param0->unk_28);
-    RequestEnableScreenHBlank(param0->unk_34, &param0->unk_00, sub_0201035C, screen, heapID);
+    HardwareWindow_Setup(param5, param1->insideMask, param1->outsideMask, 0, screen, 0, 0, 255, 192, param0->flag);
+    HardwareWindow_Setup(param5, param1->insideMask, param1->outsideMask, 1, screen, 0, 0, 255, 192, param0->flag);
+    HardwareWindow_SetVisible(param5, GX_WNDMASK_W0 | GX_WNDMASK_W1, screen, param0->flag);
+    RequestEnableScreenHBlank(param0->hblanks, &param0->windowData, WindowData_ApplyHBlank, screen, heapID);
 }
 
-static BOOL sub_02011E04(UnkStruct_02011E04 *param0)
+static BOOL BowtieFade_Step(BowtieFade *param0)
 {
-    param0->unk_24++;
+    param0->frameCounter++;
 
-    if (param0->unk_24 >= param0->unk_20) {
-        param0->unk_24 = 0;
+    if (param0->frameCounter >= param0->framesPerStep) {
+        param0->frameCounter = 0;
 
-        if ((param0->unk_1C + 1) <= param0->unk_18) {
-            param0->unk_1C++;
+        if ((param0->stepCounter + 1) <= param0->steps) {
+            param0->stepCounter++;
 
-            sub_02011F2C(&param0->unk_0C, param0->unk_1C, param0->unk_18);
-            sub_02011E60(param0);
-            SysTask_ExecuteAfterVBlank(sub_02010624, &param0->unk_00, 1023);
+            BowtieAngleAnim_Update(&param0->angle, param0->stepCounter, param0->steps);
+            BowtieFade_BuildTable(param0);
+            SysTask_ExecuteAfterVBlank(WindowData_CopyNextToCurrent, &param0->windowData, 1023);
         } else {
-            RequestDisableScreenHBlank(param0->unk_34, param0->unk_00.screen, param0->heapID);
+            RequestDisableScreenHBlank(param0->hblanks, param0->windowData.screen, param0->heapID);
             return 1;
         }
     }
@@ -2828,26 +2971,30 @@ static BOOL sub_02011E04(UnkStruct_02011E04 *param0)
     return 0;
 }
 
-static void sub_02011E5C(UnkStruct_02011E04 *param0)
+static void BowtieFade_Free(BowtieFade *param0)
 {
     return;
 }
 
-static void sub_02011E60(UnkStruct_02011E04 *param0)
+// Builds two windows symmetric about the screen centre: window 0 covers the
+// left region [128 - v4, 128 - v3] and window 1 the right [128 + v3, 128 + v4].
+// The shape is mirrored top-to-bottom, so as the angle grows the two windows
+// shrink to points at the centre.
+static void BowtieFade_BuildTable(BowtieFade *param0)
 {
-    UnkStruct_02010FC0 *v0;
-    UnkStruct_02010FC0 *v1;
+    WindowData *v0;
+    WindowData *v1;
     u16 v2;
     int v3, v4;
     int v5;
 
-    v2 = param0->unk_0C.unk_00;
-    v0 = sub_02010604(&param0->unk_00, 0);
-    v1 = sub_02010604(&param0->unk_00, 1);
+    v2 = param0->angle.current;
+    v0 = WindowData_Get(&param0->windowData, 0);
+    v1 = WindowData_Get(&param0->windowData, 1);
 
     for (v5 = 0; v5 < 96; v5++) {
-        v3 = sub_020100FC(v2, (96 - v5));
-        v4 = sub_020100FC(((90 * 0xffff) / 360) - v2, (96 - v5));
+        v3 = TanIdxMul(v2, (96 - v5));
+        v4 = TanIdxMul(((90 * 0xffff) / 360) - v2, (96 - v5));
 
         if (v3 > 127) {
             v3 = 127;
@@ -2857,60 +3004,61 @@ static void sub_02011E60(UnkStruct_02011E04 *param0)
             v4 = 127;
         }
 
-        v0->unk_300[0][v5] = 128 - v4;
-        v0->unk_300[1][v5] = 128 - v3;
+        v0->next[0][v5] = 128 - v4;
+        v0->next[1][v5] = 128 - v3;
 
-        v0->unk_300[0][191 - v5] = 128 - v4;
-        v0->unk_300[1][191 - v5] = 128 - v3;
+        v0->next[0][191 - v5] = 128 - v4;
+        v0->next[1][191 - v5] = 128 - v3;
 
-        v1->unk_300[0][v5] = 128 + v3;
-        v1->unk_300[1][v5] = 128 + v4;
+        v1->next[0][v5] = 128 + v3;
+        v1->next[1][v5] = 128 + v4;
 
-        v1->unk_300[0][191 - v5] = 128 + v3;
-        v1->unk_300[1][191 - v5] = 128 + v4;
+        v1->next[0][191 - v5] = 128 + v3;
+        v1->next[1][191 - v5] = 128 + v4;
     }
 }
 
-static void sub_02011F2C(UnkStruct_02011F2C *param0, int param1, int param2)
+// Interpolates the angle from `start` over `range` for step param1 of param2.
+static void BowtieAngleAnim_Update(BowtieAngleAnim *param0, int param1, int param2)
 {
-    int v0 = param0->unk_08 * param1;
+    int v0 = param0->range * param1;
     v0 = v0 / param2;
 
-    param0->unk_00 = v0 + param0->unk_04;
+    param0->current = v0 + param0->start;
 }
 
-static void sub_02011F44(ScreenFade *param0, UnkStruct_0200FE6C *param1)
+static void WipeFade_Start(ScreenFade *param0, WipeFadeParams *param1)
 {
-    UnkStruct_020120D4 *v0;
+    WipeFade *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_020120D4));
-    memset(param0->data, 0, sizeof(UnkStruct_020120D4));
+    param0->data = Heap_Alloc(param0->heapID, sizeof(WipeFade));
+    memset(param0->data, 0, sizeof(WipeFade));
 
     v0 = param0->data;
-    sub_02011FE8(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
+    WipeFade_Init(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
 
     param0->state++;
 }
 
-static BOOL sub_02011F88(ScreenFade *param0)
+static BOOL WipeFade_Update(ScreenFade *param0)
 {
-    UnkStruct_020120D4 *v0;
+    WipeFade *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_020120D4 *)param0->data;
+    v0 = (WipeFade *)param0->data;
 
     switch (param0->state) {
     case 1:
-        v1 = sub_020120D4(v0);
+        v1 = WipeFade_Step(v0);
 
         if (v1 == 1) {
-            sub_02010658(v0->unk_324, v0->unk_32C, param0->screen);
+            HardwareWindow_Reset(v0->flag, v0->hwSettings, param0->screen);
             param0->state++;
         }
         break;
     case 2:
-        sub_02012134(v0);
+        WipeFade_Free(v0);
         Heap_Free(param0->data);
         param0->data = NULL;
         param0->state++;
@@ -2927,54 +3075,54 @@ static BOOL sub_02011F88(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02011FE8(UnkStruct_020120D4 *param0, UnkStruct_0200FE6C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
+static void WipeFade_Init(WipeFade *param0, WipeFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
 {
-    sub_02010728(&param0->unk_00, screen, 1, 0, 0);
+    HBlankWindow_Init(&param0->hblankWindow, screen, 1, 0, 0);
 
-    if (param1->unk_06 == 0) {
-        memset(param0->unk_00.unk_00[0].unk_00, 1, sizeof(u8) * 192);
-        memset(param0->unk_00.unk_00[0].unk_C0, 1, sizeof(u8) * 192);
+    if (param1->flag == 0) {
+        memset(param0->hblankWindow.buffers[0].next, 1, sizeof(u8) * 192);
+        memset(param0->hblankWindow.buffers[0].current, 1, sizeof(u8) * 192);
     } else {
-        memset(param0->unk_00.unk_00[0].unk_00, 0, sizeof(u8) * 192);
-        memset(param0->unk_00.unk_00[0].unk_C0, 0, sizeof(u8) * 192);
+        memset(param0->hblankWindow.buffers[0].next, 0, sizeof(u8) * 192);
+        memset(param0->hblankWindow.buffers[0].current, 0, sizeof(u8) * 192);
     }
 
-    param0->unk_30C = param1->unk_00;
-    param0->unk_310 = param1->unk_04;
-    param0->unk_324 = param1->unk_06;
+    param0->wipes = param1->wipes;
+    param0->wipeCount = param1->count;
+    param0->flag = param1->flag;
     param0->heapID = heapID;
-    param0->unk_314 = param2;
-    param0->unk_318 = 0;
-    param0->unk_31C = param3;
-    param0->unk_320 = 0;
-    param0->unk_32C = param5;
-    param0->unk_330 = param6;
+    param0->steps = param2;
+    param0->stepCounter = 0;
+    param0->framesPerStep = param3;
+    param0->frameCounter = 0;
+    param0->hwSettings = param5;
+    param0->hblanks = param6;
 
-    sub_02010784(param6, &param0->unk_00, heapID);
+    HBlankWindow_Enable(param6, &param0->hblankWindow, heapID);
 
-    if (param1->unk_06 == 1) {
-        sub_020106A8(param5, GX_BLEND_PLANEMASK_BD, GX_BLEND_ALL, 0, screen, 0, 0, 0, 0, param1->unk_06);
+    if (param1->flag == 1) {
+        HardwareWindow_Setup(param5, GX_BLEND_PLANEMASK_BD, GX_BLEND_ALL, 0, screen, 0, 0, 0, 0, param1->flag);
     } else {
-        sub_020106A8(param5, GX_BLEND_ALL, GX_BLEND_PLANEMASK_BD, 0, screen, 0, 0, 0, 0, param1->unk_06);
+        HardwareWindow_Setup(param5, GX_BLEND_ALL, GX_BLEND_PLANEMASK_BD, 0, screen, 0, 0, 0, 0, param1->flag);
     }
 
-    sub_02010710(param5, GX_WNDMASK_W0, screen, param0->unk_324);
+    HardwareWindow_SetVisible(param5, GX_WNDMASK_W0, screen, param0->flag);
 }
 
-static BOOL sub_020120D4(UnkStruct_020120D4 *param0)
+static BOOL WipeFade_Step(WipeFade *param0)
 {
-    param0->unk_320++;
+    param0->frameCounter++;
 
-    if (param0->unk_320 >= param0->unk_31C) {
-        param0->unk_320 = 0;
+    if (param0->frameCounter >= param0->framesPerStep) {
+        param0->frameCounter = 0;
 
-        if ((param0->unk_318 + 1) <= param0->unk_314) {
-            param0->unk_318++;
+        if ((param0->stepCounter + 1) <= param0->steps) {
+            param0->stepCounter++;
 
-            sub_02012138(param0);
-            sub_0201076C(&param0->unk_00);
+            WipeFade_BuildTable(param0);
+            HBlankWindow_RequestCopy(&param0->hblankWindow);
         } else {
-            sub_0201079C(param0->unk_330, &param0->unk_00, param0->heapID);
+            HBlankWindow_Disable(param0->hblanks, &param0->hblankWindow, param0->heapID);
             return 1;
         }
     }
@@ -2982,26 +3130,31 @@ static BOOL sub_020120D4(UnkStruct_020120D4 *param0)
     return 0;
 }
 
-static void sub_02012134(UnkStruct_020120D4 *param0)
+static void WipeFade_Free(WipeFade *param0)
 {
     return;
 }
 
-static void sub_02012138(UnkStruct_020120D4 *param0)
+// Draws every wipe of the fade into the buffer for the current step.
+static void WipeFade_BuildTable(WipeFade *param0)
 {
     int v0;
-    UnkStruct_02012174 *v1;
-    const UnkStruct_0200F898 *v2;
+    WipeBuffer *v1;
+    const ScreenFadeWipe *v2;
 
-    v1 = &param0->unk_00.unk_00[0];
+    v1 = &param0->hblankWindow.buffers[0];
 
-    for (v0 = 0; v0 < param0->unk_310; v0++) {
-        v2 = &param0->unk_30C[v0];
-        sub_02012174(v2, v1, param0->unk_318, param0->unk_314);
+    for (v0 = 0; v0 < param0->wipeCount; v0++) {
+        v2 = &param0->wipes[v0];
+        WipeFade_DrawWipe(v2, v1, param0->stepCounter, param0->steps);
     }
 }
 
-static void sub_02012174(const UnkStruct_0200F898 *param0, UnkStruct_02012174 *param1, int param2, int param3)
+// Fills scanlines between `start` and `end` with `fill`, toggling the value at
+// the boundary's current position (start + (end - start) * param2 / param3).
+// When start > end the fill is inverted so the region past the boundary gets
+// the opposite value.
+static void WipeFade_DrawWipe(const ScreenFadeWipe *param0, WipeBuffer *param1, int param2, int param3)
 {
     int v0;
     int v1;
@@ -3010,20 +3163,20 @@ static void sub_02012174(const UnkStruct_0200F898 *param0, UnkStruct_02012174 *p
     int v4;
     int v5;
 
-    v1 = (param0->unk_01 - param0->unk_00) * param2;
+    v1 = (param0->end - param0->start) * param2;
     v2 = v1 / param3;
 
-    v2 += param0->unk_00;
+    v2 += param0->start;
 
-    if (param0->unk_00 <= param0->unk_01) {
-        v3 = param0->unk_00;
-        v4 = param0->unk_01;
-        v5 = param0->unk_02;
+    if (param0->start <= param0->end) {
+        v3 = param0->start;
+        v4 = param0->end;
+        v5 = param0->fill;
     } else {
-        v3 = param0->unk_01;
-        v4 = param0->unk_00;
+        v3 = param0->end;
+        v4 = param0->start;
 
-        if (param0->unk_02 == 0) {
+        if (param0->fill == 0) {
             v5 = 1;
         } else {
             v5 = 0;
@@ -3039,46 +3192,46 @@ static void sub_02012174(const UnkStruct_0200F898 *param0, UnkStruct_02012174 *p
             }
         }
 
-        param1->unk_00[v0] = v5;
+        param1->next[v0] = v5;
     }
 }
 
-static void sub_020121C4(ScreenFade *param0, UnkStruct_0201006C *param1)
+static void ClampFade_Start(ScreenFade *param0, ClampFadeParams *param1)
 {
-    UnkStruct_02012290 *v0;
+    ClampFade *v0;
 
-    param0->data = Heap_Alloc(param0->heapID, sizeof(UnkStruct_02012290));
-    memset(param0->data, 0, sizeof(UnkStruct_02012290));
+    param0->data = Heap_Alloc(param0->heapID, sizeof(ClampFade));
+    memset(param0->data, 0, sizeof(ClampFade));
 
     v0 = param0->data;
 
-    if (param1->unk_00.unk_0B == 0) {
-        sub_02012290(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
+    if (param1->window.flag == 0) {
+        ClampFade_InitOut(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
     } else {
-        sub_02012384(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
+        ClampFade_InitIn(v0, param1, param0->steps, param0->framesPerStep, param0->screen, param0->hwSettings, param0->hblanks, param0->heapID);
     }
 
     param0->state++;
 }
 
-static BOOL sub_02012228(ScreenFade *param0)
+static BOOL ClampFade_Update(ScreenFade *param0)
 {
-    UnkStruct_02012290 *v0;
+    ClampFade *v0;
     BOOL v1;
     BOOL v2 = 0;
 
-    v0 = (UnkStruct_02012290 *)param0->data;
+    v0 = (ClampFade *)param0->data;
 
     switch (param0->state) {
     case 1:
-        if (v0->unk_386 == 0) {
-            v1 = sub_02012310(v0, param0);
+        if (v0->flag == 0) {
+            v1 = ClampFade_StepOut(v0, param0);
         } else {
-            v1 = sub_020123F4(v0, param0);
+            v1 = ClampFade_StepIn(v0, param0);
         }
 
         if (v1 == 1) {
-            sub_02010658(param0->direction, param0->hwSettings, param0->screen);
+            HardwareWindow_Reset(param0->direction, param0->hwSettings, param0->screen);
             param0->state++;
         }
         break;
@@ -3099,46 +3252,49 @@ static BOOL sub_02012228(ScreenFade *param0)
     return v2;
 }
 
-static void sub_02012290(UnkStruct_02012290 *param0, UnkStruct_0201006C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, int param7)
+// Fade-out variant: the window phase runs first (collapsing the content to a
+// thin band), then the wipe phase finishes the fade. `splitRatio` gives the
+// window phase its share of the steps.
+static void ClampFade_InitOut(ClampFade *param0, ClampFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, int param7)
 {
-    int v0 = FX_Mul(param2 * FX32_ONE, param1->unk_14) >> FX32_SHIFT;
+    int v0 = FX_Mul(param2 * FX32_ONE, param1->splitRatio) >> FX32_SHIFT;
 
-    param0->unk_384 = param2 - v0;
-    param0->unk_380 = param1;
-    param0->unk_386 = param1->unk_00.unk_0B;
+    param0->secondPhaseSteps = param2 - v0;
+    param0->params = param1;
+    param0->flag = param1->window.flag;
 
-    sub_02010E48(&param0->unk_00, &param1->unk_00, v0, param3, screen, param5);
+    WindowFade_Init(&param0->windowFade, &param1->window, v0, param3, screen, param5);
 
-    if (param1->unk_00.unk_08 == 0) {
-        sub_02010710(param5, GX_WNDMASK_W0, screen, param1->unk_00.unk_0B);
+    if (param1->window.windowID == 0) {
+        HardwareWindow_SetVisible(param5, GX_WNDMASK_W0, screen, param1->window.flag);
     } else {
-        sub_02010710(param5, GX_WNDMASK_W1, screen, param1->unk_00.unk_0B);
+        HardwareWindow_SetVisible(param5, GX_WNDMASK_W1, screen, param1->window.flag);
     }
 
-    param0->unk_385 = 0;
+    param0->phase = 0;
 }
 
-static BOOL sub_02012310(UnkStruct_02012290 *param0, ScreenFade *param1)
+static BOOL ClampFade_StepOut(ClampFade *param0, ScreenFade *param1)
 {
     BOOL v0;
     BOOL v1 = 0;
 
-    switch (param0->unk_385) {
+    switch (param0->phase) {
     case 0:
-        v0 = sub_02010EA4(&param0->unk_00);
+        v0 = WindowFade_Step(&param0->windowFade);
 
         if (v0 == 1) {
-            param0->unk_385++;
+            param0->phase++;
 
-            sub_02011FE8(&param0->unk_4C, &param0->unk_380->unk_0C, param0->unk_384, param1->framesPerStep, param1->screen, param1->hwSettings, param1->hblanks, param1->heapID);
+            WipeFade_Init(&param0->wipeFade, &param0->params->wipe, param0->secondPhaseSteps, param1->framesPerStep, param1->screen, param1->hwSettings, param1->hblanks, param1->heapID);
         }
         break;
     case 1:
-        v0 = sub_020120D4(&param0->unk_4C);
+        v0 = WipeFade_Step(&param0->wipeFade);
 
         if (v0 == 1) {
             v1 = 1;
-            param0->unk_385++;
+            param0->phase++;
         }
         break;
     case 2:
@@ -3149,48 +3305,50 @@ static BOOL sub_02012310(UnkStruct_02012290 *param0, ScreenFade *param1)
     return v1;
 }
 
-static void sub_02012384(UnkStruct_02012290 *param0, UnkStruct_0201006C *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
+// Fade-in variant: the wipe phase runs first, then the window phase opens the
+// content back up. `splitRatio` gives the wipe phase its share of the steps.
+static void ClampFade_InitIn(ClampFade *param0, ClampFadeParams *param1, int param2, int param3, enum DSScreen screen, HardwareWindowSettings *param5, ScreenFadeHBlanks *param6, enum HeapID heapID)
 {
     int v0;
 
-    param0->unk_384 = FX_Mul(param2 * FX32_ONE, param1->unk_14) >> FX32_SHIFT;
+    param0->secondPhaseSteps = FX_Mul(param2 * FX32_ONE, param1->splitRatio) >> FX32_SHIFT;
 
-    v0 = param2 - param0->unk_384;
+    v0 = param2 - param0->secondPhaseSteps;
 
-    param0->unk_380 = param1;
-    param0->unk_386 = param1->unk_00.unk_0B;
+    param0->params = param1;
+    param0->flag = param1->window.flag;
 
-    sub_02011FE8(&param0->unk_4C, &param0->unk_380->unk_0C, v0, param3, screen, param5, param6, heapID);
+    WipeFade_Init(&param0->wipeFade, &param0->params->wipe, v0, param3, screen, param5, param6, heapID);
 
-    param0->unk_385 = 0;
+    param0->phase = 0;
 }
 
-static BOOL sub_020123F4(UnkStruct_02012290 *param0, ScreenFade *param1)
+static BOOL ClampFade_StepIn(ClampFade *param0, ScreenFade *param1)
 {
     BOOL v0;
     BOOL v1 = 0;
 
-    switch (param0->unk_385) {
+    switch (param0->phase) {
     case 0:
-        v0 = sub_020120D4(&param0->unk_4C);
+        v0 = WipeFade_Step(&param0->wipeFade);
 
         if (v0 == 1) {
-            param0->unk_385++;
-            sub_02010E48(&param0->unk_00, &param0->unk_380->unk_00, param0->unk_384, param1->framesPerStep, param1->screen, param1->hwSettings);
+            param0->phase++;
+            WindowFade_Init(&param0->windowFade, &param0->params->window, param0->secondPhaseSteps, param1->framesPerStep, param1->screen, param1->hwSettings);
 
-            if (param0->unk_380->unk_00.unk_08 == 0) {
-                sub_02010710(param1->hwSettings, GX_WNDMASK_W0, param1->screen, param0->unk_380->unk_00.unk_0B);
+            if (param0->params->window.windowID == 0) {
+                HardwareWindow_SetVisible(param1->hwSettings, GX_WNDMASK_W0, param1->screen, param0->params->window.flag);
             } else {
-                sub_02010710(param1->hwSettings, GX_WNDMASK_W1, param1->screen, param0->unk_380->unk_00.unk_0B);
+                HardwareWindow_SetVisible(param1->hwSettings, GX_WNDMASK_W1, param1->screen, param0->params->window.flag);
             }
         }
         break;
     case 1:
-        v0 = sub_02010EA4(&param0->unk_00);
+        v0 = WindowFade_Step(&param0->windowFade);
 
         if (v0 == 1) {
             v1 = 1;
-            param0->unk_385++;
+            param0->phase++;
         }
         break;
     case 2:

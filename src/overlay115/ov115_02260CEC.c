@@ -46,7 +46,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "trainer_info.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202419C.h"
 #include "unk_020363E8.h"
 #include "vram_transfer.h"
@@ -245,7 +245,7 @@ typedef struct {
     Sprite *unk_34;
     Window unk_38;
     FontOAM *unk_48;
-    UnkStruct_02012B20 *unk_4C;
+    FontOAMWindow *unk_4C;
     CharTransferAllocation unk_50;
     String *unk_5C;
     SpriteResource *unk_60;
@@ -278,7 +278,7 @@ typedef struct {
     SpriteResourceCollection *unk_1AC[4];
     SpriteResourcesHeader unk_1BC;
     SpriteResource *unk_1E0[4];
-    UnkStruct_02012744 *unk_1F0;
+    FontOAMManager *unk_1F0;
     Camera *camera;
     VecFx32 unk_1F8;
     UnkStruct_ov115_02264FA0 unk_204;
@@ -3166,14 +3166,14 @@ static void ov115_02263990(UnkStruct_ov115_02261ADC *param0, u32 heapID)
         param0->unk_1AC[v0] = SpriteResourceCollection_New(16, v0, heapID);
     }
 
-    param0->unk_1F0 = sub_02012744(8, heapID);
+    param0->unk_1F0 = FontOAMManager_New(8, heapID);
 }
 
 static void ov115_02263A3C(UnkStruct_ov115_02261ADC *param0)
 {
     int v0;
 
-    sub_020127BC(param0->unk_1F0);
+    FontOAMManager_Free(param0->unk_1F0);
     SpriteList_Delete(param0->unk_1C);
 
     for (v0 = 0; v0 < 4; v0++) {
@@ -4400,9 +4400,9 @@ static void ov115_02265478(UnkStruct_ov115_02265788 *param0, UnkStruct_ov115_022
 
         param0->unk_5C = String_Init(16, heapID);
         Window_AddToTopLeftCorner(param1->unk_00, &param0->unk_38, 3, 2, 0, 0);
-        param0->unk_4C = sub_02012B20(&param0->unk_38, heapID);
+        param0->unk_4C = FontOAMWindow_New(&param0->unk_38, heapID);
 
-        v2 = sub_02012B58(param0->unk_4C, NNS_G2D_VRAM_TYPE_2DMAIN);
+        v2 = FontOAMWindow_GetSize(param0->unk_4C, NNS_G2D_VRAM_TYPE_2DMAIN);
         v3 = CharTransfer_AllocRange(v2, 1, NNS_G2D_VRAM_TYPE_2DMAIN, &param0->unk_50);
         GF_ASSERT(v3 == 1);
 
@@ -4425,9 +4425,9 @@ static void ov115_02265478(UnkStruct_ov115_02265788 *param0, UnkStruct_ov115_022
         v4.unk_28 = NNS_G2D_VRAM_TYPE_2DMAIN;
         v4.heapID = heapID;
 
-        param0->unk_48 = sub_02012B60(&v4, param0->unk_4C);
+        param0->unk_48 = FontOAM_NewFromWindow(&v4, param0->unk_4C);
 
-        sub_020129D0(param0->unk_48, 0);
+        FontOAM_SetDrawFlag(param0->unk_48, 0);
         Window_Remove(&param0->unk_38);
     }
 
@@ -4441,11 +4441,11 @@ static void ov115_02265478(UnkStruct_ov115_02265788 *param0, UnkStruct_ov115_022
 static void ov115_02265688(UnkStruct_ov115_02265788 *param0, UnkStruct_ov115_02261ADC *param1)
 {
     {
-        sub_02012BD8(param0->unk_48);
+        FontOAM_Delete(param0->unk_48);
         SpriteTransfer_ResetPlttTransfer(param0->unk_60);
         SpriteResourceCollection_Remove(param1->unk_1AC[1], param0->unk_60);
         CharTransfer_ClearRange(&param0->unk_50);
-        sub_02012B48(param0->unk_4C);
+        FontOAMWindow_Free(param0->unk_4C);
         String_Free(param0->unk_5C);
     }
 
@@ -4467,11 +4467,11 @@ static void ov115_02265700(UnkStruct_ov115_02265788 *param0, UnkStruct_ov115_022
         String_FormatInt(param0->unk_5C, param2, 2, 2, 1);
         Window_AddToTopLeftCorner(param1->unk_00, &param0->unk_38, 3, 2, 0, 0);
         Text_AddPrinterWithParamsAndColor(&param0->unk_38, FONT_SYSTEM, param0->unk_5C, 0, 0, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(15, 14, 0), NULL);
-        sub_02012BE0(param0->unk_48, param0->unk_4C, &param0->unk_38, param0->heapID);
+        FontOAMWindow_UploadToVRAM(param0->unk_48, param0->unk_4C, &param0->unk_38, param0->heapID);
         Window_Remove(&param0->unk_38);
     }
 
-    sub_020129D0(param0->unk_48, 1);
+    FontOAM_SetDrawFlag(param0->unk_48, 1);
     Sprite_SetDrawFlag(param0->unk_34, TRUE);
 
     param0->unk_98 = 1;
@@ -4496,7 +4496,7 @@ static void ov115_022657A8(UnkStruct_ov115_02265788 *param0, UnkStruct_ov115_022
             String_FormatInt(param0->unk_5C, param2, 2, 2, 1);
             Window_AddToTopLeftCorner(param1->unk_00, &param0->unk_38, 3, 2, 0, 0);
             Text_AddPrinterWithParamsAndColor(&param0->unk_38, FONT_SYSTEM, param0->unk_5C, 0, 0, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(15, 14, 0), NULL);
-            sub_02012BE0(param0->unk_48, param0->unk_4C, &param0->unk_38, param0->heapID);
+            FontOAMWindow_UploadToVRAM(param0->unk_48, param0->unk_4C, &param0->unk_38, param0->heapID);
             Window_Remove(&param0->unk_38);
         }
 
@@ -4528,7 +4528,7 @@ static void ov115_02265820(UnkStruct_ov115_02265788 *param0)
             param0->unk_94--;
         } else {
             param0->unk_98 = 0;
-            sub_020129D0(param0->unk_48, 0);
+            FontOAM_SetDrawFlag(param0->unk_48, 0);
             Sprite_SetDrawFlag(param0->unk_34, FALSE);
         }
         break;
@@ -4552,7 +4552,7 @@ static void ov115_02265820(UnkStruct_ov115_02265788 *param0)
         v0.y = param0->unk_7C.unk_00;
 
         Sprite_SetPosition(param0->unk_34, &v0);
-        sub_02012938(param0->unk_48);
+        FontOAM_UpdatePosition(param0->unk_48);
     }
 }
 

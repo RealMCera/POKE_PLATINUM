@@ -28,7 +28,7 @@
 #include "system.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/pokedex/zukan.naix"
@@ -343,13 +343,13 @@ static BOOL FormSubGraphicsExit(void *graphics, PokedexGraphicsManager *graphics
 static void SetSpriteOAMModesXLU(FormSubGraphics *formSubGraphics)
 {
     Sprite_SetExplicitOAMMode(formSubGraphics->buttonSprite, GX_OAM_MODE_XLU);
-    sub_02012AF0(formSubGraphics->buttonText->fontOAM, GX_OAM_MODE_XLU);
+    FontOAM_SetExplicitOAMMode(formSubGraphics->buttonText->fontOAM, GX_OAM_MODE_XLU);
 }
 
 static void SetSpriteOAMModesNormal(FormSubGraphics *formSubGraphics)
 {
     Sprite_SetExplicitOAMMode(formSubGraphics->buttonSprite, GX_OAM_MODE_NORMAL);
-    sub_02012AF0(formSubGraphics->buttonText->fontOAM, GX_OAM_MODE_NORMAL);
+    FontOAM_SetExplicitOAMMode(formSubGraphics->buttonText->fontOAM, GX_OAM_MODE_NORMAL);
 }
 
 static void InitBlendTransition(FormSubGraphics *formSubGraphics, PokedexGraphicData **param1, const FormSubData *formSubData, BOOL isEntering)
@@ -564,7 +564,7 @@ static void LoadButtonText(FormSubGraphics *formSubGraphics, PokedexGraphicData 
 
     formSubGraphics->buttonText = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(formSubGraphics->buttonText->fontOAM, plttOffset + 4);
+    FontOAM_SetExplicitPalette(formSubGraphics->buttonText->fontOAM, plttOffset + 4);
     PokedexTextManager_FreeWindow(window);
 }
 
@@ -623,9 +623,9 @@ static void UpdateButtonText(Sprite *sprite, PokedexTextData *textData, int y, i
     PokedexMain_SetButtonY(sprite, textData, y);
 
     if ((int)Sprite_GetAnimFrame(sprite) < 2) {
-        sub_02012AC0(textData->fontOAM, textPaletteOffsetUnpressed);
+        FontOAM_SetExplicitPaletteOffsetAutoAdjust(textData->fontOAM, textPaletteOffsetUnpressed);
     } else {
-        sub_02012AC0(textData->fontOAM, textPaletteOffsetPressed);
+        FontOAM_SetExplicitPaletteOffsetAutoAdjust(textData->fontOAM, textPaletteOffsetPressed);
     }
 }
 

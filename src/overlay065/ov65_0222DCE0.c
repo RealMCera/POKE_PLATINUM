@@ -77,7 +77,7 @@
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
 #include "trainer_info.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_02030CE8.h"
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
@@ -852,7 +852,7 @@ static void ov65_0222E47C(UnkStruct_ov65_0222EBE0 *param0)
     }
 
     ov65_0222E99C(&param0->unk_BD0);
-    sub_020127BC(param0->unk_32C);
+    FontOAMManager_Free(param0->unk_32C);
 
     for (v0 = 0; v0 < 4; v0++) {
         SpriteResourceCollection_Delete(param0->unk_31C[v0]);
@@ -1489,7 +1489,7 @@ static void ov65_0222EE18(UnkStruct_ov65_0222EBE0 *param0, NARC *param1)
         param0->unk_31C[v0] = SpriteResourceCollection_New(1, v0, HEAP_ID_54);
     }
 
-    param0->unk_32C = sub_02012744(1, HEAP_ID_54);
+    param0->unk_32C = FontOAMManager_New(1, HEAP_ID_54);
 }
 
 static void ov65_0222EE8C(UnkStruct_ov65_0222EBE0 *param0)
@@ -5852,7 +5852,7 @@ static void ov65_02234A68(UnkStruct_ov65_0222EBE0 *param0, NARC *param1, enum He
     SpriteResourcesHeader v2;
     Window v3;
     String *v4;
-    UnkStruct_02012B20 *v5;
+    FontOAMWindow *v5;
     int v6;
     UnkStruct_020127E8 v7;
     u32 v8;
@@ -5924,8 +5924,8 @@ static void ov65_02234A68(UnkStruct_ov65_0222EBE0 *param0, NARC *param1, enum He
 
     String_Free(v4);
 
-    v5 = sub_02012B20(&v3, heapID);
-    v6 = sub_02012B58(v5, NNS_G2D_VRAM_TYPE_2DSUB);
+    v5 = FontOAMWindow_New(&v3, heapID);
+    v6 = FontOAMWindow_GetSize(v5, NNS_G2D_VRAM_TYPE_2DSUB);
     v0 = CharTransfer_AllocRange(v6, 1, NNS_G2D_VRAM_TYPE_2DSUB, &param0->unk_BE0.unk_228);
 
     GF_ASSERT(v0);
@@ -5943,9 +5943,9 @@ static void ov65_02234A68(UnkStruct_ov65_0222EBE0 *param0, NARC *param1, enum He
     v7.unk_28 = NNS_G2D_VRAM_TYPE_2DSUB;
     v7.heapID = heapID;
 
-    param0->unk_BE0.unk_234 = sub_02012B60(&v7, v5);
+    param0->unk_BE0.unk_234 = FontOAM_NewFromWindow(&v7, v5);
 
-    sub_02012B48(v5);
+    FontOAMWindow_Free(v5);
     Window_Remove(&v3);
     Font_Free(FONT_SUBSCREEN);
 
@@ -5957,7 +5957,7 @@ static void ov65_02234CFC(UnkStruct_ov65_0222EBE0 *param0)
     int v0;
 
     TouchScreenActions_Free(param0->unk_BE0.unk_244);
-    sub_02012BD8(param0->unk_BE0.unk_234);
+    FontOAM_Delete(param0->unk_BE0.unk_234);
     CharTransfer_ClearRange(&param0->unk_BE0.unk_228);
 
     for (v0 = 0; v0 < 3; v0++) {
@@ -5989,7 +5989,7 @@ static void ov65_02234DA0(UnkStruct_ov65_0222EBE0 *param0)
 {
     if (param0->unk_BE0.unk_238 == 2) {
         Sprite_SetDrawFlag(param0->unk_BE0.unk_21C[1], TRUE);
-        sub_020129D0(param0->unk_BE0.unk_234, 1);
+        FontOAM_SetDrawFlag(param0->unk_BE0.unk_234, 1);
     }
 
     param0->unk_BE0.unk_238 = 0;

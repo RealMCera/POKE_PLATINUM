@@ -13,7 +13,7 @@ typedef struct {
     UnkStruct_ov22_02259C58 unk_00[4];
     UnkStruct_ov22_0225A154 unk_40;
     BOOL unk_60;
-    UnkStruct_02012744 *unk_64;
+    FontOAMManager *unk_64;
     TouchScreenActions *unk_68;
     TouchScreenHitTable unk_6C[5];
 } UnkStruct_ov22_02259D2C;

@@ -30,9 +30,9 @@
 #include "system.h"
 #include "touch_pad.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202419C.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "unk_0208B284.h"
 #include "unk_0208BA78.h"
 #include "unk_0208C010.h"
@@ -123,7 +123,7 @@ void ov62_0222F2C0(UnkStruct_0208C06C *param0)
     }
 
     {
-        param0->unk_14.unk_3C = sub_02012744((5 * 2) + 10, HEAP_ID_102);
+        param0->unk_14.unk_3C = FontOAMManager_New((5 * 2) + 10, HEAP_ID_102);
         param0->unk_14.unk_34 = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_UNK_0010, HEAP_ID_102);
         param0->unk_14.unk_38 = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_UNK_0020, HEAP_ID_102);
     }
@@ -193,7 +193,7 @@ void ov62_0222F514(UnkStruct_0208C06C *param0)
     }
 
     {
-        sub_020127BC(param0->unk_14.unk_3C);
+        FontOAMManager_Free(param0->unk_14.unk_3C);
         MessageLoader_Free(param0->unk_14.unk_34);
         MessageLoader_Free(param0->unk_14.unk_38);
     }

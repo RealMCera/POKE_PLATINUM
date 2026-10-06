@@ -22,7 +22,7 @@
 #include "system.h"
 #include "touch_pad.h"
 #include "touch_screen_actions.h"
-#include "unk_02089604.h"
+#include "number_entry_screen.h"
 #include "unk_0208A3F4.h"
 #include "vram_transfer.h"
 
@@ -43,13 +43,13 @@ const ApplicationManagerTemplate Unk_020F2DBC = {
 
 static int sub_020890F4(ApplicationManager *appMan, int *param1)
 {
-    UnkStruct_02089688 *v0;
+    NumberEntryScreen *v0;
 
     Heap_Create(HEAP_ID_APPLICATION, HEAP_ID_101, 0x40000);
 
-    v0 = ApplicationManager_NewData(appMan, sizeof(UnkStruct_02089688), HEAP_ID_101);
-    memset(v0, 0, sizeof(UnkStruct_02089688));
-    v0->unk_3B8 = *((UnkStruct_02089438 *)ApplicationManager_Args(appMan));
+    v0 = ApplicationManager_NewData(appMan, sizeof(NumberEntryScreen), HEAP_ID_101);
+    memset(v0, 0, sizeof(NumberEntryScreen));
+    v0->args = *((UnkStruct_02089438 *)ApplicationManager_Args(appMan));
 
     SetVBlankCallback(NULL, NULL);
     DisableHBlank();
@@ -59,26 +59,26 @@ static int sub_020890F4(ApplicationManager *appMan, int *param1)
     GX_SetVisiblePlane(0);
     GXS_SetVisiblePlane(0);
 
-    v0->unk_2EC.unk_00 = NARC_ctor(NARC_INDEX_ARC__CODEIN_GRA, HEAP_ID_101);
-    v0->unk_2EC.unk_0C = BgConfig_New(HEAP_ID_101);
-    v0->unk_2EC.unk_10 = PaletteData_New(HEAP_ID_101);
+    v0->graphics.narc = NARC_ctor(NARC_INDEX_ARC__CODEIN_GRA, HEAP_ID_101);
+    v0->graphics.bgConfig = BgConfig_New(HEAP_ID_101);
+    v0->graphics.paletteData = PaletteData_New(HEAP_ID_101);
 
-    PaletteData_SetAutoTransparent(v0->unk_2EC.unk_10, TRUE);
-    PaletteData_AllocBuffer(v0->unk_2EC.unk_10, PLTTBUF_MAIN_BG, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
-    PaletteData_AllocBuffer(v0->unk_2EC.unk_10, PLTTBUF_SUB_BG, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
-    PaletteData_AllocBuffer(v0->unk_2EC.unk_10, PLTTBUF_MAIN_OBJ, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
-    PaletteData_AllocBuffer(v0->unk_2EC.unk_10, PLTTBUF_SUB_OBJ, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
-    sub_0208945C(v0->unk_2EC.unk_0C);
+    PaletteData_SetAutoTransparent(v0->graphics.paletteData, TRUE);
+    PaletteData_AllocBuffer(v0->graphics.paletteData, PLTTBUF_MAIN_BG, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
+    PaletteData_AllocBuffer(v0->graphics.paletteData, PLTTBUF_SUB_BG, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
+    PaletteData_AllocBuffer(v0->graphics.paletteData, PLTTBUF_MAIN_OBJ, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
+    PaletteData_AllocBuffer(v0->graphics.paletteData, PLTTBUF_SUB_OBJ, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
+    sub_0208945C(v0->graphics.bgConfig);
     sub_0208A3F4(v0);
-    sub_02089688(v0);
+    NumberEntry_InitLayout(v0);
 
     {
         EnableTouchPad();
         InitializeTouchPad(4);
-        sub_0208A0B8(v0);
+        NumberEntry_InitTouchScreen(v0);
     }
 
-    if (v0->unk_3B8.unk_30 != 0) {
+    if (v0->args.unk_30 != 0) {
         NetworkIcon_Init();
         NetworkIcon_CreateOnSubScreen(1, HEAP_ID_101);
     }
@@ -94,10 +94,10 @@ static int sub_020890F4(ApplicationManager *appMan, int *param1)
 static int sub_0208924C(ApplicationManager *appMan, int *param1)
 {
     BOOL v0;
-    UnkStruct_02089688 *v1 = ApplicationManager_Data(appMan);
-    v0 = sub_02089BEC(v1);
+    NumberEntryScreen *v1 = ApplicationManager_Data(appMan);
+    v0 = NumberEntry_Update(v1);
 
-    if (v1->unk_3B8.unk_30 != 0) {
+    if (v1->args.unk_30 != 0) {
         NetworkIcon_SetStrength(WM_LINK_LEVEL_3 - DWC_GetLinkLevel());
     }
 
@@ -106,9 +106,9 @@ static int sub_0208924C(ApplicationManager *appMan, int *param1)
 
 static int sub_0208927C(ApplicationManager *appMan, int *param1)
 {
-    UnkStruct_02089688 *v0 = ApplicationManager_Data(appMan);
+    NumberEntryScreen *v0 = ApplicationManager_Data(appMan);
 
-    if (v0->unk_3B8.unk_30 != 0) {
+    if (v0->args.unk_30 != 0) {
         NetworkIcon_Destroy();
     }
 
@@ -121,29 +121,29 @@ static int sub_0208927C(ApplicationManager *appMan, int *param1)
     GXLayers_EngineBToggleLayers(GX_PLANEMASK_BG1, 0);
     GXLayers_EngineBToggleLayers(GX_PLANEMASK_BG2, 0);
     GXLayers_EngineBToggleLayers(GX_PLANEMASK_BG3, 0);
-    Bg_FreeTilemapBuffer(v0->unk_2EC.unk_0C, 1);
-    Bg_FreeTilemapBuffer(v0->unk_2EC.unk_0C, 2);
-    Bg_FreeTilemapBuffer(v0->unk_2EC.unk_0C, 3);
-    Bg_FreeTilemapBuffer(v0->unk_2EC.unk_0C, 4);
-    Bg_FreeTilemapBuffer(v0->unk_2EC.unk_0C, 5);
-    Bg_FreeTilemapBuffer(v0->unk_2EC.unk_0C, 6);
-    Bg_FreeTilemapBuffer(v0->unk_2EC.unk_0C, 7);
-    Heap_Free(v0->unk_2EC.unk_0C);
-    PaletteData_FreeBuffer(v0->unk_2EC.unk_10, PLTTBUF_MAIN_BG);
-    PaletteData_FreeBuffer(v0->unk_2EC.unk_10, PLTTBUF_SUB_BG);
-    PaletteData_FreeBuffer(v0->unk_2EC.unk_10, PLTTBUF_MAIN_OBJ);
-    PaletteData_FreeBuffer(v0->unk_2EC.unk_10, PLTTBUF_SUB_OBJ);
-    PaletteData_Free(v0->unk_2EC.unk_10);
-    NARC_dtor(v0->unk_2EC.unk_00);
+    Bg_FreeTilemapBuffer(v0->graphics.bgConfig, 1);
+    Bg_FreeTilemapBuffer(v0->graphics.bgConfig, 2);
+    Bg_FreeTilemapBuffer(v0->graphics.bgConfig, 3);
+    Bg_FreeTilemapBuffer(v0->graphics.bgConfig, 4);
+    Bg_FreeTilemapBuffer(v0->graphics.bgConfig, 5);
+    Bg_FreeTilemapBuffer(v0->graphics.bgConfig, 6);
+    Bg_FreeTilemapBuffer(v0->graphics.bgConfig, 7);
+    Heap_Free(v0->graphics.bgConfig);
+    PaletteData_FreeBuffer(v0->graphics.paletteData, PLTTBUF_MAIN_BG);
+    PaletteData_FreeBuffer(v0->graphics.paletteData, PLTTBUF_SUB_BG);
+    PaletteData_FreeBuffer(v0->graphics.paletteData, PLTTBUF_MAIN_OBJ);
+    PaletteData_FreeBuffer(v0->graphics.paletteData, PLTTBUF_SUB_OBJ);
+    PaletteData_Free(v0->graphics.paletteData);
+    NARC_dtor(v0->graphics.narc);
 
     {
         u32 v1;
         v1 = DisableTouchPad();
     }
 
-    SpriteSystem_FreeResourcesAndManager(v0->unk_2EC.unk_04, v0->unk_2EC.unk_08);
-    SpriteSystem_Free(v0->unk_2EC.unk_04);
-    TouchScreenActions_Free(v0->unk_2EC.unk_14);
+    SpriteSystem_FreeResourcesAndManager(v0->graphics.spriteSystem, v0->graphics.spriteManager);
+    SpriteSystem_Free(v0->graphics.spriteSystem);
+    TouchScreenActions_Free(v0->graphics.touchScreenActions);
     ApplicationManager_FreeData(appMan);
     Heap_Destroy(HEAP_ID_101);
 
@@ -340,12 +340,12 @@ static void sub_0208945C(BgConfig *param0)
 
 static void sub_020895CC(void *param0)
 {
-    UnkStruct_02089688 *v0 = param0;
+    NumberEntryScreen *v0 = param0;
 
     VramTransfer_Process();
     SpriteSystem_TransferOam();
-    PaletteData_CommitFadedBuffers(v0->unk_2EC.unk_10);
-    Bg_RunScheduledUpdates(v0->unk_2EC.unk_0C);
+    PaletteData_CommitFadedBuffers(v0->graphics.paletteData);
+    Bg_RunScheduledUpdates(v0->graphics.bgConfig);
 
     OS_SetIrqCheckFlag(OS_IE_V_BLANK);
 }

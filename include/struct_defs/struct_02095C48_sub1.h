@@ -17,7 +17,7 @@ typedef struct {
     UnkStruct_ov6_02248BE8 unk_10[CONTEST_NUM_PARTICIPANTS];
     UnkStruct_020954F0 unk_C0[CONTEST_NUM_JUDGES];
     String *trainerNames[CONTEST_NUM_PARTICIPANTS];
-    UnkStruct_02029C88 *unk_E8[CONTEST_NUM_PARTICIPANTS];
+    ContestPhoto *unk_E8[CONTEST_NUM_PARTICIPANTS];
     u8 trainerGenders[CONTEST_NUM_PARTICIPANTS];
     u8 unk_FC[CONTEST_NUM_PARTICIPANTS];
     u8 monContestFame[CONTEST_NUM_PARTICIPANTS];

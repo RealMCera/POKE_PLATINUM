@@ -15,7 +15,7 @@
 #include "communication_system.h"
 #include "contest.h"
 #include "heap.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "unk_02032798.h"
 
 static void sub_02095B2C(int param0, int param1, void *param2, void *param3);
@@ -82,7 +82,7 @@ static void sub_02095B30(int param0, int param1, void *param2, void *param3)
     int v2;
     u8 *v3;
 
-    v1 = sub_02029C64();
+    v1 = ContestPhoto_Size();
     v3 = param2;
     v2 = v3[v1];
 
@@ -91,13 +91,13 @@ static void sub_02095B30(int param0, int param1, void *param2, void *param3)
     v0->unk_568++;
 }
 
-BOOL sub_02095B5C(Contest *param0, int param1, const UnkStruct_02029C88 *param2)
+BOOL sub_02095B5C(Contest *param0, int param1, const ContestPhoto *param2)
 {
     u8 *v0;
     int v1;
     int v2;
 
-    v1 = sub_02029C64();
+    v1 = ContestPhoto_Size();
     v0 = Heap_Alloc(HEAP_ID_20, v1 + 1);
     MI_CpuCopy8(param2, v0, v1);
     v0[v1] = param1;
@@ -119,7 +119,7 @@ static void sub_02095B9C(int param0, int param1, void *param2, void *param3)
     u8 *v3;
     int v4;
 
-    v1 = sub_02029C64();
+    v1 = ContestPhoto_Size();
     v2 = v1 * 4;
     v3 = param2;
 
@@ -132,14 +132,14 @@ static void sub_02095B9C(int param0, int param1, void *param2, void *param3)
     v0->unk_568++;
 }
 
-BOOL sub_02095BEC(Contest *param0, UnkStruct_02029C88 **param1)
+BOOL sub_02095BEC(Contest *param0, ContestPhoto **param1)
 {
     u8 *v0;
     int v1, v2;
     int v3;
     int v4;
 
-    v1 = sub_02029C64();
+    v1 = ContestPhoto_Size();
     v2 = v1 * 4;
 
     GF_ASSERT(v2 < 1024);

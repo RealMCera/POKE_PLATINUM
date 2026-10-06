@@ -49,7 +49,7 @@ Static main
 	Object main.nef.p/src_screen_fade.c.o
 	Object main.nef.p/src_screen_fade_funcs.c.o
 	Object main.nef.p/src_hardware_window.c.o
-	Object main.nef.p/src_unk_02012744.c.o
+	Object main.nef.p/src_font_oam.c.o
 	Object main.nef.p/src_character_sprite.c.o
 	Object main.nef.p/src_rtc.c.o
 	Object main.nef.p/src_string_list.c.o
@@ -119,7 +119,7 @@ Static main
 	Object main.nef.p/src_pal_pad.c.o
 	Object main.nef.p/src_mail.c.o
 	Object main.nef.p/src_underground.c.o
-	Object main.nef.p/src_unk_020298BC.c.o
+	Object main.nef.p/src_image_clips.c.o
 	Object main.nef.p/src_poffin.c.o
 	Object main.nef.p/src_wifi_list.c.o
 	Object main.nef.p/src_record_mixed_rng.c.o
@@ -310,7 +310,7 @@ Static main
 	Object main.nef.p/src_applications_party_menu_callbacks.c.o
 	Object main.nef.p/src_applications_naming_screen.c.o
 	Object main.nef.p/src_unk_020890F4.c.o
-	Object main.nef.p/src_unk_02089604.c.o
+	Object main.nef.p/src_number_entry_screen.c.o
 	Object main.nef.p/src_unk_0208A3F4.c.o
 	Object main.nef.p/src_unk_0208B284.c.o
 	Object main.nef.p/src_unk_0208BA78.c.o

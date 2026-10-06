@@ -29,7 +29,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_02030A80.h"
 #include "unk_0208C010.h"
 
@@ -461,8 +461,8 @@ void ov62_02230AB8(UnkStruct_0208C06C *param0)
     int v0;
 
     for (v0 = 0; v0 < 5; v0++) {
-        sub_020131E0(param0->unk_534.unk_C8[v0].unk_14, param0->unk_534.unk_C8[v0].unk_00->sprite);
-        sub_020131E0(param0->unk_534.unk_00[v0].unk_14, param0->unk_534.unk_00[v0].unk_00->sprite);
+        FontOAM_SetParentSprite(param0->unk_534.unk_C8[v0].unk_14, param0->unk_534.unk_C8[v0].unk_00->sprite);
+        FontOAM_SetParentSprite(param0->unk_534.unk_00[v0].unk_14, param0->unk_534.unk_00[v0].unk_00->sprite);
     }
 }
 
@@ -478,7 +478,7 @@ void ov62_02230AF0(UnkStruct_0208C06C *param0)
         ManagedSprite_SetAnim(param0->unk_534.unk_00[v0].unk_00, param0->unk_534.unk_190[v0]->unk_0C);
         ov62_02230FC8(param0, &param0->unk_534.unk_00[v0], param0->unk_534.unk_190[v0]->unk_08, param0->unk_534.unk_190[v0]);
         FontOAM_SetXY(param0->unk_534.unk_00[v0].unk_14, 36, -8);
-        sub_020129D0(param0->unk_534.unk_00[v0].unk_14, 1);
+        FontOAM_SetDrawFlag(param0->unk_534.unk_00[v0].unk_14, 1);
         ManagedSprite_SetDrawFlag(param0->unk_534.unk_00[v0].unk_00, 1);
     }
 }
@@ -500,18 +500,18 @@ void ov62_02230B9C(UnkStruct_0208C06C *param0, BOOL param1)
 
     for (v0 = 0; v0 < 5; v0++) {
         if (param0->unk_534.unk_00[v0].unk_0C == 0) {
-            sub_020129D0(param0->unk_534.unk_00[v0].unk_14, 0);
+            FontOAM_SetDrawFlag(param0->unk_534.unk_00[v0].unk_14, 0);
             ManagedSprite_SetDrawFlag(param0->unk_534.unk_00[v0].unk_00, 0);
         } else {
-            sub_020129D0(param0->unk_534.unk_00[v0].unk_14, param1);
+            FontOAM_SetDrawFlag(param0->unk_534.unk_00[v0].unk_14, param1);
             ManagedSprite_SetDrawFlag(param0->unk_534.unk_00[v0].unk_00, param1);
         }
 
         if (param0->unk_534.unk_C8[v0].unk_0C == 0) {
-            sub_020129D0(param0->unk_534.unk_C8[v0].unk_14, 0);
+            FontOAM_SetDrawFlag(param0->unk_534.unk_C8[v0].unk_14, 0);
             ManagedSprite_SetDrawFlag(param0->unk_534.unk_C8[v0].unk_00, 0);
         } else {
-            sub_020129D0(param0->unk_534.unk_C8[v0].unk_14, param1);
+            FontOAM_SetDrawFlag(param0->unk_534.unk_C8[v0].unk_14, param1);
             ManagedSprite_SetDrawFlag(param0->unk_534.unk_C8[v0].unk_00, param1);
         }
     }
@@ -659,8 +659,8 @@ void ov62_02230E80(UnkStruct_0208C06C *param0)
             Window_Init(&v6);
             Window_AddToTopLeftCorner(param0->unk_14.unk_10, &v6, 20, 2, 0, 0);
 
-            v7[v11]->unk_18 = sub_02012B20(&v6, HEAP_ID_102);
-            v4 = sub_02012898(&v6, v8[v11], HEAP_ID_102);
+            v7[v11]->unk_18 = FontOAMWindow_New(&v6, HEAP_ID_102);
+            v4 = FontOAM_GetWindowSize(&v6, v8[v11], HEAP_ID_102);
 
             CharTransfer_AllocRange(v4, 1, v8[v11], &v7[v11]->unk_1C);
             ManagedSprite_GetPositionXY(v7[v11]->unk_00, &v0, &v1);
@@ -677,11 +677,11 @@ void ov62_02230E80(UnkStruct_0208C06C *param0)
             v2.unk_24 = Unk_ov62_022488A8[v11][v10] - 1;
             v2.unk_28 = v8[v11];
             v2.heapID = HEAP_ID_102;
-            v7[v11]->unk_14 = sub_02012B60(&v2, v7[v11]->unk_18);
+            v7[v11]->unk_14 = FontOAM_NewFromWindow(&v2, v7[v11]->unk_18);
 
-            sub_02012AC0(v7[v11]->unk_14, (2 - 1));
+            FontOAM_SetExplicitPaletteOffsetAutoAdjust(v7[v11]->unk_14, (2 - 1));
             Window_Remove(&v6);
-            sub_020129D0(v7[v11]->unk_14, 0);
+            FontOAM_SetDrawFlag(v7[v11]->unk_14, 0);
         }
     }
 }
@@ -736,7 +736,7 @@ void ov62_02230FC8(UnkStruct_0208C06C *param0, UnkStruct_ov62_022307C0_sub1 *par
     Window_Init(&v2);
     Window_AddToTopLeftCorner(param0->unk_14.unk_10, &v2, 20, 2, 0, 0);
     Text_AddPrinterWithParamsAndColor(&v2, FONT_SYSTEM, v0, 0, 0, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(14, 13, 0), NULL);
-    sub_02012BE0(param1->unk_14, param1->unk_18, &v2, HEAP_ID_102);
+    FontOAMWindow_UploadToVRAM(param1->unk_14, param1->unk_18, &v2, HEAP_ID_102);
     String_Free(v0);
     Window_Remove(&v2);
 }
@@ -751,8 +751,8 @@ void ov62_0223113C(UnkStruct_0208C06C *param0)
         v2[1] = &param0->unk_534.unk_00[v0];
 
         for (v1 = 0; v1 < 2; v1++) {
-            sub_02012B48(v2[v1]->unk_18);
-            sub_02012BD8(v2[v1]->unk_14);
+            FontOAMWindow_Free(v2[v1]->unk_18);
+            FontOAM_Delete(v2[v1]->unk_14);
             CharTransfer_ClearRange(&v2[v1]->unk_1C);
         }
     }
@@ -775,8 +775,8 @@ void ov62_0223118C(UnkStruct_ov62_022312B0 *param0, UnkStruct_ov62_0223118C *par
     Window_Init(&v6);
     Window_AddToTopLeftCorner(param1->unk_10, &v6, 20, 2, 0, 0);
 
-    param0->unk_10 = sub_02012B20(&v6, HEAP_ID_102);
-    v4 = sub_02012898(&v6, param2, HEAP_ID_102);
+    param0->unk_10 = FontOAMWindow_New(&v6, HEAP_ID_102);
+    v4 = FontOAM_GetWindowSize(&v6, param2, HEAP_ID_102);
 
     CharTransfer_AllocRange(v4, 1, param2, &param0->unk_14);
     ManagedSprite_GetPositionXY(param0->unk_08, &v0, &v1);
@@ -794,11 +794,11 @@ void ov62_0223118C(UnkStruct_ov62_022312B0 *param0, UnkStruct_ov62_0223118C *par
     v2.unk_28 = param2;
     v2.heapID = HEAP_ID_102;
 
-    param0->unk_0C = sub_02012B60(&v2, param0->unk_10);
+    param0->unk_0C = FontOAM_NewFromWindow(&v2, param0->unk_10);
 
-    sub_02012AC0(param0->unk_0C, (2 - 1));
+    FontOAM_SetExplicitPaletteOffsetAutoAdjust(param0->unk_0C, (2 - 1));
     Window_Remove(&v6);
-    sub_020129D0(param0->unk_0C, 0);
+    FontOAM_SetDrawFlag(param0->unk_0C, 0);
 }
 
 void ov62_0223124C(UnkStruct_ov62_022312B0 *param0, UnkStruct_ov62_0223118C *param1, int param2)
@@ -813,15 +813,15 @@ void ov62_0223124C(UnkStruct_ov62_022312B0 *param0, UnkStruct_ov62_0223118C *par
     Window_Init(&v2);
     Window_AddToTopLeftCorner(param1->unk_10, &v2, 20, 2, 0, 0);
     Text_AddPrinterWithParamsAndColor(&v2, FONT_SYSTEM, v0, 0, 0, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(14, 13, 0), NULL);
-    sub_02012BE0(param0->unk_0C, param0->unk_10, &v2, HEAP_ID_102);
+    FontOAMWindow_UploadToVRAM(param0->unk_0C, param0->unk_10, &v2, HEAP_ID_102);
     String_Free(v0);
     Window_Remove(&v2);
 }
 
 void ov62_022312B0(UnkStruct_ov62_022312B0 *param0)
 {
-    sub_02012B48(param0->unk_10);
-    sub_02012BD8(param0->unk_0C);
+    FontOAMWindow_Free(param0->unk_10);
+    FontOAM_Delete(param0->unk_0C);
     CharTransfer_ClearRange(&param0->unk_14);
 }
 

@@ -33,7 +33,7 @@
 #include "trainer_info.h"
 #include "underground.h"
 #include "unk_02017038.h"
-#include "unk_020298BC.h"
+#include "image_clips.h"
 #include "unk_02054884.h"
 #include "unk_02092494.h"
 #include "vars_flags.h"

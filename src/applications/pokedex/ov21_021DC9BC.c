@@ -27,7 +27,7 @@
 #include "sprite_resource.h"
 #include "sprite_transfer.h"
 #include "sprite_util.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 #include "res/graphics/pokedex/zukan.naix"
 #include "res/text/bank/pokedex.h"
@@ -654,7 +654,7 @@ static void ov21_021DD2E0(PokedexMapDisplay *mapDisplay, UnkStruct_ov21_021DCAE0
 
     mapDisplay->AreaUnknownSpriteManager = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(mapDisplay->AreaUnknownSpriteManager->fontOAM, v4 + 2);
+    FontOAM_SetExplicitPalette(mapDisplay->AreaUnknownSpriteManager->fontOAM, v4 + 2);
     PokedexTextManager_FreeWindow(v0);
 
     for (v5 = 0; v5 < 3; v5++) {
@@ -668,7 +668,7 @@ static void ov21_021DD2E0(PokedexMapDisplay *mapDisplay, UnkStruct_ov21_021DCAE0
 
         mapDisplay->unk_E0[v5] = PokedexTextManager_NextTextData(&displayBox);
 
-        sub_02012A60(mapDisplay->unk_E0[v5]->fontOAM, v4 + 2);
+        FontOAM_SetExplicitPalette(mapDisplay->unk_E0[v5]->fontOAM, v4 + 2);
         PokedexTextManager_FreeWindow(v0);
     }
 }
@@ -689,10 +689,10 @@ static void PokedexMapDisplay_OAMMode_XLU(PokedexMapDisplay *mapDisplay)
     int v0;
 
     Sprite_SetExplicitOAMMode(mapDisplay->AreaUnknownCellActor, GX_OAM_MODE_XLU);
-    sub_02012AF0(mapDisplay->AreaUnknownSpriteManager->fontOAM, GX_OAM_MODE_XLU);
+    FontOAM_SetExplicitOAMMode(mapDisplay->AreaUnknownSpriteManager->fontOAM, GX_OAM_MODE_XLU);
 
     for (v0 = 0; v0 < 3; v0++) {
-        sub_02012AF0(mapDisplay->unk_E0[v0]->fontOAM, GX_OAM_MODE_XLU);
+        FontOAM_SetExplicitOAMMode(mapDisplay->unk_E0[v0]->fontOAM, GX_OAM_MODE_XLU);
     }
 }
 
@@ -701,10 +701,10 @@ static void PokedexMapDisplay_OAMMode_Normal(PokedexMapDisplay *mapDisplay)
     int v0;
 
     Sprite_SetExplicitOAMMode(mapDisplay->AreaUnknownCellActor, GX_OAM_MODE_NORMAL);
-    sub_02012AF0(mapDisplay->AreaUnknownSpriteManager->fontOAM, GX_OAM_MODE_NORMAL);
+    FontOAM_SetExplicitOAMMode(mapDisplay->AreaUnknownSpriteManager->fontOAM, GX_OAM_MODE_NORMAL);
 
     for (v0 = 0; v0 < 3; v0++) {
-        sub_02012AF0(mapDisplay->unk_E0[v0]->fontOAM, GX_OAM_MODE_NORMAL);
+        FontOAM_SetExplicitOAMMode(mapDisplay->unk_E0[v0]->fontOAM, GX_OAM_MODE_NORMAL);
     }
 }
 
@@ -1109,10 +1109,10 @@ static void ov21_021DD9E8(PokedexMapDisplay *mapDisplay, const EncounterCollecti
 {
     if ((mapDisplay->numVisibleDungeons <= 0) && (mapDisplay->numVisibleFields <= 0) && (mapDisplay->dungeonsZero <= 0) && (mapDisplay->fieldsZero <= 0)) {
         Sprite_SetDrawFlag(mapDisplay->AreaUnknownCellActor, TRUE);
-        sub_020129D0(mapDisplay->AreaUnknownSpriteManager->fontOAM, 1);
+        FontOAM_SetDrawFlag(mapDisplay->AreaUnknownSpriteManager->fontOAM, 1);
     } else {
         Sprite_SetDrawFlag(mapDisplay->AreaUnknownCellActor, FALSE);
-        sub_020129D0(mapDisplay->AreaUnknownSpriteManager->fontOAM, 0);
+        FontOAM_SetDrawFlag(mapDisplay->AreaUnknownSpriteManager->fontOAM, 0);
     }
 }
 
@@ -1122,9 +1122,9 @@ static void ov21_021DDA48(PokedexMapDisplay *mapDisplay, int param1)
 
     for (v0 = 0; v0 < 3; v0++) {
         if (v0 == param1) {
-            sub_020129D0(mapDisplay->unk_E0[v0]->fontOAM, 1);
+            FontOAM_SetDrawFlag(mapDisplay->unk_E0[v0]->fontOAM, 1);
         } else {
-            sub_020129D0(mapDisplay->unk_E0[v0]->fontOAM, 0);
+            FontOAM_SetDrawFlag(mapDisplay->unk_E0[v0]->fontOAM, 0);
         }
     }
 }

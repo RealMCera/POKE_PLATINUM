@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_02012744_DECL_H
 #define POKEPLATINUM_STRUCT_02012744_DECL_H
 
-typedef struct UnkStruct_02012744_t UnkStruct_02012744;
+typedef struct FontOAMManager FontOAMManager;
 
 #endif // POKEPLATINUM_STRUCT_02012744_DECL_H

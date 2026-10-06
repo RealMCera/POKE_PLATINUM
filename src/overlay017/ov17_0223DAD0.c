@@ -48,7 +48,7 @@
 #include "sys_task_manager.h"
 #include "system.h"
 #include "touch_pad.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_02094EDC.h"
 #include "vram_transfer.h"
 
@@ -282,7 +282,7 @@ int DanceCompetition_Init(ApplicationManager *appMan, int *param1)
     v0->unk_14.danceMessageLoader = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_CONTEST_DANCE_COMPETITION, HEAP_ID_23);
     v0->unk_14.unk_88 = StringTemplate_Default(HEAP_ID_23);
     v0->unk_14.danceMessage = String_Init(2 * 160, HEAP_ID_23);
-    v0->unk_14.unk_94 = sub_02012744(3 * 3, HEAP_ID_23);
+    v0->unk_14.unk_94 = FontOAMManager_New(3 * 3, HEAP_ID_23);
 
     {
         NARC *v1;
@@ -421,7 +421,7 @@ int DanceCompetition_Exit(ApplicationManager *appMan, int *param1)
     ov17_0224A1EC(&v0->unk_14);
 
     PokemonSpriteManager_Free(v0->unk_14.unk_44);
-    sub_020127BC(v0->unk_14.unk_94);
+    FontOAMManager_Free(v0->unk_14.unk_94);
     Font_Free(FONT_SUBSCREEN);
     Heap_Free(v0->unk_1050.unk_00);
     PaletteData_FreeBuffer(v0->unk_14.unk_90, PLTTBUF_MAIN_BG);

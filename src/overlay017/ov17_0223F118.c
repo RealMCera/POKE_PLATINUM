@@ -34,7 +34,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "text.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 FS_EXTERN_OVERLAY(overlay11);
 FS_EXTERN_OVERLAY(battle_anim);
@@ -103,7 +103,7 @@ void ov17_0223F1E0(G3DPipelineBuffers *param0)
     G3DPipelineBuffers_Free(param0);
 }
 
-void ov17_0223F1E8(enum HeapID heapID, BgConfig *param1, SpriteManager *param2, UnkStruct_02012744 *param3, UnkStruct_ov17_0223F2E4 *param4, const String *message, enum Font param6, TextColor param7, int param8, int param9, int param10, int param11, int param12, int param13, int param14)
+void ov17_0223F1E8(enum HeapID heapID, BgConfig *param1, SpriteManager *param2, FontOAMManager *param3, UnkStruct_ov17_0223F2E4 *param4, const String *message, enum Font param6, TextColor param7, int param8, int param9, int param10, int param11, int param12, int param13, int param14)
 {
     UnkStruct_020127E8 v0;
     Window v1;
@@ -128,7 +128,7 @@ void ov17_0223F1E8(enum HeapID heapID, BgConfig *param1, SpriteManager *param2, 
         Text_AddPrinterWithParamsColorAndSpacing(&v1, param6, message, 0, 0, TEXT_SPEED_NO_TRANSFER, param7, v7, 0, NULL);
     }
 
-    v3 = sub_02012898(&v1, NNS_G2D_VRAM_TYPE_2DMAIN, heapID);
+    v3 = FontOAM_GetWindowSize(&v1, NNS_G2D_VRAM_TYPE_2DMAIN, heapID);
     CharTransfer_AllocRange(v3, 1, NNS_G2D_VRAM_TYPE_2DMAIN, &v2);
 
     if (param12 == 1) {
@@ -150,10 +150,10 @@ void ov17_0223F1E8(enum HeapID heapID, BgConfig *param1, SpriteManager *param2, 
     v0.unk_28 = NNS_G2D_VRAM_TYPE_2DMAIN;
     v0.heapID = heapID;
 
-    v4 = sub_020127E8(&v0);
+    v4 = FontOAM_New(&v0);
 
     if (param8 != 0) {
-        sub_02012A90(v4, param8);
+        FontOAM_SetExplicitPaletteOffset(v4, param8);
     }
 
     FontOAM_SetXY(v4, param10, param11);
@@ -166,7 +166,7 @@ void ov17_0223F1E8(enum HeapID heapID, BgConfig *param1, SpriteManager *param2, 
 
 void ov17_0223F2E4(UnkStruct_ov17_0223F2E4 *param0)
 {
-    sub_02012870(param0->unk_00);
+    FontOAM_Free(param0->unk_00);
     CharTransfer_ClearRange(&param0->unk_04);
 }
 

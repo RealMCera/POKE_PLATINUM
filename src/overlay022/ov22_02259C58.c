@@ -32,11 +32,11 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 
 static void ov22_02259D94(UnkStruct_ov22_02259C58 *param0, void *param1);
 static void ov22_0225A0E4(UnkStruct_ov22_02259C58 *param0, int param1, UnkStruct_ov22_0225A0E4 *param2, int param3, int param4, int param5, int param6);
-static void ov22_0225A154(UnkStruct_ov22_0225A154 *param0, int param1, UnkStruct_ov22_0225A0E4 *param2, const UnkStruct_02012744 *param3, const Window *param4, int param5, int param6, int param7, int param8);
+static void ov22_0225A154(UnkStruct_ov22_0225A154 *param0, int param1, UnkStruct_ov22_0225A0E4 *param2, const FontOAMManager *param3, const Window *param4, int param5, int param6, int param7, int param8);
 static void ov22_0225A200(TouchScreenHitTable *hitTable, int param1, int param2, int param3, int param4, int param5);
 static void ov22_0225A218(UnkStruct_ov22_0225A0E4 *param0);
 static void ov22_0225A2A8(UnkStruct_ov22_0225A0E4 *param0);
@@ -86,7 +86,7 @@ void ov22_02259C9C(UnkStruct_ov22_0225A154 *param0, UnkStruct_ov22_02259C9C *par
     v0.unk_28 = param1->unk_00.unk_00->vramType;
     v0.heapID = param1->unk_00.unk_00->heapID;
 
-    param0->unk_10 = sub_020127E8(&v0);
+    param0->unk_10 = FontOAM_New(&v0);
 }
 
 void ov22_02259CE8(UnkStruct_ov22_02259C58 *param0)
@@ -98,7 +98,7 @@ void ov22_02259CE8(UnkStruct_ov22_02259C58 *param0)
 void ov22_02259D00(UnkStruct_ov22_0225A154 *param0)
 {
     ov22_02259CE8(&param0->unk_00);
-    sub_02012870(param0->unk_10);
+    FontOAM_Free(param0->unk_10);
     memset(param0, 0, sizeof(UnkStruct_ov22_0225A154));
 }
 
@@ -166,7 +166,7 @@ void ov22_02259DBC(UnkStruct_ov22_02259D2C *param0, UnkStruct_ov22_0225A0E4 *par
 {
     Window *v0;
 
-    param0->unk_64 = sub_02012744(1, HEAP_ID_13);
+    param0->unk_64 = FontOAMManager_New(1, HEAP_ID_13);
 
     ov22_0225A218(param1);
 
@@ -219,7 +219,7 @@ void ov22_02259F24(UnkStruct_ov22_02259D2C *param0, UnkStruct_ov22_0225A0E4 *par
 
     CharTransfer_ClearRange(&param0->unk_40.unk_14);
     ov22_02259D00(&param0->unk_40);
-    sub_020127BC(param0->unk_64);
+    FontOAMManager_Free(param0->unk_64);
     TouchScreenActions_Free(param0->unk_68);
 
     param0->unk_68 = NULL;
@@ -321,7 +321,7 @@ static void ov22_0225A0E4(UnkStruct_ov22_02259C58 *param0, int param1, UnkStruct
     ov22_02259C58(param0, &v0);
 }
 
-static void ov22_0225A154(UnkStruct_ov22_0225A154 *param0, int param1, UnkStruct_ov22_0225A0E4 *param2, const UnkStruct_02012744 *param3, const Window *param4, int param5, int param6, int param7, int param8)
+static void ov22_0225A154(UnkStruct_ov22_0225A154 *param0, int param1, UnkStruct_ov22_0225A0E4 *param2, const FontOAMManager *param3, const Window *param4, int param5, int param6, int param7, int param8)
 {
     UnkStruct_ov22_02259C9C v0;
     SpriteResourcesHeader v1;
@@ -351,7 +351,7 @@ static void ov22_0225A154(UnkStruct_ov22_0225A154 *param0, int param1, UnkStruct
     v3 = SpriteResourceCollection_Find(param2->unk_48[1], 1);
     v0.unk_18 = SpriteTransfer_GetPaletteProxy(v3, NULL);
 
-    GF_ASSERT(CharTransfer_AllocRange(sub_02012898(param4, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_13), 1, NNS_G2D_VRAM_TYPE_2DMAIN, &param0->unk_14));
+    GF_ASSERT(CharTransfer_AllocRange(FontOAM_GetWindowSize(param4, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_13), 1, NNS_G2D_VRAM_TYPE_2DMAIN, &param0->unk_14));
 
     v0.unk_24 = param0->unk_14.offset;
 
@@ -407,7 +407,7 @@ static void ov22_0225A2F4(UnkStruct_ov22_0225A154 *param0, int param1)
 {
     if (param1 == 0) {
         FontOAM_SetXY(param0->unk_10, 0, 15);
-        sub_02012A60(param0->unk_10, 4);
+        FontOAM_SetExplicitPalette(param0->unk_10, 4);
     } else {
         if (param1 == 1) {
             FontOAM_SetXY(param0->unk_10, 0, 19);
@@ -415,7 +415,7 @@ static void ov22_0225A2F4(UnkStruct_ov22_0225A154 *param0, int param1)
 
         if (param1 == 3) {
             FontOAM_SetXY(param0->unk_10, 0, 19);
-            sub_02012A60(param0->unk_10, 3);
+            FontOAM_SetExplicitPalette(param0->unk_10, 3);
         }
     }
 }
@@ -472,5 +472,5 @@ static void ov22_0225A3DC(UnkStruct_ov22_02259C58 *param0, int param1, int param
 static void ov22_0225A418(UnkStruct_ov22_0225A154 *param0, int param1, int param2)
 {
     ov22_0225A3DC(&param0->unk_00, param1, param2);
-    sub_02012938(param0->unk_10);
+    FontOAM_UpdatePosition(param0->unk_10);
 }

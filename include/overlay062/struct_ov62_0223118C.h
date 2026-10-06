@@ -30,7 +30,7 @@ typedef struct {
     BOOL unk_30;
     MessageLoader *unk_34;
     MessageLoader *unk_38;
-    UnkStruct_02012744 *unk_3C;
+    FontOAMManager *unk_3C;
     int unk_40;
     int unk_44;
     u8 unk_48;

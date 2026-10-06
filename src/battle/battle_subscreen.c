@@ -47,7 +47,7 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "type_icon.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0208C098.h"
 
 #include "res/text/bank/battle_strings.h"
@@ -884,7 +884,7 @@ void *BattleSubscreen_New(NARC *unused1, NARC *unused2, BattleSystem *battleSys,
         GF_ASSERT(FALSE);
     }
 
-    btlSubscreen->fontOAMManager = sub_02012744(13, HEAP_ID_BATTLE);
+    btlSubscreen->fontOAMManager = FontOAMManager_New(13, HEAP_ID_BATTLE);
     btlSubscreen->pulseCursorTask = SysTask_Start(SysTask_PulseCursorHighlight, btlSubscreen, 1310);
 
     NNSG2dScreenData *screenData;
@@ -973,7 +973,7 @@ void BattleSubscreen_Free(BattleSubscreen *btlSubscreen)
     BattleSubscreen_FreeSprites(btlSubscreen);
     BattleSubscreen_FreeGraphics(btlSubscreen);
 
-    sub_020127BC(btlSubscreen->fontOAMManager);
+    FontOAMManager_Free(btlSubscreen->fontOAMManager);
     SysTask_Done(btlSubscreen->pulseCursorTask);
 
     for (int i = 0; i < SNELEMS(btlSubscreen->tilemapBuffers); i++) {
@@ -1531,9 +1531,9 @@ static void BattleSubscreen_DrawFirstBattleMenu(BattleSubscreen *btlSubscreen, i
     Bg_FillTilemapRect(bgConfig, 4, 0x6000 / 0x20 - 1, 0, 0x10, 32, 8, 17);
     Bg_ScheduleTilemapTransfer(bgConfig, 5);
 
-    sub_020129D0(btlSubscreen->fontOAMEntry[1].fontOAM, 0);
-    sub_020129D0(btlSubscreen->fontOAMEntry[2].fontOAM, 0);
-    sub_020129D0(btlSubscreen->fontOAMEntry[3].fontOAM, 0);
+    FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[1].fontOAM, 0);
+    FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[2].fontOAM, 0);
+    FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[3].fontOAM, 0);
 }
 
 static void BattleSubscreen_OpenPalParkMenu(BattleSubscreen *btlSubscreen, int unused1, int unused2)
@@ -1554,8 +1554,8 @@ static void BattleSubscreen_DrawPalParkMenu(BattleSubscreen *btlSubscreen, int u
     Bg_FillTilemapRect(bgConfig, 4, 0x6000 / 0x20 - 1, 0x16, 0x10, 10, 8, 17);
     Bg_ScheduleTilemapTransfer(bgConfig, 5);
 
-    sub_020129D0(btlSubscreen->fontOAMEntry[1].fontOAM, 0);
-    sub_020129D0(btlSubscreen->fontOAMEntry[2].fontOAM, 0);
+    FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[1].fontOAM, 0);
+    FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[2].fontOAM, 0);
 }
 
 static void BattleSubscreen_DrawMoveSelectMenu(BattleSubscreen *btlSubscreen, int unused1, int unused2)
@@ -1601,27 +1601,27 @@ static void BattleSubscreen_DrawMoveSelectMenu(BattleSubscreen *btlSubscreen, in
     BgConfig *bgConfig = BattleSystem_GetBgConfig(btlSubscreen->battleSys);
 
     if (!moveData->moveIDs[0]) {
-        sub_020129D0(btlSubscreen->fontOAMEntry[0].fontOAM, 0);
-        sub_020129D0(btlSubscreen->fontOAMEntry[5].fontOAM, 0);
-        sub_020129D0(btlSubscreen->fontOAMEntry[9].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[0].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[5].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[9].fontOAM, 0);
     }
 
     if (!moveData->moveIDs[1]) {
-        sub_020129D0(btlSubscreen->fontOAMEntry[1].fontOAM, 0);
-        sub_020129D0(btlSubscreen->fontOAMEntry[6].fontOAM, 0);
-        sub_020129D0(btlSubscreen->fontOAMEntry[10].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[1].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[6].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[10].fontOAM, 0);
     }
 
     if (!moveData->moveIDs[2]) {
-        sub_020129D0(btlSubscreen->fontOAMEntry[2].fontOAM, 0);
-        sub_020129D0(btlSubscreen->fontOAMEntry[7].fontOAM, 0);
-        sub_020129D0(btlSubscreen->fontOAMEntry[11].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[2].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[7].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[11].fontOAM, 0);
     }
 
     if (!moveData->moveIDs[3]) {
-        sub_020129D0(btlSubscreen->fontOAMEntry[3].fontOAM, 0);
-        sub_020129D0(btlSubscreen->fontOAMEntry[8].fontOAM, 0);
-        sub_020129D0(btlSubscreen->fontOAMEntry[12].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[3].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[8].fontOAM, 0);
+        FontOAM_SetDrawFlag(btlSubscreen->fontOAMEntry[12].fontOAM, 0);
     }
 }
 
@@ -2222,7 +2222,7 @@ static void BattleSubscreen_NewFontOAM(BattleSubscreen *btlSubscreen, FontOAMEnt
         window = precomputedLayout->window;
     }
 
-    int charTileCount = sub_02012898(&window, NNS_G2D_VRAM_TYPE_2DSUB, HEAP_ID_BATTLE);
+    int charTileCount = FontOAM_GetWindowSize(&window, NNS_G2D_VRAM_TYPE_2DSUB, HEAP_ID_BATTLE);
     CharTransferAllocation allocation;
     CharTransfer_AllocRange(charTileCount, 1, NNS_G2D_VRAM_TYPE_2DSUB, &allocation);
 
@@ -2245,9 +2245,9 @@ static void BattleSubscreen_NewFontOAM(BattleSubscreen *btlSubscreen, FontOAMEnt
     fontOAMParams.unk_28 = NNS_G2D_VRAM_TYPE_2DSUB;
     fontOAMParams.heapID = HEAP_ID_BATTLE;
 
-    FontOAM *fontOAM = sub_020127E8(&fontOAMParams);
+    FontOAM *fontOAM = FontOAM_New(&fontOAMParams);
 
-    sub_02012AC0(fontOAM, plttOffset);
+    FontOAM_SetExplicitPaletteOffsetAutoAdjust(fontOAM, plttOffset);
     FontOAM_SetXY(fontOAM, x, y);
 
     if (precomputedLayout == NULL) {
@@ -2263,7 +2263,7 @@ static void BattleSubscreen_FreeFontOAMs(BattleSubscreen *btlSubscreen)
 {
     for (int i = 0; i < SNELEMS(btlSubscreen->fontOAMEntry); i++) {
         if (btlSubscreen->fontOAMEntry[i].fontOAM) {
-            sub_02012870(btlSubscreen->fontOAMEntry[i].fontOAM);
+            FontOAM_Free(btlSubscreen->fontOAMEntry[i].fontOAM);
             CharTransfer_ClearRange(&btlSubscreen->fontOAMEntry[i].allocation);
             btlSubscreen->fontOAMEntry[i].fontOAM = NULL;
         }

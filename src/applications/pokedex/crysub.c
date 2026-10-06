@@ -30,7 +30,7 @@
 #include "system.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/pokedex/zukan.naix"
@@ -506,8 +506,8 @@ static void SetSpriteOAMModesXLU(PokedexCrySubGraphics *pokedexCrySubGraphics)
     Sprite_SetExplicitOAMMode(pokedexCrySubGraphics->playButtonSprite, GX_OAM_MODE_XLU);
     Sprite_SetExplicitOAMMode(pokedexCrySubGraphics->loopButtonSprite, GX_OAM_MODE_XLU);
 
-    sub_02012AF0(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, GX_OAM_MODE_XLU);
-    sub_02012AF0(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, GX_OAM_MODE_XLU);
+    FontOAM_SetExplicitOAMMode(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, GX_OAM_MODE_XLU);
+    FontOAM_SetExplicitOAMMode(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, GX_OAM_MODE_XLU);
 }
 
 static void SetSpriteOAMModesNormal(PokedexCrySubGraphics *pokedexCrySubGraphics)
@@ -517,8 +517,8 @@ static void SetSpriteOAMModesNormal(PokedexCrySubGraphics *pokedexCrySubGraphics
     Sprite_SetExplicitOAMMode(pokedexCrySubGraphics->playButtonSprite, GX_OAM_MODE_NORMAL);
     Sprite_SetExplicitOAMMode(pokedexCrySubGraphics->loopButtonSprite, GX_OAM_MODE_NORMAL);
 
-    sub_02012AF0(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, GX_OAM_MODE_NORMAL);
-    sub_02012AF0(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, GX_OAM_MODE_NORMAL);
+    FontOAM_SetExplicitOAMMode(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, GX_OAM_MODE_NORMAL);
+    FontOAM_SetExplicitOAMMode(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, GX_OAM_MODE_NORMAL);
 }
 
 static void InitBlendTransition(PokedexCrySubGraphics *pokedexCrySubGraphics, PokedexGraphicData **graphicData, const PokedexCrySubData *pokedexCrySubData, BOOL isEntering)
@@ -996,7 +996,7 @@ static void LoadSwitchText(PokedexCrySubGraphics *pokedexCrySubGraphics, Pokedex
 
     pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS] = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, paletteOffset);
+    FontOAM_SetExplicitPalette(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, paletteOffset);
     PokedexTextManager_FreeWindow(window);
 
     window = PokedexTextManager_NewWindow(graphicData->textMan, SWITCH_LABEL_WIDTH, SWITCH_LABEL_HEIGHT);
@@ -1007,9 +1007,9 @@ static void LoadSwitchText(PokedexCrySubGraphics *pokedexCrySubGraphics, Pokedex
 
     pokedexCrySubGraphics->switchLabel[SWITCH_PAN] = PokedexTextManager_NextTextData(&displayBox);
 
-    sub_02012A60(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, paletteOffset);
+    FontOAM_SetExplicitPalette(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, paletteOffset);
     PokedexTextManager_FreeWindow(window);
-    sub_020129D0(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, FALSE);
+    FontOAM_SetDrawFlag(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, FALSE);
 }
 
 static void FreeSwitchLabel(PokedexCrySubGraphics *pokedexCrySubGraphics, PokedexGraphicData **graphicData)
@@ -1188,11 +1188,11 @@ static void UpdatePan(PokedexCrySubPageData *pokedexCrySubPageData, int touchX)
 static void UpdateSwitchLabel(PokedexCrySubGraphics *pokedexCrySubGraphics)
 {
     if (pokedexCrySubGraphics->switchMode == SWITCH_CHORUS) {
-        sub_020129D0(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, TRUE);
-        sub_020129D0(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, FALSE);
+        FontOAM_SetDrawFlag(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, TRUE);
+        FontOAM_SetDrawFlag(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, FALSE);
     } else {
-        sub_020129D0(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, FALSE);
-        sub_020129D0(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, TRUE);
+        FontOAM_SetDrawFlag(pokedexCrySubGraphics->switchLabel[SWITCH_CHORUS]->fontOAM, FALSE);
+        FontOAM_SetDrawFlag(pokedexCrySubGraphics->switchLabel[SWITCH_PAN]->fontOAM, TRUE);
     }
 }
 

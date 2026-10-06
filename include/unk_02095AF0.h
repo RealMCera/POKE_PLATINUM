@@ -7,8 +7,8 @@
 #include "contest.h"
 
 void sub_02095AF0(void *param0);
-BOOL sub_02095B5C(Contest *param0, int param1, const UnkStruct_02029C88 *param2);
-BOOL sub_02095BEC(Contest *param0, UnkStruct_02029C88 **param1);
+BOOL sub_02095B5C(Contest *param0, int param1, const ContestPhoto *param2);
+BOOL sub_02095BEC(Contest *param0, ContestPhoto **param1);
 BOOL sub_02095C60(UnkStruct_02095C60 *param0, u32 param1);
 BOOL sub_02095CA8(UnkStruct_02095C60 *param0, int param1);
 

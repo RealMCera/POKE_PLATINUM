@@ -38,7 +38,7 @@
 #include "sys_task_manager.h"
 #include "text.h"
 #include "touch_screen.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202419C.h"
 
 #define CAPSULE_MENU_EDIT           0
@@ -80,18 +80,18 @@ static void CapsuleGraphics_OffsetSprite(TouchScreenRect *rect, ManagedSprite *s
 
 void CapsuleGraphics_InitFontOAMManager(CapsuleAppManager *appMan)
 {
-    appMan->graphicsMan.fontOAMManager = sub_02012744(2, HEAP_ID_53);
+    appMan->graphicsMan.fontOAMManager = FontOAMManager_New(2, HEAP_ID_53);
     Font_InitManager(FONT_SUBSCREEN, HEAP_ID_53);
 }
 
 void CapsuleGraphics_FreeFonts(CapsuleAppManager *appMan)
 {
     Font_Free(FONT_SUBSCREEN);
-    sub_02012870(appMan->graphicsMan.fontOAM[0]);
+    FontOAM_Free(appMan->graphicsMan.fontOAM[0]);
     CharTransfer_ClearRange(&appMan->graphicsMan.charTransfer[0]);
-    sub_02012870(appMan->graphicsMan.fontOAM[1]);
+    FontOAM_Free(appMan->graphicsMan.fontOAM[1]);
     CharTransfer_ClearRange(&appMan->graphicsMan.charTransfer[1]);
-    sub_020127BC(appMan->graphicsMan.fontOAMManager);
+    FontOAMManager_Free(appMan->graphicsMan.fontOAMManager);
 }
 
 void CapsuleGraphics_LoadPaletteBuffer(CapsuleAppManager *appMan)
@@ -108,8 +108,8 @@ void ov76_0223B940(CapsuleAppManager *appMan)
 
 void CapsuleGraphics_SetFontOAMDrawFlag(CapsuleAppManager *appMan, BOOL flag)
 {
-    sub_020129D0(appMan->graphicsMan.fontOAM[0], flag);
-    sub_020129D0(appMan->graphicsMan.fontOAM[1], flag);
+    FontOAM_SetDrawFlag(appMan->graphicsMan.fontOAM[0], flag);
+    FontOAM_SetDrawFlag(appMan->graphicsMan.fontOAM[1], flag);
 }
 
 void ov76_0223B98C(CapsuleAppManager *appMan, int index, int param2, int param3, int param4)
@@ -129,7 +129,7 @@ void ov76_0223B98C(CapsuleAppManager *appMan, int index, int param2, int param3,
     Text_AddPrinterWithParamsAndColor(&window, FONT_SUBSCREEN, string, 0, 0, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(15, 13, 2), NULL);
 
     resID = 30000;
-    v3 = sub_02012898(&window, NNS_G2D_VRAM_TYPE_2DSUB, HEAP_ID_53);
+    v3 = FontOAM_GetWindowSize(&window, NNS_G2D_VRAM_TYPE_2DSUB, HEAP_ID_53);
     CharTransfer_AllocRange(v3, 1, NNS_G2D_VRAM_TYPE_2DSUB, &appMan->graphicsMan.charTransfer[index]);
 
     fontOAMManager.unk_00 = appMan->graphicsMan.fontOAMManager;
@@ -144,9 +144,9 @@ void ov76_0223B98C(CapsuleAppManager *appMan, int index, int param2, int param3,
     fontOAMManager.unk_24 = 40;
     fontOAMManager.unk_28 = NNS_G2D_VRAM_TYPE_2DSUB;
     fontOAMManager.heapID = HEAP_ID_53;
-    appMan->graphicsMan.fontOAM[index] = sub_020127E8(&fontOAMManager);
+    appMan->graphicsMan.fontOAM[index] = FontOAM_New(&fontOAMManager);
 
-    sub_02012AC0(appMan->graphicsMan.fontOAM[index], param4);
+    FontOAM_SetExplicitPaletteOffsetAutoAdjust(appMan->graphicsMan.fontOAM[index], param4);
     String_Free(string);
     MessageLoader_Free(messageLoader);
     Window_Remove(&window);

@@ -59,7 +59,7 @@
 #include "system.h"
 #include "text.h"
 #include "touch_pad.h"
-#include "unk_02012744.h"
+#include "font_oam.h"
 #include "unk_0202419C.h"
 #include "vram_transfer.h"
 #include "yes_no_touch_menu.h"
@@ -80,7 +80,7 @@ typedef struct UnkStruct_ov113_0225DBCC_t {
     SaveData *saveData;
     BgConfig *unk_08;
     PaletteData *unk_0C;
-    UnkStruct_02012744 *unk_10;
+    FontOAMManager *unk_10;
     G3DPipelineBuffers *unk_14;
     SysTask *unk_18;
     SpriteSystem *unk_1C;
@@ -377,7 +377,7 @@ int ov113_0225C700(ApplicationManager *appMan, int *param1)
 
     v0->unk_2C = StringTemplate_Default(HEAP_ID_118);
     v0->unk_30 = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_UNK_0650, HEAP_ID_118);
-    v0->unk_10 = sub_02012744(4, HEAP_ID_118);
+    v0->unk_10 = FontOAMManager_New(4, HEAP_ID_118);
     v0->unk_160 = NARC_ctor(NARC_INDEX_GRAPHIC__FOOTPRINT_BOARD, HEAP_ID_118);
     v0->unk_164 = NARC_ctor(NARC_INDEX_POKETOOL__POKEFOOT__POKEFOOT, HEAP_ID_118);
 
@@ -623,7 +623,7 @@ int ov113_0225CDFC(ApplicationManager *appMan, int *param1)
 
     String_Free(v0->unk_C4);
     Font_Free(FONT_SUBSCREEN);
-    sub_020127BC(v0->unk_10);
+    FontOAMManager_Free(v0->unk_10);
     MessageLoader_Free(v0->unk_30);
     StringTemplate_Free(v0->unk_2C);
 
@@ -983,7 +983,7 @@ static void ov113_0225D484(UnkStruct_ov113_0225DBCC *param0)
 
         v2 = MessageLoader_GetNewString(param0->unk_30, 1);
         ov113_0225E15C(param0, &param0->unk_19C0, v2, FONT_SUBSCREEN, TEXT_COLOR(1, 2, 3), 0, 10003, 0x1c * 8, 176, 1);
-        sub_020129D0(param0->unk_19C0.unk_00, 1);
+        FontOAM_SetDrawFlag(param0->unk_19C0.unk_00, 1);
         String_Free(v2);
     }
 }
@@ -1498,7 +1498,7 @@ static void ov113_0225E15C(UnkStruct_ov113_0225DBCC *param0, UnkStruct_ov113_022
     Window_AddToTopLeftCorner(v5, &v1, v8, 16 / 8, 0, 0);
     Text_AddPrinterWithParamsColorAndSpacing(&v1, param3, param2, 0, 0, TEXT_SPEED_NO_TRANSFER, param4, 0, 0, NULL);
 
-    v3 = sub_02012898(&v1, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_118);
+    v3 = FontOAM_GetWindowSize(&v1, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_118);
     CharTransfer_AllocRange(v3, 1, NNS_G2D_VRAM_TYPE_2DMAIN, &v2);
 
     if (param9 == 1) {
@@ -1520,9 +1520,9 @@ static void ov113_0225E15C(UnkStruct_ov113_0225DBCC *param0, UnkStruct_ov113_022
     v0.unk_28 = NNS_G2D_VRAM_TYPE_2DMAIN;
     v0.heapID = HEAP_ID_118;
 
-    v4 = sub_020127E8(&v0);
+    v4 = FontOAM_New(&v0);
 
-    sub_02012AC0(v4, param5);
+    FontOAM_SetExplicitPaletteOffsetAutoAdjust(v4, param5);
     FontOAM_SetXY(v4, param7, param8);
     Window_Remove(&v1);
 
@@ -1533,7 +1533,7 @@ static void ov113_0225E15C(UnkStruct_ov113_0225DBCC *param0, UnkStruct_ov113_022
 
 static void ov113_0225E250(UnkStruct_ov113_0225E250 *param0)
 {
-    sub_02012870(param0->unk_00);
+    FontOAM_Free(param0->unk_00);
     CharTransfer_ClearRange(&param0->unk_04);
 }
 
