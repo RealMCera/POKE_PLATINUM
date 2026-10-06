@@ -9,7 +9,7 @@
 
 typedef struct {
     UnkStruct_02030A80 *unk_00;
-    UnkStruct_0202F41C *unk_04;
+    BattleRecordingSummary *unk_04;
     u8 padding_08[4];
     ManagedSprite *unk_0C[12];
     Window unk_3C[8];

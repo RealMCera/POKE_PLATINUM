@@ -22,7 +22,7 @@
 #include "trainer_case_badge_dirt.h"
 #include "tv_segment.h"
 #include "underground.h"
-#include "unk_0202E2CC.h"
+#include "tv_broadcast.h"
 #include "battle_salon.h"
 #include "vars_flags.h"
 #include "wifi_history_save_data.h"

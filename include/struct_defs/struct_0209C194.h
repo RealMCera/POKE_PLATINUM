@@ -14,7 +14,7 @@ typedef struct UnkStruct_0209C194_t {
     u32 unk_0C;
     BOOL unk_10;
     UnkStruct_0209C194_1 unk_14;
-    UnkStruct_0209BDF8 *unk_34;
+    UnionRoomComm *unk_34;
     UnkStruct_ov109_021D0F70 *unk_38;
     UnkStruct_ov109_021D5140 *unk_3C;
 } UnkStruct_0209C194;

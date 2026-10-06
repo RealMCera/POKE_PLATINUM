@@ -76,7 +76,7 @@ void sub_02030AA0(UnkStruct_02030A80 *param0, SaveData *saveData)
     param0->appearance = Appearance_GetData(TrainerInfo_Gender(v0), TrainerInfo_Appearance(v0), APPEARANCE_DATA_INDEX);
     param0->version = GAME_VERSION;
     param0->language = GAME_LANGUAGE;
-    param0->unk_7C.unk_00 = SaveData_CalculateChecksum(saveData, param0, sizeof(UnkStruct_02030A80) - (sizeof(UnkStruct_0202F298_sub1)));
+    param0->unk_7C.checksum = SaveData_CalculateChecksum(saveData, param0, sizeof(UnkStruct_02030A80) - (sizeof(BattleRecordingChecksum)));
 }
 
 String *sub_02030B94(const UnkStruct_02030A80 *param0, enum HeapID heapID)

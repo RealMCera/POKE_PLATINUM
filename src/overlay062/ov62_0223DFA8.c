@@ -40,7 +40,7 @@
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
 #include "font_oam.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 #include "unk_02030A80.h"
 #include "unk_0208B284.h"
 #include "unk_0208BA78.h"
@@ -362,7 +362,7 @@ static void ov62_0223E428(UnkStruct_0208C06C *param0)
 {
     UnkStruct_ov62_0223E01C *v0 = param0->unk_860;
 
-    sub_0202FF44(v0->unk_220.unk_04);
+    BattleRecording_FreeSummary(v0->unk_220.unk_04);
     sub_02030A98(v0->unk_194.unk_00);
 }
 
@@ -453,7 +453,7 @@ static BOOL ov62_0223E510(UnkStruct_0208C06C *param0)
         ov62_0223E0FC(param0, 280, 0);
 
         {
-            u64 v2 = sub_0202FE98(sub_0202FE04(), 4, 0);
+            u64 v2 = BattleRecording_GetSummaryValue(BattleRecording_GetSummary(), 4, 0);
 
             if (ov61_0222B550(ov62_0224112C(param0), v2) == 1) {
                 param0->unk_08++;
@@ -1694,7 +1694,7 @@ static BOOL ov62_022403F8(UnkStruct_0208C06C *a0)
 {
     UnkStruct_0208C06C *r4 = a0;
     UnkStruct_ov62_0223E01C *r5 = r4->unk_860;
-    if (ov62_02234970(r4, sub_0202FE98(sub_0202FE04(), 4, 0))) {
+    if (ov62_02234970(r4, BattleRecording_GetSummaryValue(BattleRecording_GetSummary(), 4, 0))) {
         switch (r4->unk_08) {
         case 0:
             ov62_02234540(r4, 1);
@@ -2028,7 +2028,7 @@ static void ov62_02240B94(UnkStruct_0208C06C *param0)
     v0->unk_194.unk_00 = sub_02030A80(HEAP_ID_102);
     ov61_0222AFC0(&param0->unk_8B4.unk_1D58[param0->unk_14.unk_48C.unk_38.unk_00]->unk_00, v0->unk_194.unk_00);
     v0->unk_220.unk_00 = v0->unk_194.unk_00;
-    v0->unk_220.unk_04 = sub_0202FF2C(HEAP_ID_102);
+    v0->unk_220.unk_04 = BattleRecording_NewSummary(HEAP_ID_102);
     MI_CpuCopy8(&param0->unk_8B4.unk_1D58[param0->unk_14.unk_48C.unk_38.unk_00]->unk_80, v0->unk_220.unk_04, sizeof(UnkStruct_ov61_0222BED8_sub1));
 }
 
@@ -2054,7 +2054,7 @@ static void ov62_02240BF4(UnkStruct_0208C06C *param0)
             continue;
         }
 
-        if (ov62_02233F94((UnkStruct_0202F41C *)&param0->unk_8B4.unk_1D58[v7 + v0]->unk_80)) {
+        if (ov62_02233F94((BattleRecordingSummary *)&param0->unk_8B4.unk_1D58[v7 + v0]->unk_80)) {
             v11 = 1;
         } else {
             v11 = 0;
@@ -2081,7 +2081,7 @@ static void ov62_02240BF4(UnkStruct_0208C06C *param0)
                 v14++;
             }
 
-            if (ov62_02233F94((UnkStruct_0202F41C *)&param0->unk_8B4.unk_1D58[v7 + v0]->unk_80)) {
+            if (ov62_02233F94((BattleRecordingSummary *)&param0->unk_8B4.unk_1D58[v7 + v0]->unk_80)) {
                 v14 = 3;
             }
 
@@ -2205,7 +2205,7 @@ static void ov62_02240E30(UnkStruct_0208C06C *param0)
         int v12[6] = { 0, 0, 0, 0, 0, 0 };
         int v13 = 0;
 
-        if (ov62_02233F94((UnkStruct_0202F41C *)&param0->unk_8B4.unk_1D58[v9]->unk_80)) {
+        if (ov62_02233F94((BattleRecordingSummary *)&param0->unk_8B4.unk_1D58[v9]->unk_80)) {
             v13 = 1;
         }
 
@@ -2230,7 +2230,7 @@ static void ov62_02240E30(UnkStruct_0208C06C *param0)
                 v16++;
             }
 
-            if (ov62_02233F94((UnkStruct_0202F41C *)&param0->unk_8B4.unk_1D58[v9]->unk_80)) {
+            if (ov62_02233F94((BattleRecordingSummary *)&param0->unk_8B4.unk_1D58[v9]->unk_80)) {
                 v16 = 3;
             }
 

@@ -21,7 +21,7 @@
 #include "journal.h"
 #include "save_player.h"
 #include "field_system_apps.h"
-#include "unk_0209BDF8.h"
+#include "union_room_comm.h"
 
 FS_EXTERN_OVERLAY(overlay109);
 
@@ -44,15 +44,15 @@ UnkStruct_0209C194 *sub_0209C194(UnkStruct_0209C194_1 *param0, enum HeapID heapI
     UnkStruct_0209C194 *v0 = Heap_Alloc(heapID, sizeof(UnkStruct_0209C194));
     memset(v0, 0, sizeof(UnkStruct_0209C194));
     v0->unk_14 = *param0;
-    v0->unk_34 = sub_0209BDF8(v0, heapID);
+    v0->unk_34 = UnionRoomComm_New(v0, heapID);
 
     return v0;
 }
 
 void sub_0209C1D0(UnkStruct_0209C194 *param0)
 {
-    sub_0209BE64(param0->unk_34);
-    sub_0209BE38(param0->unk_34);
+    UnionRoomComm_Reset(param0->unk_34);
+    UnionRoomComm_Free(param0->unk_34);
     Heap_Free(param0);
 }
 

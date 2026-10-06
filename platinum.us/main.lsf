@@ -137,12 +137,12 @@ Static main
 	Object main.nef.p/src_global_trade.c.o
 	Object main.nef.p/src_mystery_gift.c.o
 	Object main.nef.p/src_hall_of_fame_entries.c.o
-	Object main.nef.p/src_unk_0202E2CC.c.o
+	Object main.nef.p/src_tv_broadcast.c.o
 	Object main.nef.p/src_rankings.c.o
 	Object main.nef.p/src_pal_park_transfers.c.o
 	Object main.nef.p/src_link_contest_records.c.o
 	Object main.nef.p/src_save_catchrecords.c.o
-	Object main.nef.p/src_unk_0202F1D4.c.o
+	Object main.nef.p/src_battle_recording.c.o
 	Object main.nef.p/src_battle_factory_save.c.o
 	Object main.nef.p/src_battle_hall_save.c.o
 	Object main.nef.p/src_battle_castle_save.c.o
@@ -311,7 +311,7 @@ Static main
 	Object main.nef.p/src_applications_naming_screen.c.o
 	Object main.nef.p/src_unk_020890F4.c.o
 	Object main.nef.p/src_number_entry_screen.c.o
-	Object main.nef.p/src_unk_0208A3F4.c.o
+	Object main.nef.p/src_number_entry_graphics.c.o
 	Object main.nef.p/src_unk_0208B284.c.o
 	Object main.nef.p/src_unk_0208BA78.c.o
 	Object main.nef.p/src_unk_0208BEBC.c.o
@@ -362,7 +362,7 @@ Static main
 	Object main.nef.p/src_error_message_reset.c.o
 	Object main.nef.p/src_battle_frontier.c.o
 	Object main.nef.p/src_unk_0209BA80.c.o
-	Object main.nef.p/src_unk_0209BDF8.c.o
+	Object main.nef.p/src_union_room_comm.c.o
 	Object main.nef.p/src_unk_0209C194.c.o
 	Object main.nef.p/src_unk_0209C370.c.o
 	Object main.nef.p/src_unk_0209C390.c.o

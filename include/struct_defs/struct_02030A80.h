@@ -25,7 +25,7 @@ typedef struct UnkStruct_02030A80_t {
         u16 unk_20_val2[40];
     };
     u8 unk_70[12];
-    UnkStruct_0202F298_sub1 unk_7C;
+    BattleRecordingChecksum unk_7C;
 } UnkStruct_02030A80;
 
 #endif // POKEPLATINUM_STRUCT_02030A80_H

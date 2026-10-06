@@ -44,21 +44,27 @@ typedef struct TVBroadcast {
     u8 playedSegments[TV_BROADCAST_MAX_PLAYED_SEGMENTS];
     int timeSlotMinutesRemaining;
     u8 programFinished;
-    TVSegmentInstance unk_0C[4];
-    TVSegmentInstance unk_C4[4];
-    TVSegmentInstance unk_17C[4];
-    TVWifiEpisode unk_234[16];
-    TVWifiEpisode unk_684[8];
-    TVWifiEpisode unk_8AC[8];
+    // Locally recorded segments, one array per program type (see
+    // TVBroadcast_GetSegmentInstances).
+    TVSegmentInstance trainerSightingSegments[4];
+    TVSegmentInstance recordSegments[4];
+    TVSegmentInstance interviewSegments[4];
+    // Episodes received from other players over Wi-Fi, one array per program
+    // type (see TVBroadcast_GetWifiEpisodes).
+    TVWifiEpisode trainerSightingWifiEpisodes[16];
+    TVWifiEpisode recordWifiEpisodes[8];
+    TVWifiEpisode interviewWifiEpisodes[8];
     TVSegment_ContestHall_ShowcasedPokemon showcasedPokemon;
-    UnkStruct_0202E7E4 unk_ADE;
-    UnkStruct_0202E7F0 unk_B02;
-    UnkStruct_0202E7FC unk_B04;
-    UnkStruct_0202E808 safariGame;
-    UnkStruct_0202E810 unk_B10;
-    UnkStruct_0202E81C unk_B2E;
-    UnkStruct_0202E828 unk_B44;
-    UnkStruct_0202E834 unk_B4C;
+    // Pending segment data recorded by the player, consumed when the matching
+    // TV segment is saved.
+    TVSegment_AmitySquareWatchData amitySquareWatch;
+    TVSegment_ThreeCheersForPoffinCornerData poffinCorner;
+    TVSegment_BattleTowerCornerData battleTowerCorner;
+    TVSegment_SafariGameData safariGame;
+    TVSegment_BattleFrontierFrontlineNewsSingleData frontlineNewsSingle;
+    TVSegment_BattleFrontierFrontlineNewsMultiData frontlineNewsMulti;
+    TVSegment_BattlePointsRecordData battlePointsRecord;
+    TVSegment_GTSTradeRecordData gtsTradeRecord;
 } TVBroadcast;
 
 #endif // POKEPLATINUM_STRUCT_DEF_TV_H

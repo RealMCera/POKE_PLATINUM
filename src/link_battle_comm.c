@@ -26,7 +26,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "trainer_info.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 #include "unk_02032798.h"
 #include "unk_020363E8.h"
 
@@ -341,7 +341,7 @@ static void LinkBattleComm_RecvSystemVersion(int netId, int size, void *data, vo
     LinkBattleCommState *linkBattleCommState = (LinkBattleCommState *)commState;
 
     linkBattleCommState->dto->systemVersion[netId] = *((u32 *)data);
-    sub_0202FAA8(netId, linkBattleCommState->dto->systemVersion[netId]);
+    BattleRecording_SetSystemVersion(netId, linkBattleCommState->dto->systemVersion[netId]);
     linkBattleCommState->recvCount++;
 }
 

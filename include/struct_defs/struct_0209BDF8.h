@@ -3,27 +3,31 @@
 
 #include "struct_decls/struct_0209C194_decl.h"
 
-typedef struct {
-    UnkStruct_0209C194 *unk_00;
-    u8 unk_04[24];
-    int unk_1C;
-    int unk_20;
-    int unk_24;
-    int unk_28;
-    int unk_2C;
-    u32 unk_30;
-    int unk_34;
-    u16 unk_38;
-    int unk_3C;
-    u16 unk_40;
-    u16 unk_42;
-    u16 unk_44;
-    s16 unk_46;
-    u16 unk_48;
-    u16 unk_4A;
-    u8 *unk_4C;
-    u8 *unk_50;
-    int unk_54;
-} UnkStruct_0209BDF8;
+// Communication state for the Union Room (overlay 109). One instance is owned
+// by the Union Room application and registered as the active command handler
+// via CommCmd_Init. It tracks the local player's readiness, the set of players
+// taking part in a trade, and per-player party data buffers.
+typedef struct UnionRoomComm {
+    UnkStruct_0209C194 *app; // Owning Union Room application.
+    u8 sendBuffer[24]; // Staging area for an outgoing command packet.
+    int sendDisabled; // When 1, UnionRoomComm_Send refuses to send. Never set.
+    int receivedCount; // Incremented by the (never-sent) count command.
+    int disconnected; // Set when a peer drops out of the room.
+    int confirmed; // Local player's confirm flag (command 7).
+    int playerCount; // Expected number of connected players.
+    u32 confirmedBitmap; // Server-side bitmap of players that confirmed.
+    int unk_34; // Written but never read.
+    u16 serverPlayerCount; // Player count reported by the server.
+    int unk_3C; // Read but never written.
+    u16 stageFlags; // Bitmap of completed connection stages (command 8).
+    u16 participantBitmap; // Bitmap of players taking part in the trade (command 9).
+    u16 unk_44; // Unused.
+    s16 trainerDataBitmap; // Bitmap of players whose party data has arrived.
+    u16 badEggBitmap; // Bitmap of players reporting a bad egg (command 16).
+    u16 eggOkBitmap; // Bitmap of players reporting their eggs are OK (command 17).
+    u8 *sendTrainerData; // Per-player outgoing party buffers (5 slots).
+    u8 *recvTrainerData; // Per-player incoming party buffers (5 slots).
+    int unk_54; // Unused.
+} UnionRoomComm;
 
 #endif // POKEPLATINUM_STRUCT_0209BDF8_H

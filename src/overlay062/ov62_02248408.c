@@ -19,7 +19,7 @@
 #include "savedata.h"
 #include "string_gf.h"
 #include "system.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 
 static void ov62_0224856C(String *param0, enum HeapID heapID);
 
@@ -27,8 +27,8 @@ extern BattleRecording *gBattleRecording;
 
 void ov62_02248408(BattleRecording *param0, FieldBattleDTO *param1, enum HeapID heapID)
 {
-    UnkStruct_0202F298 *v0 = &param0->unk_E8;
-    UnkStruct_0202F41C *v1 = &param0->unk_84;
+    BattleRecordingData *v0 = &param0->data;
+    BattleRecordingSummary *v1 = &param0->summary;
     int v2, v3, v4, v5;
     String *v6, *v7;
     u16 *v8;
@@ -36,7 +36,7 @@ void ov62_02248408(BattleRecording *param0, FieldBattleDTO *param1, enum HeapID 
     int v10, v11, v12;
     Pokemon *v13;
 
-    sub_0202F4C0(v1->unk_26, &v2, &v3);
+    BattleRecording_GetPartyLayout(v1->battleType, &v2, &v3);
     v6 = String_Init(v9, heapID);
     v7 = String_Init(v9, heapID);
     v8 = Heap_Alloc(heapID, sizeof(u16) * v9);
@@ -113,17 +113,17 @@ int ov62_02248598(SaveData *saveData, int param1, u8 param2, u16 *param3, u16 *p
         GF_ASSERT(gBattleRecording);
 
         if (param2 == 1) {
-            gBattleRecording->unk_84.unk_27 = param2;
+            gBattleRecording->summary.unk_27 = param2;
 
-            gBattleRecording->unk_84.unk_48 = 0xe281;
-            gBattleRecording->unk_84.unk_60.unk_00 = SaveData_CalculateChecksum(saveData, &gBattleRecording->unk_84, sizeof(UnkStruct_0202F41C) - (sizeof(UnkStruct_0202F298_sub1)) - (sizeof(u64)));
+            gBattleRecording->summary.magic = 0xe281;
+            gBattleRecording->summary.checksum.checksum = SaveData_CalculateChecksum(saveData, &gBattleRecording->summary, sizeof(BattleRecordingSummary) - (sizeof(BattleRecordingChecksum)) - (sizeof(u64)));
         }
 
-        sub_0202F858(&gBattleRecording->unk_E8, sizeof(UnkStruct_0202F298) - (sizeof(UnkStruct_0202F298_sub1)), gBattleRecording->unk_E8.unk_1BEC.unk_00 + ((gBattleRecording->unk_E8.unk_1BEC.unk_00 ^ 0xffff) << 16));
+        BattleRecording_Encode(&gBattleRecording->data, sizeof(BattleRecordingData) - (sizeof(BattleRecordingChecksum)), gBattleRecording->data.checksum.checksum + ((gBattleRecording->data.checksum.checksum ^ 0xffff) << 16));
         (*param3)++;
         break;
     case 1:
-        v0 = sub_0202F3AC(saveData, gBattleRecording, param1, param4);
+        v0 = BattleRecording_Save(saveData, gBattleRecording, param1, param4);
         return v0;
     }
 
@@ -133,7 +133,7 @@ int ov62_02248598(SaveData *saveData, int param1, u8 param2, u16 *param3, u16 *p
 void ov62_02248624(SaveData *saveData)
 {
     GF_ASSERT(gBattleRecording);
-    sub_0202F858(&gBattleRecording->unk_E8, sizeof(UnkStruct_0202F298) - (sizeof(UnkStruct_0202F298_sub1)), gBattleRecording->unk_E8.unk_1BEC.unk_00 + ((gBattleRecording->unk_E8.unk_1BEC.unk_00 ^ 0xffff) << 16));
+    BattleRecording_Encode(&gBattleRecording->data, sizeof(BattleRecordingData) - (sizeof(BattleRecordingChecksum)), gBattleRecording->data.checksum.checksum + ((gBattleRecording->data.checksum.checksum ^ 0xffff) << 16));
 }
 
 int ov62_02248658(SaveData *saveData, u64 param1, u16 *param2, u16 *param3)
@@ -144,11 +144,11 @@ int ov62_02248658(SaveData *saveData, u64 param1, u16 *param2, u16 *param3)
     case 0:
         GF_ASSERT(gBattleRecording);
 
-        gBattleRecording->unk_84.unk_58 = param1;
+        gBattleRecording->summary.unk_58 = param1;
         (*param2)++;
         break;
     case 1:
-        v0 = sub_0202F3AC(saveData, gBattleRecording, 0, param3);
+        v0 = BattleRecording_Save(saveData, gBattleRecording, 0, param3);
         return v0;
     }
 
@@ -161,11 +161,11 @@ int ov62_022486A4(SaveData *saveData, int param1)
 
     GF_ASSERT(gBattleRecording != NULL);
 
-    gBattleRecording->unk_84.unk_27 = 1;
-    gBattleRecording->unk_84.unk_48 = 0xe281;
-    gBattleRecording->unk_84.unk_60.unk_00 = SaveData_CalculateChecksum(saveData, &gBattleRecording->unk_84, sizeof(UnkStruct_0202F41C) - (sizeof(UnkStruct_0202F298_sub1)) - (sizeof(u64)));
+    gBattleRecording->summary.unk_27 = 1;
+    gBattleRecording->summary.magic = 0xe281;
+    gBattleRecording->summary.checksum.checksum = SaveData_CalculateChecksum(saveData, &gBattleRecording->summary, sizeof(BattleRecordingSummary) - (sizeof(BattleRecordingChecksum)) - (sizeof(u64)));
 
-    sub_0202F858(&gBattleRecording->unk_E8, sizeof(UnkStruct_0202F298) - (sizeof(UnkStruct_0202F298_sub1)), gBattleRecording->unk_E8.unk_1BEC.unk_00 + ((gBattleRecording->unk_E8.unk_1BEC.unk_00 ^ 0xffff) << 16));
+    BattleRecording_Encode(&gBattleRecording->data, sizeof(BattleRecordingData) - (sizeof(BattleRecordingChecksum)), gBattleRecording->data.checksum.checksum + ((gBattleRecording->data.checksum.checksum ^ 0xffff) << 16));
     ResetLock(RESET_LOCK_0x8);
 
     v0 = SaveData_SaveBattleRecording(saveData, gBattleRecording, param1);

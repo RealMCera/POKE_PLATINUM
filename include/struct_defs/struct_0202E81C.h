@@ -2,13 +2,13 @@
 #define POKEPLATINUM_STRUCT_0202E81C_H
 
 typedef struct {
-    u8 unk_00;
-    u8 unk_01;
-    u8 unk_02;
+    u8 active; // Set when a multi battle ends, cleared once the segment is saved.
+    u8 facility; // Battle Frontier facility ID (see TVSegment_LoadMessage_BattleFrontierFrontlineNews_Multi).
+    u8 gender;
     u8 language;
-    u8 unk_04;
+    u8 gameCode;
     u8 padding_05;
-    u16 unk_06[8];
-} UnkStruct_0202E81C;
+    u16 trainerName[8];
+} TVSegment_BattleFrontierFrontlineNewsMultiData;
 
 #endif // POKEPLATINUM_STRUCT_0202E81C_H

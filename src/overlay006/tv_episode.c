@@ -13,7 +13,7 @@
 #include "heap.h"
 #include "save_player.h"
 #include "trainer_info.h"
-#include "unk_0202E2CC.h"
+#include "tv_broadcast.h"
 
 static void TVEpisode_Clear(TVEpisode *episode)
 {
@@ -42,14 +42,14 @@ static void TVEpisode_SetTrainerName(TVEpisode *episode, const u16 *name)
 
 static void TVEpisode_SetDetails(TVEpisode *episode, TVSegmentInstance *segmentInstance)
 {
-    episode->segmentID = sub_0202E55C(segmentInstance);
+    episode->segmentID = TVSegmentInstance_GetSegmentID(segmentInstance);
     episode->details = segmentInstance;
 }
 
 void TVEpisode_IncrementTimesPlayed(TVEpisode *episode)
 {
     if (episode->details != NULL) {
-        sub_0202E560(episode->details);
+        TVSegmentInstance_IncrementTimesPlayed(episode->details);
     }
 }
 
@@ -70,7 +70,7 @@ const u16 *TVEpisode_GetTrainerName(const TVEpisode *episode)
 
 void *TVEpisode_GetSegment(TVEpisode *episode)
 {
-    return sub_0202E574(episode->details);
+    return TVSegmentInstance_GetSegmentData(episode->details);
 }
 
 int TVEpisode_GetSegmentID(const TVEpisode *episode)
@@ -83,10 +83,10 @@ static TVEpisode *CreateTVEpisodeFromWifiEpisode(FieldSystem *fieldSystem, TVWif
     TVEpisode *episode = Heap_Alloc(HEAP_ID_FIELD1, sizeof(TVEpisode));
 
     TVEpisode_Clear(episode);
-    TVEpisode_SetTrainerName(episode, sub_0202E4C8(wifiEpisode));
-    TVEpisode_SetLanguage(episode, sub_0202E4CC(wifiEpisode));
-    TVEpisode_SetGameVersion(episode, sub_0202E4D0(wifiEpisode));
-    TVEpisode_SetDetails(episode, sub_0202E4D4(wifiEpisode));
+    TVEpisode_SetTrainerName(episode, TVWifiEpisode_GetTrainerName(wifiEpisode));
+    TVEpisode_SetLanguage(episode, TVWifiEpisode_GetLanguage(wifiEpisode));
+    TVEpisode_SetGameVersion(episode, TVWifiEpisode_GetGameVersion(wifiEpisode));
+    TVEpisode_SetDetails(episode, TVWifiEpisode_GetDetails(wifiEpisode));
 
     return episode;
 }
@@ -101,7 +101,7 @@ static TVEpisode *CreateTVEpisodeFromSegmentInstance(FieldSystem *fieldSystem, T
     TVEpisode_SetGender(episode, TrainerInfo_Gender(playerInfo));
     TVEpisode_SetLanguage(episode, GAME_LANGUAGE);
     TVEpisode_SetGameVersion(episode, GAME_VERSION);
-    TVEpisode_SetDetails(episode, sub_0202E4D8(instance));
+    TVEpisode_SetDetails(episode, TVSegmentInstance_GetDetails(instance));
 
     return episode;
 }
@@ -130,11 +130,11 @@ TVEpisode *TVEpisode_New(FieldSystem *fieldSystem, int programType, int segmentI
         return CreateEmptyTVEpisode(fieldSystem, segmentID);
     }
 
-    if (sub_0202E7C0(segmentID) == 0) {
-        TVWifiEpisode *wifiEpisode = sub_0202E794(broadcast, programType, segmentID);
+    if (TVBroadcast_IsLocalSegment(segmentID) == 0) {
+        TVWifiEpisode *wifiEpisode = TVBroadcast_GetWifiEpisode(broadcast, programType, segmentID);
         return CreateTVEpisodeFromWifiEpisode(fieldSystem, wifiEpisode);
     } else {
-        TVSegmentInstance *instance = sub_0202E768(broadcast, programType, segmentID);
+        TVSegmentInstance *instance = TVBroadcast_GetSegmentInstance(broadcast, programType, segmentID);
         return CreateTVEpisodeFromSegmentInstance(fieldSystem, instance);
     }
 }

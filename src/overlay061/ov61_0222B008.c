@@ -34,7 +34,7 @@
 #include "string_gf.h"
 #include "string_template.h"
 #include "system.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 
 typedef int (*UnkFuncPtr_ov61_0222E48C)(UnkStruct_ov62_022349A8 *, UnkStruct_ov61_0222B138 *);
 
@@ -262,11 +262,11 @@ int ov61_0222B338(UnkStruct_ov62_022349A8 *param0, UnkStruct_02030A80 *param1)
     GF_ASSERT((BattleRecording_SaveSize() - sizeof(u32)) == sizeof(UnkStruct_ov62_022349A8_sub3_sub3));
     GF_ASSERT(sizeof(UnkStruct_ov61_0222AFC0) == sizeof(UnkStruct_02030A80));
 
-    param0->unk_190.unk_00_val4 = (UnkStruct_ov62_022349A8_sub3_sub3 *)sub_0202F27C();
+    param0->unk_190.unk_00_val4 = (UnkStruct_ov62_022349A8_sub3_sub3 *)BattleRecording_GetData();
 
     ov62_02248624(param0->saveData);
 
-    v0 = sub_0202FDE8();
+    v0 = BattleRecording_GetHeader();
     MI_CpuCopy8(param1, v0, sizeof(UnkStruct_ov61_0222AFC0));
 
     param0->unk_40E = 60;

@@ -10,16 +10,16 @@
 // (grouped, e.g. a Friend Code as XXXX-XXXX-XXXX) plus BACK and OK buttons, and
 // lets the player move a cursor between the slots to enter a number.
 typedef struct {
-    // Digit slots. `unk_00` holds the digit value + 1 (0 means "not entered")
-    // and `unk_04` holds the 1-based group the slot belongs to.
-    UnkStruct_0208AF44 digits[16];
+    // Digit slots. `value` holds the digit value + 1 (0 means "not entered")
+    // and `group` holds the 1-based group the slot belongs to.
+    NumberEntrySprite digits[16];
     // Separator sprites drawn between adjacent digit groups (one fewer than
     // the number of groups).
-    UnkStruct_0208AF44 dividers[3];
+    NumberEntrySprite dividers[3];
     // The cursor sprite and the OK/BACK button sprites.
-    UnkStruct_0208AF44 controls[3];
+    NumberEntrySprite controls[3];
     // Press animations for the BACK (0) and OK (1) buttons.
-    UnkStruct_0208AF44 buttonEffects[2];
+    NumberEntrySprite buttonEffects[2];
     // Left edge of each group's row, indexed by group number (0 = no group).
     s16 groupXPos[5];
     // [group][0] = first digit slot in the group, [group][1] = one past the

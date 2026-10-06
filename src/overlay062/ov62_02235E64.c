@@ -26,7 +26,7 @@
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
 #include "font_oam.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 #include "unk_0208BA78.h"
 
 typedef struct {
@@ -137,7 +137,7 @@ static BOOL ov62_02235EBC(UnkStruct_0208C06C *param0)
 
             if (param0->unk_86C == 0) {
                 v1 = 1;
-            } else if (sub_0202FE98(param0->unk_87C[param0->unk_86C], 5, 0) == 1) {
+            } else if (BattleRecording_GetSummaryValue(param0->unk_87C[param0->unk_86C], 5, 0) == 1) {
                 v1 = 1;
             } else if (param0->unk_874 == 1) {
                 v1 = 1;
@@ -451,7 +451,7 @@ static BOOL ov62_02236624(UnkStruct_0208C06C *param0)
                 int v1;
                 int v2;
 
-                sub_0202F298(param0->saveData, 102, &v1, NULL, param0->unk_86C);
+                BattleRecording_Load(param0->saveData, 102, &v1, NULL, param0->unk_86C);
                 v2 = ov62_022486A4(param0->saveData, param0->unk_86C);
                 BattleRecording_Free();
 
@@ -665,7 +665,7 @@ static void ov62_02236AB0(u32 param0, enum TouchScreenButtonState param1, void *
     case 1:
         ov62_02234520(v0);
 
-        if ((v0->unk_86C == 0) || (sub_0202FE98(v1->unk_9C.unk_04, 5, 0) == 1)) {
+        if ((v0->unk_86C == 0) || (BattleRecording_GetSummaryValue(v1->unk_9C.unk_04, 5, 0) == 1)) {
             ov62_0222FB60(v0, 7);
         } else {
             ov62_0222FB60(v0, 5);

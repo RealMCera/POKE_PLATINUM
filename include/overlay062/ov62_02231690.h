@@ -80,7 +80,7 @@ void ov62_02233A74(NARC *param0);
 ManagedSprite *ov62_02233A7C(UnkStruct_0208C06C *param0, NARC *param1, int param2, int param3, int param4, int param5);
 void ov62_02233B24(UnkStruct_0208C06C *param0, int param1, ManagedSprite *param2);
 void ov62_02233B40(UnkStruct_0208C06C *param0, int param1, ManagedSprite *param2);
-BOOL ov62_02233F94(UnkStruct_0202F41C *param0);
+BOOL ov62_02233F94(BattleRecordingSummary *param0);
 int ov62_02233FEC(UnkStruct_ov62_02233F74 *param0);
 void ov62_02234214(UnkStruct_ov62_02233F74 *param0, UnkStruct_0208C06C *param1);
 void ov62_02234228(UnkStruct_ov62_02233F74 *param0, UnkStruct_0208C06C *param1);

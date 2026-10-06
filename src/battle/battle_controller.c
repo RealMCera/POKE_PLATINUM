@@ -25,7 +25,7 @@
 #include "move_table.h"
 #include "party.h"
 #include "pokemon.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 #include "link_battle_comm.h"
 
 static void BattleController_SendLocalMessage(BattleSystem *battleSys, int recipient, int battler, void *message, u8 size);

@@ -20,7 +20,7 @@
 #include "record_mixed_rng.h"
 #include "savedata.h"
 #include "image_clips.h"
-#include "unk_0202E2CC.h"
+#include "tv_broadcast.h"
 #include "unk_02073700.h"
 #include "wifi_battle_tower_save.h"
 
@@ -240,6 +240,6 @@ void ov59_021D313C(SaveData *saveData, const UnkStruct_ov59_021D30E0 *param1)
     }
 
     TVBroadcast *broadcast = SaveData_GetTVBroadcast(saveData);
-    sub_0202E2EC(broadcast);
+    TVBroadcast_ClearSegmentInstances(broadcast);
     TVBroadcast_ClearWatchProgress(broadcast);
 }

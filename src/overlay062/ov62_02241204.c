@@ -50,7 +50,7 @@
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
 #include "font_oam.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 #include "unk_02030A80.h"
 #include "unk_0208B284.h"
 #include "unk_0208BA78.h"
@@ -341,7 +341,7 @@ static void ov62_02241278(UnkStruct_0208C06C *param0)
             continue;
         }
 
-        if (ov62_02233F94((UnkStruct_0202F41C *)&param0->unk_8B4.unk_1D58[v11 + v0]->unk_80)) {
+        if (ov62_02233F94((BattleRecordingSummary *)&param0->unk_8B4.unk_1D58[v11 + v0]->unk_80)) {
             v7 = 1;
         } else {
             v7 = 0;
@@ -367,7 +367,7 @@ static void ov62_02241278(UnkStruct_0208C06C *param0)
                 v14++;
             }
 
-            if (ov62_02233F94((UnkStruct_0202F41C *)&param0->unk_8B4.unk_1D58[v11 + v0]->unk_80)) {
+            if (ov62_02233F94((BattleRecordingSummary *)&param0->unk_8B4.unk_1D58[v11 + v0]->unk_80)) {
                 v14 = 3;
             }
 
@@ -494,7 +494,7 @@ static void ov62_022414C0(UnkStruct_0208C06C *param0)
         int v12[6] = { 0, 0, 0, 0, 0, 0 };
         int v13 = 0;
 
-        if (ov62_02233F94((UnkStruct_0202F41C *)&param0->unk_8B4.unk_1D58[v9]->unk_80)) {
+        if (ov62_02233F94((BattleRecordingSummary *)&param0->unk_8B4.unk_1D58[v9]->unk_80)) {
             v13 = 1;
         }
 
@@ -519,7 +519,7 @@ static void ov62_022414C0(UnkStruct_0208C06C *param0)
                 v16++;
             }
 
-            if (ov62_02233F94((UnkStruct_0202F41C *)&param0->unk_8B4.unk_1D58[v9]->unk_80)) {
+            if (ov62_02233F94((BattleRecordingSummary *)&param0->unk_8B4.unk_1D58[v9]->unk_80)) {
                 v16 = 3;
             }
 
@@ -2060,7 +2060,7 @@ static BOOL ov62_02243514(UnkStruct_0208C06C *param0)
 {
     UnkStruct_ov62_02241204 *v0 = param0->unk_860;
 
-    if (ov62_02234970(param0, sub_0202FE98(sub_0202FE04(), 4, 0))) {
+    if (ov62_02234970(param0, BattleRecording_GetSummaryValue(BattleRecording_GetSummary(), 4, 0))) {
         switch (param0->unk_08) {
         case 0:
             ov62_02234540(param0, 1);
@@ -2797,7 +2797,7 @@ static void ov62_022443EC(UnkStruct_0208C06C *param0)
     v0->unk_80.unk_00 = sub_02030A80(HEAP_ID_102);
     ov61_0222AFC0(&v0->unk_4BC->unk_00, v0->unk_80.unk_00);
     v0->unk_10C.unk_00 = v0->unk_80.unk_00;
-    v0->unk_10C.unk_04 = sub_0202FF2C(HEAP_ID_102);
+    v0->unk_10C.unk_04 = BattleRecording_NewSummary(HEAP_ID_102);
     MI_CpuCopy8(&v0->unk_4BC->unk_80, v0->unk_10C.unk_04, sizeof(UnkStruct_ov61_0222BED8_sub1));
 }
 
@@ -2808,7 +2808,7 @@ static void ov62_0224443C(UnkStruct_0208C06C *param0)
     v0->unk_80.unk_00 = sub_02030A80(HEAP_ID_102);
     ov61_0222AFC0(&param0->unk_8B4.unk_1D58[param0->unk_14.unk_48C.unk_38.unk_00]->unk_00, v0->unk_80.unk_00);
     v0->unk_10C.unk_00 = v0->unk_80.unk_00;
-    v0->unk_10C.unk_04 = sub_0202FF2C(HEAP_ID_102);
+    v0->unk_10C.unk_04 = BattleRecording_NewSummary(HEAP_ID_102);
     MI_CpuCopy8(&param0->unk_8B4.unk_1D58[param0->unk_14.unk_48C.unk_38.unk_00]->unk_80, v0->unk_10C.unk_04, sizeof(UnkStruct_ov61_0222BED8_sub1));
 }
 
@@ -2816,7 +2816,7 @@ static void ov62_022444A0(UnkStruct_0208C06C *param0)
 {
     UnkStruct_ov62_02241204 *v0 = param0->unk_860;
 
-    sub_0202FF44(v0->unk_10C.unk_04);
+    BattleRecording_FreeSummary(v0->unk_10C.unk_04);
     sub_02030A98(v0->unk_80.unk_00);
 }
 
@@ -3169,7 +3169,7 @@ static BOOL ov62_02244CD4(UnkStruct_0208C06C *param0)
 {
     UnkStruct_ov62_02241204 *v0 = param0->unk_860;
 
-    if (ov62_02234970(param0, sub_0202FE98(sub_0202FE04(), 4, 0))) {
+    if (ov62_02234970(param0, BattleRecording_GetSummaryValue(BattleRecording_GetSummary(), 4, 0))) {
         switch (param0->unk_08) {
         case 0:
             ov62_02234540(param0, 1);
@@ -3485,7 +3485,7 @@ static BOOL ov62_0224536C(UnkStruct_0208C06C *param0)
         {
             int v2;
 
-            sub_0202F298(param0->saveData, 102, &v2, NULL, 0);
+            BattleRecording_Load(param0->saveData, 102, &v2, NULL, 0);
             v0->unk_1D0 = sub_02030A80(HEAP_ID_102);
             sub_02030AA0(v0->unk_1D0, param0->saveData);
 
@@ -4253,7 +4253,7 @@ static BOOL ov62_0224613C(UnkStruct_0208C06C *param0)
         ov62_02244AB4(param0, 280, 0);
 
         {
-            u64 v2 = sub_0202FE98(sub_0202FE04(), 4, 0);
+            u64 v2 = BattleRecording_GetSummaryValue(BattleRecording_GetSummary(), 4, 0);
 
             if (ov61_0222B550(ov62_0224112C(param0), v2) == 1) {
                 param0->unk_08++;

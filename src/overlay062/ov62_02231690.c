@@ -55,7 +55,7 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "font_oam.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 #include "unk_02030A80.h"
 #include "unk_0208B284.h"
 
@@ -1707,9 +1707,9 @@ void ov62_0223371C(UnkStruct_0208C06C *param0)
 
     {
         UnkStruct_02030A80 *v1 = (UnkStruct_02030A80 *)(&param0->unk_8B4.unk_00->unk_00);
-        UnkStruct_0202F41C *v2 = (UnkStruct_0202F41C *)(&param0->unk_8B4.unk_00->unk_80);
-        UnkStruct_0202F298 *v3 = (UnkStruct_0202F298 *)(&param0->unk_8B4.unk_00->unk_E4);
-        sub_0202FE20(v1, v2, v3, NULL, param0->saveData);
+        BattleRecordingSummary *v2 = (BattleRecordingSummary *)(&param0->unk_8B4.unk_00->unk_80);
+        BattleRecordingData *v3 = (BattleRecordingData *)(&param0->unk_8B4.unk_00->unk_E4);
+        BattleRecording_Store(v1, v2, v3, NULL, param0->saveData);
     }
 }
 
@@ -1810,7 +1810,7 @@ void ov62_022338A8(UnkStruct_0208C06C *param0)
     int v1;
 
     for (v0 = 0; v0 < 4; v0++) {
-        sub_0202F298(param0->saveData, 102, &v1, NULL, v0);
+        BattleRecording_Load(param0->saveData, 102, &v1, NULL, v0);
 
         switch (v1) {
         case 0:
@@ -1841,13 +1841,13 @@ void ov62_022338A8(UnkStruct_0208C06C *param0)
             }
             break;
         case 1:
-            param0->unk_87C[v0] = sub_0202FD88(HEAP_ID_102);
+            param0->unk_87C[v0] = BattleRecording_CloneSummary(HEAP_ID_102);
 
             if (v0 == 0) {
                 param0->unk_88C[v0] = sub_02030A80(HEAP_ID_102);
                 sub_02030AA0(param0->unk_88C[v0], param0->saveData);
             } else {
-                param0->unk_88C[v0] = sub_0202FDB8(HEAP_ID_102);
+                param0->unk_88C[v0] = BattleRecording_CloneHeader(HEAP_ID_102);
             }
             break;
         }
@@ -2041,7 +2041,7 @@ static void ov62_02233B50(UnkStruct_ov62_02233F74 *param0, UnkStruct_0208C06C *p
         StringTemplate_ClearArgs(v9);
 
         {
-            int v12 = sub_0202FE98(param0->unk_04, 3, 0);
+            int v12 = BattleRecording_GetSummaryValue(param0->unk_04, 3, 0);
 
             v10 = &param0->unk_3C[1];
             v8 = MessageLoader_GetNewString(param1->unk_14.unk_34, 132 + v12);
@@ -2054,7 +2054,7 @@ static void ov62_02233B50(UnkStruct_ov62_02233F74 *param0, UnkStruct_0208C06C *p
         }
 
         {
-            int v13 = sub_0202FE98(param0->unk_04, 2, 0);
+            int v13 = BattleRecording_GetSummaryValue(param0->unk_04, 2, 0);
 
             if (v13 != 0) {
                 v10 = &param0->unk_3C[2];
@@ -2080,7 +2080,7 @@ static void ov62_02233B50(UnkStruct_ov62_02233F74 *param0, UnkStruct_0208C06C *p
         }
 
         {
-            u64 v14 = sub_0202FE98(param0->unk_04, 4, 0);
+            u64 v14 = BattleRecording_GetSummaryValue(param0->unk_04, 4, 0);
             u64 v15 = v14;
             u32 v16[3];
             String *v17 = String_Init(255, HEAP_ID_102);
@@ -2138,12 +2138,12 @@ static void ov62_02233F74(UnkStruct_ov62_02233F74 *param0, UnkStruct_0208C06C *p
     }
 }
 
-BOOL ov62_02233F94(UnkStruct_0202F41C *param0)
+BOOL ov62_02233F94(BattleRecordingSummary *param0)
 {
     int v0;
     BOOL v1 = 0;
 
-    v0 = sub_0202FE98(param0, 3, 0);
+    v0 = BattleRecording_GetSummaryValue(param0, 3, 0);
 
     switch (v0) {
     case UnkEnum_0202F510_17:
@@ -2258,8 +2258,8 @@ static void ov62_02234000(UnkStruct_ov62_02233F74 *param0, UnkStruct_0208C06C *p
         do {
             for (v0 = v20; v0 < v21; v0++) {
                 v7[v16] = 0xFF;
-                v17 = sub_0202FE98(param0->unk_04, 0, v0);
-                v18 = sub_0202FE98(param0->unk_04, 1, v0);
+                v17 = BattleRecording_GetSummaryValue(param0->unk_04, 0, v0);
+                v18 = BattleRecording_GetSummaryValue(param0->unk_04, 1, v0);
 
                 if (v17 == 0) {
                     continue;
@@ -2890,7 +2890,7 @@ BOOL ov62_02234970(UnkStruct_0208C06C *param0, u64 param1)
             continue;
         }
 
-        v0 = sub_0202FE98(param0->unk_87C[v1], 4, 0);
+        v0 = BattleRecording_GetSummaryValue(param0->unk_87C[v1], 4, 0);
 
         if (v0 == param1) {
             return 1;

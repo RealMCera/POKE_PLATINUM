@@ -24,7 +24,7 @@
 #include "savedata.h"
 #include "sound.h"
 #include "system_flags.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 #include "unk_0208C010.h"
 #include "vars_flags.h"
 #include "wifi_overlays.h"
@@ -259,9 +259,9 @@ static BOOL sub_0208BC8C(UnkStruct_0208BC3C *param0, enum HeapID heapID)
         param0->unk_10 = FieldBattleDTO_New(heapID, 0x0);
 
         if (BattleRecording_Exists() == 0) {
-            sub_0202F298(param0->saveData, heapID, &v0, param0->unk_10, param0->unk_14->unk_86C);
+            BattleRecording_Load(param0->saveData, heapID, &v0, param0->unk_10, param0->unk_14->unk_86C);
         } else {
-            sub_0202FAFC(param0->unk_10, param0->saveData);
+            BattleRecording_RestoreBattleInfo(param0->unk_10, param0->saveData);
             v0 = 1;
         }
 

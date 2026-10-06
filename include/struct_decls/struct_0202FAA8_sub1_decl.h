@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_0202FAA8_SUB1_DECL_H
 #define POKEPLATINUM_STRUCT_0202FAA8_SUB1_DECL_H
 
-typedef struct UnkStruct_0202FAA8_sub1_t UnkStruct_0202FAA8_sub1;
+typedef struct BattleRecordingInputLog BattleRecordingInputLog;
 
 #endif // POKEPLATINUM_STRUCT_0202FAA8_SUB1_DECL_H

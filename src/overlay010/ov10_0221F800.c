@@ -52,7 +52,7 @@
 #include "trainer_info.h"
 #include "font_oam.h"
 #include "unk_0202419C.h"
-#include "unk_0202F1D4.h"
+#include "battle_recording.h"
 #include "unk_020363E8.h"
 #include "unk_0208C098.h"
 #include "vram_transfer.h"
@@ -379,7 +379,7 @@ void ov10_0221F800(TrainerIntroData *trainerIntroData)
 
     v0->trainerIntroData = trainerIntroData;
     v0->unk_B73 = 0;
-    v0->unk_BBC = sub_0202FAC0();
+    v0->unk_BBC = BattleRecording_CheckSystemVersions();
 
     if (v0->unk_BBC == 1) {
         if ((v0->trainerIntroData->dto != NULL) && (v0->trainerIntroData->dto->saveData != NULL)) {
@@ -640,7 +640,7 @@ static u8 ov10_0221FD00(UnkStruct_ov10_0221FB28 *param0)
             BOOL v0;
             int v1;
 
-            v0 = sub_0202F330(param0->trainerIntroData->dto->saveData, param0->trainerIntroData->heapID, &v1, 0);
+            v0 = BattleRecording_Validate(param0->trainerIntroData->dto->saveData, param0->trainerIntroData->heapID, &v1, 0);
             param0->unk_BC0 = v1;
         }
         {
@@ -1007,7 +1007,7 @@ static u8 ov10_02220700(UnkStruct_ov10_0221FB28 *param0)
     case 1: {
         int v0;
 
-        v0 = sub_0202F41C(param0->trainerIntroData->dto->saveData, param0->trainerIntroData->recordingType, 0, 0, &param0->unk_B78, &param0->unk_B7A);
+        v0 = BattleRecording_SaveWithSummary(param0->trainerIntroData->dto->saveData, param0->trainerIntroData->recordingType, 0, 0, &param0->unk_B78, &param0->unk_B7A);
 
         if (v0 == 2) {
             MessageLoader_GetString(param0->unk_BA0, 6, param0->unk_BA8);

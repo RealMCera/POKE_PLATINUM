@@ -15,7 +15,7 @@
 #include "system.h"
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
-#include "unk_0208A3F4.h"
+#include "number_entry_graphics.h"
 
 // Number-entry screen. The player is shown a row of digit slots, split into
 // groups (for example a Friend Code as XXXX-XXXX-XXXX), and moves a cursor
@@ -99,7 +99,7 @@ void NumberEntry_InitLayout(NumberEntryScreen *param0)
     // A separator sits after the last slot of each group except the last one.
     for (v0 = 0; v0 < param0->dividerCount; v0++) {
         v3 += param0->args.unk_04[v0];
-        param0->dividers[v0].unk_00 = v3 - 1;
+        param0->dividers[v0].value = v3 - 1;
     }
 
     v5 = 0;
@@ -108,7 +108,7 @@ void NumberEntry_InitLayout(NumberEntryScreen *param0)
     // Tag every slot with its 1-based group number.
     do {
         for (v4 = 0; v4 < param0->args.unk_04[v5]; v4++) {
-            param0->digits[v0].unk_04 = v5 + 1;
+            param0->digits[v0].group = v5 + 1;
             v0++;
         }
         v5++;
@@ -133,16 +133,16 @@ void NumberEntry_SetPhase(NumberEntryScreen *param0, int param1)
 // the fade-in. Advances to phase 1.
 BOOL NumberEntry_Setup(NumberEntryScreen *param0)
 {
-    sub_0208A490(param0);
-    sub_0208ADA4(param0);
-    sub_0208A758(param0);
-    sub_0208ADE4(param0, 0);
-    sub_0208A8A0(param0);
-    sub_0208A9BC(param0);
-    sub_0208AF44(param0);
-    sub_0208AFCC(param0);
-    sub_0208B064(param0);
-    sub_0208B1C4(param0->graphics.bgConfig, &param0->graphics.messageWindow, 4, 2, 21, 27, 2, 100, param0->args.unk_2C);
+    NumberEntryGraphics_LoadResources(param0);
+    NumberEntryGraphics_UpdateDigitSelection(param0);
+    NumberEntryGraphics_CreateDigitSprites(param0);
+    NumberEntryGraphics_LayoutDigits(param0, 0);
+    NumberEntryGraphics_CreateControlSprites(param0);
+    NumberEntryGraphics_CreateButtonEffectSprites(param0);
+    NumberEntryGraphics_UpdateDigitTouchRects(param0);
+    NumberEntryGraphics_InitFont(param0);
+    NumberEntryGraphics_CreateButtonLabels(param0);
+    NumberEntryGraphics_InitMessageWindow(param0->graphics.bgConfig, &param0->graphics.messageWindow, 4, 2, 21, 27, 2, 100, param0->args.unk_2C);
 
     // When the screen is used for a Wi-Fi connection, load the connection
     // strength icon palette.
@@ -218,45 +218,45 @@ BOOL NumberEntry_AnimateSelection(NumberEntryScreen *param0)
 
     switch (param0->phaseStep) {
     case 0:
-        sub_0208AAB4(param0, 0, 0);
+        NumberEntryGraphics_SetControlVisible(param0, 0, 0);
         {
             for (v0 = 0; v0 < param0->digitCount; v0++) {
-                if (param0->digits[v0].unk_14.unk_04 == 0) {
+                if (param0->digits[v0].anim.timer == 0) {
                     continue;
                 }
 
-                ManagedSprite_OffsetPositionXY(param0->digits[v0].unk_0C, param0->digits[v0].unk_14.unk_00, param0->digits[v0].unk_14.unk_02);
-                param0->digits[v0].unk_14.unk_04--;
+                ManagedSprite_OffsetPositionXY(param0->digits[v0].sprite, param0->digits[v0].anim.offsetX, param0->digits[v0].anim.offsetY);
+                param0->digits[v0].anim.timer--;
 
                 if ((v0 >= param0->selectedGroupStart) && (v0 < param0->selectedGroupEnd)) {
-                    ManagedSprite_SetAffineScale(param0->digits[v0].unk_0C, v1[param0->digits[v0].unk_14.unk_05], v1[param0->digits[v0].unk_14.unk_05]);
-                    param0->digits[v0].unk_14.unk_05++;
+                    ManagedSprite_SetAffineScale(param0->digits[v0].sprite, v1[param0->digits[v0].anim.step], v1[param0->digits[v0].anim.step]);
+                    param0->digits[v0].anim.step++;
                 }
 
                 if ((v0 >= param0->prevGroupStart) && (v0 < param0->prevGroupEnd)) {
-                    ManagedSprite_SetAffineScale(param0->digits[v0].unk_0C, v2[param0->digits[v0].unk_14.unk_05], v2[param0->digits[v0].unk_14.unk_05]);
-                    param0->digits[v0].unk_14.unk_05++;
+                    ManagedSprite_SetAffineScale(param0->digits[v0].sprite, v2[param0->digits[v0].anim.step], v2[param0->digits[v0].anim.step]);
+                    param0->digits[v0].anim.step++;
                 }
             }
 
             for (v0 = 0; v0 < param0->dividerCount; v0++) {
-                if (param0->dividers[v0].unk_14.unk_04 == 0) {
+                if (param0->dividers[v0].anim.timer == 0) {
                     continue;
                 }
 
-                ManagedSprite_OffsetPositionXY(param0->dividers[v0].unk_0C, param0->dividers[v0].unk_14.unk_00, param0->dividers[v0].unk_14.unk_02);
-                param0->dividers[v0].unk_14.unk_04--;
+                ManagedSprite_OffsetPositionXY(param0->dividers[v0].sprite, param0->dividers[v0].anim.offsetX, param0->dividers[v0].anim.offsetY);
+                param0->dividers[v0].anim.timer--;
             }
 
-            if (param0->digits[0].unk_14.unk_04 == 0) {
+            if (param0->digits[0].anim.timer == 0) {
                 for (v0 = param0->selectedGroupStart; v0 < param0->selectedGroupEnd; v0++) {
-                    ManagedSprite_SetAnim(param0->digits[v0].unk_0C, sub_0208AD98(param0->digits[v0].unk_00, param0->digits[v0].unk_08));
-                    ManagedSprite_TickFrame(param0->digits[v0].unk_0C);
+                    ManagedSprite_SetAnim(param0->digits[v0].sprite, NumberEntryGraphics_GetDigitAnim(param0->digits[v0].value, param0->digits[v0].isSelected));
+                    ManagedSprite_TickFrame(param0->digits[v0].sprite);
                 }
 
                 for (v0 = param0->prevGroupStart; v0 < param0->prevGroupEnd; v0++) {
-                    ManagedSprite_SetAnim(param0->digits[v0].unk_0C, sub_0208AD98(param0->digits[v0].unk_00, param0->digits[v0].unk_08));
-                    ManagedSprite_TickFrame(param0->digits[v0].unk_0C);
+                    ManagedSprite_SetAnim(param0->digits[v0].sprite, NumberEntryGraphics_GetDigitAnim(param0->digits[v0].value, param0->digits[v0].isSelected));
+                    ManagedSprite_TickFrame(param0->digits[v0].sprite);
                 }
 
                 param0->phaseStep++;
@@ -267,21 +267,21 @@ BOOL NumberEntry_AnimateSelection(NumberEntryScreen *param0)
         break;
     case 1:
         for (v0 = param0->selectedGroupStart; v0 < param0->selectedGroupEnd; v0++) {
-            if (param0->digits[v0].unk_14.unk_05 == 6) {
+            if (param0->digits[v0].anim.step == 6) {
                 continue;
             }
 
-            ManagedSprite_SetAffineScale(param0->digits[v0].unk_0C, v1[param0->digits[v0].unk_14.unk_05], v1[param0->digits[v0].unk_14.unk_05]);
-            param0->digits[v0].unk_14.unk_05++;
+            ManagedSprite_SetAffineScale(param0->digits[v0].sprite, v1[param0->digits[v0].anim.step], v1[param0->digits[v0].anim.step]);
+            param0->digits[v0].anim.step++;
         }
 
         for (v0 = param0->prevGroupStart; v0 < param0->prevGroupEnd; v0++) {
-            if (param0->digits[v0].unk_14.unk_05 == 6) {
+            if (param0->digits[v0].anim.step == 6) {
                 continue;
             }
 
-            ManagedSprite_SetAffineScale(param0->digits[v0].unk_0C, v2[param0->digits[v0].unk_14.unk_05], v2[param0->digits[v0].unk_14.unk_05]);
-            param0->digits[v0].unk_14.unk_05++;
+            ManagedSprite_SetAffineScale(param0->digits[v0].sprite, v2[param0->digits[v0].anim.step], v2[param0->digits[v0].anim.step]);
+            param0->digits[v0].anim.step++;
         }
 
         param0->animTimer++;
@@ -291,18 +291,18 @@ BOOL NumberEntry_AnimateSelection(NumberEntryScreen *param0)
         }
         break;
     default:
-        sub_0208AF44(param0);
+        NumberEntryGraphics_UpdateDigitTouchRects(param0);
 
         // Move the cursor to the first or last slot of the newly selected
         // group, depending on the direction the player moved.
         if (param0->selectionAction.selectLastDigit == 0) {
-            sub_0208AAE4(param0, NumberEntry_GetFirstDigitInGroup(param0, param0->selectionAction.value));
+            NumberEntryGraphics_MoveCursorToDigit(param0, NumberEntry_GetFirstDigitInGroup(param0, param0->selectionAction.value));
         } else {
-            sub_0208AAE4(param0, NumberEntry_GetLastDigitInGroup(param0, param0->selectionAction.value));
+            NumberEntryGraphics_MoveCursorToDigit(param0, NumberEntry_GetLastDigitInGroup(param0, param0->selectionAction.value));
         }
 
         if (param0->selectedGroup != 0) {
-            sub_0208AAB4(param0, 0, 1);
+            NumberEntryGraphics_SetControlVisible(param0, 0, 1);
         }
 
         NumberEntry_ClearSelectionAction(param0);
@@ -327,8 +327,8 @@ BOOL NumberEntry_Update(NumberEntryScreen *param0)
 {
     BOOL v0 = sPhaseFuncs[param0->phase](param0);
 
-    sub_0208ABB4(param0);
-    sub_0208AC8C(param0);
+    NumberEntryGraphics_UpdateControls(param0);
+    NumberEntryGraphics_UpdateButtonEffects(param0);
     SpriteSystem_DrawSprites(param0->graphics.spriteManager);
 
     return v0;
@@ -336,7 +336,7 @@ BOOL NumberEntry_Update(NumberEntryScreen *param0)
 
 // Reads the keypad. The cursor is laid out on a 5x3 grid: the top two rows are
 // the ten digit keys (0-9) and the bottom row holds the BACK and OK buttons
-// (cells 10 and 11). The cursor position is stored in controls[1].unk_14.
+// (cells 10 and 11). The cursor position is stored in controls[1].anim.
 void NumberEntry_ProcessInput(NumberEntryScreen *param0)
 {
     const int sCursorGrid[][5] = {
@@ -345,7 +345,7 @@ void NumberEntry_ProcessInput(NumberEntryScreen *param0)
         { 10, 10, 10, 11, 11 },
     };
     BOOL v1 = FALSE;
-    int v2 = sCursorGrid[param0->controls[1].unk_14.unk_02][param0->controls[1].unk_14.unk_00];
+    int v2 = sCursorGrid[param0->controls[1].anim.offsetY][param0->controls[1].anim.offsetX];
 
     if (param0->phase != 1 || param0->selectionAction.type == 1) {
         return;
@@ -356,14 +356,14 @@ void NumberEntry_ProcessInput(NumberEntryScreen *param0)
     if (param0->graphics.touchMode == TRUE) {
         if (gSystem.pressedKeys && !TouchScreen_Touched()) {
             param0->graphics.touchMode = FALSE;
-            sub_0208AB2C(param0, v2);
+            NumberEntryGraphics_MoveKeyCursor(param0, v2);
             if (v2 == 10 || v2 == 11) {
-                if (param0->controls[1].unk_00 != 2) {
-                    param0->controls[1].unk_00 = 2;
+                if (param0->controls[1].value != 2) {
+                    param0->controls[1].value = 2;
                 }
             } else {
-                if (param0->controls[1].unk_00 != 1) {
-                    param0->controls[1].unk_00 = 1;
+                if (param0->controls[1].value != 1) {
+                    param0->controls[1].value = 1;
                 }
             }
         }
@@ -371,38 +371,38 @@ void NumberEntry_ProcessInput(NumberEntryScreen *param0)
     }
 
     if (gSystem.pressedKeysRepeatable & PAD_KEY_UP) {
-        if (param0->controls[1].unk_14.unk_02 > 0) {
-            param0->controls[1].unk_14.unk_02--;
+        if (param0->controls[1].anim.offsetY > 0) {
+            param0->controls[1].anim.offsetY--;
         } else {
-            param0->controls[1].unk_14.unk_02 = 2;
+            param0->controls[1].anim.offsetY = 2;
         }
         v1 = TRUE;
     } else if (gSystem.pressedKeysRepeatable & PAD_KEY_DOWN) {
-        param0->controls[1].unk_14.unk_02++;
-        param0->controls[1].unk_14.unk_02 %= 3;
+        param0->controls[1].anim.offsetY++;
+        param0->controls[1].anim.offsetY %= 3;
         v1 = TRUE;
     } else if (gSystem.pressedKeysRepeatable & PAD_KEY_RIGHT) {
 
         if (v2 == 10) {
-            param0->controls[1].unk_14.unk_00 = 3;
+            param0->controls[1].anim.offsetX = 3;
         } else if (v2 == 11) {
-            param0->controls[1].unk_14.unk_00 = 0;
+            param0->controls[1].anim.offsetX = 0;
         } else {
-            param0->controls[1].unk_14.unk_00++;
-            param0->controls[1].unk_14.unk_00 %= 5;
+            param0->controls[1].anim.offsetX++;
+            param0->controls[1].anim.offsetX %= 5;
         }
         v1 = TRUE;
     } else if (gSystem.pressedKeysRepeatable & PAD_KEY_LEFT) {
 
         if (v2 == 10) {
-            param0->controls[1].unk_14.unk_00 = 3;
+            param0->controls[1].anim.offsetX = 3;
         } else if (v2 == 11) {
-            param0->controls[1].unk_14.unk_00 = 0;
+            param0->controls[1].anim.offsetX = 0;
         } else {
-            if (param0->controls[1].unk_14.unk_00 > 0) {
-                param0->controls[1].unk_14.unk_00--;
+            if (param0->controls[1].anim.offsetX > 0) {
+                param0->controls[1].anim.offsetX--;
             } else {
-                param0->controls[1].unk_14.unk_00 = 4;
+                param0->controls[1].anim.offsetX = 4;
             }
         }
         v1 = TRUE;
@@ -427,25 +427,25 @@ void NumberEntry_ProcessInput(NumberEntryScreen *param0)
             // Write the chosen digit into the current slot and advance the
             // cursor. If the next slot belongs to a different group, queue a
             // group change instead of a plain cursor move.
-            v3 = param0->controls[0].unk_00;
-            param0->digits[v3].unk_00 = v2 + 1;
-            sub_0208AAB4(param0, 1, FALSE);
-            sub_0208AAB4(param0, 2, TRUE);
-            sub_0208AB6C(param0, v2, 2);
-            ManagedSprite_SetAnim(param0->digits[v3].unk_0C, sub_0208AD98(param0->digits[v3].unk_00, param0->digits[v3].unk_08));
-            ManagedSprite_SetAnim(param0->controls[2].unk_0C, 3);
+            v3 = param0->controls[0].value;
+            param0->digits[v3].value = v2 + 1;
+            NumberEntryGraphics_SetControlVisible(param0, 1, FALSE);
+            NumberEntryGraphics_SetControlVisible(param0, 2, TRUE);
+            NumberEntryGraphics_PositionControlAtKey(param0, v2, 2);
+            ManagedSprite_SetAnim(param0->digits[v3].sprite, NumberEntryGraphics_GetDigitAnim(param0->digits[v3].value, param0->digits[v3].isSelected));
+            ManagedSprite_SetAnim(param0->controls[2].sprite, 3);
 
-            v4 = param0->digits[v3].unk_04;
+            v4 = param0->digits[v3].group;
             v3++;
             if (v3 == param0->digitCount) {
 
                 param0->selectionAction.type = 1;
                 param0->selectionAction.value = 0;
-                param0->controls[1].unk_14.unk_00 = 3;
-                param0->controls[1].unk_14.unk_02 = 2;
+                param0->controls[1].anim.offsetX = 3;
+                param0->controls[1].anim.offsetY = 2;
                 v1 = TRUE;
             } else {
-                v5 = param0->digits[v3].unk_04;
+                v5 = param0->digits[v3].group;
 
                 if (v4 != v5) {
 
@@ -462,41 +462,41 @@ void NumberEntry_ProcessInput(NumberEntryScreen *param0)
         NumberEntry_Cancel(param0);
         Sound_PlayEffect(1509);
     } else if (gSystem.pressedKeysRepeatable & PAD_BUTTON_L) {
-        int v6 = param0->controls[0].unk_00;
+        int v6 = param0->controls[0].value;
 
         // L/R wrap around the digit slots, skipping the pre-filled ones.
         if (v6 == param0->prefilledDigitCount) {
-            param0->controls[0].unk_00 = param0->digitCount - 1;
+            param0->controls[0].value = param0->digitCount - 1;
         } else {
-            param0->controls[0].unk_00--;
+            param0->controls[0].value--;
         }
-        v6 = param0->controls[0].unk_00;
+        v6 = param0->controls[0].value;
 
-        if (param0->digits[v6].unk_08 == 1) {
+        if (param0->digits[v6].isSelected == 1) {
             param0->selectionAction.type = 2;
             param0->selectionAction.value = v6;
         } else {
             param0->selectionAction.type = 1;
-            param0->selectionAction.value = param0->digits[v6].unk_04;
+            param0->selectionAction.value = param0->digits[v6].group;
             param0->selectionAction.selectLastDigit = 1;
         }
         Sound_PlayEffect(1504);
     } else if (gSystem.pressedKeysRepeatable & PAD_BUTTON_R) {
-        int v7 = param0->controls[0].unk_00;
+        int v7 = param0->controls[0].value;
 
         if (v7 == param0->digitCount - 1) {
-            param0->controls[0].unk_00 = param0->prefilledDigitCount;
+            param0->controls[0].value = param0->prefilledDigitCount;
         } else {
-            param0->controls[0].unk_00++;
+            param0->controls[0].value++;
         }
-        v7 = param0->controls[0].unk_00;
+        v7 = param0->controls[0].value;
 
-        if (param0->digits[v7].unk_08 == 1) {
+        if (param0->digits[v7].isSelected == 1) {
             param0->selectionAction.type = 2;
             param0->selectionAction.value = v7;
         } else {
             param0->selectionAction.type = 1;
-            param0->selectionAction.value = param0->digits[v7].unk_04;
+            param0->selectionAction.value = param0->digits[v7].group;
         }
         Sound_PlayEffect(1504);
     }
@@ -504,16 +504,16 @@ void NumberEntry_ProcessInput(NumberEntryScreen *param0)
     if (v1 == TRUE) {
         Sound_PlayEffect(1504);
 
-        v2 = sCursorGrid[param0->controls[1].unk_14.unk_02][param0->controls[1].unk_14.unk_00];
-        sub_0208AB2C(param0, v2);
+        v2 = sCursorGrid[param0->controls[1].anim.offsetY][param0->controls[1].anim.offsetX];
+        NumberEntryGraphics_MoveKeyCursor(param0, v2);
 
         if (v2 == 10 || v2 == 11) {
-            if (param0->controls[1].unk_00 != 2) {
-                param0->controls[1].unk_00 = 2;
+            if (param0->controls[1].value != 2) {
+                param0->controls[1].value = 2;
             }
         } else {
-            if (param0->controls[1].unk_00 != 1) {
-                param0->controls[1].unk_00 = 1;
+            if (param0->controls[1].value != 1) {
+                param0->controls[1].value = 1;
             }
         }
     }
@@ -527,16 +527,16 @@ void NumberEntry_Confirm(NumberEntryScreen *param0)
     u32 v1 = 0;
     String *v2 = String_Init(100, HEAP_ID_101);
 
-    param0->buttonEffects[1].unk_00 = 1;
-    param0->buttonEffects[1].unk_14.unk_04 = 0;
+    param0->buttonEffects[1].value = 1;
+    param0->buttonEffects[1].anim.timer = 0;
 
     for (v0 = 0; v0 < param0->digitCount; v0++) {
-        if (param0->digits[v0].unk_00 == 0) {
-            param0->digits[v0].unk_00 = 1;
-            ManagedSprite_SetAnim(param0->digits[v0].unk_0C, sub_0208AD98(param0->digits[v0].unk_00, param0->digits[v0].unk_08));
+        if (param0->digits[v0].value == 0) {
+            param0->digits[v0].value = 1;
+            ManagedSprite_SetAnim(param0->digits[v0].sprite, NumberEntryGraphics_GetDigitAnim(param0->digits[v0].value, param0->digits[v0].isSelected));
         }
 
-        v1 = param0->digits[v0].unk_00 - 1;
+        v1 = param0->digits[v0].value - 1;
         String_FormatInt(v2, v1, 1, 1, 1);
         String_Concat(param0->args.unk_1C, v2);
     }
@@ -553,13 +553,13 @@ void NumberEntry_Cancel(NumberEntryScreen *param0)
     int v1;
     int v2;
 
-    param0->buttonEffects[0].unk_00 = 1;
-    param0->buttonEffects[0].unk_14.unk_04 = 0;
+    param0->buttonEffects[0].value = 1;
+    param0->buttonEffects[0].anim.timer = 0;
 
     // With no group highlighted, jump to the last slot.
     if (param0->selectedGroup == 0) {
-        v0 = param0->controls[0].unk_00 = param0->digitCount - 1;
-        v2 = param0->digits[v0].unk_04;
+        v0 = param0->controls[0].value = param0->digitCount - 1;
+        v2 = param0->digits[v0].group;
 
         param0->selectionAction.type = 1;
         param0->selectionAction.value = v2;
@@ -568,17 +568,17 @@ void NumberEntry_Cancel(NumberEntryScreen *param0)
         return;
     }
 
-    v0 = param0->controls[0].unk_00;
-    param0->digits[v0].unk_00 = 0;
+    v0 = param0->controls[0].value;
+    param0->digits[v0].value = 0;
 
-    ManagedSprite_SetAnim(param0->digits[v0].unk_0C, sub_0208AD98(param0->digits[v0].unk_00, param0->digits[v0].unk_08));
-    v1 = param0->digits[v0].unk_04;
+    ManagedSprite_SetAnim(param0->digits[v0].sprite, NumberEntryGraphics_GetDigitAnim(param0->digits[v0].value, param0->digits[v0].isSelected));
+    v1 = param0->digits[v0].group;
 
     if (v0 > param0->prefilledDigitCount) {
         v0--;
-        ManagedSprite_SetAnim(param0->digits[v0].unk_0C, sub_0208AD98(param0->digits[v0].unk_00, param0->digits[v0].unk_08));
+        ManagedSprite_SetAnim(param0->digits[v0].sprite, NumberEntryGraphics_GetDigitAnim(param0->digits[v0].value, param0->digits[v0].isSelected));
 
-        v2 = param0->digits[v0].unk_04;
+        v2 = param0->digits[v0].group;
 
         if (v1 != v2) {
             param0->selectionAction.type = 1;
@@ -598,7 +598,7 @@ void NumberEntry_InitTouchScreen(NumberEntryScreen *param0)
     int v0;
 
     for (v0 = 0; v0 < 15 + 1; v0++) {
-        param0->digits[v0].unk_10 = &param0->graphics.touchRects[v0];
+        param0->digits[v0].touchRect = &param0->graphics.touchRects[v0];
     }
 
     {
@@ -651,27 +651,27 @@ void NumberEntry_TouchCallback(u32 param0, enum TouchScreenButtonState param1, v
                 return;
             }
 
-            if (v0->digits[param0].unk_08 == 1) {
+            if (v0->digits[param0].isSelected == 1) {
                 v0->selectionAction.type = 2;
                 v0->selectionAction.value = param0;
             } else {
                 v0->selectionAction.type = 1;
-                v0->selectionAction.value = v0->digits[param0].unk_04;
+                v0->selectionAction.value = v0->digits[param0].group;
             }
 
             Sound_PlayEffect(SEQ_SE_DP_BUTTON3_sseq);
         } else {
             if (param0 == 26) {
-                v0->controls[1].unk_14.unk_00 = 0;
-                v0->controls[1].unk_14.unk_02 = 2;
+                v0->controls[1].anim.offsetX = 0;
+                v0->controls[1].anim.offsetY = 2;
                 Sound_PlayEffect(SEQ_SE_DP_BUTTON3_sseq);
             } else if (param0 == 27) {
-                v0->controls[1].unk_14.unk_00 = 3;
-                v0->controls[1].unk_14.unk_02 = 2;
+                v0->controls[1].anim.offsetX = 3;
+                v0->controls[1].anim.offsetY = 2;
                 Sound_PlayEffect(SEQ_SE_DP_PIRORIRO_sseq);
             } else {
-                v0->controls[1].unk_14.unk_00 = (param0 - 16) % 5;
-                v0->controls[1].unk_14.unk_02 = (param0 - 16) / 5;
+                v0->controls[1].anim.offsetX = (param0 - 16) % 5;
+                v0->controls[1].anim.offsetY = (param0 - 16) / 5;
                 Sound_PlayEffect(SEQ_SE_DP_BUTTON3_sseq);
             }
 
@@ -684,18 +684,18 @@ void NumberEntry_TouchCallback(u32 param0, enum TouchScreenButtonState param1, v
                     return;
                 }
 
-                v1 = v0->controls[0].unk_00;
-                v0->digits[v1].unk_00 = param0 - 16 + 1;
+                v1 = v0->controls[0].value;
+                v0->digits[v1].value = param0 - 16 + 1;
 
-                ManagedSprite_SetAnim(v0->digits[v1].unk_0C, sub_0208AD98(v0->digits[v1].unk_00, v0->digits[v1].unk_08));
-                sub_0208AAB4(v0, 1, 1);
-                sub_0208AB2C(v0, param0 - 16);
-                sub_0208AAB4(v0, 1, 0);
-                sub_0208AAB4(v0, 2, 1);
-                sub_0208AB6C(v0, param0 - 16, 2);
-                ManagedSprite_SetAnim(v0->controls[2].unk_0C, 3);
+                ManagedSprite_SetAnim(v0->digits[v1].sprite, NumberEntryGraphics_GetDigitAnim(v0->digits[v1].value, v0->digits[v1].isSelected));
+                NumberEntryGraphics_SetControlVisible(v0, 1, 1);
+                NumberEntryGraphics_MoveKeyCursor(v0, param0 - 16);
+                NumberEntryGraphics_SetControlVisible(v0, 1, 0);
+                NumberEntryGraphics_SetControlVisible(v0, 2, 1);
+                NumberEntryGraphics_PositionControlAtKey(v0, param0 - 16, 2);
+                ManagedSprite_SetAnim(v0->controls[2].sprite, 3);
 
-                v2 = v0->digits[v1].unk_04;
+                v2 = v0->digits[v1].group;
                 v1++;
 
                 if (v1 == v0->digitCount) {
@@ -703,7 +703,7 @@ void NumberEntry_TouchCallback(u32 param0, enum TouchScreenButtonState param1, v
                     v0->selectionAction.value = 0;
                     v0->selectionAction.selectLastDigit = 0;
                 } else {
-                    v3 = v0->digits[v1].unk_04;
+                    v3 = v0->digits[v1].group;
 
                     if (v2 != v3) {
                         v0->selectionAction.type = 1;
@@ -734,13 +734,13 @@ void NumberEntry_ProcessSelectionAction(NumberEntryScreen *param0)
         break;
     case 1:
         NumberEntry_SetSelectedGroup(param0, param0->selectionAction.value);
-        sub_0208ADA4(param0);
-        sub_0208ADE4(param0, 1);
+        NumberEntryGraphics_UpdateDigitSelection(param0);
+        NumberEntryGraphics_LayoutDigits(param0, 1);
         NumberEntry_SetPhase(param0, 2);
         param0->selectionAction.type = 0xFF;
         break;
     case 2:
-        sub_0208AAE4(param0, param0->selectionAction.value);
+        NumberEntryGraphics_MoveCursorToDigit(param0, param0->selectionAction.value);
         NumberEntry_ClearSelectionAction(param0);
         break;
     case 0xFF:
@@ -762,7 +762,7 @@ int NumberEntry_GetFirstDigitInGroup(NumberEntryScreen *param0, int param1)
     int v0;
 
     for (v0 = 0; v0 < param0->digitCount; v0++) {
-        if (param0->digits[v0].unk_04 == param1) {
+        if (param0->digits[v0].group == param1) {
             return v0;
         }
     }
@@ -778,7 +778,7 @@ int NumberEntry_GetLastDigitInGroup(NumberEntryScreen *param0, int param1)
     int v2 = 0;
 
     for (v0 = 0; v0 < param0->digitCount; v0++) {
-        if (param0->digits[v0].unk_04 == param1) {
+        if (param0->digits[v0].group == param1) {
             v2 = 1;
         } else {
             if (v2 == 1) {

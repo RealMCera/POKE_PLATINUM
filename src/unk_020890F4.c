@@ -23,7 +23,7 @@
 #include "touch_pad.h"
 #include "touch_screen_actions.h"
 #include "number_entry_screen.h"
-#include "unk_0208A3F4.h"
+#include "number_entry_graphics.h"
 #include "vram_transfer.h"
 
 #include "constdata/const_020F2DBC.h"
@@ -69,7 +69,7 @@ static int sub_020890F4(ApplicationManager *appMan, int *param1)
     PaletteData_AllocBuffer(v0->graphics.paletteData, PLTTBUF_MAIN_OBJ, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
     PaletteData_AllocBuffer(v0->graphics.paletteData, PLTTBUF_SUB_OBJ, PALETTE_SIZE_BYTES * 16, HEAP_ID_101);
     sub_0208945C(v0->graphics.bgConfig);
-    sub_0208A3F4(v0);
+    NumberEntryGraphics_InitSpriteSystem(v0);
     NumberEntry_InitLayout(v0);
 
     {
@@ -112,7 +112,7 @@ static int sub_0208927C(ApplicationManager *appMan, int *param1)
         NetworkIcon_Destroy();
     }
 
-    sub_0208A6CC(v0);
+    NumberEntryGraphics_Free(v0);
     GXLayers_EngineAToggleLayers(GX_PLANEMASK_BG0, 0);
     GXLayers_EngineAToggleLayers(GX_PLANEMASK_BG1, 0);
     GXLayers_EngineAToggleLayers(GX_PLANEMASK_BG2, 0);

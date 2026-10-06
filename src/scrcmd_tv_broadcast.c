@@ -37,7 +37,7 @@
 #include "string_template.h"
 #include "tv_segment.h"
 #include "image_clips.h"
-#include "unk_0202E2CC.h"
+#include "tv_broadcast.h"
 #include "unk_02054884.h"
 
 #include "res/text/bank/tv_reporter_interviews.h"
@@ -232,7 +232,7 @@ static BOOL TVInterview_IsEligible(FieldSystem *fieldSystem, int segmentID)
     TVInterview_IsEligibleFunction isEligibleFn;
     TVBroadcast *broadcast = SaveData_GetTVBroadcast(fieldSystem->saveData);
 
-    if (sub_0202E6B0(broadcast, 1, segmentID) == 0) {
+    if (TVBroadcast_CanSaveSegment(broadcast, 1, segmentID) == 0) {
         return FALSE;
     }
 
@@ -272,9 +272,9 @@ static void sub_020492A0(FieldSystem *fieldSystem, StringTemplate *param1)
 {
     u16 v0[10 + 1];
     TVBroadcast *broadcast = SaveData_GetTVBroadcast(fieldSystem->saveData);
-    UnkStruct_0202E7E4 *v2 = sub_0202E7E4(broadcast);
+    TVSegment_AmitySquareWatchData *v2 = TVBroadcast_GetAmitySquareWatch(broadcast);
 
-    MessageLoader_GetSpeciesName(v2->unk_02, HEAP_ID_FIELD1, v0);
+    MessageLoader_GetSpeciesName(v2->species, HEAP_ID_FIELD1, v0);
     sub_0204922C(param1, 0, v0, 0, GAME_LANGUAGE, 1);
 }
 
@@ -282,9 +282,9 @@ static void sub_020492D4(FieldSystem *fieldSystem, StringTemplate *param1)
 {
     u16 v0[10 + 1];
     TVBroadcast *broadcast = SaveData_GetTVBroadcast(fieldSystem->saveData);
-    UnkStruct_0202E810 *v2 = sub_0202E810(broadcast);
+    TVSegment_BattleFrontierFrontlineNewsSingleData *v2 = TVBroadcast_GetFrontlineNewsSingle(broadcast);
 
-    MessageLoader_GetSpeciesName(v2->unk_02, HEAP_ID_FIELD1, v0);
+    MessageLoader_GetSpeciesName(v2->species, HEAP_ID_FIELD1, v0);
     sub_0204922C(param1, 0, v0, 0, GAME_LANGUAGE, 1);
 }
 
@@ -292,19 +292,19 @@ static void sub_02049308(FieldSystem *fieldSystem, StringTemplate *param1)
 {
     String *v0;
     TVBroadcast *broadcast = SaveData_GetTVBroadcast(fieldSystem->saveData);
-    UnkStruct_0202E81C *v2 = sub_0202E81C(broadcast);
+    TVSegment_BattleFrontierFrontlineNewsMultiData *v2 = TVBroadcast_GetFrontlineNewsMulti(broadcast);
 
     v0 = String_Init(64, HEAP_ID_FIELD1);
 
-    String_CopyChars(v0, v2->unk_06);
-    StringTemplate_SetString(param1, 0, v0, v2->unk_02, 1, GAME_LANGUAGE);
+    String_CopyChars(v0, v2->trainerName);
+    StringTemplate_SetString(param1, 0, v0, v2->gender, 1, GAME_LANGUAGE);
     String_Free(v0);
 }
 
 static BOOL sub_02049348(FieldSystem *fieldSystem)
 {
-    UnkStruct_0202E7FC *v0 = sub_0202E7FC(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->unk_00;
+    TVSegment_BattleTowerCornerData *v0 = TVBroadcast_GetBattleTowerCorner(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return v0->active;
 }
 
 static BOOL sub_02049358(FieldSystem *fieldSystem)
@@ -327,26 +327,26 @@ static BOOL sub_02049378(FieldSystem *fieldSystem)
 
 static BOOL sub_02049388(FieldSystem *fieldSystem)
 {
-    UnkStruct_0202E7F0 *v0 = sub_0202E7F0(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->unk_00;
+    TVSegment_ThreeCheersForPoffinCornerData *v0 = TVBroadcast_GetPoffinCorner(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return v0->active;
 }
 
 static BOOL sub_02049398(FieldSystem *fieldSystem)
 {
-    UnkStruct_0202E7E4 *v0 = sub_0202E7E4(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->unk_00;
+    TVSegment_AmitySquareWatchData *v0 = TVBroadcast_GetAmitySquareWatch(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return v0->active;
 }
 
 static BOOL sub_020493A8(FieldSystem *fieldSystem)
 {
-    UnkStruct_0202E810 *v0 = sub_0202E810(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->unk_00;
+    TVSegment_BattleFrontierFrontlineNewsSingleData *v0 = TVBroadcast_GetFrontlineNewsSingle(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return v0->active;
 }
 
 static BOOL sub_020493B8(FieldSystem *fieldSystem)
 {
-    UnkStruct_0202E81C *v0 = sub_0202E81C(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->unk_00;
+    TVSegment_BattleFrontierFrontlineNewsMultiData *v0 = TVBroadcast_GetFrontlineNewsMulti(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return v0->active;
 }
 
 static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = {
@@ -469,7 +469,7 @@ static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = 
 BOOL ScrCmd_GetCurrentSafariGameCaughtNum(ScriptContext *ctx)
 {
     TVBroadcast *broadcast;
-    UnkStruct_0202E808 *safariGame;
+    TVSegment_SafariGameData *safariGame;
     u16 *destVar = ScriptContext_GetVarPointer(ctx);
 
     broadcast = SaveData_GetTVBroadcast(ctx->fieldSystem->saveData);
@@ -482,16 +482,16 @@ BOOL ScrCmd_GetCurrentSafariGameCaughtNum(ScriptContext *ctx)
 BOOL ScrCmd_GetBattleFrontierReporterPosition(ScriptContext *ctx)
 {
     TVBroadcast *broadcast;
-    UnkStruct_0202E81C *v1;
+    TVSegment_BattleFrontierFrontlineNewsMultiData *v1;
     u16 *x = ScriptContext_GetVarPointer(ctx);
     u16 *z = ScriptContext_GetVarPointer(ctx);
     u16 *dir = ScriptContext_GetVarPointer(ctx);
     u16 *movementType = ScriptContext_GetVarPointer(ctx);
 
     broadcast = SaveData_GetTVBroadcast(ctx->fieldSystem->saveData);
-    v1 = sub_0202E81C(broadcast);
+    v1 = TVBroadcast_GetFrontlineNewsMulti(broadcast);
 
-    switch (v1->unk_01) {
+    switch (v1->facility) {
     case 5:
         *x = 25;
         *z = 36;

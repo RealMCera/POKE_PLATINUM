@@ -53,7 +53,7 @@
 #include "unk_020363E8.h"
 #include "unk_02038ED4.h"
 #include "unk_02092494.h"
-#include "unk_0209BDF8.h"
+#include "union_room_comm.h"
 #include "vram_transfer.h"
 
 typedef struct {
@@ -247,7 +247,7 @@ typedef struct {
     int unk_10;
     int unk_14;
     int unk_18[5];
-    UnkStruct_0209C0F0 unk_2C;
+    UnionRoomCommSpinTradePos unk_2C;
     UnkStruct_ov109_021D17EC unk_34;
     UnkStruct_ov109_021D1048 unk_44[5];
     TrainerInfo *unk_58[5];
@@ -269,7 +269,7 @@ typedef struct UnkStruct_ov109_021D0F70_t {
     UnkStruct_ov109_021D0F70_sub1 unk_2C;
     u8 unk_AC[32];
     UnkStruct_0209C194 *unk_CC;
-    UnkStruct_0209BDF8 *unk_D0;
+    UnionRoomComm *unk_D0;
     UnkStruct_ov109_021D2AE4 unk_D4;
     UnkStruct_ov109_021D1334 unk_190;
     UnkStruct_ov109_021D31A8 unk_AB4;
@@ -574,7 +574,7 @@ static int ov109_021D0FC8(UnkStruct_ov109_021D0F70 *param0)
 {
     u16 v0 = (1 << 0);
 
-    if (sub_0209BEBC(param0->unk_D0, 8, &v0, 2) == 1) {
+    if (UnionRoomComm_Send(param0->unk_D0, 8, &v0, 2) == 1) {
         param0->unk_00 = 4;
         return 1;
     }
@@ -600,7 +600,7 @@ static int ov109_021D1018(UnkStruct_ov109_021D0F70 *param0)
 
     param0->unk_2C.unk_04 = ov109_021D3B04(param0) + 1;
 
-    v0 = sub_0209BEBC(param0->unk_D0, 13, &param0->unk_2C.unk_04, 4);
+    v0 = UnionRoomComm_Send(param0->unk_D0, 13, &param0->unk_2C.unk_04, 4);
 
     if (v0 == 1) {
         param0->unk_14 = 0;
@@ -619,7 +619,7 @@ static int ov109_021D1048(UnkStruct_ov109_021D0F70 *param0)
         v1.unk_02 = 0;
         v1.unk_00 = 0;
 
-        v0 = sub_0209BEBC(param0->unk_D0, 12, &v1, sizeof(UnkStruct_ov109_021D1048));
+        v0 = UnionRoomComm_Send(param0->unk_D0, 12, &v1, sizeof(UnkStruct_ov109_021D1048));
 
         if (v0 == 1) {
             param0->unk_14++;
@@ -630,7 +630,7 @@ static int ov109_021D1048(UnkStruct_ov109_021D0F70 *param0)
 
     {
         int v2 = 1, v3 = 1;
-        u32 v4 = param0->unk_D0->unk_42;
+        u32 v4 = param0->unk_D0->participantBitmap;
 
         do {
             if (v4 & (1 << v2)) {
@@ -638,7 +638,7 @@ static int ov109_021D1048(UnkStruct_ov109_021D0F70 *param0)
                     v1.unk_02 = v2;
                     v1.unk_00 = param0->unk_14;
 
-                    v0 = sub_0209BEBC(param0->unk_D0, 12, &v1, sizeof(UnkStruct_ov109_021D1048));
+                    v0 = UnionRoomComm_Send(param0->unk_D0, 12, &v1, sizeof(UnkStruct_ov109_021D1048));
 
                     if (v0 == 1) {
                         param0->unk_14++;
@@ -664,7 +664,7 @@ static int ov109_021D10D8(UnkStruct_ov109_021D0F70 *param0)
 {
     u16 v0 = (1 << 3);
 
-    if (sub_0209BEBC(param0->unk_D0, 8, &v0, 2) == 1) {
+    if (UnionRoomComm_Send(param0->unk_D0, 8, &v0, 2) == 1) {
         param0->unk_00 = 10;
     }
 
@@ -673,7 +673,7 @@ static int ov109_021D10D8(UnkStruct_ov109_021D0F70 *param0)
 
 static int ov109_021D1100(UnkStruct_ov109_021D0F70 *param0)
 {
-    int v0 = sub_0209BEBC(param0->unk_D0, 9, NULL, 0);
+    int v0 = UnionRoomComm_Send(param0->unk_D0, 9, NULL, 0);
 
     if (v0 == 1) {
         param0->unk_10 = 0;
@@ -713,7 +713,7 @@ static int ov109_021D1164(UnkStruct_ov109_021D0F70 *param0)
 
 static int ov109_021D117C(UnkStruct_ov109_021D0F70 *param0)
 {
-    if (sub_0209BEBC(param0->unk_D0, 14, &param0->unk_CC->unk_04, 4)) {
+    if (UnionRoomComm_Send(param0->unk_D0, 14, &param0->unk_CC->unk_04, 4)) {
         param0->unk_00 = 13;
     }
 
@@ -737,10 +737,10 @@ static int ov109_021D11BC(UnkStruct_ov109_021D0F70 *param0)
 {
     if (ov109_021D3BC4(param0) == param0->unk_2C.unk_04) {
         if (ov109_021D3CD8(param0) == 1) {
-            sub_0209BEBC(param0->unk_D0, 16, NULL, 0);
+            UnionRoomComm_Send(param0->unk_D0, 16, NULL, 0);
             param0->unk_00 = 46;
         } else {
-            sub_0209BEBC(param0->unk_D0, 17, NULL, 0);
+            UnionRoomComm_Send(param0->unk_D0, 17, NULL, 0);
             param0->unk_00 = 15;
         }
     }
@@ -857,7 +857,7 @@ static int ov109_021D1390(UnkStruct_ov109_021D0F70 *param0)
 {
     u16 v0 = (1 << 2);
 
-    if (sub_0209BEBC(param0->unk_D0, 8, &v0, 2) == 1) {
+    if (UnionRoomComm_Send(param0->unk_D0, 8, &v0, 2) == 1) {
         param0->unk_00 = 22;
     }
 
@@ -960,7 +960,7 @@ static int ov109_021D1460(UnkStruct_ov109_021D0F70 *param0)
     }
 
     if (param0->unk_2C.unk_0C) {
-        if (sub_0209BEBC(param0->unk_CC->unk_34, 10, &param0->unk_2C.unk_0C, 1) == 1) {
+        if (UnionRoomComm_Send(param0->unk_CC->unk_34, 10, &param0->unk_2C.unk_0C, 1) == 1) {
             param0->unk_2C.unk_0C = 0;
         }
     }
@@ -993,13 +993,13 @@ static int ov109_021D1460(UnkStruct_ov109_021D0F70 *param0)
     }
 
     {
-        UnkStruct_0209C0F0 v3;
+        UnionRoomCommSpinTradePos v3;
 
-        v3.unk_02 = param0->unk_08;
-        v3.unk_04 = ((param0->unk_D4.unk_48) / FX32_ONE);
-        v3.unk_06 = ((param0->unk_D4.unk_3C) / FX32_ONE);
+        v3.state = param0->unk_08;
+        v3.posX = ((param0->unk_D4.unk_48) / FX32_ONE);
+        v3.posY = ((param0->unk_D4.unk_3C) / FX32_ONE);
 
-        sub_0209BEBC(param0->unk_D0, 11, &v3, sizeof(UnkStruct_0209C0F0));
+        UnionRoomComm_Send(param0->unk_D0, 11, &v3, sizeof(UnionRoomCommSpinTradePos));
     }
 
     return 0;
@@ -1008,9 +1008,9 @@ static int ov109_021D1460(UnkStruct_ov109_021D0F70 *param0)
 static int ov109_021D1570(UnkStruct_ov109_021D0F70 *param0)
 {
     if (param0->unk_2C.unk_10 == 1) {
-        param0->unk_D4.unk_3C = (FX32_ONE * (param0->unk_2C.unk_2C.unk_06));
-        param0->unk_D4.unk_48 = (FX32_ONE * (param0->unk_2C.unk_2C.unk_04));
-        param0->unk_08 = param0->unk_2C.unk_2C.unk_02;
+        param0->unk_D4.unk_3C = (FX32_ONE * (param0->unk_2C.unk_2C.posY));
+        param0->unk_D4.unk_48 = (FX32_ONE * (param0->unk_2C.unk_2C.posX));
+        param0->unk_08 = param0->unk_2C.unk_2C.state;
     }
 
     {
@@ -1040,7 +1040,7 @@ static int ov109_021D1570(UnkStruct_ov109_021D0F70 *param0)
     }
 
     if (param0->unk_2C.unk_0C) {
-        if (sub_0209BEBC(param0->unk_CC->unk_34, 10, &param0->unk_2C.unk_0C, 1) == 1) {
+        if (UnionRoomComm_Send(param0->unk_CC->unk_34, 10, &param0->unk_2C.unk_0C, 1) == 1) {
             param0->unk_2C.unk_0C = 0;
         }
     }
@@ -1161,7 +1161,7 @@ static int ov109_021D1758(UnkStruct_ov109_021D0F70 *param0)
     }
 
     v3.unk_02 = param0->unk_20;
-    v1 = sub_0209BEBC(param0->unk_D0, 15, &v3, sizeof(UnkStruct_ov109_021D17EC));
+    v1 = UnionRoomComm_Send(param0->unk_D0, 15, &v3, sizeof(UnkStruct_ov109_021D17EC));
 
     if (v1 == 1) {
         param0->unk_00 = 36;
@@ -3343,7 +3343,7 @@ void ov109_021D3A68(UnkStruct_ov109_021D0F70 *param0, u32 param1)
     }
 }
 
-void ov109_021D3A70(UnkStruct_ov109_021D0F70 *param0, const UnkStruct_0209C0F0 *param1)
+void ov109_021D3A70(UnkStruct_ov109_021D0F70 *param0, const UnionRoomCommSpinTradePos *param1)
 {
     param0->unk_2C.unk_10 = 1;
     param0->unk_2C.unk_2C = *param1;
@@ -3363,7 +3363,7 @@ static void *ov109_021D3AB4(UnkStruct_ov109_021D0F70 *param0)
 
 static BOOL ov109_021D3AB8(UnkStruct_ov109_021D0F70 *param0, u16 param1)
 {
-    u32 v0 = param0->unk_D0->unk_40;
+    u32 v0 = param0->unk_D0->stageFlags;
 
     if (v0 & param1) {
         return 1;
@@ -3376,7 +3376,7 @@ static BOOL ov109_021D3ACC(UnkStruct_ov109_021D0F70 *param0)
 {
     int v0 = 0;
     int v1 = param0->unk_CC->unk_08 - 1;
-    u32 v2 = param0->unk_D0->unk_42;
+    u32 v2 = param0->unk_D0->participantBitmap;
 
     while (v2) {
         v0 += (v2 & 0x1);
@@ -3393,7 +3393,7 @@ static BOOL ov109_021D3ACC(UnkStruct_ov109_021D0F70 *param0)
 static int ov109_021D3B04(UnkStruct_ov109_021D0F70 *param0)
 {
     int v0 = 0;
-    u32 v1 = param0->unk_D0->unk_42;
+    u32 v1 = param0->unk_D0->participantBitmap;
 
     while (v1) {
         v0 += (v1 & 0x1);
@@ -3422,7 +3422,7 @@ static BOOL ov109_021D3B54(UnkStruct_ov109_021D0F70 *param0, int param1)
     if (param1 != 0) {
         u32 v0 = 1 << (u32)param1;
 
-        if ((param0->unk_D0->unk_42 & v0) == 0) {
+        if ((param0->unk_D0->participantBitmap & v0) == 0) {
             return 0;
         }
     }
@@ -3437,7 +3437,7 @@ static void ov109_021D3B70(UnkStruct_ov109_021D0F70 *param0, int param1)
     Pokemon *v4, *v5;
 
     v2 = param0->unk_24;
-    v3 = (Party *)sub_0209C188(param0->unk_D0, param1);
+    v3 = (Party *)UnionRoomComm_GetRecvTrainerData(param0->unk_D0, param1);
 
     v0 = param0->unk_CC->unk_04;
     v1 = param0->unk_2C.unk_18[param1];
@@ -3452,7 +3452,7 @@ static void ov109_021D3B70(UnkStruct_ov109_021D0F70 *param0, int param1)
 static int ov109_021D3BC4(UnkStruct_ov109_021D0F70 *param0)
 {
     int v0 = 0;
-    u32 v1 = param0->unk_D0->unk_46;
+    u32 v1 = param0->unk_D0->trainerDataBitmap;
 
     while (v1) {
         v0 += (v1 & 0x1);
@@ -3539,7 +3539,7 @@ static BOOL ov109_021D3CD8(UnkStruct_ov109_021D0F70 *param0)
 
         for (v0 = 0; v0 < 5; v0++) {
             if (ov109_021D3B54(param0, v0)) {
-                v1 = sub_0209C188(param0->unk_D0, v0);
+                v1 = UnionRoomComm_GetRecvTrainerData(param0->unk_D0, v0);
 
                 if (ov109_021D3C94(v1) == 1) {
                     return 1;
@@ -3554,7 +3554,7 @@ static BOOL ov109_021D3CD8(UnkStruct_ov109_021D0F70 *param0)
 static int ov109_021D3D1C(UnkStruct_ov109_021D0F70 *param0)
 {
     int v0 = 0;
-    u32 v1 = param0->unk_D0->unk_4A;
+    u32 v1 = param0->unk_D0->eggOkBitmap;
 
     while (v1) {
         v0 += v1 & 0x1;
@@ -3567,7 +3567,7 @@ static int ov109_021D3D1C(UnkStruct_ov109_021D0F70 *param0)
 static BOOL ov109_021D3D3C(UnkStruct_ov109_021D0F70 *param0)
 {
     int v0 = 0;
-    u32 v1 = param0->unk_D0->unk_48;
+    u32 v1 = param0->unk_D0->badEggBitmap;
 
     if (v1) {
         return 1;

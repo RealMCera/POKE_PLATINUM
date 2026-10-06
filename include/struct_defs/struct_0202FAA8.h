@@ -3,32 +3,35 @@
 
 #include "struct_defs/trainer.h"
 
+// Battle setup stored at the head of a recording. The fields mirror the
+// matching members of FieldBattleDTO and are copied to/from it by
+// BattleRecording_StoreBattleInfo and BattleRecording_RestoreBattleInfo.
 typedef struct {
-    u32 unk_00;
-    int unk_04;
-    int unk_08[4];
-    Trainer unk_18[4];
-    int unk_E8;
-    int unk_EC;
-    int unk_F0;
-    int unk_F4;
-    int unk_F8;
-    int unk_FC;
-    int unk_100;
-    int unk_104;
-    int unk_108;
-    int unk_10C;
-    int unk_110;
-    u32 unk_114[4];
-    u32 unk_124;
-    int unk_128;
-    u32 unk_12C;
-    u32 unk_130;
-    int unk_134[4];
-    u16 unk_144;
-    u16 unk_146;
-    int unk_148;
-    u8 unk_14C[4];
-} UnkStruct_0202FAA8;
+    u32 battleType;
+    int resultMask;
+    int trainerIDs[4];
+    Trainer trainer[4];
+    int background;
+    int terrain;
+    int mapLabelTextID;
+    int mapHeaderID;
+    int timeOfDay;
+    int mapEvolutionMethod;
+    int visitedContestHall;
+    int metBebe;
+    int caughtBattlerIdx;
+    int fieldWeather;
+    int leveledUpMonsMask;
+    u32 systemVersion[4];
+    u32 battleStatusMask;
+    int countSafariBalls;
+    u32 rulesetMask;
+    u32 seed;
+    int linkPlayerPositions[4];
+    u16 networkID;
+    u16 dummy18B;
+    int totalTurnsElapsed;
+    u8 recordedChatter[4];
+} BattleRecordingBattleInfo;
 
 #endif // POKEPLATINUM_STRUCT_0202FAA8_H
