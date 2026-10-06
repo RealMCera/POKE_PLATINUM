@@ -60,8 +60,8 @@
 #include "terrain_collision_manager.h"
 #include "trainer_info.h"
 #include "underground.h"
-#include "unk_02033200.h"
-#include "unk_020655F4.h"
+#include "comm_server_client.h"
+#include "map_object_animation.h"
 #include "vars_flags.h"
 #include "wireless_manager.h"
 
@@ -2762,7 +2762,7 @@ static void ov23_0224DC08(void)
     WirelessManager_SetPauseClientConnection(TRUE);
     WirelessManager_SetPauseConnection(TRUE);
     CommManager_SetPauseUnderground(TRUE);
-    sub_020340FC();
+    CommServerClient_SendGameInfo();
 }
 
 static void ov23_0224DC24(void)
@@ -2770,5 +2770,5 @@ static void ov23_0224DC24(void)
     WirelessManager_SetPauseClientConnection(FALSE);
     WirelessManager_SetPauseConnection(FALSE);
     CommManager_SetPauseUnderground(FALSE);
-    sub_020340FC();
+    CommServerClient_SendGameInfo();
 }

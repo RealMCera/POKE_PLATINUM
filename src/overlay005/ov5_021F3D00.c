@@ -12,7 +12,7 @@
 #include "map_object_move.h"
 #include "overworld_anim_manager.h"
 #include "simple3d.h"
-#include "unk_02069BE0.h"
+#include "map_object_movement.h"
 
 typedef struct {
     FieldEffectManager *unk_00;

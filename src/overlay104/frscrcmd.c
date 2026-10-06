@@ -87,7 +87,7 @@
 #include "trainer_info.h"
 #include "tv_segment.h"
 #include "unk_0202F1D4.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"

@@ -79,7 +79,7 @@
 #include "trainer_info.h"
 #include "unk_02012744.h"
 #include "unk_02030CE8.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "unk_0203909C.h"
 #include "unk_0207DFAC.h"

@@ -23,7 +23,7 @@
 #include "unk_020322D8.h"
 #include "unk_0203266C.h"
 #include "unk_02032798.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "wireless_manager.h"
 
@@ -444,7 +444,7 @@ void CommSys_Delete(void)
             NintendoWFC_Stop();
             v0 = 1;
         } else {
-            if (sub_02033768()) {
+            if (CommServerClient_Shutdown()) {
                 v0 = 1;
             }
         }
@@ -473,7 +473,7 @@ void CommSys_Delete(void)
 
 BOOL sub_02034984(u16 param0)
 {
-    return sub_020339E8(param0);
+    return CommServerClient_ConnectToServer(param0);
 }
 
 static void sub_0203498C(SysTask *param0, void *param1)
@@ -491,7 +491,7 @@ static void sub_0203498C(SysTask *param0, void *param1)
 
 static void sub_020349C4(void)
 {
-    if (!sub_0203406C()) {
+    if (!CommServerClient_IsFinished()) {
         return;
     }
 
@@ -535,7 +535,7 @@ BOOL CommSys_Update(void)
             Unk_021C07C5 = 1;
         }
 
-        sub_02033D94(sCommunicationSystem->unk_68C);
+        CommServerClient_Update(sCommunicationSystem->unk_68C);
 
         if (CommSys_CurNetId() == 0) {
             sub_02034734();
@@ -543,7 +543,7 @@ BOOL CommSys_Update(void)
 
         sub_020349C4();
     } else {
-        sub_02033D94(0);
+        CommServerClient_Update(0);
     }
 
     CommManager_DisplayError(0);
@@ -587,7 +587,7 @@ void CommSys_ResetBattleClient(void)
 
     if (sCommunicationSystem) {
         sub_0203463C();
-        sub_02033518();
+        CommServerClient_ClearScanResults();
     }
 
     Unk_021C07C5 = v0;
@@ -1819,11 +1819,11 @@ void sub_0203619C(int param0, int param1, void *param2, void *param3)
 {
     u8 v0;
 
-    if (!sub_0203406C() && CommSys_CurNetId() == 0) {
+    if (!CommServerClient_IsFinished() && CommSys_CurNetId() == 0) {
         CommSys_SendDataFixedSizeServer(2, &v0);
     }
 
-    sub_0203408C();
+    CommServerClient_SetFinished();
 }
 
 void CommSys_Seed(MATHRandContext32 *rand)

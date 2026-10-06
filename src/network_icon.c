@@ -11,7 +11,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "system.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 
 #define UPPER_SCREEN 1
 #define LOWER_SCREEN 2

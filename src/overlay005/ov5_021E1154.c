@@ -16,7 +16,7 @@
 #include "player_avatar.h"
 #include "player_move.h"
 #include "sound_playback.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 typedef struct {
     int unk_00;

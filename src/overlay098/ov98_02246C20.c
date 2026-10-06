@@ -26,7 +26,7 @@
 #include "system.h"
 #include "system_flags.h"
 #include "unk_02030CE8.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_02038FFC.h"
 #include "unk_020890F4.h"
 #include "vars_flags.h"

@@ -48,7 +48,7 @@
 #include "system.h"
 #include "system_flags.h"
 #include "underground.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "vars_flags.h"
 
 #include "res/text/bank/underground_capture_flag.h"

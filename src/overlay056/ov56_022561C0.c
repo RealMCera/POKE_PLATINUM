@@ -37,8 +37,8 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "trainer_info.h"
-#include "unk_02033200.h"
-#include "unk_0205B33C.h"
+#include "comm_server_client.h"
+#include "union_room.h"
 
 FS_EXTERN_OVERLAY(overlay56);
 
@@ -60,7 +60,7 @@ typedef struct {
 struct UnkStruct_ov56_02256468_t {
     int unk_00;
     UnkStruct_0205C22C *unk_04;
-    UnkStruct_0205B43C *unk_08;
+    UnionRoom *unk_08;
     FieldSystem *fieldSystem;
     TrainerInfo *unk_10;
     BgConfig *unk_14;
@@ -589,7 +589,7 @@ static int ov56_02256A68(UnkStruct_ov56_02256468 *param0)
                 v2 = ov56_022567F0(param0->unk_2D4->unk_34C, param0->unk_2D8.unk_04 + v0 - 2);
 
                 for (v1 = 0; v1 < 10; v1++) {
-                    v4 = sub_02033F3C(v1);
+                    v4 = CommServerClient_GetServerBssDesc(v1);
 
                     if (v4 != NULL) {
                         v5 = (UnkStruct_0203330C *)&v4->gameInfo.userGameInfo;
@@ -603,7 +603,7 @@ static int ov56_02256A68(UnkStruct_ov56_02256468 *param0)
                 }
 
                 {
-                    TrainerInfo *v6 = sub_02033F9C();
+                    TrainerInfo *v6 = CommServerClient_GetPersonalTrainerInfo();
 
                     if (param0->unk_2D4->unk_00[v2].unk_0C == TrainerInfo_ID(v6)) {
                         Sound_PlayEffect(SEQ_SE_DP_BUTTON3_sseq);
@@ -872,19 +872,19 @@ static void ov56_02257098(UnkStruct_ov56_02256468 *param0)
     }
 
     for (v0 = 0; v0 < 16; v0++) {
-        v2 = sub_02033F3C(v0);
+        v2 = CommServerClient_GetServerBssDesc(v0);
 
         if (v2 != NULL) {
             v3 = (UnkStruct_0203330C *)&v2->gameInfo.userGameInfo;
             v4 = (EasyChatSentence *)&v3->unk_08;
 
             if (ov56_02256FC8(param0, v4, v3->unk_00)) {
-                ov56_02257048(param0, sub_02033FB0(v0), v4, v3->unk_00);
+                ov56_02257048(param0, CommServerClient_GetServerTrainerInfo(v0), v4, v3->unk_00);
             }
         }
     }
 
-    if ((v4 = sub_0205C028(param0->unk_08)) != NULL) {
+    if ((v4 = UnionRoom_TakeEasyChatSentence(param0->unk_08)) != NULL) {
         u32 v7 = TrainerInfo_ID(param0->unk_10);
         ov56_02257048(param0, param0->unk_10, v4, v7);
     }

@@ -47,7 +47,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "system.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 typedef struct MonRideTask {
     BOOL playCutIn;
@@ -597,16 +597,16 @@ static BOOL ov5_021DFFBC(FieldTask *param0)
             }
         }
 
-        sub_020656AC(v2);
-        sub_020656AC(v1);
+        LocalMapObj_ClearAnimation(v2);
+        LocalMapObj_ClearAnimation(v1);
         v0->unk_00++;
     case 2:
         MonRideTaskEnv_Free(v0);
         return 1;
     case 3:
         if (DistWorldFallingBoulder_Tick(v0->unk_14) == 1) {
-            sub_020656AC(v2);
-            sub_020656AC(v1);
+            LocalMapObj_ClearAnimation(v2);
+            LocalMapObj_ClearAnimation(v1);
             v0->unk_00 = 2;
         }
         break;
@@ -724,7 +724,7 @@ static BOOL FieldTask_UseSurf(FieldTask *task)
             break;
         }
 
-        sub_020656AC(taskEnv->playerObject);
+        LocalMapObj_ClearAnimation(taskEnv->playerObject);
 
         if (PlayerAvatar_MapDistortionState(taskEnv->playerAvatar) == AVATAR_DISTORTION_STATE_NONE) {
             int moveState;
@@ -825,7 +825,7 @@ static BOOL ov5_021E03C8(FieldTask *param0)
             break;
         }
 
-        sub_020656AC(v0->unk_10);
+        LocalMapObj_ClearAnimation(v0->unk_10);
 
         if (v0->unk_14 != NULL) {
             FieldEffectManager_FinishAnimManager(v0->unk_14);
@@ -1156,7 +1156,7 @@ static int SubTask_RockClimb_WaitFinished(RockClimbTaskEnv *taskEnv)
         return 0;
     }
 
-    sub_020656AC(taskEnv->playerObject);
+    LocalMapObj_ClearAnimation(taskEnv->playerObject);
     FieldEffectManager_FinishAnimManager(taskEnv->unk_18);
     return 1;
 }

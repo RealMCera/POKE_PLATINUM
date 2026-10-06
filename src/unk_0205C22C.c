@@ -34,13 +34,13 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "trainer_info.h"
-#include "unk_0205B33C.h"
-#include "unk_020655F4.h"
+#include "union_room.h"
+#include "map_object_animation.h"
 
 #include "constdata/const_020ED570.h"
 
 static void sub_0205C304(SysTask *param0, void *param1);
-static void sub_0205C44C(UnkStruct_0205C22C *param0, UnkStruct_0205B43C *param1, MapObjectManager *param2, PalPad *param3);
+static void sub_0205C44C(UnkStruct_0205C22C *param0, UnionRoom *param1, MapObjectManager *param2, PalPad *param3);
 static int sub_0205C340(UnkStruct_0205C22C *param0, int param1, WMBssDesc *param2, PalPad *param3);
 static void sub_0205C51C(UnkStruct_0205C22C *param0, MapObjectManager *param1);
 static void sub_0205C680(UnkStruct_0205C680 *param0, int param1);
@@ -57,7 +57,7 @@ static void sub_0205C924(UnkStruct_0205C924 *param0);
 static void sub_0205C900(UnkStruct_0205C95C *param0);
 static void sub_0205C8DC(UnkStruct_0205C924 *param0);
 
-UnkStruct_0205C22C *sub_0205C22C(UnkStruct_0205B43C *param0)
+UnkStruct_0205C22C *sub_0205C22C(UnionRoom *param0)
 {
     UnkStruct_0205C22C *v0 = (UnkStruct_0205C22C *)Heap_Alloc(HEAP_ID_31, sizeof(UnkStruct_0205C22C));
 
@@ -66,7 +66,7 @@ UnkStruct_0205C22C *sub_0205C22C(UnkStruct_0205B43C *param0)
     v0->unk_00 = param0;
     v0->unk_47C = 1;
     v0->unk_04 = SysTask_Start(sub_0205C304, v0, 11);
-    v0->fieldSystem = sub_0205B770(param0);
+    v0->fieldSystem = UnionRoom_GetFieldSystem(param0);
     v0->unk_474 = SaveData_SaveTable(v0->fieldSystem->saveData, SAVE_TABLE_ENTRY_PAL_PAD);
     v0->playerAvatar = v0->fieldSystem->playerAvatar;
 
@@ -111,7 +111,7 @@ void sub_0205C2E0(UnkStruct_0205C22C *param0)
 static void sub_0205C304(SysTask *task, void *param1)
 {
     UnkStruct_0205C22C *v0 = (UnkStruct_0205C22C *)param1;
-    UnkStruct_0205B43C *v1 = v0->unk_00;
+    UnionRoom *v1 = v0->unk_00;
 
     if (!FieldSystem_IsRunningTask(v0->fieldSystem)) {
         v0->playerAvatar = v0->fieldSystem->playerAvatar;
@@ -129,7 +129,7 @@ static int sub_0205C340(UnkStruct_0205C22C *param0, int param1, WMBssDesc *param
 
     if (param2 == NULL) {
         for (v0 = 0; v0 < 4; v0++) {
-            v1 = Unk_020ED570[param1] + v0;
+            v1 = gUnionRoomTrainerGroupBaseSlots[param1] + v0;
             sub_0205C444(param0->unk_0C, v1, 3);
         }
 
@@ -141,7 +141,7 @@ static int sub_0205C340(UnkStruct_0205C22C *param0, int param1, WMBssDesc *param
 
     if (param0->unk_0C[param1].unk_0C != v3->unk_00) {
         for (v0 = 0; v0 < 4; v0++) {
-            v1 = Unk_020ED570[param1] + v0;
+            v1 = gUnionRoomTrainerGroupBaseSlots[param1] + v0;
             sub_0205C444(param0->unk_0C, v1, 3);
         }
 
@@ -149,7 +149,7 @@ static int sub_0205C340(UnkStruct_0205C22C *param0, int param1, WMBssDesc *param
     }
 
     for (v0 = 0; v0 < 4; v0++) {
-        v1 = Unk_020ED570[param1] + v0;
+        v1 = gUnionRoomTrainerGroupBaseSlots[param1] + v0;
 
         switch (param0->unk_0C[v1].unk_01) {
         case 0:
@@ -188,7 +188,7 @@ static void sub_0205C444(UnkStruct_0205C680 param0[], int param1, int param2)
     param0[param1].unk_00 = param2;
 }
 
-static void sub_0205C44C(UnkStruct_0205C22C *param0, UnkStruct_0205B43C *param1, MapObjectManager *param2, PalPad *param3)
+static void sub_0205C44C(UnkStruct_0205C22C *param0, UnionRoom *param1, MapObjectManager *param2, PalPad *param3)
 {
     WMBssDesc *v0;
     int v1;
@@ -196,7 +196,7 @@ static void sub_0205C44C(UnkStruct_0205C22C *param0, UnkStruct_0205B43C *param1,
     TrainerInfo *v3;
 
     for (v1 = 0; v1 < 10; v1++) {
-        v0 = sub_0205B774(param1, v1);
+        v0 = UnionRoom_GetBssDesc(param1, v1);
 
         if (v0 != NULL) {
             v2 = (UnkStruct_0203330C *)v0->gameInfo.userGameInfo;
@@ -278,7 +278,7 @@ static void sub_0205C51C(UnkStruct_0205C22C *param0, MapObjectManager *param1)
                     continue;
                 }
 
-                sub_020656AC(v0);
+                LocalMapObj_ClearAnimation(v0);
                 MapObject_SetStatus19(v0, 0);
 
                 if ((param0->unk_0C[v1].unk_00 == 1) && (param0->unk_0C[v1].unk_09 == 0)) {
@@ -305,7 +305,7 @@ static void sub_0205C51C(UnkStruct_0205C22C *param0, MapObjectManager *param1)
             break;
         case 3:
             if (LocalMapObj_IsAnimationSet(v0) == 1) {
-                sub_020656AC(v0);
+                LocalMapObj_ClearAnimation(v0);
 
                 param0->unk_0C[v1].unk_01 = 4;
                 param0->unk_0C[v1].unk_00 = 0;

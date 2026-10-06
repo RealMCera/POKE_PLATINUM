@@ -42,7 +42,7 @@
 #include "text.h"
 #include "text_banks.h"
 #include "trainer_info.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 
 #include "res/graphics/main_menu/main_menu_graphics.naix"
 #include "res/text/bank/main_menu_alerts.h"

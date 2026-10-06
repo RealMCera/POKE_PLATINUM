@@ -26,8 +26,8 @@
 #include "map_object.h"
 #include "map_tile_behavior.h"
 #include "terrain_collision_manager.h"
-#include "unk_020655F4.h"
-#include "unk_020673B8.h"
+#include "map_object_animation.h"
+#include "trainer_facing.h"
 
 // Movement for map objects and their interaction with the tile they occupy.
 // Each frame MapObject_Move runs the object's movement action and then reacts

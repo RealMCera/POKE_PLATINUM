@@ -17,7 +17,7 @@
 #include "savedata.h"
 #include "trainer_info.h"
 #include "underground.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_0203909C.h"
 #include "wifi_history_save_data.h"
 #include "wifi_list.h"
@@ -202,7 +202,7 @@ void CommInfo_RecvPlayerData(int netId, int param1, void *src, void *param3)
     }
 
     MI_CpuCopy8(src, &sCommInfo->playerInfo[netId], sizeof(CommPlayerInfo));
-    sub_02033FDC(&sCommInfo->playerInfo[netId].macAddress[0], netId);
+    CommServerClient_SetPlayerMacAddress(&sCommInfo->playerInfo[netId].macAddress[0], netId);
 
     sCommInfo->infoState[netId] = INFO_STATE_BEGIN_RECIEVE;
 

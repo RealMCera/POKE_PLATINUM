@@ -44,9 +44,9 @@
 #include "touch_pad.h"
 #include "touch_screen.h"
 #include "trainer_info.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_020363E8.h"
-#include "unk_0205B33C.h"
+#include "union_room.h"
 #include "unk_0205C22C.h"
 #include "unk_02095E98.h"
 #include "vram_transfer.h"
@@ -214,8 +214,8 @@ int ov58_021D0D80(ApplicationManager *appMan, int *param1)
         NetworkIcon_Init();
 
         if (CommSys_CurNetId() == 0) {
-            sub_0205BEA8(1);
-            sub_02033ED4(1);
+            UnionRoom_BroadcastActivity(1);
+            CommServerClient_SetErrorTimeout(1);
         }
 
         NARC_dtor(v1);
@@ -333,8 +333,8 @@ int ov58_021D1018(ApplicationManager *appMan, int *param1)
 
         GX_SetDispSelect(GX_DISP_SELECT_MAIN_SUB);
 
-        sub_0205BEA8(0);
-        sub_02033ED4(0);
+        UnionRoom_BroadcastActivity(0);
+        CommServerClient_SetErrorTimeout(0);
         (*param1)++;
         break;
     case 2:
@@ -1776,7 +1776,7 @@ static int ov58_021D2B5C(UnkStruct_02095EAC *param0)
     case 2:
     case 3:
     case 4:
-        sub_0205BEA8(1);
+        UnionRoom_BroadcastActivity(1);
 
         if (v0 < param0->unk_378) {
             if (param0->unk_9458 == 2) {
@@ -1787,7 +1787,7 @@ static int ov58_021D2B5C(UnkStruct_02095EAC *param0)
         }
         break;
     case 5:
-        sub_0205BEA8(8);
+        UnionRoom_BroadcastActivity(8);
         break;
     }
 

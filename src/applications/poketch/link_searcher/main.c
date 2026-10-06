@@ -13,7 +13,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "touch_screen.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 
 #include "res/sound/pl_sound_data.naix"
 
@@ -382,7 +382,7 @@ static BOOL UpdateLinkSearchResults(PoketchLinkSearcher *appData)
         int j, hits;
 
         for (j = 0, hits = 0; j < linkTypes[i].numElems; j++) {
-            hits += sub_02034120(linkTypes[i].linkIDs[j]);
+            hits += CommServerClient_CountPlayersByCommType(linkTypes[i].linkIDs[j]);
         }
 
         if (hits != appData->results.results[i]) {

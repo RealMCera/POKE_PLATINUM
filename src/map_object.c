@@ -26,7 +26,7 @@
 #include "script_manager.h"
 #include "sys_task.h"
 #include "sys_task_manager.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 #include "unk_020EDBAC.h"
 
 // Map objects are the dynamic entities placed on the overworld: the player,
@@ -566,7 +566,7 @@ static void MapObject_InitAfterLoad(const MapObjectManager *mapObjMan, MapObject
     MapObject_SyncPosFromCoords(mapObj);
     MapObject_SetMapObjectManager(mapObj, mapObjMan);
     MapObject_LoadMovementCallbacks(mapObj);
-    sub_020656DC(mapObj);
+    LocalMapObj_CancelAnimation(mapObj);
     MapObject_RefreshDraw(mapObj);
     MapObjectMan_AddMoveTask(mapObjMan, mapObj);
     MapObject_CallMovementLoad(mapObj);
@@ -753,7 +753,7 @@ static void MapObject_InitStatusAndManager(MapObject *mapObj, const MapObjectMan
     MapObject_SetMapObjectManager(mapObj, mapObjMan);
     MapObject_Face(mapObj, MapObject_GetInitialDir(mapObj));
     MapObject_Turn(mapObj, MapObject_GetInitialDir(mapObj));
-    sub_020656DC(mapObj);
+    LocalMapObj_CancelAnimation(mapObj);
 }
 
 static void MapObject_LoadMovementCallbacks(MapObject *mapObj)
@@ -2472,7 +2472,7 @@ void MapObject_SetPosDirFromVec(MapObject *mapObj, const VecFx32 *pos, int dir)
 
     MapObject_Face(mapObj, dir);
 
-    sub_020656DC(mapObj);
+    LocalMapObj_CancelAnimation(mapObj);
     MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_START_MOVEMENT);
     MapObject_SetStatusFlagOff(mapObj, MAP_OBJ_STATUS_1 | MAP_OBJ_STATUS_END_MOVEMENT);
 }
@@ -2498,7 +2498,7 @@ void MapObject_SetPosDirFromCoords(MapObject *mapObj, int x, int y, int z, int d
     MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_START_MOVEMENT);
     MapObject_SetStatusFlagOff(mapObj, MAP_OBJ_STATUS_1 | MAP_OBJ_STATUS_END_MOVEMENT);
 
-    sub_020656DC(mapObj);
+    LocalMapObj_CancelAnimation(mapObj);
 }
 
 void MapObject_SwitchMovementType(MapObject *mapObj, u32 movementType)

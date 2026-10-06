@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "heap.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 
 void WFCSettings_StartApplication(enum HeapID heapID)
 {

@@ -29,7 +29,7 @@
 #include "sys_task_manager.h"
 #include "system_flags.h"
 #include "system_vars.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 #include "vars_flags.h"
 
 #define VS_SEEKER_SEARCH_RADIUS_LEFT  7

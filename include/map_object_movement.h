@@ -1,5 +1,5 @@
-#ifndef POKEPLATINUM_UNK_02069BE0_H
-#define POKEPLATINUM_UNK_02069BE0_H
+#ifndef POKEPLATINUM_MAP_OBJECT_MOVEMENT_H
+#define POKEPLATINUM_MAP_OBJECT_MOVEMENT_H
 
 #include "struct_decls/map_object.h"
 
@@ -38,4 +38,4 @@ void MapObjectMovement_WanderAvoidObstacles_Init065(MapObject *param0);
 void MapObjectMovement_WanderAvoidObstacles_Init066(MapObject *param0);
 void MapObjectMovement_WanderAvoidObstacles_Update(MapObject *param0);
 
-#endif // POKEPLATINUM_UNK_02069BE0_H
+#endif // POKEPLATINUM_MAP_OBJECT_MOVEMENT_H

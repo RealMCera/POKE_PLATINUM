@@ -41,7 +41,7 @@
 #include "string_template.h"
 #include "system.h"
 #include "text.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/main_menu/main_menu_graphics.naix"
@@ -750,7 +750,7 @@ void MainMenuUtil_DecryptReceivedWonderCard(MysteryGiftEventData *eventData, Won
     Heap_Free(crcTable);
 
     u16 key[4];
-    const WMBssDesc *bssDesc = sub_02033F3C(0); // Network ID 0 is the sending console
+    const WMBssDesc *bssDesc = CommServerClient_GetServerBssDesc(0); // Network ID 0 is the sending console
     memcpy(key, bssDesc->bssid, WM_SIZE_BSSID); // BSSID = MAC address of the sending console
 
     key[3] = key[1];

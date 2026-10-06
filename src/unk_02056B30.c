@@ -33,7 +33,7 @@
 #include "screen_fade.h"
 #include "sound_playback.h"
 #include "terrain_collision_manager.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 typedef struct {
     int unk_00;
@@ -358,7 +358,7 @@ static BOOL sub_02056F1C(FieldTask *taskMan)
         v2 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
         if (LocalMapObj_CheckAnimationFinished(v2) == 1) {
-            sub_020656AC(v2);
+            LocalMapObj_ClearAnimation(v2);
             (v1->unk_04)++;
         }
         break;
@@ -565,7 +565,7 @@ static BOOL sub_02057218(FieldTask *taskMan)
         v2 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
         if (LocalMapObj_CheckAnimationFinished(v2) == 1) {
-            sub_020656AC(v2);
+            LocalMapObj_ClearAnimation(v2);
             (v1->unk_04)++;
         }
         break;

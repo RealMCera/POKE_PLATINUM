@@ -28,7 +28,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "trainer_types.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 typedef struct ApproachingTrainerTemplate {
     int distance;
@@ -670,7 +670,7 @@ static int ApproachingTrainerTask_WaitPlayerFaceTrainer(ApproachingTrainerData *
         return 0;
     }
 
-    sub_020656AC(mapObj);
+    LocalMapObj_ClearAnimation(mapObj);
     data->state = STATE_SWITCH_MOVEMENT_TYPE_NONE;
 
     return 1;
@@ -678,7 +678,7 @@ static int ApproachingTrainerTask_WaitPlayerFaceTrainer(ApproachingTrainerData *
 
 static int ApproachingTrainerTask_SwitchMovementTypeNone(ApproachingTrainerData *data)
 {
-    sub_020656AC(data->mapObj);
+    LocalMapObj_ClearAnimation(data->mapObj);
 
     if (PersistedMapFeatures_IsCurrentDynamicMap(data->fieldSystem, DYNAMIC_MAP_FEATURES_HEARTHOME_GYM) == FALSE
         || HearthomeGym_SetTrainerPostBattleMovement(data->fieldSystem, data->mapObj) == FALSE) {

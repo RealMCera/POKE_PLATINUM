@@ -48,7 +48,7 @@
 #include "system.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_020363E8.h"
 
 #include "res/graphics/main_menu/main_menu_graphics.naix"
@@ -1549,7 +1549,7 @@ static int WonderCardsApp_Main(ApplicationManager *appMan, enum WonderCardsAppSt
         int connectedPlayersCount = 0;
 
         if (CommSys_IsPlayerConnected(0)) {
-            sub_02034150(&appData->mysteryGiftAppData.eventData.header);
+            CommServerClient_SetMysteryGiftEventData(&appData->mysteryGiftAppData.eventData.header);
 
             connectedPlayersCount = UpdateConnectedPlayers(appData, &appData->windows[WC_SHARING_PLAYER_INFO]);
 

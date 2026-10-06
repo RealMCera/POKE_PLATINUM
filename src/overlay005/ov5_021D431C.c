@@ -22,7 +22,7 @@
 #include "sound_playback.h"
 #include "terrain_collision_manager.h"
 #include "unk_02056B30.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 #include "res/field/props/models/prop_models.naix"
 
@@ -177,7 +177,7 @@ BOOL ov5_021D433C(FieldSystem *fieldSystem, UnkStruct_ov5_021D432C *param1)
         v0 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
         if (LocalMapObj_CheckAnimationFinished(v0) == 1) {
-            sub_020656AC(v0);
+            LocalMapObj_ClearAnimation(v0);
             MapObject_SetHidden(v0, 1);
             {
                 int v13;
@@ -348,7 +348,7 @@ BOOL ov5_021D453C(FieldSystem *fieldSystem, UnkStruct_ov5_021D432C *param1)
         v0 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
         if (LocalMapObj_CheckAnimationFinished(v0) == 1) {
-            sub_020656AC(v0);
+            LocalMapObj_ClearAnimation(v0);
 
             {
                 int v13;
@@ -573,7 +573,7 @@ BOOL ov5_021D4858(FieldSystem *fieldSystem, UnkStruct_ov5_021D432C *param1, cons
         v0 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
         if (LocalMapObj_CheckAnimationFinished(v0) == 1) {
-            sub_020656AC(v0);
+            LocalMapObj_ClearAnimation(v0);
             (param1->unk_00)++;
         }
         break;
@@ -674,7 +674,7 @@ BOOL ov5_021D4A24(FieldSystem *fieldSystem, UnkStruct_ov5_021D432C *param1, cons
         v0 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
         if (LocalMapObj_CheckAnimationFinished(v0) == 1) {
-            sub_020656AC(v0);
+            LocalMapObj_ClearAnimation(v0);
             (param1->unk_00)++;
         }
         break;
@@ -911,7 +911,7 @@ BOOL ov5_021D4E10(FieldTask *param0)
         v0 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
         if (LocalMapObj_CheckAnimationFinished(v0) == 1) {
-            sub_020656AC(v0);
+            LocalMapObj_ClearAnimation(v0);
             (v2->unk_00)++;
         }
         break;
@@ -1058,7 +1058,7 @@ BOOL ov5_021D5020(FieldTask *param0)
         v0 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
         if (LocalMapObj_CheckAnimationFinished(v0) == 1) {
-            sub_020656AC(v0);
+            LocalMapObj_ClearAnimation(v0);
             (v2->unk_00)++;
         }
         break;
@@ -1111,7 +1111,7 @@ BOOL ov5_021D5150(FieldTask *param0)
         v0 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
         if (LocalMapObj_CheckAnimationFinished(v0) == 1) {
-            sub_020656AC(v0);
+            LocalMapObj_ClearAnimation(v0);
             (v2->unk_00)++;
         }
         break;

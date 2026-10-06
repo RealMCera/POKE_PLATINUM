@@ -35,7 +35,7 @@
 #include "sys_task_manager.h"
 #include "system.h"
 #include "tv_segment.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 #include "res/text/bank/common_strings.h"
 
@@ -217,7 +217,7 @@ static BOOL FishingTask_Start(FishingTask *fishingTask, PlayerAvatar *playerAvat
 static BOOL FishingTask_PreparePlayerAvatar(FishingTask *fishingTask, PlayerAvatar *playerAvatar, MapObject *playerMapObject)
 {
     if (LocalMapObj_IsAnimationSet(playerMapObject) == TRUE) {
-        sub_020656AC(playerMapObject);
+        LocalMapObj_ClearAnimation(playerMapObject);
         PlayerAvatar_SetTransitionState(playerAvatar, PLAYER_TRANSITION_FISHING);
         PlayerAvatar_RequestChangeState(playerAvatar);
         MapObject_SetUnkA0(playerMapObject, MAP_OBJ_UNK_A0_01);

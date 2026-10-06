@@ -31,7 +31,7 @@
 #include "sprite_util.h"
 #include "string_template.h"
 #include "system.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "vram_transfer.h"
 #include "wifi_overlays.h"
 

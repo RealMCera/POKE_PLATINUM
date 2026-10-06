@@ -24,7 +24,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "system_flags.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "vars_flags.h"
 
 static void CommManUnderground_SetFieldCommManTask(FieldCommTask task, int timer);
@@ -311,7 +311,7 @@ static void CommManUnderground_ConnectTaskClient(void)
         fieldCommMan->timer--;
     }
 
-    if (sub_02033E68() || CommSys_CheckError() || fieldCommMan->timer == 0) {
+    if (CommServerClient_IsDisconnected() || CommSys_CheckError() || fieldCommMan->timer == 0) {
         CommManager_ResetUnderground();
         CommManUnderground_SetFieldCommManTask(CommManUnderground_RestartTaskClient, 0);
     } else if (CommSys_IsPlayerConnected(CommSys_CurNetId())) {
@@ -565,7 +565,7 @@ static void CommManUnderground_MainTaskClient(void)
         return;
     }
 
-    if (sub_02033E68() || CommSys_CheckError()) {
+    if (CommServerClient_IsDisconnected() || CommSys_CheckError()) {
         CommManUnderground_RestartClient();
     }
 }
@@ -588,7 +588,7 @@ static void CommManUnderground_BaseTransitionEndTaskClient(void)
     SecretBases_RequestClearTransitioningStatus();
     CommPlayerMan_Restart();
 
-    if (sub_02033E68() || CommSys_CheckError()) {
+    if (CommServerClient_IsDisconnected() || CommSys_CheckError()) {
         SecretBases_ResetAllBaseInfo();
         CommPlayerMan_Stop();
         UndergroundMan_ForceEndCurrentSysTask();

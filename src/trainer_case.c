@@ -26,7 +26,7 @@
 #include "underground.h"
 #include "unk_0203D1B8.h"
 #include "unk_020559DC.h"
-#include "unk_0205B33C.h"
+#include "union_room.h"
 #include "vars_flags.h"
 
 #define TRAINER_CASE_MAX_TIMES_LINKED        999999
@@ -274,7 +274,7 @@ static BOOL FieldTask_OpenUnionRoomCaseTask(FieldTask *task)
         break;
     case 11:
         if (!FieldSystem_IsRunningApplication(fieldSystem)) {
-            sub_0205C1F0(fieldSystem->unk_7C);
+            UnionRoom_FreeTrainerCase(fieldSystem->unk_7C);
             Heap_Free(data);
             return TRUE;
         }

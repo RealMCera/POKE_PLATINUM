@@ -1,4 +1,4 @@
-#include "unk_020673B8.h"
+#include "trainer_facing.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -9,7 +9,7 @@
 
 #include "map_header_data.h"
 #include "map_object.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 // Per-trainer-type idle "look around" behaviour. Trainer types that face or
 // rotate (TRAINER_TYPE_FACE_SIDES, TRAINER_TYPE_FACE_COUNTERCLOCKWISE and
@@ -237,11 +237,11 @@ static int TrainerFacingSides_Face(MapObject *mapObj)
         int targetDir = dirsByAxis[state->axis][state->sideIndex];
         int movementAction = MovementAction_TurnActionTowardsDir(targetDir, MOVEMENT_ACTION_FACE_NORTH);
 
-        sub_02065668(mapObj, movementAction);
+        LocalMapObj_SetMovementAction(mapObj, movementAction);
         state->faceState++;
     }
     case 2: {
-        if (sub_020658DC(mapObj) == 0) {
+        if (LocalMapObj_RunMovementAction(mapObj) == 0) {
             return 1;
         }
 
@@ -365,11 +365,11 @@ static int TrainerFacingRotate_Face(MapObject *mapObj)
         int targetDir = rotationOrder[state->rotationDir][state->rotationIndex];
         int movementAction = MovementAction_TurnActionTowardsDir(targetDir, MOVEMENT_ACTION_FACE_NORTH);
 
-        sub_02065668(mapObj, movementAction);
+        LocalMapObj_SetMovementAction(mapObj, movementAction);
         state->faceState++;
     }
     case 2: {
-        if (sub_020658DC(mapObj) == 0) {
+        if (LocalMapObj_RunMovementAction(mapObj) == 0) {
             return 1;
         }
 

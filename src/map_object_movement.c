@@ -1,4 +1,4 @@
-#include "unk_02069BE0.h"
+#include "map_object_movement.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -19,7 +19,7 @@
 #include "player_avatar.h"
 #include "terrain_collision_manager.h"
 #include "trainer_encounter.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 // This module implements the movement behaviors (selected through the
 // Unk_020EE3A8 table in unk_020EDBAC.c) for several overworld NPCs:
@@ -152,7 +152,7 @@ static int FollowPlayer_Step(MapObject *mapObj, FollowPlayerData *param1)
 
 static int FollowPlayer_ResetIfIdle(MapObject *mapObj, FollowPlayerData *param1)
 {
-    if (sub_020658DC(mapObj) == 1) {
+    if (LocalMapObj_RunMovementAction(mapObj) == 1) {
         MapObject_ClearStatus1(mapObj);
         param1->state = 0;
     }
@@ -263,7 +263,7 @@ static int FollowPlayer_MoveTowardPlayer(MapObject *mapObj)
         int dir = GetDirectionBetweenPoints(xCur, zCur, xPrev, zPrev);
 
         v6 = MovementAction_TurnActionTowardsDir(dir, v6);
-        sub_02065668(mapObj, v6);
+        LocalMapObj_SetMovementAction(mapObj, v6);
 
         return 1;
     }
@@ -324,7 +324,7 @@ static int FollowPartnerTrainer_Step(MapObject *mapObj, FollowPartnerTrainerData
 
 static int FollowPartnerTrainer_ResetIfIdle(MapObject *mapObj, FollowPartnerTrainerData *param1)
 {
-    if (sub_020658DC(mapObj) == 0) {
+    if (LocalMapObj_RunMovementAction(mapObj) == 0) {
         return 0;
     }
 
@@ -447,7 +447,7 @@ static int FollowPartnerTrainer_MoveTowardPartner(MapObject *mapObj, FollowPartn
         u32 v7 = 0xc;
 
         v7 = MovementAction_TurnActionTowardsDir(v6, v7);
-        sub_02065668(mapObj, v7);
+        LocalMapObj_SetMovementAction(mapObj, v7);
         return 1;
     }
 
@@ -653,7 +653,7 @@ static int WalkWithPlayer_FaceNorth(MapObject *mapObj, WalkWithPlayerData *param
 
     v0 = MovementAction_TurnActionTowardsDir(v0, MOVEMENT_ACTION_FACE_NORTH);
 
-    sub_02065668(mapObj, v0);
+    LocalMapObj_SetMovementAction(mapObj, v0);
     MapObject_ClearStatus1(mapObj);
     MapObject_SetEndMovementOff(mapObj);
 
@@ -663,7 +663,7 @@ static int WalkWithPlayer_FaceNorth(MapObject *mapObj, WalkWithPlayerData *param
 
 static int WalkWithPlayer_WaitForTurn(MapObject *mapObj, WalkWithPlayerData *param1)
 {
-    if (sub_020658DC(mapObj) == 1) {
+    if (LocalMapObj_RunMovementAction(mapObj) == 1) {
         param1->state = 2;
         return 1;
     }
@@ -719,7 +719,7 @@ static void WalkWithPlayer_WalkInDir(MapObject *mapObj, int param1, int param2, 
         MapObject_SetStatus1(mapObj);
     }
 
-    sub_02065668(mapObj, param2);
+    LocalMapObj_SetMovementAction(mapObj, param2);
 }
 
 // Mirrors the player: walks in the player's facing direction using the walk
@@ -735,7 +735,7 @@ static int WalkWithPlayer_Walk(MapObject *mapObj, WalkWithPlayerData *param1)
     case PLAYER_ACTION_SPEED_NONE:
     case PLAYER_ACTION_SPEED_NOT_MOVING:
         v0 = MovementAction_TurnActionTowardsDir(v2, MOVEMENT_ACTION_FACE_NORTH);
-        sub_02065668(mapObj, v0);
+        LocalMapObj_SetMovementAction(mapObj, v0);
         break;
     case PLAYER_ACTION_SPEED_SLOWER:
         WalkWithPlayer_WalkInDir(mapObj, v2, MOVEMENT_ACTION_WALK_SLOWER_NORTH, param1->checkTallGrass);
@@ -760,7 +760,7 @@ static int WalkWithPlayer_Walk(MapObject *mapObj, WalkWithPlayerData *param1)
 
 static int WalkWithPlayer_WaitForWalk(MapObject *mapObj, WalkWithPlayerData *param1)
 {
-    if (sub_020658DC(mapObj) == 0) {
+    if (LocalMapObj_RunMovementAction(mapObj) == 0) {
         return 0;
     }
 
@@ -836,7 +836,7 @@ static int WanderAvoidObstacles_Walk(MapObject *mapObj, WanderAvoidObstaclesData
 
 static int WanderAvoidObstacles_WaitForWalk(MapObject *mapObj, WanderAvoidObstaclesData *param1)
 {
-    if (sub_020658DC(mapObj) == 1) {
+    if (LocalMapObj_RunMovementAction(mapObj) == 1) {
         param1->state = 0;
         return 1;
     }
@@ -992,14 +992,14 @@ static int WanderAvoidObstacles_PickDirection(MapObject *mapObj, WanderAvoidObst
     if (dir == -1) {
         dir = MapObject_GetFacingDir(mapObj);
         param2 = MovementAction_TurnActionTowardsDir(dir, MOVEMENT_ACTION_WALK_ON_SPOT_SLOW_NORTH);
-        sub_02065668(mapObj, param2);
+        LocalMapObj_SetMovementAction(mapObj, param2);
         return 0;
     }
 
     if (v0 == 0) {
         param2 = MovementAction_TurnActionTowardsDir(dir, param2);
         MapObject_SetStatus1(mapObj);
-        sub_02065668(mapObj, param2);
+        LocalMapObj_SetMovementAction(mapObj, param2);
         return 1;
     }
 
@@ -1013,14 +1013,14 @@ static int WanderAvoidObstacles_PickDirection(MapObject *mapObj, WanderAvoidObst
         if (dir == -1) {
             dir = MapObject_GetFacingDir(mapObj);
             param2 = MovementAction_TurnActionTowardsDir(dir, MOVEMENT_ACTION_WALK_ON_SPOT_SLOW_NORTH);
-            sub_02065668(mapObj, param2);
+            LocalMapObj_SetMovementAction(mapObj, param2);
             return 0;
         }
 
         if (v0 == 0) {
             param2 = MovementAction_TurnActionTowardsDir(dir, param2);
             MapObject_SetStatus1(mapObj);
-            sub_02065668(mapObj, param2);
+            LocalMapObj_SetMovementAction(mapObj, param2);
             return 1;
         }
     }
@@ -1032,14 +1032,14 @@ static int WanderAvoidObstacles_PickDirection(MapObject *mapObj, WanderAvoidObst
         if (dir == -1) {
             dir = MapObject_GetFacingDir(mapObj);
             param2 = MovementAction_TurnActionTowardsDir(dir, MOVEMENT_ACTION_WALK_ON_SPOT_SLOW_NORTH);
-            sub_02065668(mapObj, param2);
+            LocalMapObj_SetMovementAction(mapObj, param2);
             return 0;
         }
 
         if (v0 == 0) {
             param2 = MovementAction_TurnActionTowardsDir(dir, param2);
             MapObject_SetStatus1(mapObj);
-            sub_02065668(mapObj, param2);
+            LocalMapObj_SetMovementAction(mapObj, param2);
             return 1;
         }
     }
@@ -1047,6 +1047,6 @@ static int WanderAvoidObstacles_PickDirection(MapObject *mapObj, WanderAvoidObst
     dir = MapObject_GetFacingDir(mapObj);
     param2 = MovementAction_TurnActionTowardsDir(dir, MOVEMENT_ACTION_WALK_ON_SPOT_SLOW_NORTH);
 
-    sub_02065668(mapObj, param2);
+    LocalMapObj_SetMovementAction(mapObj, param2);
     return 0;
 }

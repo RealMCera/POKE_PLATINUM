@@ -28,7 +28,7 @@
 #include "player_avatar.h"
 #include "sound_playback.h"
 #include "terrain_collision_manager.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 typedef BOOL (*TileBehaviorFunc)(u8);
 
@@ -460,7 +460,7 @@ void PlayerAvatar_ForceStopMovement(PlayerAvatar *playerAvatar, int dir)
     MapObject_TryFace(mapObj, dir);
     MapObject_SetUnkA0(mapObj, 0x0);
     MapObject_UpdateCoords(mapObj);
-    sub_020656DC(mapObj);
+    LocalMapObj_CancelAnimation(mapObj);
     LocalMapObj_SetAnimationCode(mapObj, MovementAction_TurnActionTowardsDir(dir, MOVEMENT_ACTION_FACE_NORTH));
 }
 

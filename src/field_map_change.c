@@ -68,7 +68,7 @@
 #include "underground_map_transition.h"
 #include "unk_0203D1B8.h"
 #include "unk_020559DC.h"
-#include "unk_0205B33C.h"
+#include "union_room.h"
 #include "unk_0205C22C.h"
 #include "vars_flags.h"
 
@@ -1431,7 +1431,7 @@ void sub_020545EC(FieldSystem *fieldSystem)
     MI_CpuClear8(mapChangeData, sizeof(MapChangeUnionData));
 
     mapChangeData->location = *location;
-    sub_0205B388(fieldSystem);
+    UnionRoom_Exit(fieldSystem);
     sub_0205C2E0(fieldSystem->unk_80);
     fieldSystem->mapLoadType = MAP_LOAD_TYPE_OVERWORLD;
 

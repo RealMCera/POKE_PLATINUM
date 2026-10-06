@@ -158,7 +158,7 @@ Static main
 	Object main.nef.p/src_unk_0203266C.c.o
 	Object main.nef.p/src_unk_02032798.c.o
 	Object main.nef.p/src_communication_information.c.o
-	Object main.nef.p/src_unk_02033200.c.o
+	Object main.nef.p/src_comm_server_client.c.o
 	Object main.nef.p/src_communication_system.c.o
 	Object main.nef.p/src_unk_020363E8.c.o
 	Object main.nef.p/src_comm_manager.c.o
@@ -239,7 +239,7 @@ Static main
 	Object main.nef.p/src_comm_player_manager.c.o
 	Object main.nef.p/src_field_comm_manager.c.o
 	Object main.nef.p/src_unk_0205A0D8.c.o
-	Object main.nef.p/src_unk_0205B33C.c.o
+	Object main.nef.p/src_union_room.c.o
 	Object main.nef.p/src_unk_0205C22C.c.o
 	Object main.nef.p/src_appearance.c.o
 	Object main.nef.p/src_underground_map_transition.c.o
@@ -252,15 +252,15 @@ Static main
 	Object main.nef.p/src_map_object.c.o
 	Object main.nef.p/src_unk_020EDBAC.c.o
 	Object main.nef.p/src_map_object_move.c.o
-	Object main.nef.p/src_unk_0206450C.c.o
-	Object main.nef.p/src_unk_020655F4.c.o
-	Object main.nef.p/src_unk_020673B8.c.o
+	Object main.nef.p/src_map_object_movement_patterns.c.o
+	Object main.nef.p/src_map_object_animation.c.o
+	Object main.nef.p/src_trainer_facing.c.o
 	Object main.nef.p/src_berry_patch_graphics.c.o
 	Object main.nef.p/src_trainer_encounter.c.o
 	Object main.nef.p/src_dynamic_map_features.c.o
 	Object main.nef.p/src_item_use_functions.c.o
 	Object main.nef.p/src_pokeradar.c.o
-	Object main.nef.p/src_unk_02069BE0.c.o
+	Object main.nef.p/src_map_object_movement.c.o
 	Object main.nef.p/src_scroll_prompts.c.o
 	Object main.nef.p/src_system_flags.c.o
 	Object main.nef.p/src_system_vars.c.o

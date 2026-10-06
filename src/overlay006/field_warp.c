@@ -21,7 +21,7 @@
 #include "screen_fade.h"
 #include "sound_playback.h"
 #include "spawn_locations.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 enum FieldWarpStateResult {
     STATE_RESULT_NEXT_STATE = 0,

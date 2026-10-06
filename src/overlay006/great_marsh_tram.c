@@ -20,7 +20,7 @@
 #include "player_avatar.h"
 #include "savedata_misc.h"
 #include "sound_playback.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 #include "res/field/props/models/prop_models.naix"
 

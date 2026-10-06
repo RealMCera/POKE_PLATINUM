@@ -43,7 +43,7 @@
 #include "trainer_info.h"
 #include "unk_020363E8.h"
 #include "unk_0203D1B8.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 #include "constdata/const_020F410C.h"
 

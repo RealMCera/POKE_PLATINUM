@@ -14,7 +14,7 @@
 #include "network_icon.h"
 #include "overlay_manager.h"
 #include "system.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "wifi_overlays.h"
 
 static BOOL Unk_ov97_02240400;

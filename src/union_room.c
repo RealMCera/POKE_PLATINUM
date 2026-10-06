@@ -1,4 +1,4 @@
-#include "unk_0205B33C.h"
+#include "union_room.h"
 
 #include <nitro.h>
 
@@ -31,7 +31,7 @@
 #include "sys_task_manager.h"
 #include "trainer_case.h"
 #include "trainer_info.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_02095E98.h"
 #include "unk_02099500.h"
 
@@ -40,75 +40,89 @@
 #include "res/text/bank/greetings.h"
 #include "res/text/bank/union_room.h"
 
-typedef void (*UnkFuncPtr_0205B43C)(UnkStruct_0205B43C *);
+// Union Room communication state. The Union Room lets two players interact
+// wirelessly: they can greet each other, show trainer cases, battle, trade,
+// draw, mix records or spin trade. This module owns the connection state
+// machine (driven by UnionRoom_Update) and the activity handshake that the
+// Union Room scripts drive through the ScrCmd_* commands.
+//
+// The state machine is a single callback (stateFunc) plus a frame countdown
+// (stateDelay); UnionRoom_SetState installs the next callback and delay.
 
+// Callback invoked once per frame by the Union Room system task.
+typedef void (*UnionRoomStateFunc)(UnionRoom *);
+
+// Unused scratch entries; the original code never reads or writes them.
 typedef struct {
     u16 unk_00;
     u16 unk_02;
 } UnkStruct_0205B43C_sub1;
 
+// Unused scratch entries; the original code never reads or writes them.
 typedef struct {
     u16 unk_00;
     u16 unk_02;
 } UnkStruct_0205B43C_sub2;
 
-struct UnkStruct_0205B43C_t {
+struct UnionRoom {
     FieldSystem *fieldSystem;
     SaveData *saveData;
-    TrainerInfo *unk_08;
-    SysTask *unk_0C;
-    UnkFuncPtr_0205B43C unk_10;
-    int unk_14;
-    u32 unk_18;
-    u32 unk_1C;
-    int unk_20;
-    int unk_24;
-    int unk_28;
-    int unk_2C;
-    u32 unk_30;
-    u32 unk_34;
-    u32 unk_38;
-    u32 unk_3C;
-    u32 unk_40;
-    u32 unk_44;
-    UnkStruct_0205B43C_sub1 unk_48[10];
-    UnkStruct_0205B43C_sub2 unk_70[40];
-    WMbssDesc *unk_110[16];
-    MATHRandContext32 unk_150;
-    int unk_168;
-    int unk_16C;
-    int unk_170;
-    u16 unk_174;
-    u8 unk_176[2];
-    EasyChatSentence unk_178;
-    BOOL unk_180;
-    TrainerCase *unk_184;
-    TrainerCase *unk_188[2];
+    TrainerInfo *trainerInfo; // Local player's trainer info
+    SysTask *task; // System task that drives the state machine
+    UnionRoomStateFunc stateFunc; // Current state callback
+    int stateDelay; // Frames to wait before the state callback runs
+    u32 connectionID; // Net ID of the peer we are connecting to
+    u32 connectState; // Connection result: 0 pending, 1 connected, 2 failed, 3 connecting
+    int pendingRequest; // Pending activity request: 0 none, 1 connect/mix records/spin trade, 2 draw
+    int unk_24; // Unused (written but never read)
+    int unk_28; // Unused (written but never read)
+    int unk_2C; // Unused (written but never read)
+    u32 activity; // Activity requested by the peer, or being started locally
+    u32 selectedActivity; // Activity the local player picked from the menu (1-based)
+    u32 unk_38; // Unused
+    u32 unk_3C; // Unused (written but never read)
+    u32 peerActivity; // Activity the peer agreed to (7 = declined/busy)
+    u32 peerNoActivity; // Set when the peer reports it has no activity
+    UnkStruct_0205B43C_sub1 unk_48[10]; // Unused
+    UnkStruct_0205B43C_sub2 unk_70[40]; // Unused
+    WMbssDesc *bssDesc[16]; // Wireless beacon descriptors, indexed by net ID
+    MATHRandContext32 rng; // RNG used to pick random busy messages
+    int unk_168; // Unused
+    int unk_16C; // Unused
+    int unk_170; // Unused
+    u16 unk_174; // Unused (written but never read)
+    u8 menuChoice[2]; // Per-player party menu choice (1 = confirm, 2 = cancel)
+    EasyChatSentence easyChatSentence; // Pending easy chat sentence to broadcast
+    BOOL hasEasyChatSentence; // Whether easyChatSentence holds a pending sentence
+    TrainerCase *trainerCase; // Local player's trainer case
+    TrainerCase *trainerCases[2]; // Trainer cases exchanged with the peer
 };
 
-static UnkStruct_0205B43C *sub_0205B3A0(FieldSystem *fieldSystem);
-static void sub_0205B43C(UnkStruct_0205B43C *param0);
-static void sub_0205B4B0(UnkStruct_0205B43C *param0);
-static void sub_0205B5B4(UnkStruct_0205B43C *param0, UnkFuncPtr_0205B43C param1, int param2);
-static void sub_0205B5FC(UnkStruct_0205B43C *param0);
-static void sub_0205B620(UnkStruct_0205B43C *param0);
-static void sub_0205B754(UnkStruct_0205B43C *param0);
-static void sub_0205B634(UnkStruct_0205B43C *param0);
-static void sub_0205B4F8(UnkStruct_0205B43C *param0);
-static void sub_0205B578(UnkStruct_0205B43C *param0);
-static void sub_0205B72C(UnkStruct_0205B43C *param0);
-static void sub_0205B6C4(UnkStruct_0205B43C *param0);
-static void sub_0205B694(UnkStruct_0205B43C *param0);
-static void sub_0205C160(UnkStruct_0205B43C *param0);
-static int sub_0205B4D4(void);
-static int UnionRoom_GetTrainerBusyMessage(UnkStruct_0205B43C *param0, int param1);
+static UnionRoom *UnionRoom_New(FieldSystem *fieldSystem);
+static void UnionRoom_StateConnect(UnionRoom *param0);
+static void UnionRoom_StateRestart(UnionRoom *param0);
+static void UnionRoom_SetState(UnionRoom *param0, UnionRoomStateFunc param1, int param2);
+static void UnionRoom_StateExit(UnionRoom *param0);
+static void UnionRoom_StateWaitExit(UnionRoom *param0);
+static void UnionRoom_Free(UnionRoom *param0);
+static void UnionRoom_StateConnectClient(UnionRoom *param0);
+static void UnionRoom_StateWaitClient(UnionRoom *param0);
+static void UnionRoom_StateWaitClientReady(UnionRoom *param0);
+static void UnionRoom_StateWaitDisconnect(UnionRoom *param0);
+static void UnionRoom_StateWaitClientInfo(UnionRoom *param0);
+static void UnionRoom_StateConnectFailed(UnionRoom *param0);
+static void UnionRoom_ResetState(UnionRoom *param0);
+static int UnionRoom_HasConnectedTrainer(void);
+static int UnionRoom_GetTrainerBusyMessage(UnionRoom *param0, int param1);
 static int UnionRoom_GetStartMessage(int param0, int gender, StringTemplate *strTemplate);
-static void sub_0205B408(UnkStruct_0205B43C *param0);
-static void sub_0205BFF0(UnkStruct_0205B4F8 *param0);
+static void UnionRoom_StateInit(UnionRoom *param0);
+static void UnionRoom_ResetGameInfo(UnkStruct_0205B4F8 *param0);
 
-UnkStruct_0205B43C *FieldSystem_InitCommUnionRoom(FieldSystem *fieldSystem)
+// Allocates the Union Room state and starts its state machine. Called when the
+// player enters the Union Room. Returns NULL if it is already initialised.
+UnionRoom *FieldSystem_InitCommUnionRoom(FieldSystem *fieldSystem)
 {
-    UnkStruct_0205B43C *v0 = NULL;
+    UnionRoom *v0 = NULL;
 
     GF_ASSERT(fieldSystem != NULL);
 
@@ -120,7 +134,7 @@ UnkStruct_0205B43C *FieldSystem_InitCommUnionRoom(FieldSystem *fieldSystem)
         (void)0;
     }
 
-    v0 = sub_0205B3A0(fieldSystem);
+    v0 = UnionRoom_New(fieldSystem);
 
     if (v0 == NULL) {
         v0 = fieldSystem->unk_7C;
@@ -128,25 +142,28 @@ UnkStruct_0205B43C *FieldSystem_InitCommUnionRoom(FieldSystem *fieldSystem)
 
     CommFieldCmd_Init((void *)fieldSystem);
     CommManager_SetMaxNumConnections(2);
-    sub_0205B5B4(v0, sub_0205B408, 40);
+    UnionRoom_SetState(v0, UnionRoom_StateInit, 40);
 
     return v0;
 }
 
-void sub_0205B388(FieldSystem *fieldSystem)
+// Begins tearing down the Union Room state machine.
+void UnionRoom_Exit(FieldSystem *fieldSystem)
 {
     if (fieldSystem->unk_7C == NULL) {
         return;
     }
 
-    sub_0205B5B4(fieldSystem->unk_7C, sub_0205B5FC, 5);
+    UnionRoom_SetState(fieldSystem->unk_7C, UnionRoom_StateExit, 5);
 }
 
-static UnkStruct_0205B43C *sub_0205B3A0(FieldSystem *fieldSystem)
+// Allocates and initialises the Union Room state. The state machine starts in
+// the idle state and is driven by UnionRoom_Update.
+static UnionRoom *UnionRoom_New(FieldSystem *fieldSystem)
 {
     void *v0;
     SaveData *saveData;
-    UnkStruct_0205B43C *v2 = NULL;
+    UnionRoom *v2 = NULL;
 
     if (fieldSystem->unk_7C != NULL) {
         return NULL;
@@ -155,74 +172,83 @@ static UnkStruct_0205B43C *sub_0205B3A0(FieldSystem *fieldSystem)
     saveData = FieldSystem_GetSaveData(fieldSystem);
     CommManager_StartUnion(saveData);
 
-    v2 = (UnkStruct_0205B43C *)Heap_Alloc(HEAP_ID_31, sizeof(UnkStruct_0205B43C));
-    MI_CpuClear8(v2, sizeof(UnkStruct_0205B43C));
+    v2 = (UnionRoom *)Heap_Alloc(HEAP_ID_31, sizeof(UnionRoom));
+    MI_CpuClear8(v2, sizeof(UnionRoom));
 
-    v2->unk_10 = NULL;
-    v2->unk_14 = 40;
-    v2->unk_0C = SysTask_Start(sub_0205B5BC, v2, 10);
+    v2->stateFunc = NULL;
+    v2->stateDelay = 40;
+    v2->task = SysTask_Start(UnionRoom_Update, v2, 10);
     v2->fieldSystem = fieldSystem;
     v2->saveData = saveData;
-    v2->unk_08 = SaveData_GetTrainerInfo(saveData);
+    v2->trainerInfo = SaveData_GetTrainerInfo(saveData);
 
-    sub_0205C160(v2);
-    CommSys_Seed(&v2->unk_150);
+    UnionRoom_ResetState(v2);
+    CommSys_Seed(&v2->rng);
 
     return v2;
 }
 
-static void sub_0205B408(UnkStruct_0205B43C *param0)
+// Initial state: wait until the wireless server/client is ready, then publish
+// the player's easy chat sentence and move on to the connection state.
+static void UnionRoom_StateInit(UnionRoom *param0)
 {
     EasyChatSentence v0;
 
     if (CommServerClient_IsInitialized()) {
         EasyChatSentence_InitWithEnteredUnionRoom(&v0);
-        sub_0205C12C(&v0);
-        sub_0205C010(param0, &v0);
-        sub_0205B5B4(param0, sub_0205B43C, 40);
+        UnionRoom_InitGameInfo(&v0);
+        UnionRoom_SetEasyChatSentence(param0, &v0);
+        UnionRoom_SetState(param0, UnionRoom_StateConnect, 40);
     }
 }
 
+// Write-only counter; the original code increments and resets it but never
+// reads it.
 static int Unk_021C0850;
 
-static void sub_0205B43C(UnkStruct_0205B43C *param0)
+// Idle connection state. If the player has requested an activity, start the
+// matching connection (mix records, spin trade, draw or a plain union
+// connection) and wait for it to complete.
+static void UnionRoom_StateConnect(UnionRoom *param0)
 {
     if (CommManager_IsConnectUnionServer()) {
         Unk_021C0850 = 0;
-        sub_0205B5B4(param0, sub_0205B4F8, 0);
+        UnionRoom_SetState(param0, UnionRoom_StateWaitClient, 0);
         return;
     }
 
-    if (param0->unk_20 != 0) {
+    if (param0->pendingRequest != 0) {
         param0->unk_28 = 2;
 
-        if (param0->unk_20 == 1) {
-            if (param0->unk_30 == 5) {
-                CommManager_StartMixRecordsClient(param0->unk_18);
-            } else if (param0->unk_30 == 6) {
-                CommManager_StartSpinTradeClient(param0->unk_18);
+        if (param0->pendingRequest == 1) {
+            if (param0->activity == 5) {
+                CommManager_StartMixRecordsClient(param0->connectionID);
+            } else if (param0->activity == 6) {
+                CommManager_StartSpinTradeClient(param0->connectionID);
             } else {
-                CommManager_ConnectUnion(param0->unk_18);
+                CommManager_ConnectUnion(param0->connectionID);
             }
-        } else if (param0->unk_20 == 2) {
+        } else if (param0->pendingRequest == 2) {
             sub_02095E98(NULL);
-            CommManager_StartDrawClient(param0->unk_18);
+            CommManager_StartDrawClient(param0->connectionID);
         }
 
-        sub_0205B5B4(param0, sub_0205B634, 12);
+        UnionRoom_SetState(param0, UnionRoom_StateConnectClient, 12);
         return;
     }
 }
 
-static void sub_0205B4B0(UnkStruct_0205B43C *param0)
+// Wait for the union search to restart, then return to the connection state.
+static void UnionRoom_StateRestart(UnionRoom *param0)
 {
     if (CommManager_UnionRestartSuccess() == 1) {
         CommFieldCmd_Init((void *)param0->fieldSystem);
-        sub_0205B5B4(param0, sub_0205B43C, 2);
+        UnionRoom_SetState(param0, UnionRoom_StateConnect, 2);
     }
 }
 
-static int sub_0205B4D4(void)
+// TRUE if at least one of the other net IDs (1-4) has a trainer registered.
+static int UnionRoom_HasConnectedTrainer(void)
 {
     int v0, v1;
     TrainerInfo *v2;
@@ -240,34 +266,39 @@ static int sub_0205B4D4(void)
     return v1 >= 1;
 }
 
-static void sub_0205B4F8(UnkStruct_0205B43C *param0)
+// Wait for a client to connect. Once one is present, send our player info and
+// broadcast that we are busy (11) while the handshake completes. If the union
+// server is lost, restart the search.
+static void UnionRoom_StateWaitClient(UnionRoom *param0)
 {
     UnkStruct_0205B4F8 *v0;
 
-    if (param0->unk_14 > 0) {
-        param0->unk_14--;
+    if (param0->stateDelay > 0) {
+        param0->stateDelay--;
         return;
     }
 
     Unk_021C0850++;
-    v0 = sub_020340E8();
+    v0 = CommServerClient_GetBattleRegulation();
 
-    if (CommSys_IsClientConnecting() && (sub_0205B4D4() == 1) && (v0->unk_1C != 4)) {
+    if (CommSys_IsClientConnecting() && (UnionRoom_HasConnectedTrainer() == 1) && (v0->unk_1C != 4)) {
         CommInfo_SendPlayerInfo();
         CommManager_SetErrorHandling(1, 1);
-        sub_0205BEA8(11);
-        sub_0205B5B4(param0, sub_0205B578, 0);
+        UnionRoom_BroadcastActivity(11);
+        UnionRoom_SetState(param0, UnionRoom_StateWaitClientReady, 0);
     }
 
     if (CommManager_IsConnectUnionServer() == 0) {
         CommManager_UnionRestartSearch();
-        sub_0205C160(param0);
-        sub_0205BEA8(0);
-        sub_0205B5B4(param0, sub_0205B4B0, 2);
+        UnionRoom_ResetState(param0);
+        UnionRoom_BroadcastActivity(0);
+        UnionRoom_SetState(param0, UnionRoom_StateRestart, 2);
     }
 }
 
-static void sub_0205B578(UnkStruct_0205B43C *param0)
+// Wait for the client handshake to finish. If the client disconnects, restart
+// the union search.
+static void UnionRoom_StateWaitClientReady(UnionRoom *param0)
 {
     if (CommManager_CheckError() && (0 == CommSys_IsClientConnecting())) {
         return;
@@ -275,23 +306,28 @@ static void sub_0205B578(UnkStruct_0205B43C *param0)
 
     if (0 == CommSys_IsClientConnecting()) {
         CommManager_UnionRestartSearch();
-        sub_0205C160(param0);
-        sub_0205BEA8(0);
-        sub_0205B5B4(param0, sub_0205B4B0, 2);
+        UnionRoom_ResetState(param0);
+        UnionRoom_BroadcastActivity(0);
+        UnionRoom_SetState(param0, UnionRoom_StateRestart, 2);
     }
 }
 
-static void sub_0205B5B4(UnkStruct_0205B43C *param0, UnkFuncPtr_0205B43C param1, int param2)
+// Installs the next state callback and the number of frames to wait before it
+// runs.
+static void UnionRoom_SetState(UnionRoom *param0, UnionRoomStateFunc param1, int param2)
 {
-    param0->unk_10 = param1;
-    param0->unk_14 = param2;
+    param0->stateFunc = param1;
+    param0->stateDelay = param2;
 }
 
+// Write-only mirror of the beacon descriptors cached in UnionRoom_Update.
 static WMBssDesc *Unk_021C085C[16];
 
-void sub_0205B5BC(SysTask *param0, void *param1)
+// System task callback: refreshes the cached wireless beacon descriptors and
+// runs the current state callback.
+void UnionRoom_Update(SysTask *param0, void *param1)
 {
-    UnkStruct_0205B43C *v0 = (UnkStruct_0205B43C *)param1;
+    UnionRoom *v0 = (UnionRoom *)param1;
 
     if (v0 == NULL) {
         SysTask_Done(param0);
@@ -300,106 +336,116 @@ void sub_0205B5BC(SysTask *param0, void *param1)
         WMBssDesc *v2;
 
         for (v1 = 0; v1 < 16; v1++) {
-            v0->unk_110[v1] = sub_02033F3C(v1);
-            Unk_021C085C[v1] = v0->unk_110[v1];
+            v0->bssDesc[v1] = CommServerClient_GetServerBssDesc(v1);
+            Unk_021C085C[v1] = v0->bssDesc[v1];
         }
 
-        if (v0->unk_10 != NULL) {
-            v0->unk_10(v0);
+        if (v0->stateFunc != NULL) {
+            v0->stateFunc(v0);
         }
     }
 }
 
-static void sub_0205B5FC(UnkStruct_0205B43C *param0)
+// Exit state: leave the union after a short delay, then wait for the comm
+// system to shut down.
+static void UnionRoom_StateExit(UnionRoom *param0)
 {
-    if (param0->unk_14 != 0) {
-        param0->unk_14--;
+    if (param0->stateDelay != 0) {
+        param0->stateDelay--;
         return;
     }
 
     CommManager_ExitUnion();
-    sub_0205B5B4(param0, sub_0205B620, 0);
+    UnionRoom_SetState(param0, UnionRoom_StateWaitExit, 0);
 }
 
-static void sub_0205B620(UnkStruct_0205B43C *param0)
+// Wait for the comm system to finish shutting down, then free the state.
+static void UnionRoom_StateWaitExit(UnionRoom *param0)
 {
     if (CommSys_IsInitialized()) {
         return;
     }
 
-    sub_0205B754(param0);
+    UnionRoom_Free(param0);
 }
 
-static void sub_0205B634(UnkStruct_0205B43C *param0)
+// Wait for the union client connection to succeed. On success, send our player
+// info and wait for the peer's trainer info; on failure, restart the search.
+static void UnionRoom_StateConnectClient(UnionRoom *param0)
 {
     if (1 == CommManager_IsConnectedUnionClientSuccess()) {
         CommInfo_SendPlayerInfo();
-        sub_0205B5B4(param0, sub_0205B6C4, 3);
+        UnionRoom_SetState(param0, UnionRoom_StateWaitClientInfo, 3);
         return;
     } else if (CommSys_IsClientConnecting()) {
-        param0->unk_20 = 0;
-        param0->unk_1C = 3;
+        param0->pendingRequest = 0;
+        param0->connectState = 3;
 
-        sub_0205B5B4(param0, sub_0205B4F8, 0);
+        UnionRoom_SetState(param0, UnionRoom_StateWaitClient, 0);
     }
 
     if (0 == CommManager_IsConnectedUnionClientSuccess()) {
         return;
     }
 
-    sub_0205B5B4(param0, sub_0205B694, 2);
+    UnionRoom_SetState(param0, UnionRoom_StateConnectFailed, 2);
 
     param0->unk_24 = 0;
-    param0->unk_1C = 2;
-    param0->unk_20 = 0;
-    param0->unk_44 = 0;
+    param0->connectState = 2;
+    param0->pendingRequest = 0;
+    param0->peerNoActivity = 0;
 }
 
-static void sub_0205B694(UnkStruct_0205B43C *param0)
+// Wait for the field task to stop, then restart the union search.
+static void UnionRoom_StateConnectFailed(UnionRoom *param0)
 {
     if (!FieldSystem_IsRunningTask(param0->fieldSystem)) {
         CommManager_UnionRestartSearch();
-        sub_0205C160(param0);
-        sub_0205BEA8(0);
-        sub_0205B5B4(param0, sub_0205B4B0, 2);
+        UnionRoom_ResetState(param0);
+        UnionRoom_BroadcastActivity(0);
+        UnionRoom_SetState(param0, UnionRoom_StateRestart, 2);
     }
 }
 
-static void sub_0205B6C4(UnkStruct_0205B43C *param0)
+// Wait for the connected client's trainer info to become available. Once it
+// is, the connection is complete and we wait for the peer to disconnect.
+static void UnionRoom_StateWaitClientInfo(UnionRoom *param0)
 {
     if (1 == CommManager_IsConnectedUnionClientSuccess()) {
         if (CommInfo_TrainerInfo(CommSys_CurNetId()) != NULL) {
-            param0->unk_20 = 0;
-            param0->unk_1C = 1;
-            param0->unk_44 = 0;
+            param0->pendingRequest = 0;
+            param0->connectState = 1;
+            param0->peerNoActivity = 0;
 
             CommManager_SetErrorHandling(1, 1);
-            sub_0205B5B4(param0, sub_0205B72C, 3);
+            UnionRoom_SetState(param0, UnionRoom_StateWaitDisconnect, 3);
         }
     } else if (0 == CommManager_IsConnectedUnionClientSuccess()) {
         CommManager_UnionRestartSearch();
-        sub_0205C160(param0);
-        sub_0205B5B4(param0, sub_0205B4B0, 2);
+        UnionRoom_ResetState(param0);
+        UnionRoom_SetState(param0, UnionRoom_StateRestart, 2);
 
         param0->unk_24 = 0;
-        param0->unk_1C = 2;
-        param0->unk_20 = 0;
-        param0->unk_44 = 0;
+        param0->connectState = 2;
+        param0->pendingRequest = 0;
+        param0->peerNoActivity = 0;
     }
 }
 
-static void sub_0205B72C(UnkStruct_0205B43C *param0)
+// Wait for the peer to disconnect, then restart the union search.
+static void UnionRoom_StateWaitDisconnect(UnionRoom *param0)
 {
     if (0 == CommManager_IsConnectedUnionClientSuccess()) {
         CommManager_UnionRestartSearch();
-        sub_0205C160(param0);
-        sub_0205B5B4(param0, sub_0205B4B0, 2);
+        UnionRoom_ResetState(param0);
+        UnionRoom_SetState(param0, UnionRoom_StateRestart, 2);
 
         return;
     }
 }
 
-static void sub_0205B754(UnkStruct_0205B43C *param0)
+// Stops the state machine task and frees the Union Room state.
+static void UnionRoom_Free(UnionRoom *param0)
 {
     void *v0;
 
@@ -407,43 +453,49 @@ static void sub_0205B754(UnkStruct_0205B43C *param0)
         return;
     }
 
-    SysTask_Done(param0->unk_0C);
+    SysTask_Done(param0->task);
     Heap_Free(param0);
     Heap_Destroy(HEAP_ID_31);
 }
 
-FieldSystem *sub_0205B770(UnkStruct_0205B43C *param0)
+// Returns the field system that owns this Union Room state.
+FieldSystem *UnionRoom_GetFieldSystem(UnionRoom *param0)
 {
     return param0->fieldSystem;
 }
 
-WMBssDesc *sub_0205B774(UnkStruct_0205B43C *param0, int param1)
+// Returns the wireless beacon descriptor for the given net ID.
+WMBssDesc *UnionRoom_GetBssDesc(UnionRoom *param0, int param1)
 {
-    return param0->unk_110[param1];
+    return param0->bssDesc[param1];
 }
 
+// Write-only cache of the peer's broadcast game info.
 static UnkStruct_0205B4F8 *Unk_021C0854;
 
-int sub_0205B780(UnkStruct_0205B43C *param0, int param1)
+// Returns the activity status of the trainer at the given local ID (1-based):
+// 1 = greet, 2 = draw, 3 = mix records, 4 = spin trade, 5 = busy. The status
+// is read from the peer's broadcast game info.
+int UnionRoom_GetTrainerStatus(UnionRoom *param0, int param1)
 {
     TrainerInfo *v0;
     UnkStruct_0203330C *v1;
     UnkStruct_0205B4F8 *v2;
 
     param1--;
-    v0 = sub_02033FB0(param1);
+    v0 = CommServerClient_GetServerTrainerInfo(param1);
 
-    sub_0205C154(param0);
+    UnionRoom_ResetActivity(param0);
 
     if (v0 == NULL) {
         return 5;
     }
 
-    if (param0->unk_110[param1] == NULL) {
+    if (param0->bssDesc[param1] == NULL) {
         return 5;
     }
 
-    v1 = (UnkStruct_0203330C *)param0->unk_110[param1]->gameInfo.userGameInfo;
+    v1 = (UnkStruct_0203330C *)param0->bssDesc[param1]->gameInfo.userGameInfo;
     v2 = (UnkStruct_0205B4F8 *)v1->unk_30;
 
     Unk_021C0854 = v2;
@@ -475,7 +527,11 @@ int sub_0205B780(UnkStruct_0205B43C *param0, int param1)
     return 5;
 }
 
-int sub_0205B804(UnkStruct_0205B43C *param0, int param1, u16 param2)
+// Attempts to start an activity with the trainer at the given local ID
+// (1-based). param2 is the activity the local player wants (1 = greet,
+// 2 = draw, 3 = mix records, 4 = spin trade). Returns 1 on success, 5 if the
+// peer is busy or the requested activity does not match what they are doing.
+int UnionRoom_RequestActivity(UnionRoom *param0, int param1, u16 param2)
 {
     TrainerInfo *v0;
     UnkStruct_0203330C *v1;
@@ -483,11 +539,11 @@ int sub_0205B804(UnkStruct_0205B43C *param0, int param1, u16 param2)
 
     param1--;
 
-    if (param0->unk_110[param1] == NULL) {
+    if (param0->bssDesc[param1] == NULL) {
         return 5;
     }
 
-    v1 = (UnkStruct_0203330C *)param0->unk_110[param1]->gameInfo.userGameInfo;
+    v1 = (UnkStruct_0203330C *)param0->bssDesc[param1]->gameInfo.userGameInfo;
     v2 = (UnkStruct_0205B4F8 *)v1->unk_30;
 
     Unk_021C0854 = v2;
@@ -498,11 +554,11 @@ int sub_0205B804(UnkStruct_0205B43C *param0, int param1, u16 param2)
             return 5;
         }
 
-        param0->unk_30 = 5;
-        param0->unk_18 = param1;
-        param0->unk_20 = 1;
+        param0->activity = 5;
+        param0->connectionID = param1;
+        param0->pendingRequest = 1;
         param0->unk_24 = 0;
-        param0->unk_1C = 0;
+        param0->connectState = 0;
         return 1;
         break;
     case 0:
@@ -510,10 +566,10 @@ int sub_0205B804(UnkStruct_0205B43C *param0, int param1, u16 param2)
             return 5;
         }
 
-        param0->unk_18 = param1;
-        param0->unk_20 = 1;
+        param0->connectionID = param1;
+        param0->pendingRequest = 1;
         param0->unk_24 = 0;
-        param0->unk_1C = 0;
+        param0->connectState = 0;
         return 1;
         break;
     case 1:
@@ -521,10 +577,10 @@ int sub_0205B804(UnkStruct_0205B43C *param0, int param1, u16 param2)
             return 5;
         }
 
-        param0->unk_18 = param1;
-        param0->unk_20 = 2;
+        param0->connectionID = param1;
+        param0->pendingRequest = 2;
         param0->unk_24 = 0;
-        param0->unk_1C = 0;
+        param0->connectState = 0;
         return 1;
         break;
     case 13:
@@ -533,10 +589,10 @@ int sub_0205B804(UnkStruct_0205B43C *param0, int param1, u16 param2)
             return 5;
         }
 
-        param0->unk_30 = 6;
-        param0->unk_18 = param1;
-        param0->unk_20 = 1;
-        param0->unk_1C = 0;
+        param0->activity = 6;
+        param0->connectionID = param1;
+        param0->pendingRequest = 1;
+        param0->connectState = 0;
         return 1;
         break;
     case 4:
@@ -557,14 +613,17 @@ int sub_0205B804(UnkStruct_0205B43C *param0, int param1, u16 param2)
     return 0;
 }
 
-u32 sub_0205B8D8(UnkStruct_0205B43C *param0)
+// Returns the connection result: 0 pending, 1 connected, 2 failed, 3 connecting.
+u32 UnionRoom_GetConnectState(UnionRoom *param0)
 {
-    return param0->unk_1C;
+    return param0->connectState;
 }
 
-u32 sub_0205B8DC(UnkStruct_0205B43C *param0)
+// Returns the activity the peer agreed to, or 7 if there is no peer or the
+// peer reported no activity.
+u32 UnionRoom_GetPeerActivity(UnionRoom *param0)
 {
-    if (param0->unk_44) {
+    if (param0->peerNoActivity) {
         return 7;
     }
 
@@ -574,40 +633,45 @@ u32 sub_0205B8DC(UnkStruct_0205B43C *param0)
 
     if (CommSys_CurNetId() == 0) {
         if (CommManager_IsConnectUnionServer() == 1) {
-            return param0->unk_40;
+            return param0->peerActivity;
         }
     } else {
         if (CommManager_IsConnectedUnionClientSuccess() == 1) {
-            return param0->unk_40;
+            return param0->peerActivity;
         }
     }
 
     return 7;
 }
 
-u32 sub_0205B91C(UnkStruct_0205B43C *param0)
+// Returns the activity requested by the peer, or 7 if we are not the server.
+u32 UnionRoom_GetActivity(UnionRoom *param0)
 {
     if (CommManager_IsConnectUnionServer() == 1) {
-        return param0->unk_30;
+        return param0->activity;
     }
 
     return 7;
 }
 
-void sub_0205B930(UnkStruct_0205B43C *param0, int param1, u32 param2)
+// Sends an activity handshake packet. param1 selects the direction:
+// 0 = we are requesting an activity (send our selection on command 99),
+// 1 = we are answering a request (send our activity on command 103, or 7 to
+// decline).
+void UnionRoom_SendActivityRequest(UnionRoom *param0, int param1, u32 param2)
 {
     u8 v0 = (u8)param2;
 
     switch (param1) {
     case 0:
-        if (param0->unk_44 == 0) {
-            param0->unk_34 = v0;
+        if (param0->peerNoActivity == 0) {
+            param0->selectedActivity = v0;
             CommSys_SendData(99, &v0, 1);
         }
         break;
     case 1:
         if (param2 == 0) {
-            u8 v1 = param0->unk_30;
+            u8 v1 = param0->activity;
 
             CommSys_SendDataServer(103, &v1, 1);
             param0->unk_3C = param2;
@@ -621,65 +685,75 @@ void sub_0205B930(UnkStruct_0205B43C *param0, int param1, u32 param2)
     }
 }
 
-void sub_0205B988(int param0, int param1, void *param2, void *param3)
+// Command 98 handler: unused.
+void UnionRoom_HandleNoOpTrainerInfo(int param0, int param1, void *param2, void *param3)
 {
     return;
 }
 
-void sub_0205B98C(int param0, int param1, void *param2, void *param3)
+// Command 100 handler: unused.
+void UnionRoom_HandleNoOpNetId(int param0, int param1, void *param2, void *param3)
 {
     return;
 }
 
-void sub_0205B990(int param0, int param1, void *param2, void *param3)
+// Command 102 handler: reset the state machine back to the connection state.
+void UnionRoom_HandleResetState(int param0, int param1, void *param2, void *param3)
 {
     FieldSystem *fieldSystem = (FieldSystem *)param3;
 
-    sub_0205B5B4(fieldSystem->unk_7C, sub_0205B43C, 2);
-    sub_0205C160(fieldSystem->unk_7C);
+    UnionRoom_SetState(fieldSystem->unk_7C, UnionRoom_StateConnect, 2);
+    UnionRoom_ResetState(fieldSystem->unk_7C);
 }
 
+// Write-only cache of the activity received on command 99.
 static int Unk_021C0858;
 
-void sub_0205B9AC(int param0, int param1, void *param2, void *param3)
+// Command 99 handler: record the activity the peer requested.
+void UnionRoom_HandleSetActivity(int param0, int param1, void *param2, void *param3)
 {
     FieldSystem *fieldSystem = (FieldSystem *)param3;
     u8 *v1 = (u8 *)param2;
 
-    if (fieldSystem->unk_7C->unk_44 == 0) {
-        fieldSystem->unk_7C->unk_30 = *v1;
+    if (fieldSystem->unk_7C->peerNoActivity == 0) {
+        fieldSystem->unk_7C->activity = *v1;
         Unk_021C0858 = *v1;
     }
 }
 
-void sub_0205B9C4(int param0, int param1, void *param2, void *param3)
+// Command 103 handler: record the activity the peer agreed to. A value of 4
+// (draw) also starts the draw server.
+void UnionRoom_HandlePeerActivity(int param0, int param1, void *param2, void *param3)
 {
     FieldSystem *fieldSystem = (FieldSystem *)param3;
     u8 *v1 = (u8 *)param2;
 
     fieldSystem->unk_7C->unk_2C = 1;
-    fieldSystem->unk_7C->unk_40 = *v1;
+    fieldSystem->unk_7C->peerActivity = *v1;
 
     if (*v1 == 4) {
         CommManager_StartDrawServer();
     }
 }
 
-void sub_0205B9E0(int param0, int param1, void *param2, void *param3)
+// Command 104 handler: the peer reports it has no activity.
+void UnionRoom_HandlePeerNoActivity(int param0, int param1, void *param2, void *param3)
 {
     FieldSystem *fieldSystem = (FieldSystem *)param3;
 
-    fieldSystem->unk_7C->unk_44 = 1;
+    fieldSystem->unk_7C->peerNoActivity = 1;
 }
 
-int sub_0205B9E8(UnkStruct_0205B43C *param0)
+// Returns whether the peer has reported that it has no activity.
+int UnionRoom_GetPeerNoActivity(UnionRoom *param0)
 {
-    return param0->unk_44;
+    return param0->peerNoActivity;
 }
 
-int sub_0205B9EC(UnkStruct_0205B43C *param0, int param1)
+// If we have no activity, tell the peer (command 104) and return param1.
+int UnionRoom_CancelActivity(UnionRoom *param0, int param1)
 {
-    if (param0->unk_30 == 0) {
+    if (param0->activity == 0) {
         CommSys_SendData(104, NULL, 0);
         return param1;
     }
@@ -687,7 +761,9 @@ int sub_0205B9EC(UnkStruct_0205B43C *param0, int param1)
     return 0;
 }
 
-void sub_0205BA08(int param0, int param1, void *param2, void *param3)
+// Command 105 handler: receives the peer's trainer case, marks it as copied
+// and records a journal entry for the greeting.
+void UnionRoom_HandleTrainerCase(int param0, int param1, void *param2, void *param3)
 {
     FieldSystem *fieldSystem = (FieldSystem *)param3;
     TrainerCase *trainerCase = (TrainerCase *)param2;
@@ -709,44 +785,51 @@ void sub_0205BA08(int param0, int param1, void *param2, void *param3)
     }
 }
 
-u8 *sub_0205BA5C(int param0, void *param1, int param2)
+// Returns the buffer used to send our trainer case for the given net ID.
+u8 *UnionRoom_GetTrainerCaseBuffer(int param0, void *param1, int param2)
 {
     FieldSystem *fieldSystem = (FieldSystem *)param1;
-    UnkStruct_0205B43C *v1 = fieldSystem->unk_7C;
+    UnionRoom *v1 = fieldSystem->unk_7C;
 
-    return (u8 *)v1->unk_188[param0];
+    return (u8 *)v1->trainerCases[param0];
 }
 
-void sub_0205BA6C(int param0, int param1, void *param2, void *param3)
+// Command 101 handler: records the peer's party menu choice.
+void UnionRoom_HandleMenuChoice(int param0, int param1, void *param2, void *param3)
 {
     FieldSystem *fieldSystem = (FieldSystem *)param3;
-    UnkStruct_0205B43C *v1 = fieldSystem->unk_7C;
+    UnionRoom *v1 = fieldSystem->unk_7C;
     u8 *v2 = (u8 *)param2;
 
-    v1->unk_176[param0] = *v2;
+    v1->menuChoice[param0] = *v2;
 }
 
-u16 sub_0205BA7C(UnkStruct_0205B43C *param0)
+// Returns 1 if the local player cancelled the party menu, 2 if the peer did,
+// or 0 if neither has.
+u16 UnionRoom_GetCancelState(UnionRoom *param0)
 {
     int v0 = CommSys_CurNetId();
 
-    if (param0->unk_176[v0] == 2) {
+    if (param0->menuChoice[v0] == 2) {
         return 1;
     }
 
-    if (param0->unk_176[v0 ^ 1] == 2) {
+    if (param0->menuChoice[v0 ^ 1] == 2) {
         return 2;
     }
 
     return 0;
 }
 
-void sub_0205BAAC(int param0)
+// Sends our party menu choice (1 = confirm, 2 = cancel) on command 101.
+void UnionRoom_SendMenuChoice(int param0)
 {
     u8 v0 = param0;
     CommSys_SendData(101, &v0, 1);
 }
 
+// Message tables indexed by [activity][gender]. The activity index matches the
+// value passed to ScrCmd_143 and stored in selectedActivity.
 static const int sMessagesShowingTrainerCase[][2] = {
     { UnionRoom_Text_ShowTrainerCaseMale, UnionRoom_Text_ShowTrainerCaseFemale },
     { UnionRoom_Text_ShowingTrainerCaseMale, UnionRoom_Text_ShowingTrainerCaseFemale }
@@ -868,7 +951,10 @@ static const int sMessagesBadEgg[2] = {
     UnionRoom_Text_BadEggInPartyFemale
 };
 
-const u16 Unk_020ED570[] = {
+// Base map object slot for each group of four Union Room trainers. The ten
+// groups cover slots 10-49; UnionRoom_GetTrainerGroup maps a slot back to its
+// group index.
+const u16 gUnionRoomTrainerGroupBaseSlots[] = {
     10,
     14,
     18,
@@ -881,12 +967,13 @@ const u16 Unk_020ED570[] = {
     46
 };
 
-static int sub_0205BAC0(int param0)
+// Returns the group index (0-9) containing the given map object slot, or -1.
+static int UnionRoom_GetTrainerGroup(int param0)
 {
     int v0, v1, v2;
 
     for (v0 = 0; v0 < 10; v0++) {
-        if ((Unk_020ED570[v0] <= param0) && ((Unk_020ED570[v0] + 4) > param0)) {
+        if ((gUnionRoomTrainerGroupBaseSlots[v0] <= param0) && ((gUnionRoomTrainerGroupBaseSlots[v0] + 4) > param0)) {
             return v0;
         }
     }
@@ -894,23 +981,26 @@ static int sub_0205BAC0(int param0)
     return -1;
 }
 
-static int UnionRoom_GetTrainerBusyMessage(UnkStruct_0205B43C *param0, int param1)
+// Returns the "trainer is busy" message for the trainer at the given local ID
+// (1-based). The message depends on the activity the trainer is broadcasting;
+// a random variant is chosen for most activities.
+static int UnionRoom_GetTrainerBusyMessage(UnionRoom *param0, int param1)
 {
     int gender, v1;
 
     if (param1 > 9) {
-        v1 = sub_0205BAC0(param1);
+        v1 = UnionRoom_GetTrainerGroup(param1);
         GF_ASSERT(param1 != -1);
     } else {
         v1 = param1;
     }
 
-    if (param0->unk_110[v1] == NULL) {
+    if (param0->bssDesc[v1] == NULL) {
         return UnionRoom_Text_TrainersAppearsBusy;
     }
 
-    TrainerInfo *trainerInfo = sub_02033FB0(v1);
-    UnkStruct_0203330C *v3 = (UnkStruct_0203330C *)param0->unk_110[v1]->gameInfo.userGameInfo;
+    TrainerInfo *trainerInfo = CommServerClient_GetServerTrainerInfo(v1);
+    UnkStruct_0203330C *v3 = (UnkStruct_0203330C *)param0->bssDesc[v1]->gameInfo.userGameInfo;
     UnkStruct_0205B4F8 *v4 = (UnkStruct_0205B4F8 *)v3->unk_30;
 
     if (trainerInfo == NULL) {
@@ -957,6 +1047,8 @@ static int UnionRoom_GetTrainerBusyMessage(UnkStruct_0205B43C *param0, int param
     return UnionRoom_Text_TrainersAppearsBusy;
 }
 
+// Returns the message describing where the peer's trainer case is from,
+// based on the player's and peer's country/region.
 int UnionRoom_GetTrainerCasePlayerMessage(StringTemplate *strTemplate)
 {
     u8 playerCountry = CommInfo_PlayerCountry(CommSys_CurNetId());
@@ -995,6 +1087,8 @@ int UnionRoom_GetTrainerCasePlayerMessage(StringTemplate *strTemplate)
     return UnionRoom_Text_PlayersTrainerCase;
 }
 
+// Returns the "let's start <activity>" message. Activity 0 is the trainer case
+// greeting, which has its own location-aware message.
 static int UnionRoom_GetStartMessage(int param0, int gender, StringTemplate *strTemplate)
 {
     if (param0 != 0) {
@@ -1004,7 +1098,9 @@ static int UnionRoom_GetStartMessage(int param0, int gender, StringTemplate *str
     return UnionRoom_GetTrainerCasePlayerMessage(strTemplate);
 }
 
-int UnionRoom_GetMessage(UnkStruct_0205B43C *param0, int param1, int msgType, StringTemplate *strTemplate)
+// Returns the Union Room message for the given message type. msgType is one of
+// the UR_MSG_* constants; param1 is the target trainer's local ID (1-based).
+int UnionRoom_GetMessage(UnionRoom *param0, int param1, int msgType, StringTemplate *strTemplate)
 {
     param1--;
 
@@ -1012,7 +1108,7 @@ int UnionRoom_GetMessage(UnkStruct_0205B43C *param0, int param1, int msgType, St
         return UnionRoom_GetTrainerBusyMessage(param0, param1);
     }
 
-    TrainerInfo *trainerInfo = sub_02033FB0(param1);
+    TrainerInfo *trainerInfo = CommServerClient_GetServerTrainerInfo(param1);
 
     if (trainerInfo == NULL) {
         CommManager_SetErrorHandling(1, 1);
@@ -1024,16 +1120,16 @@ int UnionRoom_GetMessage(UnkStruct_0205B43C *param0, int param1, int msgType, St
 
     switch (msgType) {
     case UR_MSG_LETS_START:
-        return UnionRoom_GetStartMessage(param0->unk_34 - 1, gender, strTemplate);
+        return UnionRoom_GetStartMessage(param0->selectedActivity - 1, gender, strTemplate);
         break;
     case UR_MSG_THIS_IS_PLAYER_ASK_DO_SOMETHING:
         return sMessagesThisIsPlayerAskDoSomething[gender];
         break;
     case UR_MSG_WAIT_FOR_ANSWER:
-        if (param0->unk_34 == 0) {
+        if (param0->selectedActivity == 0) {
             return 0;
         }
-        return sMessagesWaitForAnswer[param0->unk_34 - 1][gender];
+        return sMessagesWaitForAnswer[param0->selectedActivity - 1][gender];
         break;
     case UR_MSG_NEED_TWO_LV_30_POKEMON_TO_BATTLE:
     case UR_MSG_CANT_TRADE_IF_ONE_POKEMON:
@@ -1084,6 +1180,7 @@ int UnionRoom_GetMessage(UnkStruct_0205B43C *param0, int param1, int msgType, St
     return UnionRoom_Text_TrainersAppearsBusy;
 }
 
+// Returns the game code of the connected peer.
 u8 UnionRoom_GetCommInfoGameCode(void)
 {
     TrainerInfo *trainerInfo = CommInfo_TrainerInfo(CommSys_CurNetId() ^ 1);
@@ -1091,7 +1188,10 @@ u8 UnionRoom_GetCommInfoGameCode(void)
     return TrainerInfo_GameCode(trainerInfo);
 }
 
-static void sub_0205BE58(UnkStruct_0205B4F8 *param0, int param1)
+// Fills the broadcast game info with the trainer IDs and appearance of the
+// other players (net IDs 1-4). Only the server (net ID 0) fills this in.
+// param1 is unused.
+static void UnionRoom_FillTrainerInfo(UnkStruct_0205B4F8 *param0, int param1)
 {
     TrainerInfo *v0;
     int v1, v2 = 0;
@@ -1113,7 +1213,11 @@ static void sub_0205BE58(UnkStruct_0205B4F8 *param0, int param1)
     }
 }
 
-void sub_0205BEA8(int param0)
+// Broadcasts the local player's activity to the wireless manager so other
+// players can see what we are doing. The activity codes are the values passed
+// to ScrCmd_139 (0 = idle, 1 = draw, 2 = mix records, 5 = trainer case,
+// 6 = battle, 7 = trade, 11 = busy, 13 = spin trade).
+void UnionRoom_BroadcastActivity(int param0)
 {
     UnkStruct_0205B4F8 v0;
 
@@ -1125,39 +1229,39 @@ void sub_0205BEA8(int param0)
     case 4:
         break;
     case 11:
-        sub_0205BE58(&v0, 2);
+        UnionRoom_FillTrainerInfo(&v0, 2);
         break;
     case 7:
     case 5:
     case 6:
-        sub_0205BE58(&v0, 2);
+        UnionRoom_FillTrainerInfo(&v0, 2);
         break;
     case 8:
-        sub_0205BE58(&v0, 5);
+        UnionRoom_FillTrainerInfo(&v0, 5);
         break;
     case 1:
-        sub_0205BE58(&v0, 4);
+        UnionRoom_FillTrainerInfo(&v0, 4);
         break;
     case 9:
-        sub_0205BE58(&v0, 5);
+        UnionRoom_FillTrainerInfo(&v0, 5);
         break;
     case 2:
-        sub_0205BE58(&v0, 4);
+        UnionRoom_FillTrainerInfo(&v0, 4);
         break;
     case 10:
     case 12:
-        sub_0205BE58(&v0, 5);
+        UnionRoom_FillTrainerInfo(&v0, 5);
         break;
     case 3:
     case 13:
-        sub_0205BE58(&v0, 4);
+        UnionRoom_FillTrainerInfo(&v0, 4);
         break;
     }
 
     v0.unk_1C = param0;
 
-    sub_020340C4(&v0);
-    sub_020340FC();
+    CommServerClient_SetBattleRegulation(&v0);
+    CommServerClient_SendGameInfo();
 }
 
 static const int sTealaMessages[] = {
@@ -1183,13 +1287,16 @@ static const int sTealaMessages[] = {
     UnionRoom_Text_Teala20
 };
 
-int UnionRoom_GetTealaMessage(UnkStruct_0205B43C *param0, StringTemplate *strTemplate)
+// Returns the message spoken by Teala, the Union Room guide. If another player
+// is present she comments on that; otherwise she reacts to the player's easy
+// chat sentence.
+int UnionRoom_GetTealaMessage(UnionRoom *param0, StringTemplate *strTemplate)
 {
     int v0, v1 = 0;
     u16 v3;
 
     for (v0 = 0; v0 < 10; v0++) {
-        if (param0->unk_110[v0] != NULL) {
+        if (param0->bssDesc[v0] != NULL) {
             v1++;
         }
     }
@@ -1198,33 +1305,34 @@ int UnionRoom_GetTealaMessage(UnkStruct_0205B43C *param0, StringTemplate *strTem
         return UnionRoom_Text_HereComesSomeoneNow;
     }
 
-    if (!EasyChatSentence_IsValid(&param0->unk_178)) {
+    if (!EasyChatSentence_IsValid(&param0->easyChatSentence)) {
         return UnionRoom_Text_BoringIfNoOneComes;
     }
 
-    if (EasyChatSentence_GetType(&param0->unk_178) != 4) {
-        int appearance = TrainerInfo_Appearance(param0->unk_08);
-        int gender = TrainerInfo_Gender(param0->unk_08);
+    if (EasyChatSentence_GetType(&param0->easyChatSentence) != 4) {
+        int appearance = TrainerInfo_Appearance(param0->trainerInfo);
+        int gender = TrainerInfo_Gender(param0->trainerInfo);
 
         StringTemplate_SetTrainerClassName(strTemplate, 0, Appearance_GetData(gender, appearance, APPEARANCE_DATA_TRAINER_CLASS_1));
 
         return UnionRoom_Text_MistakenForTrainerClass;
     }
 
-    int id = EasyChatSentence_GetID(&param0->unk_178);
+    int id = EasyChatSentence_GetID(&param0->easyChatSentence);
 
     if (id >= 20) {
         id = 0;
     }
 
-    if ((v3 = EasyChatSentence_GetWord(&param0->unk_178, 0)) != WORD_NONE) {
+    if ((v3 = EasyChatSentence_GetWord(&param0->easyChatSentence, 0)) != WORD_NONE) {
         StringTemplate_SetEasyChatWord(strTemplate, 0, v3);
     }
 
     return sTealaMessages[id];
 }
 
-static void sub_0205BFF0(UnkStruct_0205B4F8 *param0)
+// Clears the broadcast game info.
+static void UnionRoom_ResetGameInfo(UnkStruct_0205B4F8 *param0)
 {
     int v0;
 
@@ -1238,22 +1346,29 @@ static void sub_0205BFF0(UnkStruct_0205B4F8 *param0)
     }
 }
 
-void sub_0205C010(UnkStruct_0205B43C *param0, EasyChatSentence *param1)
+// Stores an easy chat sentence to be broadcast later.
+void UnionRoom_SetEasyChatSentence(UnionRoom *param0, EasyChatSentence *param1)
 {
-    EasyChatSentence_Copy(&param0->unk_178, param1);
-    param0->unk_180 = 1;
+    EasyChatSentence_Copy(&param0->easyChatSentence, param1);
+    param0->hasEasyChatSentence = 1;
 }
 
-EasyChatSentence *sub_0205C028(UnkStruct_0205B43C *param0)
+// Returns the pending easy chat sentence and clears the pending flag, or NULL
+// if there is none.
+EasyChatSentence *UnionRoom_TakeEasyChatSentence(UnionRoom *param0)
 {
-    if (param0->unk_180 == 0) {
+    if (param0->hasEasyChatSentence == 0) {
         return NULL;
     }
 
-    param0->unk_180 = 0;
-    return &param0->unk_178;
+    param0->hasEasyChatSentence = 0;
+    return &param0->easyChatSentence;
 }
 
+// Sets up the greeting message for the peer, choosing the greeting text from
+// the peer's language and unlocking the matching easy chat greeting word.
+// param1 selects the peer: 0 = trainer at local ID param2, 1 = the connected
+// peer.
 void UnionRoom_DoGreeting(StringTemplate *strTemplate, int param1, int param2, TrainerInfo *playerTrainerInfo, UnlockedEasyChatWords *unlockedWords)
 {
     TrainerInfo *commTrainerInfo;
@@ -1263,7 +1378,7 @@ void UnionRoom_DoGreeting(StringTemplate *strTemplate, int param1, int param2, T
     param2--;
 
     if (param1 == 0) {
-        commTrainerInfo = sub_02033FB0(param2);
+        commTrainerInfo = CommServerClient_GetServerTrainerInfo(param2);
     } else {
         commTrainerInfo = CommInfo_TrainerInfo(CommSys_CurNetId() ^ 1);
     }
@@ -1325,56 +1440,63 @@ void UnionRoom_DoGreeting(StringTemplate *strTemplate, int param1, int param2, T
     MessageLoader_Free(msgLoader);
 }
 
-void sub_0205C12C(EasyChatSentence *param0)
+// Publishes the player's easy chat sentence and clears the broadcast game info.
+void UnionRoom_InitGameInfo(EasyChatSentence *param0)
 {
     UnkStruct_0205B4F8 v0;
 
-    sub_0205BFF0(&v0);
+    UnionRoom_ResetGameInfo(&v0);
     v0.unk_1C = 0;
 
-    sub_020340A8(param0);
-    sub_020340C4(&v0);
-    sub_020340FC();
+    CommServerClient_SetEasyChatSentence(param0);
+    CommServerClient_SetBattleRegulation(&v0);
+    CommServerClient_SendGameInfo();
 }
 
-void sub_0205C154(UnkStruct_0205B43C *param0)
+// Clears the local activity handshake state.
+void UnionRoom_ResetActivity(UnionRoom *param0)
 {
-    param0->unk_30 = 0;
-    param0->unk_40 = 0;
-    param0->unk_44 = 0;
+    param0->activity = 0;
+    param0->peerActivity = 0;
+    param0->peerNoActivity = 0;
 }
 
-static void sub_0205C160(UnkStruct_0205B43C *param0)
+// Clears the connection and activity handshake state.
+static void UnionRoom_ResetState(UnionRoom *param0)
 {
-    param0->unk_20 = 0;
+    param0->pendingRequest = 0;
     param0->unk_24 = 0;
     param0->unk_2C = 0;
-    param0->unk_30 = 0;
-    param0->unk_40 = 0;
+    param0->activity = 0;
+    param0->peerActivity = 0;
     param0->unk_174 = 0;
-    param0->unk_180 = 0;
-    param0->unk_44 = 0;
+    param0->hasEasyChatSentence = 0;
+    param0->peerNoActivity = 0;
 }
 
-void *UnionRoom_GetTrainerCase(UnkStruct_0205B43C *param0)
+// Allocates the trainer cases used to exchange trainer cards with the peer and
+// returns the buffer for the peer's case.
+void *UnionRoom_GetTrainerCase(UnionRoom *param0)
 {
-    param0->unk_184 = TrainerCase_New(HEAP_ID_SYSTEM);
-    param0->unk_188[0] = TrainerCase_New(HEAP_ID_SYSTEM);
-    param0->unk_188[1] = TrainerCase_New(HEAP_ID_SYSTEM);
+    param0->trainerCase = TrainerCase_New(HEAP_ID_SYSTEM);
+    param0->trainerCases[0] = TrainerCase_New(HEAP_ID_SYSTEM);
+    param0->trainerCases[1] = TrainerCase_New(HEAP_ID_SYSTEM);
 
-    TrainerCase_Init(FALSE, FALSE, 0, Appearance_GetData(TrainerInfo_Gender(param0->unk_08), TrainerInfo_Appearance(param0->unk_08), 0), param0->fieldSystem, param0->unk_184);
+    TrainerCase_Init(FALSE, FALSE, 0, Appearance_GetData(TrainerInfo_Gender(param0->trainerInfo), TrainerInfo_Appearance(param0->trainerInfo), 0), param0->fieldSystem, param0->trainerCase);
 
-    return (void *)param0->unk_188[CommSys_CurNetId() ^ 1];
+    return (void *)param0->trainerCases[CommSys_CurNetId() ^ 1];
 }
 
-void sub_0205C1F0(UnkStruct_0205B43C *param0)
+// Frees the trainer cases allocated by UnionRoom_GetTrainerCase.
+void UnionRoom_FreeTrainerCase(UnionRoom *param0)
 {
-    Heap_Free(param0->unk_188[0]);
-    Heap_Free(param0->unk_188[1]);
-    Heap_Free(param0->unk_184);
+    Heap_Free(param0->trainerCases[0]);
+    Heap_Free(param0->trainerCases[1]);
+    Heap_Free(param0->trainerCase);
 }
 
-void UnionRoom_SendTrainerCase(UnkStruct_0205B43C *param0)
+// Sends the local player's trainer case to the peer on command 105.
+void UnionRoom_SendTrainerCase(UnionRoom *param0)
 {
-    CommSys_SendDataHuge(105, param0->unk_184, sizeof(TrainerCase));
+    CommSys_SendDataHuge(105, param0->trainerCase, sizeof(TrainerCase));
 }

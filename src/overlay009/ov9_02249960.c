@@ -71,7 +71,7 @@
 #include "sys_task_manager.h"
 #include "system_flags.h"
 #include "system_vars.h"
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 #include "vars_flags.h"
 #include "vram_transfer.h"
 
@@ -6459,7 +6459,7 @@ static int EventCmdSetMapObjectAnimation_Finish(DistWorldSystem *system, FieldTa
     MapObject *mapObj = MapObjMan_LocalMapObjByIndex(system->fieldSystem->mapObjMan, cmdParams->mapObjLocalID);
     GF_ASSERT(mapObj != NULL);
 
-    if (sub_020656AC(mapObj) == TRUE) {
+    if (LocalMapObj_ClearAnimation(mapObj) == TRUE) {
         return EVENT_CMD_HANDLER_RES_FINISH;
     }
 

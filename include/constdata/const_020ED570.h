@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_CONST_020ED570_H
 #define POKEPLATINUM_CONST_020ED570_H
 
-extern const u16 Unk_020ED570[];
+extern const u16 gUnionRoomTrainerGroupBaseSlots[];
 
 #endif // POKEPLATINUM_CONST_020ED570_H

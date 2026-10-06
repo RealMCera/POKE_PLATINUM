@@ -1,5 +1,5 @@
-#ifndef POKEPLATINUM_UNK_020655F4_H
-#define POKEPLATINUM_UNK_020655F4_H
+#ifndef POKEPLATINUM_MAP_OBJECT_ANIMATION_H
+#define POKEPLATINUM_MAP_OBJECT_ANIMATION_H
 
 #include "generated/movement_actions.h"
 
@@ -9,19 +9,23 @@
 
 #include "sys_task_manager.h"
 
+// Movement-action engine for map objects. See src/map_object_animation.c for details.
+// The gMovementActionFuncs_* tables are the per-step callbacks for each
+// MovementAction and are indexed through gMovementActionFuncs (unk_020EDBAC.c).
+
 BOOL LocalMapObj_IsAnimationSet(const MapObject *mapObj);
 void LocalMapObj_SetAnimationCode(MapObject *mapObj, enum MovementAction movementAction);
-void sub_02065668(MapObject *mapObj, enum MovementAction movementAction);
+void LocalMapObj_SetMovementAction(MapObject *mapObj, enum MovementAction movementAction);
 BOOL LocalMapObj_CheckAnimationFinished(const MapObject *mapObj);
-BOOL sub_020656AC(MapObject *mapObj);
-void sub_020656DC(MapObject *mapObj);
+BOOL LocalMapObj_ClearAnimation(MapObject *mapObj);
+void LocalMapObj_CancelAnimation(MapObject *mapObj);
 SysTask *MapObject_StartAnimation(MapObject *mapObj, const MapObjectAnimCmd *animCmd);
 BOOL MapObject_HasAnimationEnded(SysTask *task);
 void MapObject_FinishAnimation(SysTask *task);
 enum MovementAction MovementAction_TurnActionTowardsDir(int targetDir, enum MovementAction movementAction);
 int MovementAction_GetDirFromAction(enum MovementAction movementAction);
 void MapObject_DoMovementAction(MapObject *mapObj);
-BOOL sub_020658DC(MapObject *mapObj);
+BOOL LocalMapObj_RunMovementAction(MapObject *mapObj);
 
 extern BOOL (*const gMovementActionFuncs_FaceNorth[])(MapObject *);
 extern BOOL (*const gMovementActionFuncs_FaceSouth[])(MapObject *);
@@ -178,4 +182,4 @@ extern BOOL (*const gMovementActionFuncs_143[])(MapObject *);
 extern BOOL (*const gMovementActionFuncs_144[])(MapObject *);
 extern BOOL (*const gMovementActionFuncs_153[])(MapObject *);
 
-#endif // POKEPLATINUM_UNK_020655F4_H
+#endif // POKEPLATINUM_MAP_OBJECT_ANIMATION_H

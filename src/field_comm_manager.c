@@ -30,7 +30,7 @@
 #include "trainer_case.h"
 #include "trainer_info.h"
 #include "underground.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "unk_0205A0D8.h"
 #include "unk_02099500.h"
@@ -741,7 +741,7 @@ static void FieldCommTask_ResetBattleClient(void)
  */
 static void FieldCommTask_ReinitBattleClient(void)
 {
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 

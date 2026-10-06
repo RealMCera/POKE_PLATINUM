@@ -1,4 +1,4 @@
-#include "unk_020655F4.h"
+#include "map_object_animation.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -21,10 +21,24 @@
 #include "sound_playback.h"
 #include "sys_task.h"
 #include "sys_task_manager.h"
-#include "unk_02069BE0.h"
+#include "map_object_movement.h"
 #include "unk_020EDBAC.h"
 
 #include "res/sound/pl_sound_data.naix"
+
+// This module is the movement-action engine for map objects. A movement action
+// (enum MovementAction) is a small scripted animation such as a step, a jump,
+// a delay or a warp. Each action is implemented as an array of per-step
+// callbacks (gMovementActionFuncs_*); MapObject_DoMovementAction runs the
+// current step and advances until the action reports that it has ended.
+//
+// The gMovementActionFuncs_* tables are indexed by the action's movement step
+// and are looked up through gMovementActionFuncs in unk_020EDBAC.c. Actions
+// that move the object store their per-instance state in the map object's
+// movement-data scratch buffer via MapObject_InitMovementData.
+//
+// The distortion world (Giratina's realm) has its own set of actions that move
+// the object along the west wall, east wall and ceiling rather than the floor.
 
 typedef struct MoveAnimData {
     int state;
@@ -48,13 +62,13 @@ typedef struct WalkOnSpotMovementData {
 
 typedef struct JumpMovementData {
     fx32 distance;
-    fx32 unk_04;
-    u16 unk_08;
-    u16 unk_0A;
+    fx32 distanceAccumulator;
+    u16 jumpHeightStep;
+    u16 jumpHeightIndex;
     s8 dir;
     s8 duration;
     u8 unused;
-    s8 unk_0F;
+    s8 jumpHeightTable;
 } JumpMovementData;
 
 typedef struct DelayMovementData {
@@ -67,8 +81,8 @@ typedef struct WarpMovementData {
 } WarpMovementData;
 
 typedef struct EmoteMovementData {
-    int unk_00;
-    OverworldAnimManager *unk_04;
+    int emoteType;
+    OverworldAnimManager *animManager;
 } EmoteMovementData;
 
 typedef struct WalkUnevenMovementData {
@@ -78,21 +92,24 @@ typedef struct WalkUnevenMovementData {
     s16 timer;
 } WalkUnevenMovementData;
 
-typedef struct UnkStruct_02066824 {
+typedef struct MoveByVectorMovementData {
     int duration;
-    VecFx32 unk_04;
-} UnkStruct_02066824;
+    VecFx32 offset;
+} MoveByVectorMovementData;
 
-typedef struct UnkStruct_02066F88 {
-    u8 unk_00;
-    u8 unk_01;
-    u8 unk_02;
-    u8 unk_03;
-    fx32 unk_04;
-    fx32 unk_08;
-    u16 unk_0C;
-    u16 unk_0E;
-} UnkStruct_02066F88;
+// State for the distortion-world jump actions (133..144). The object moves one
+// tile at a time along moveAxis while a sprite jump offset is animated along
+// jumpAxis using the low jump-height curve.
+typedef struct JumpDistortionMovementData {
+    u8 duration; // frames remaining
+    u8 jumpAxis; // axis (0=x, 1=y, 2=z) the sprite jump offset is applied to
+    u8 moveAxis; // axis (0=x, 1=y, 2=z) the object moves along
+    u8 jumpDirection; // 1 negates the jump offset
+    fx32 distance; // signed distance moved per frame
+    fx32 distanceAccumulator; // accumulated distance; steps a tile every 16
+    u16 jumpHeightIndex; // fixed-point index into the jump-height curve
+    u16 jumpHeightStep; // per-frame increment of jumpHeightIndex
+} JumpDistortionMovementData;
 
 typedef struct PokecenterNurseBowMovementData {
     int timer;
@@ -114,6 +131,10 @@ static const fx32 sStepSizes_WalkEverSoSlightlyFast[7];
 static const fx32 sStepSizes_WalkSlightlyFast[6];
 static const fx32 sStepSizes_WalkSlightlyFaster[3];
 
+// MAP_OBJ_STATUS_4 marks that an animation/movement action has been set, and
+// MAP_OBJ_STATUS_5 marks that it has finished. An object is "free" to start a
+// new animation when it is not currently animating (status 4 set but status 5
+// clear), is not hidden (status 1) and is active (status 0).
 BOOL LocalMapObj_IsAnimationSet(const MapObject *mapObj)
 {
     if (!MapObject_CheckStatusFlag(mapObj, MAP_OBJ_STATUS_0)) {
@@ -131,6 +152,8 @@ BOOL LocalMapObj_IsAnimationSet(const MapObject *mapObj)
     return TRUE;
 }
 
+// Starts a movement action as a blocking animation: status 4 is set so that
+// LocalMapObj_IsAnimationSet reports the object as busy until it finishes.
 void LocalMapObj_SetAnimationCode(MapObject *mapObj, enum MovementAction movementAction)
 {
     GF_ASSERT(movementAction < MAX_MOVEMENT_ACTION);
@@ -141,7 +164,10 @@ void LocalMapObj_SetAnimationCode(MapObject *mapObj, enum MovementAction movemen
     MapObject_SetStatusFlagOff(mapObj, MAP_OBJ_STATUS_5);
 }
 
-void sub_02065668(MapObject *mapObj, enum MovementAction movementAction)
+// Starts a movement action without marking the object as animating. Used by
+// movement behaviors that drive the action themselves via
+// LocalMapObj_RunMovementAction.
+void LocalMapObj_SetMovementAction(MapObject *mapObj, enum MovementAction movementAction)
 {
     MapObject_SetMovementAction(mapObj, movementAction);
     MapObject_SetMovementStep(mapObj, 0);
@@ -161,7 +187,9 @@ BOOL LocalMapObj_CheckAnimationFinished(const MapObject *mapObj)
     return TRUE;
 }
 
-BOOL sub_020656AC(MapObject *mapObj)
+// Clears the animation status flags once the animation has finished, freeing
+// the object to start another one.
+BOOL LocalMapObj_ClearAnimation(MapObject *mapObj)
 {
     if (!MapObject_CheckStatusFlag(mapObj, MAP_OBJ_STATUS_4)) {
         return TRUE;
@@ -176,7 +204,8 @@ BOOL sub_020656AC(MapObject *mapObj)
     return TRUE;
 }
 
-void sub_020656DC(MapObject *mapObj)
+// Aborts any animation in progress and marks it finished.
+void LocalMapObj_CancelAnimation(MapObject *mapObj)
 {
     MapObject_SetStatusFlagOff(mapObj, MAP_OBJ_STATUS_4);
     MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_5);
@@ -184,6 +213,8 @@ void sub_020656DC(MapObject *mapObj)
     MapObject_SetMovementStep(mapObj, 0);
 }
 
+// Starts a task that plays a scripted sequence of movement actions (a
+// MapObjectAnimCmd list) on the object.
 SysTask *MapObject_StartAnimation(MapObject *mapObj, const MapObjectAnimCmd *animCmd)
 {
     MoveAnimData *data = Heap_AllocAtEnd(HEAP_ID_FIELD1, sizeof(MoveAnimData));
@@ -212,7 +243,7 @@ void MapObject_FinishAnimation(SysTask *task)
 
     GF_ASSERT(LocalMapObj_CheckAnimationFinished(data->mapObj) == TRUE);
 
-    sub_020656AC(data->mapObj);
+    LocalMapObj_ClearAnimation(data->mapObj);
     Heap_FreeExplicit(HEAP_ID_FIELD1, data);
     SysTask_Done(task);
 }
@@ -242,6 +273,9 @@ static BOOL (*const sMovementAnimationFuncs[])(MoveAnimData *) = {
     [MOVEMENT_ANIM_STATE_END] = MovementAnimation_End,
 };
 
+// Runs the animation state machine until a callback returns FALSE. The
+// callbacks return TRUE to keep stepping immediately, or FALSE to yield until
+// the next task tick.
 static void MapObject_DoAnimation(SysTask *task, void *data)
 {
     MoveAnimData *animData = data;
@@ -255,6 +289,7 @@ static BOOL MovementAnimation_Init(MoveAnimData *data)
     return TRUE;
 }
 
+// Wait until the object is free to start a new animation.
 static BOOL MovementAnimation_CheckSet(MoveAnimData *data)
 {
     if (LocalMapObj_IsAnimationSet(data->mapObj) == FALSE) {
@@ -283,6 +318,8 @@ static BOOL MovementAnimation_CheckFinished(MoveAnimData *data)
     return TRUE;
 }
 
+// Repeat the current command `count` times, then advance to the next command.
+// A MOVEMENT_ACTION_END command terminates the whole sequence.
 static BOOL MovementAnimation_Increment(MoveAnimData *data)
 {
     const MapObjectAnimCmd *animCmd = data->animCmd;
@@ -310,6 +347,8 @@ static BOOL MovementAnimation_End(MoveAnimData *data)
     return FALSE;
 }
 
+// Finds the movement action in the same direction group as `movementAction`
+// but facing `targetDir`. The direction groups live in gMovementActionCodes.
 enum MovementAction MovementAction_TurnActionTowardsDir(int targetDir, enum MovementAction movementAction)
 {
     int dir;
@@ -335,6 +374,8 @@ enum MovementAction MovementAction_TurnActionTowardsDir(int targetDir, enum Move
     return movementAction;
 }
 
+// Returns the direction index of `movementAction` within its direction group,
+// or DIR_NONE if it is not part of one.
 int MovementAction_GetDirFromAction(enum MovementAction movementAction)
 {
     int dir;
@@ -358,6 +399,8 @@ int MovementAction_GetDirFromAction(enum MovementAction movementAction)
     return DIR_NONE;
 }
 
+// Runs the current movement action's step callbacks, advancing through steps
+// while each one returns TRUE, until the action ends or yields.
 void MapObject_DoMovementAction(MapObject *mapObj)
 {
     enum MovementAction movementAction, movementStep;
@@ -373,7 +416,10 @@ void MapObject_DoMovementAction(MapObject *mapObj)
     } while (MapObject_DoMovementActionStep(mapObj, movementAction, movementStep));
 }
 
-BOOL sub_020658DC(MapObject *mapObj)
+// Runs the current movement action and, once it has ended, clears the finished
+// flag and resets the object to MOVEMENT_ACTION_NONE. Returns TRUE when the
+// action completed this call.
+BOOL LocalMapObj_RunMovementAction(MapObject *mapObj)
 {
     MapObject_DoMovementAction(mapObj);
 
@@ -393,6 +439,7 @@ static BOOL MapObject_DoMovementActionStep(MapObject *mapObj, enum MovementActio
     return gMovementActionFuncs[movementAction][movementStep](mapObj);
 }
 
+// Terminal step shared by every movement action: flags the action as finished.
 static BOOL MovementAction_End(MapObject *mapObj)
 {
     MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_5);
@@ -431,18 +478,18 @@ static BOOL MovementAction_FaceEast_Step0(MapObject *mapObj)
     return TRUE;
 }
 
-static void MovementAction_InitWalk(MapObject *mapObj, int dir, fx32 distance, s16 duration, u16 param4)
+static void MovementAction_InitWalk(MapObject *mapObj, int dir, fx32 distance, s16 duration, u16 unkA0)
 {
     WalkMovementData *data = MapObject_InitMovementData(mapObj, sizeof(WalkMovementData));
 
-    data->unused = param4;
+    data->unused = unkA0;
     data->duration = duration;
     data->dir = dir;
     data->distance = distance;
 
     MapObject_StepDir(mapObj, dir);
     MapObject_TryFaceAndTurn(mapObj, dir);
-    MapObject_SetUnkA0(mapObj, param4);
+    MapObject_SetUnkA0(mapObj, unkA0);
     MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_START_MOVEMENT);
     MapObject_AdvanceMovementStep(mapObj);
 }
@@ -635,16 +682,16 @@ static BOOL MovementAction_RunEast_Step0(MapObject *mapObj)
     return TRUE;
 }
 
-static void MovementAction_InitWalkOnSpot(MapObject *mapObj, int dir, s16 duration, u16 param3)
+static void MovementAction_InitWalkOnSpot(MapObject *mapObj, int dir, s16 duration, u16 unkA0)
 {
     // the extra 8 bytes are needed only for matching
     WalkOnSpotMovementData *data = MapObject_InitMovementData(mapObj, sizeof(WalkOnSpotMovementData) + 8);
 
-    data->unused = param3;
+    data->unused = unkA0;
     data->duration = duration + 1;
 
     MapObject_TryFace(mapObj, dir);
-    MapObject_SetUnkA0(mapObj, param3);
+    MapObject_SetUnkA0(mapObj, unkA0);
     MapObject_UpdateCoords(mapObj);
     MapObject_AdvanceMovementStep(mapObj);
 }
@@ -784,16 +831,19 @@ static BOOL MovementAction_WalkOnSpotFasterEast_Step0(MapObject *mapObj)
     return TRUE;
 }
 
-static void MovementAction_InitJumpCustomSound(MapObject *mapObj, int dir, fx32 distance, s16 duration, u16 param4, s16 param5, u16 param6, u32 seqID)
+// Initializes a jump: the object travels `distance` per frame for `duration`
+// frames while its sprite is offset along the jump-height curve selected by
+// `jumpHeightTable`. `jumpHeightStep` controls how fast the curve is traversed.
+static void MovementAction_InitJumpCustomSound(MapObject *mapObj, int dir, fx32 distance, s16 duration, u16 unkA0, s16 jumpHeightTable, u16 jumpHeightStep, u32 seqID)
 {
     JumpMovementData *data = MapObject_InitMovementData(mapObj, sizeof(JumpMovementData));
 
     data->dir = dir;
     data->distance = distance;
     data->duration = duration;
-    data->unused = param4;
-    data->unk_0F = param5;
-    data->unk_08 = param6;
+    data->unused = unkA0;
+    data->jumpHeightTable = jumpHeightTable;
+    data->jumpHeightStep = jumpHeightStep;
 
     if (distance == 0) {
         MapObject_UpdateCoords(mapObj);
@@ -803,7 +853,7 @@ static void MovementAction_InitJumpCustomSound(MapObject *mapObj, int dir, fx32 
 
     MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_START_MOVEMENT | MAP_OBJ_STATUS_START_JUMP);
     MapObject_TryFaceAndTurn(mapObj, dir);
-    MapObject_SetUnkA0(mapObj, param4);
+    MapObject_SetUnkA0(mapObj, unkA0);
     MapObject_AdvanceMovementStep(mapObj);
 
     if (seqID) {
@@ -811,9 +861,9 @@ static void MovementAction_InitJumpCustomSound(MapObject *mapObj, int dir, fx32 
     }
 }
 
-static void MovementAction_InitJump(MapObject *mapObj, int dir, fx32 distance, s16 duration, u16 param4, s16 param5, u16 param6)
+static void MovementAction_InitJump(MapObject *mapObj, int dir, fx32 distance, s16 duration, u16 unkA0, s16 jumpHeightTable, u16 jumpHeightStep)
 {
-    MovementAction_InitJumpCustomSound(mapObj, dir, distance, duration, param4, param5, param6, SEQ_SE_DP_DANSA_sseq);
+    MovementAction_InitJumpCustomSound(mapObj, dir, distance, duration, unkA0, jumpHeightTable, jumpHeightStep, SEQ_SE_DP_DANSA_sseq);
 }
 
 static BOOL MovementAction_Jump_Step1(MapObject *mapObj)
@@ -824,8 +874,9 @@ static BOOL MovementAction_Jump_Step1(MapObject *mapObj)
         MapObject_MovePosInDir(mapObj, data->dir, data->distance);
         MapObject_RecalculateObjectHeight(mapObj);
 
-        if (data->unk_04 >= FX32_CONST(16)) {
-            data->unk_04 = 0;
+        // Advance the object one tile for every 16 units of accumulated travel.
+        if (data->distanceAccumulator >= FX32_CONST(16)) {
+            data->distanceAccumulator = 0;
             MapObject_StepDir(mapObj, data->dir);
             MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_START_MOVEMENT);
         }
@@ -836,18 +887,18 @@ static BOOL MovementAction_Jump_Step1(MapObject *mapObj)
             distance = -distance;
         }
 
-        data->unk_04 += distance;
+        data->distanceAccumulator += distance;
     }
 
-    data->unk_0A += data->unk_08;
+    data->jumpHeightIndex += data->jumpHeightStep;
 
-    if (data->unk_0A > 0xF00) {
-        data->unk_0A = 0xF00;
+    if (data->jumpHeightIndex > 0xF00) {
+        data->jumpHeightIndex = 0xF00;
     }
 
     VecFx32 v2;
-    u16 jumpHeightIndex = data->unk_0A / 0x100;
-    const fx32 *jumpHeightsTable = sJumpHeightsTable[data->unk_0F];
+    u16 jumpHeightIndex = data->jumpHeightIndex / 0x100;
+    const fx32 *jumpHeightsTable = sJumpHeightsTable[data->jumpHeightTable];
 
     v2.x = 0;
     v2.y = jumpHeightsTable[jumpHeightIndex];
@@ -1086,6 +1137,7 @@ static BOOL MovementAction_Delay32_Step0(MapObject *mapObj)
     return TRUE;
 }
 
+// Warp out: rise 40 units (8 units per frame) before disappearing.
 static BOOL MovementAction_WarpOut_Step0(MapObject *mapObj)
 {
     WarpMovementData *data = MapObject_InitMovementData(mapObj, sizeof(WarpMovementData));
@@ -1115,6 +1167,7 @@ static BOOL MovementAction_WarpOut_Step1(MapObject *mapObj)
     return TRUE;
 }
 
+// Warp in: drop from 40 units above the ground down to y = 0.
 static BOOL MovementAction_WarpIn_Step0(MapObject *mapObj)
 {
     WarpMovementData *data = MapObject_InitMovementData(mapObj, sizeof(WarpMovementData));
@@ -1198,12 +1251,12 @@ static BOOL MovementAction_ResumeAnimation_Step0(MapObject *mapObj)
     return TRUE;
 }
 
-static void sub_020664A0(MapObject *mapObj, int param1, int param2)
+static void MovementAction_InitEmote(MapObject *mapObj, int emoteType, int variant)
 {
     EmoteMovementData *data = MapObject_InitMovementData(mapObj, sizeof(EmoteMovementData));
 
-    data->unk_00 = param1;
-    data->unk_04 = ov5_021F5D8C(mapObj, param1, 1, param2);
+    data->emoteType = emoteType;
+    data->animManager = ov5_021F5D8C(mapObj, emoteType, 1, variant);
 
     MapObject_AdvanceMovementStep(mapObj);
 }
@@ -1212,8 +1265,8 @@ static BOOL MovementAction_Emote_Step1(MapObject *mapObj)
 {
     EmoteMovementData *data = MapObject_GetMovementData(mapObj);
 
-    if (ov5_021F5C4C(data->unk_04) == 1) {
-        OverworldAnimManager_Finish(data->unk_04);
+    if (ov5_021F5C4C(data->animManager) == 1) {
+        OverworldAnimManager_Finish(data->animManager);
         MapObject_AdvanceMovementStep(mapObj);
         return TRUE;
     }
@@ -1223,33 +1276,36 @@ static BOOL MovementAction_Emote_Step1(MapObject *mapObj)
 
 static BOOL MovementAction_EmoteExclamationMark_Step0(MapObject *mapObj)
 {
-    sub_020664A0(mapObj, 0, 0);
+    MovementAction_InitEmote(mapObj, 0, 0);
     return FALSE;
 }
 
 static BOOL MovementAction_EmoteDoubleExclamationMark_Step0(MapObject *mapObj)
 {
-    sub_020664A0(mapObj, 1, 0);
+    MovementAction_InitEmote(mapObj, 1, 0);
     return FALSE;
 }
 
+// Action 153 is an emote that uses the alternate animation variant.
 static BOOL MovementAction_153_Step0(MapObject *mapObj)
 {
-    sub_020664A0(mapObj, 0, 1);
+    MovementAction_InitEmote(mapObj, 0, 1);
     return FALSE;
 }
 
-static void MovementAction_InitWalkUneven(MapObject *mapObj, int dir, s16 duration, u16 param3)
+// Walk with a per-frame step size taken from `stepSizes`, producing a slightly
+// uneven gait. The action ends after `duration` frames.
+static void MovementAction_InitWalkUneven(MapObject *mapObj, int dir, s16 duration, u16 unkA0)
 {
     WalkUnevenMovementData *data = MapObject_InitMovementData(mapObj, sizeof(WalkUnevenMovementData));
 
     data->dir = dir;
-    data->unused = param3;
+    data->unused = unkA0;
     data->duration = duration;
 
     MapObject_StepDir(mapObj, dir);
     MapObject_TryFaceAndTurn(mapObj, dir);
-    MapObject_SetUnkA0(mapObj, param3);
+    MapObject_SetUnkA0(mapObj, unkA0);
     MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_START_MOVEMENT);
     MapObject_AdvanceMovementStep(mapObj);
 }
@@ -1384,6 +1440,8 @@ static BOOL MovementAction_PokecenterNurseBow_Step1(MapObject *mapObj)
     return FALSE;
 }
 
+// Reveal a disguised trainer: drop the disguise model, then play the high jump
+// curve to make the trainer pop out of the ground.
 static BOOL MovementAction_RevealTrainer_Step0(MapObject *mapObj)
 {
     RevealTrainerMovementData *data = MapObject_InitMovementData(mapObj, sizeof(RevealTrainerMovementData));
@@ -1463,46 +1521,48 @@ static BOOL MovementAction_PlayerGiveReceive_Step1(MapObject *mapObj)
     return TRUE;
 }
 
-static void sub_02066824(MapObject *mapObj, const VecFx32 *param1, int param2, int param3, int param4, u8 param5)
+static void MovementAction_InitMoveByVector(MapObject *mapObj, const VecFx32 *offset, int facingDir, int movingDir, int duration, u8 unkA0)
 {
-    UnkStruct_02066824 *data = MapObject_InitMovementData(mapObj, sizeof(UnkStruct_02066824));
-    data->duration = param4;
-    data->unk_04 = *param1;
+    MoveByVectorMovementData *data = MapObject_InitMovementData(mapObj, sizeof(MoveByVectorMovementData));
+    data->duration = duration;
+    data->offset = *offset;
 
-    MapObject_TryFace(mapObj, param2);
-    MapObject_Turn(mapObj, param3);
-    MapObject_SetUnkA0(mapObj, param5);
+    MapObject_TryFace(mapObj, facingDir);
+    MapObject_Turn(mapObj, movingDir);
+    MapObject_SetUnkA0(mapObj, unkA0);
     MapObject_SetStartMovement(mapObj);
 
     MapObject_SetXPrev(mapObj, MapObject_GetX(mapObj));
     MapObject_SetYPrev(mapObj, MapObject_GetY(mapObj));
     MapObject_SetZPrev(mapObj, MapObject_GetZ(mapObj));
 
-    if (param1->x < 0) {
+    // Nudge the object one unit along each axis the offset moves it, so the
+    // first frame already leaves the source tile.
+    if (offset->x < 0) {
         MapObject_AddX(mapObj, -1);
-    } else if (param1->x > 0) {
+    } else if (offset->x > 0) {
         MapObject_AddX(mapObj, 1);
     }
 
-    if (param1->y < 0) {
+    if (offset->y < 0) {
         MapObject_AddY(mapObj, -1 * 2);
-    } else if (param1->y > 0) {
+    } else if (offset->y > 0) {
         MapObject_AddY(mapObj, 1 * 2);
     }
 
-    if (param1->z < 0) {
+    if (offset->z < 0) {
         MapObject_AddZ(mapObj, -1);
-    } else if (param1->z > 0) {
+    } else if (offset->z > 0) {
         MapObject_AddZ(mapObj, 1);
     }
 
     MapObject_AdvanceMovementStep(mapObj);
 }
 
-static BOOL sub_020668EC(MapObject *mapObj)
+static BOOL MovementAction_MoveByVector_Step1(MapObject *mapObj)
 {
-    UnkStruct_02066824 *data = MapObject_GetMovementData(mapObj);
-    MapObject_AddVecToPos(mapObj, &data->unk_04);
+    MoveByVectorMovementData *data = MapObject_GetMovementData(mapObj);
+    MapObject_AddVecToPos(mapObj, &data->offset);
 
     if (--(data->duration) > 0) {
         return FALSE;
@@ -1518,287 +1578,287 @@ static BOOL sub_020668EC(MapObject *mapObj)
     return TRUE;
 }
 
-static BOOL sub_02066934(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionWestWallNorth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, FX32_CONST(2), 0 };
 
-    sub_02066824(mapObj, &v0, 2, 0, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 2, 0, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066968(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionWestWallSouth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, -FX32_CONST(2), 0 };
 
-    sub_02066824(mapObj, &v0, 3, 1, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 3, 1, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066998(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionWestWallWest_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, FX32_CONST(2) };
 
-    sub_02066824(mapObj, &v0, 1, 2, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 1, 2, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_020669CC(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionWestWallEast_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, -FX32_CONST(2) };
 
-    sub_02066824(mapObj, &v0, 0, 3, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 0, 3, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_020669FC(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionEastWallNorth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, FX32_CONST(2), 0 };
 
-    sub_02066824(mapObj, &v0, 3, 0, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 3, 0, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066A2C(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionEastWallSouth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, -FX32_CONST(2), 0 };
 
-    sub_02066824(mapObj, &v0, 2, 1, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 2, 1, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066A60(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionEastWallWest_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, -FX32_CONST(2) };
 
-    sub_02066824(mapObj, &v0, 0, 2, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 0, 2, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066A94(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionEastWallEast_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, FX32_CONST(2) };
 
-    sub_02066824(mapObj, &v0, 1, 2, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 1, 2, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066AC8(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionCeilingNorth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, FX32_CONST(2) };
 
-    sub_02066824(mapObj, &v0, 1, 0, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 1, 0, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066AFC(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionCeilingSouth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, -FX32_CONST(2) };
 
-    sub_02066824(mapObj, &v0, 0, 1, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 0, 1, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066B30(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionCeilingWest_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { -FX32_CONST(2), 0, 0 };
 
-    sub_02066824(mapObj, &v0, 3, 2, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 3, 2, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066B60(MapObject *mapObj)
+static BOOL MovementAction_WalkDistortionCeilingEast_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { FX32_CONST(2), 0, 0 };
 
-    sub_02066824(mapObj, &v0, 2, 3, 8, MAP_OBJ_UNK_A0_03);
+    MovementAction_InitMoveByVector(mapObj, &v0, 2, 3, 8, MAP_OBJ_UNK_A0_03);
     return TRUE;
 }
 
-static BOOL sub_02066B90(MapObject *mapObj)
+static BOOL MovementAction_WalkFastDistortionCeilingNorth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, FX32_CONST(4) };
 
-    sub_02066824(mapObj, &v0, 1, 0, 4, MAP_OBJ_UNK_A0_04);
+    MovementAction_InitMoveByVector(mapObj, &v0, 1, 0, 4, MAP_OBJ_UNK_A0_04);
     return TRUE;
 }
 
-static BOOL sub_02066BC0(MapObject *mapObj)
+static BOOL MovementAction_WalkFastDistortionCeilingSouth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, -FX32_CONST(4) };
 
-    sub_02066824(mapObj, &v0, 0, 1, 4, MAP_OBJ_UNK_A0_04);
+    MovementAction_InitMoveByVector(mapObj, &v0, 0, 1, 4, MAP_OBJ_UNK_A0_04);
     return TRUE;
 }
 
-static BOOL sub_02066BF0(MapObject *mapObj)
+static BOOL MovementAction_WalkFastDistortionCeilingWest_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { -FX32_CONST(4), 0, 0 };
 
-    sub_02066824(mapObj, &v0, 3, 2, 4, MAP_OBJ_UNK_A0_04);
+    MovementAction_InitMoveByVector(mapObj, &v0, 3, 2, 4, MAP_OBJ_UNK_A0_04);
     return TRUE;
 }
 
-static BOOL sub_02066C20(MapObject *mapObj)
+static BOOL MovementAction_WalkFastDistortionCeilingEast_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { FX32_CONST(4), 0, 0 };
 
-    sub_02066824(mapObj, &v0, 2, 3, 4, MAP_OBJ_UNK_A0_04);
+    MovementAction_InitMoveByVector(mapObj, &v0, 2, 3, 4, MAP_OBJ_UNK_A0_04);
     return TRUE;
 }
 
-static BOOL sub_02066C50(MapObject *mapObj)
+static BOOL MovementAction_WalkFasterDistortionCeilingNorth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, FX32_CONST(8) };
 
-    sub_02066824(mapObj, &v0, 1, 0, 2, MAP_OBJ_UNK_A0_05);
+    MovementAction_InitMoveByVector(mapObj, &v0, 1, 0, 2, MAP_OBJ_UNK_A0_05);
     return TRUE;
 }
 
-static BOOL sub_02066C84(MapObject *mapObj)
+static BOOL MovementAction_WalkFasterDistortionCeilingSouth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, -FX32_CONST(8) };
 
-    sub_02066824(mapObj, &v0, 0, 1, 2, MAP_OBJ_UNK_A0_05);
+    MovementAction_InitMoveByVector(mapObj, &v0, 0, 1, 2, MAP_OBJ_UNK_A0_05);
     return TRUE;
 }
 
-static BOOL sub_02066CB8(MapObject *mapObj)
+static BOOL MovementAction_WalkFasterDistortionCeilingWest_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { -FX32_CONST(8), 0, 0 };
 
-    sub_02066824(mapObj, &v0, 3, 2, 2, MAP_OBJ_UNK_A0_05);
+    MovementAction_InitMoveByVector(mapObj, &v0, 3, 2, 2, MAP_OBJ_UNK_A0_05);
     return TRUE;
 }
 
-static BOOL sub_02066CE8(MapObject *mapObj)
+static BOOL MovementAction_WalkFasterDistortionCeilingEast_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { FX32_CONST(8), 0, 0 };
 
-    sub_02066824(mapObj, &v0, 2, 3, 2, MAP_OBJ_UNK_A0_05);
+    MovementAction_InitMoveByVector(mapObj, &v0, 2, 3, 2, MAP_OBJ_UNK_A0_05);
     return TRUE;
 }
 
-static BOOL sub_02066D18(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionWestWallNorth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, FX32_CONST(4), 0 };
 
-    sub_02066824(mapObj, &v0, 2, 0, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 2, 0, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066D4C(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionWestWallSouth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, -FX32_CONST(4), 0 };
 
-    sub_02066824(mapObj, &v0, 3, 1, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 3, 1, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066D80(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionWestWallWest_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, FX32_CONST(4) };
 
-    sub_02066824(mapObj, &v0, 1, 2, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 1, 2, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066DB4(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionWestWallEast_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, -FX32_CONST(4) };
 
-    sub_02066824(mapObj, &v0, 0, 3, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 0, 3, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066DE8(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionEastWallNorth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, FX32_CONST(4), 0 };
 
-    sub_02066824(mapObj, &v0, 3, 0, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 3, 0, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066E1C(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionEastWallSouth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, -FX32_CONST(4), 0 };
 
-    sub_02066824(mapObj, &v0, 2, 1, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 2, 1, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066E50(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionEastWallWest_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, -FX32_CONST(4) };
 
-    sub_02066824(mapObj, &v0, 0, 2, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 0, 2, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066E84(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionEastWallEast_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, FX32_CONST(4) };
 
-    sub_02066824(mapObj, &v0, 1, 2, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 1, 2, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066EB8(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionCeilingNorth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, FX32_CONST(4) };
 
-    sub_02066824(mapObj, &v0, 1, 0, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 1, 0, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066EEC(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionCeilingSouth_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { 0, 0, -FX32_CONST(4) };
 
-    sub_02066824(mapObj, &v0, 0, 1, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 0, 1, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066F20(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionCeilingWest_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { -FX32_CONST(4), 0, 0 };
 
-    sub_02066824(mapObj, &v0, 3, 2, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 3, 2, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static BOOL sub_02066F54(MapObject *mapObj)
+static BOOL MovementAction_RunDistortionCeilingEast_Step0(MapObject *mapObj)
 {
     VecFx32 v0 = { FX32_CONST(4), 0, 0 };
 
-    sub_02066824(mapObj, &v0, 2, 3, 4, MAP_OBJ_UNK_A0_09);
+    MovementAction_InitMoveByVector(mapObj, &v0, 2, 3, 4, MAP_OBJ_UNK_A0_09);
     return TRUE;
 }
 
-static void sub_02066F88(MapObject *mapObj, fx32 distance, int facingDir, int movingDir, u8 duration, u8 param5, u8 param6, u8 param7, u8 param8)
+static void MovementAction_InitJumpDistortion(MapObject *mapObj, fx32 distance, int facingDir, int movingDir, u8 duration, u8 unkA0, u8 moveAxis, u8 jumpAxis, u8 jumpDirection)
 {
     int v0 = 1;
-    UnkStruct_02066F88 *v1 = MapObject_InitMovementData(mapObj, sizeof(UnkStruct_02066F88));
+    JumpDistortionMovementData *v1 = MapObject_InitMovementData(mapObj, sizeof(JumpDistortionMovementData));
 
-    v1->unk_00 = duration;
-    v1->unk_04 = distance;
-    v1->unk_02 = param6;
-    v1->unk_01 = param7;
-    v1->unk_03 = param8;
-    v1->unk_0E = (0x100 * 16) / v1->unk_00;
+    v1->duration = duration;
+    v1->distance = distance;
+    v1->moveAxis = moveAxis;
+    v1->jumpAxis = jumpAxis;
+    v1->jumpDirection = jumpDirection;
+    v1->jumpHeightStep = (0x100 * 16) / v1->duration;
 
     MapObject_TryFace(mapObj, facingDir);
     MapObject_Turn(mapObj, movingDir);
-    MapObject_SetUnkA0(mapObj, param5);
+    MapObject_SetUnkA0(mapObj, unkA0);
     MapObject_SetStartMovement(mapObj);
 
     MapObject_SetXPrev(mapObj, MapObject_GetX(mapObj));
     MapObject_SetYPrev(mapObj, MapObject_GetY(mapObj));
     MapObject_SetZPrev(mapObj, MapObject_GetZ(mapObj));
 
-    GF_ASSERT(param6 <= 2);
+    GF_ASSERT(moveAxis <= 2);
 
     if (distance) {
-        switch (param6) {
+        switch (moveAxis) {
         case 0:
             if (distance < 0) {
                 v0 = -v0;
@@ -1826,50 +1886,50 @@ static void sub_02066F88(MapObject *mapObj, fx32 distance, int facingDir, int mo
     MapObject_AdvanceMovementStep(mapObj);
 }
 
-static BOOL sub_02067068(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortion_Step1(MapObject *mapObj)
 {
     VecFx32 v1;
-    UnkStruct_02066F88 *v2 = MapObject_GetMovementData(mapObj);
+    JumpDistortionMovementData *v2 = MapObject_GetMovementData(mapObj);
     MapObject_GetPosPtr(mapObj, &v1);
 
-    switch (v2->unk_02) {
+    switch (v2->moveAxis) {
     case 0:
-        v1.x += v2->unk_04;
+        v1.x += v2->distance;
         break;
     case 1:
-        v1.y += v2->unk_04;
+        v1.y += v2->distance;
         break;
     case 2:
-        v1.z += v2->unk_04;
+        v1.z += v2->distance;
         break;
     }
 
     MapObject_SetPos(mapObj, &v1);
 
-    fx32 v0 = v2->unk_04;
+    fx32 v0 = v2->distance;
 
     if (v0 < 0) {
         v0 = -v0;
     }
 
-    v2->unk_08 += v0;
-    v2->unk_0C += v2->unk_0E;
+    v2->distanceAccumulator += v0;
+    v2->jumpHeightIndex += v2->jumpHeightStep;
 
-    if (v2->unk_0C > (0x100 * (16 - 1))) {
-        v2->unk_0C = (0x100 * (16 - 1));
+    if (v2->jumpHeightIndex > (0x100 * (16 - 1))) {
+        v2->jumpHeightIndex = (0x100 * (16 - 1));
     }
 
     VecFx32 v3 = { 0, 0, 0 };
     const fx32 *jumpHeightsTable = sJumpHeightsTable[JUMP_HEIGHT_LOW];
-    u16 v5 = (v2->unk_0C) / 0x100;
+    u16 v5 = (v2->jumpHeightIndex) / 0x100;
 
     v0 = jumpHeightsTable[v5];
 
-    if (v2->unk_03 == 1) {
+    if (v2->jumpDirection == 1) {
         v0 = -v0;
     }
 
-    switch (v2->unk_01) {
+    switch (v2->jumpAxis) {
     case 0:
         v3.x = v0;
         break;
@@ -1883,19 +1943,20 @@ static BOOL sub_02067068(MapObject *mapObj)
 
     MapObject_SetSpriteJumpOffset(mapObj, &v3);
 
-    v2->unk_00--;
+    v2->duration--;
 
-    if ((v2->unk_08 >= FX32_CONST(16)) && v2->unk_00) {
+    // Step the object one tile for every 16 units of accumulated travel.
+    if ((v2->distanceAccumulator >= FX32_CONST(16)) && v2->duration) {
         int v6 = 1;
 
-        v2->unk_08 -= FX32_CONST(16);
-        v0 = v2->unk_04;
+        v2->distanceAccumulator -= FX32_CONST(16);
+        v0 = v2->distance;
 
         MapObject_SetXPrev(mapObj, MapObject_GetX(mapObj));
         MapObject_SetYPrev(mapObj, MapObject_GetY(mapObj));
         MapObject_SetZPrev(mapObj, MapObject_GetZ(mapObj));
 
-        switch (v2->unk_02) {
+        switch (v2->moveAxis) {
         case 0:
             if (v0 < 0) {
                 v6 = -v6;
@@ -1920,7 +1981,7 @@ static BOOL sub_02067068(MapObject *mapObj)
         }
     }
 
-    if (v2->unk_00 > 0) {
+    if (v2->duration > 0) {
         return FALSE;
     }
 
@@ -1937,78 +1998,81 @@ static BOOL sub_02067068(MapObject *mapObj)
     return TRUE;
 }
 
-static BOOL sub_020671F0(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionWestWallNorth_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, FX32_CONST(2), 2, 0, 8, MAP_OBJ_UNK_A0_03, 1, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, FX32_CONST(2), 2, 0, 8, MAP_OBJ_UNK_A0_03, 1, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_02067214(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionWestWallSouth_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, -FX32_CONST(2), 3, 1, 8, MAP_OBJ_UNK_A0_03, 1, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, -FX32_CONST(2), 3, 1, 8, MAP_OBJ_UNK_A0_03, 1, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_0206723C(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionWestWallWest_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, FX32_CONST(2), 1, 2, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, FX32_CONST(2), 1, 2, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_02067260(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionWestWallEast_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, -FX32_CONST(2), 0, 3, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, -FX32_CONST(2), 0, 3, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_02067288(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionEastWallNorth_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, FX32_CONST(2), 3, 0, 8, MAP_OBJ_UNK_A0_03, 1, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, FX32_CONST(2), 3, 0, 8, MAP_OBJ_UNK_A0_03, 1, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_020672AC(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionEastWallSouth_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, -FX32_CONST(2), 2, 1, 8, MAP_OBJ_UNK_A0_03, 1, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, -FX32_CONST(2), 2, 1, 8, MAP_OBJ_UNK_A0_03, 1, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_020672D4(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionEastWallWest_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, -FX32_CONST(2), 0, 2, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, -FX32_CONST(2), 0, 2, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_020672FC(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionEastWallEast_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, FX32_CONST(2), 1, 2, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, FX32_CONST(2), 1, 2, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_02067320(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionCeilingNorth_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, FX32_CONST(2), 1, 0, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, FX32_CONST(2), 1, 0, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_02067344(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionCeilingSouth_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, -FX32_CONST(2), 0, 1, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, -FX32_CONST(2), 0, 1, 8, MAP_OBJ_UNK_A0_03, 2, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_0206736C(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionCeilingWest_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, -FX32_CONST(2), 3, 2, 8, MAP_OBJ_UNK_A0_03, 0, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, -FX32_CONST(2), 3, 2, 8, MAP_OBJ_UNK_A0_03, 0, 1, 0);
     return TRUE;
 }
 
-static BOOL sub_02067394(MapObject *mapObj)
+static BOOL MovementAction_JumpDistortionCeilingEast_Step0(MapObject *mapObj)
 {
-    sub_02066F88(mapObj, FX32_CONST(2), 2, 3, 8, MAP_OBJ_UNK_A0_03, 0, 1, 0);
+    MovementAction_InitJumpDistortion(mapObj, FX32_CONST(2), 2, 3, 8, MAP_OBJ_UNK_A0_03, 0, 1, 0);
     return TRUE;
 }
 
+// Per-action step callback tables. Each entry is indexed by the movement step
+// and runs until a callback returns FALSE; MovementAction_End is the shared
+// terminal step that marks the action finished.
 BOOL (*const gMovementActionFuncs_FaceNorth[])(MapObject *) = {
     MovementAction_FaceNorth_Step0,
     MovementAction_End,
@@ -2629,123 +2693,127 @@ BOOL (*const gMovementActionFuncs_PlayerReceive[])(MapObject *) = {
     MovementAction_End,
 };
 
+// Distortion-world walk actions (105..116): the object slides along the west
+// wall, east wall or ceiling instead of the floor.
 BOOL (*const gMovementActionFuncs_105[])(MapObject *) = {
-    sub_02066934,
-    sub_020668EC,
+    MovementAction_WalkDistortionWestWallNorth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_106[])(MapObject *) = {
-    sub_02066968,
-    sub_020668EC,
+    MovementAction_WalkDistortionWestWallSouth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_107[])(MapObject *) = {
-    sub_02066998,
-    sub_020668EC,
+    MovementAction_WalkDistortionWestWallWest_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_108[])(MapObject *) = {
-    sub_020669CC,
-    sub_020668EC,
+    MovementAction_WalkDistortionWestWallEast_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_109[])(MapObject *) = {
-    sub_020669FC,
-    sub_020668EC,
+    MovementAction_WalkDistortionEastWallNorth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_110[])(MapObject *) = {
-    sub_02066A2C,
-    sub_020668EC,
+    MovementAction_WalkDistortionEastWallSouth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_111[])(MapObject *) = {
-    sub_02066A60,
-    sub_020668EC,
+    MovementAction_WalkDistortionEastWallWest_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_112[])(MapObject *) = {
-    sub_02066A94,
-    sub_020668EC,
+    MovementAction_WalkDistortionEastWallEast_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_113[])(MapObject *) = {
-    sub_02066AC8,
-    sub_020668EC,
+    MovementAction_WalkDistortionCeilingNorth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_114[])(MapObject *) = {
-    sub_02066AFC,
-    sub_020668EC,
+    MovementAction_WalkDistortionCeilingSouth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_115[])(MapObject *) = {
-    sub_02066B30,
-    sub_020668EC,
+    MovementAction_WalkDistortionCeilingWest_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_116[])(MapObject *) = {
-    sub_02066B60,
-    sub_020668EC,
+    MovementAction_WalkDistortionCeilingEast_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
+// Distortion-world ceiling walk actions at fast (145..148) and faster
+// (149..152) speeds.
 BOOL (*const gMovementActionFuncs_145[])(MapObject *) = {
-    sub_02066B90,
-    sub_020668EC,
+    MovementAction_WalkFastDistortionCeilingNorth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_146[])(MapObject *) = {
-    sub_02066BC0,
-    sub_020668EC,
+    MovementAction_WalkFastDistortionCeilingSouth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_147[])(MapObject *) = {
-    sub_02066BF0,
-    sub_020668EC,
+    MovementAction_WalkFastDistortionCeilingWest_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_148[])(MapObject *) = {
-    sub_02066C20,
-    sub_020668EC,
+    MovementAction_WalkFastDistortionCeilingEast_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_149[])(MapObject *) = {
-    sub_02066C50,
-    sub_020668EC,
+    MovementAction_WalkFasterDistortionCeilingNorth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_150[])(MapObject *) = {
-    sub_02066C84,
-    sub_020668EC,
+    MovementAction_WalkFasterDistortionCeilingSouth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_151[])(MapObject *) = {
-    sub_02066CB8,
-    sub_020668EC,
+    MovementAction_WalkFasterDistortionCeilingWest_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_152[])(MapObject *) = {
-    sub_02066CE8,
-    sub_020668EC,
+    MovementAction_WalkFasterDistortionCeilingEast_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
@@ -2774,146 +2842,148 @@ BOOL (*const gMovementActionFuncs_JumpDistortionWorldEast[])(MapObject *) = {
 };
 
 BOOL (*const gMovementActionFuncs_121[])(MapObject *) = {
-    sub_02066D18,
-    sub_020668EC,
+    MovementAction_RunDistortionWestWallNorth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_122[])(MapObject *) = {
-    sub_02066D4C,
-    sub_020668EC,
+    MovementAction_RunDistortionWestWallSouth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_123[])(MapObject *) = {
-    sub_02066D80,
-    sub_020668EC,
+    MovementAction_RunDistortionWestWallWest_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_124[])(MapObject *) = {
-    sub_02066DB4,
-    sub_020668EC,
+    MovementAction_RunDistortionWestWallEast_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_125[])(MapObject *) = {
-    sub_02066DE8,
-    sub_020668EC,
+    MovementAction_RunDistortionEastWallNorth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_126[])(MapObject *) = {
-    sub_02066E1C,
-    sub_020668EC,
+    MovementAction_RunDistortionEastWallSouth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_127[])(MapObject *) = {
-    sub_02066E50,
-    sub_020668EC,
+    MovementAction_RunDistortionEastWallWest_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_128[])(MapObject *) = {
-    sub_02066E84,
-    sub_020668EC,
+    MovementAction_RunDistortionEastWallEast_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_129[])(MapObject *) = {
-    sub_02066EB8,
-    sub_020668EC,
+    MovementAction_RunDistortionCeilingNorth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_130[])(MapObject *) = {
-    sub_02066EEC,
-    sub_020668EC,
+    MovementAction_RunDistortionCeilingSouth_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_131[])(MapObject *) = {
-    sub_02066F20,
-    sub_020668EC,
+    MovementAction_RunDistortionCeilingWest_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_132[])(MapObject *) = {
-    sub_02066F54,
-    sub_020668EC,
+    MovementAction_RunDistortionCeilingEast_Step0,
+    MovementAction_MoveByVector_Step1,
     MovementAction_End,
 };
 
+// Distortion-world jump actions (133..144): the object hops along the west
+// wall, east wall or ceiling while a sprite jump offset is animated.
 BOOL (*const gMovementActionFuncs_133[])(MapObject *) = {
-    sub_020671F0,
-    sub_02067068,
+    MovementAction_JumpDistortionWestWallNorth_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_134[])(MapObject *) = {
-    sub_02067214,
-    sub_02067068,
+    MovementAction_JumpDistortionWestWallSouth_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_135[])(MapObject *) = {
-    sub_0206723C,
-    sub_02067068,
+    MovementAction_JumpDistortionWestWallWest_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_136[])(MapObject *) = {
-    sub_02067260,
-    sub_02067068,
+    MovementAction_JumpDistortionWestWallEast_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_137[])(MapObject *) = {
-    sub_02067288,
-    sub_02067068,
+    MovementAction_JumpDistortionEastWallNorth_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_138[])(MapObject *) = {
-    sub_020672AC,
-    sub_02067068,
+    MovementAction_JumpDistortionEastWallSouth_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_139[])(MapObject *) = {
-    sub_020672D4,
-    sub_02067068,
+    MovementAction_JumpDistortionEastWallWest_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_140[])(MapObject *) = {
-    sub_020672FC,
-    sub_02067068,
+    MovementAction_JumpDistortionEastWallEast_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_141[])(MapObject *) = {
-    sub_02067320,
-    sub_02067068,
+    MovementAction_JumpDistortionCeilingNorth_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_142[])(MapObject *) = {
-    sub_02067344,
-    sub_02067068,
+    MovementAction_JumpDistortionCeilingSouth_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_143[])(MapObject *) = {
-    sub_0206736C,
-    sub_02067068,
+    MovementAction_JumpDistortionCeilingWest_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 
 BOOL (*const gMovementActionFuncs_144[])(MapObject *) = {
-    sub_02067394,
-    sub_02067068,
+    MovementAction_JumpDistortionCeilingEast_Step0,
+    MovementAction_JumpDistortion_Step1,
     MovementAction_End,
 };
 

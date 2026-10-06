@@ -17,7 +17,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "trainer_info.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_020363E8.h"
 
 typedef void (*UnkFuncPtr_ov97_0222D0A4)(void);
@@ -202,7 +202,7 @@ int ov97_0222D250(MysteryGiftAppData *param0)
     MysteryGiftEventHeader *v1;
 
     for (v0 = 0; v0 < 16; v0++) {
-        v1 = (MysteryGiftEventHeader *)sub_02034168(v0);
+        v1 = (MysteryGiftEventHeader *)CommServerClient_GetMysteryGiftEventData(v0);
 
         if (v1) {
             if (v1->id) {

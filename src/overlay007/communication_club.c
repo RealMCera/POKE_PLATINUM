@@ -31,7 +31,7 @@
 #include "system.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_020363E8.h"
 
 #include "res/text/bank/unk_0353.h"
@@ -312,7 +312,7 @@ static void ov7_02249C64(ListMenu *param0, u32 param1, u8 param2)
 
 static void ov7_02249C94(ListMenu *param0, u32 param1, u8 param2)
 {
-    int v0 = sub_02033808();
+    int v0 = CommServerClient_CountDiscoveredServers();
     u16 cnt = 0;
 
     if (sCommClubMan->unk_5C) {
@@ -324,7 +324,7 @@ static void ov7_02249C94(ListMenu *param0, u32 param1, u8 param2)
     Window_FillRectWithColor(&sCommClubMan->unk_20, 15, 8, param2 * 16, Window_GetWidth(&sCommClubMan->unk_20) * 8 - 8, 16);
 
     if (cnt < v0) {
-        sub_020339AC(cnt, sCommClubMan->unk_7C);
+        CommServerClient_CopyServerTrainerInfo(cnt, sCommClubMan->unk_7C);
 
         StringTemplate_SetNumber(sCommClubMan->unk_50, 0, cnt + 1, 2, 2, 1);
         StringTemplate_SetPlayerName(sCommClubMan->unk_50, 1, sCommClubMan->unk_7C);
@@ -450,7 +450,7 @@ static void ov7_02249FFC(SysTask *task, void *param1)
         CommClubMan_Disconnect();
         CommClubMan_DestroyList(task, commClubMan);
     } else {
-        if (!sub_02033870()) {
+        if (!CommServerClient_IsServerListUpdated()) {
             v0 = ListMenu_ProcessInput(sCommClubMan->unk_5C);
         } else {
             v0 = 0xffffffff;
@@ -470,9 +470,9 @@ static void ov7_02249FFC(SysTask *task, void *param1)
             Sound_PlayEffect(SE_CONFIRM_sseq_3);
             ListMenu_CalcTrueCursorPos(commClubMan->unk_5C, &commClubMan->connectIndex);
 
-            if (sub_02033808() > commClubMan->connectIndex) {
+            if (CommServerClient_CountDiscoveredServers() > commClubMan->connectIndex) {
                 ov7_0224A0C8(commClubMan);
-                commClubMan->connectIndex = sub_0203383C(commClubMan->connectIndex);
+                commClubMan->connectIndex = CommServerClient_GetNthServerIndex(commClubMan->connectIndex);
                 FieldCommManager_ConnectBattleClient(commClubMan->connectIndex);
                 CommList_Refresh();
                 CommClubMan_SetTask(CommClubTask_SelectServerList);
@@ -484,9 +484,9 @@ static void ov7_02249FFC(SysTask *task, void *param1)
 
 static void ov7_0224A0C8(CommClubManager *commClubMan)
 {
-    if (sub_02033870() || sCommClubMan->unk_98) {
+    if (CommServerClient_IsServerListUpdated() || sCommClubMan->unk_98) {
         sCommClubMan->unk_98 = 0;
-        sub_02033884();
+        CommServerClient_ClearServerListUpdated();
         Window_FillRectWithColor(&sCommClubMan->unk_20, 15, 8, 0, 20 - 8, (5 * 2) * 8);
         ov7_02249C64(sCommClubMan->unk_5C, 0, 0);
         Window_CopyToVRAM(&sCommClubMan->unk_20);
@@ -510,7 +510,7 @@ static void CommClubTask_SelectServerList(SysTask *task, void *param1)
 
     CommList_Refresh();
 
-    sub_020339AC(v0->connectIndex, sCommClubMan->unk_7C);
+    CommServerClient_CopyServerTrainerInfo(v0->connectIndex, sCommClubMan->unk_7C);
     StringTemplate_SetPlayerName(v0->strTempMsg, 1, sCommClubMan->unk_7C);
     if (CommClubMan_MinPlayers() <= 2) {
         CommClubMan_PrintMessage(1, TRUE);
@@ -1391,7 +1391,7 @@ static void ov7_0224B054(CommClubManager *commClubMan)
 
 static void ov7_0224B08C(CommClubManager *commClubMan)
 {
-    sub_020339AC(commClubMan->connectIndex, sCommClubMan->unk_7C);
+    CommServerClient_CopyServerTrainerInfo(commClubMan->connectIndex, sCommClubMan->unk_7C);
     StringTemplate_SetPlayerName(commClubMan->strTempMsg, 1, sCommClubMan->unk_7C);
     CommClubMan_PrintMessage(pl_msg_00000353_00004, 1); // Replied, "OK"
 
@@ -1520,7 +1520,7 @@ static void CommClubTask_ExitGuestRoomEnd(SysTask *task, void *param1)
 
 static void CommClubMan_PlayerRefused(CommClubManager *commClubMan)
 {
-    sub_020339AC(commClubMan->connectIndex, sCommClubMan->unk_7C);
+    CommServerClient_CopyServerTrainerInfo(commClubMan->connectIndex, sCommClubMan->unk_7C);
     StringTemplate_SetPlayerName(commClubMan->strTempMsg, 1, sCommClubMan->unk_7C);
 
     CommClubMan_PrintMessage(pl_msg_00000353_00005, 1); //{Player Name} refused...
@@ -1569,7 +1569,7 @@ static void ov7_0224B3A8(CommClubManager *commClubMan)
     sCommClubMan->retCode = COMM_CLUB_RET_2;
     CommManager_SetErrorHandling(1, 1);
     CommInfo_SendPlayerInfo();
-    sub_02033EA8(1);
+    CommServerClient_SetErrorDisconnect(1);
 }
 
 int CommClubMan_MinPlayers(void)

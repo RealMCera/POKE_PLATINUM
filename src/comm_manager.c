@@ -26,7 +26,7 @@
 #include "trainer_info.h"
 #include "unk_0203266C.h"
 #include "unk_02032798.h"
-#include "unk_02033200.h"
+#include "comm_server_client.h"
 #include "unk_02039814.h"
 #include "wireless_manager.h"
 
@@ -48,7 +48,7 @@ typedef struct {
     u8 unionConnectState;
     u8 connectionID;
     u8 commType;
-    u8 contestRegulation; // double check when documenting unk_02033200.c (replace.sh should hit this when renaming the file)
+    u8 contestRegulation; // double check when documenting comm_server_client.c (replace.sh should hit this when renaming the file)
     u8 unk_4C;
     s8 wifiTarget;
     u8 unk_4E;
@@ -750,7 +750,7 @@ static void CommTask_ReinitUnderground(void)
 {
     BOOL ret;
 
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -782,7 +782,7 @@ static void CommTask_ReinitUndergroundClient(void)
 {
     BOOL ret;
 
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -801,13 +801,13 @@ static void CommTask_SearchUndergroundClient(void)
 {
     int connectionID;
 
-    sub_02033A5C();
+    CommServerClient_UpdateServerList();
 
     if (sCommMan->pauseUnderground || sCommMan->unk_56) {
         return;
     }
 
-    connectionID = sub_020338EC();
+    connectionID = CommServerClient_FindServerToJoin();
 
     if (connectionID != -1) {
         sCommMan->connectionID = connectionID;
@@ -820,7 +820,7 @@ static void CommTask_SearchUndergroundClient(void)
         return;
     }
 
-    connectionID = sub_0203394C();
+    connectionID = CommServerClient_FindAnyServer();
 
     if (connectionID != -1) {
         sCommMan->connectionID = connectionID;
@@ -836,9 +836,9 @@ static void CommTask_SearchUndergroundClient(void)
  */
 static void CommTask_ForceConnectUndergroundClient(void)
 {
-    sub_02033A5C();
+    CommServerClient_UpdateServerList();
 
-    if (sub_02033898(sCommMan->connectionID) != 0) {
+    if (CommServerClient_GetServerPlayerCount(sCommMan->connectionID) != 0) {
         if (sub_02034984(sCommMan->connectionID)) {
             CommManager_SetTask(CommTask_ConnectingUndergroundClient, 100);
             return;
@@ -885,7 +885,7 @@ static void CommTask_ConnectingUndergroundClient(void)
  */
 static void CommTask_ResetUndergroundServer(void)
 {
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -897,7 +897,7 @@ static void CommTask_ResetUndergroundServer(void)
  */
 static void CommTask_ResetUndergroundClient(void)
 {
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -909,7 +909,7 @@ static void CommTask_ResetUndergroundClient(void)
  */
 static void CommTask_InitUndergroundServer(void)
 {
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -943,7 +943,7 @@ static void CommTask_WaitUndergroundServer(void)
         return;
     }
 
-    if (sub_020336D4()) {
+    if (CommServerClient_ShutdownWirelessManager()) {
         CommManager_SetTask(CommTask_ResetUndergroundClient, 2);
     }
 }
@@ -954,7 +954,7 @@ static void CommTask_WaitUndergroundServer(void)
 static void CommTask_InitConnectUndergroundServer(void)
 {
     CommSys_SetAlone(FALSE);
-    sub_02033EA8(1);
+    CommServerClient_SetErrorDisconnect(1);
     CommSys_EnableSendMovementData();
     CommManager_SetTask(CommTask_ConnectUndergroundServer, 0);
 }
@@ -981,7 +981,7 @@ static void CommTask_ConnectUndergroundClient(void)
 static void CommTask_StartSecretBase(void)
 {
     if (!CommManager_IsConnectedToWifi()) {
-        if (!sub_02033E30()) {
+        if (!CommServerClient_IsIdle()) {
             return;
         }
 
@@ -998,7 +998,7 @@ static void CommTask_StartSecretBase(void)
  */
 static void CommTask_RestartSecretBase(void)
 {
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -1025,7 +1025,7 @@ static void CommTask_StartUndergroundWifiClient(void)
  */
 static void CommTask_ResetUnderground(void)
 {
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -1095,7 +1095,7 @@ static void CommTask_StartBattleClient(void)
  */
 static void CommTask_ScanBattleClient(void)
 {
-    sub_02033A5C();
+    CommServerClient_UpdateServerList();
 }
 
 /**
@@ -1103,7 +1103,7 @@ static void CommTask_ScanBattleClient(void)
  */
 static void CommTask_ConnectBattleClient(void)
 {
-    sub_02033A5C();
+    CommServerClient_UpdateServerList();
 
     if (sub_02034984(sCommMan->connectionID)) {
         CommManager_SetTask(CommTask_ConnectingBattleClient, 10);
@@ -1129,7 +1129,7 @@ static void CommTask_ConnectingBattleClient(void)
  */
 static void CommTask_ResetBattleClient(void)
 {
-    sub_020336D4();
+    CommServerClient_ShutdownWirelessManager();
     CommManager_SetTask(CommTask_ReconnectBattleClient, 2);
 }
 
@@ -1143,7 +1143,7 @@ static void CommTask_ReconnectBattleClient(void)
         return;
     }
 
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -1168,7 +1168,7 @@ static void CommTask_WaitBattleClient(void)
  */
 static void CommTask_RetryBattleClient(void)
 {
-    sub_020336D4();
+    CommServerClient_ShutdownWirelessManager();
     CommManager_SetTask(CommTask_ReinitBattleClient, 2);
 }
 
@@ -1182,7 +1182,7 @@ static void CommTask_ReinitBattleClient(void)
         return;
     }
 
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -1246,7 +1246,7 @@ static void CommTask_WaitEndConnectionUnionClient(void)
  */
 static void CommTask_EndConnectionUnionClient(void)
 {
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -1263,7 +1263,7 @@ static void CommTask_EndConnection(void)
         sCommMan->timer--;
     }
 
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -1299,14 +1299,14 @@ static void CommTask_StartUnion(void)
  */
 static void CommTask_SearchUnionClient(void)
 {
-    sub_02033A5C();
+    CommServerClient_UpdateServerList();
 
     if (sCommMan->timer != 0) {
         sCommMan->timer--;
         return;
     }
 
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -1318,7 +1318,7 @@ static void CommTask_SearchUnionClient(void)
  */
 static void CommTask_EndUnionClient(void)
 {
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -1330,7 +1330,7 @@ static void CommTask_EndUnionClient(void)
  */
 static void CommTask_InitializeServerUnion(void)
 {
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -1348,7 +1348,7 @@ static void CommTask_InitializeServerUnion(void)
  */
 static void CommTask_WaitUnionServer(void)
 {
-    if (sub_02034148()) {
+    if (CommServerClient_ServerSentAllBeacons()) {
 
     } else {
         if (CommSys_IsClientConnecting()) {
@@ -1364,7 +1364,7 @@ static void CommTask_WaitUnionServer(void)
         }
     }
 
-    if (sub_020336D4()) {
+    if (CommServerClient_ShutdownWirelessManager()) {
         CommManager_SetTask(CommTask_RestartUnionClient, 0);
     }
 }
@@ -1376,7 +1376,7 @@ static void CommTask_RestartUnionClient(void)
 {
     u32 rand;
 
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -1392,7 +1392,7 @@ static void CommTask_RestartUnionClient(void)
  */
 static void CommTask_StartForceConnectUnion1(void)
 {
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -1404,7 +1404,7 @@ static void CommTask_StartForceConnectUnion1(void)
  */
 static void CommTask_StartForceConnectUnion2(void)
 {
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -1419,7 +1419,7 @@ static void CommTask_StartForceConnectUnion2(void)
  */
 static void CommTask_ForceConnectUnion(void)
 {
-    if (sub_02033898(sCommMan->connectionID) != 0) {
+    if (CommServerClient_GetServerPlayerCount(sCommMan->connectionID) != 0) {
         if (sub_02034984(sCommMan->connectionID)) {
             CommManager_SetTask(CommTask_ConnectingUnionClient, 100);
             return;
@@ -1518,7 +1518,7 @@ static void CommTask_ResetUnionClient(void)
 {
     sCommMan->unionConnectState = 0;
 
-    if (!sub_020336D4()) {
+    if (!CommServerClient_ShutdownWirelessManager()) {
         return;
     }
 
@@ -1537,7 +1537,7 @@ static void CommTask_ConnectUnionServer(void)
 {
     if (!CommSys_IsClientConnecting()) {
         if (!CommManager_CheckError()) {
-            if (sub_020336D4()) {
+            if (CommServerClient_ShutdownWirelessManager()) {
                 CommManager_SetTask(CommTask_RestartUnionClient, 0);
             }
         }
@@ -1560,7 +1560,7 @@ static void CommTask_ConnectUnionServer(void)
  */
 static void CommTask_PauseUnionServer(void)
 {
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -1649,7 +1649,7 @@ void CommManager_StartSpinTradeClient(int connectionID)
  */
 static void CommTask_StartDrawClient(void)
 {
-    if (sub_020336D4()) {
+    if (CommServerClient_ShutdownWirelessManager()) {
         CommManager_SetTask(CommTask_InitDrawClient, 0);
     }
 }
@@ -1659,7 +1659,7 @@ static void CommTask_StartDrawClient(void)
  */
 static void CommTask_InitDrawClient(void)
 {
-    if (!sub_02033E30()) {
+    if (!CommServerClient_IsIdle()) {
         return;
     }
 
@@ -1676,7 +1676,7 @@ static void CommTask_InitDrawClient(void)
  */
 static void CommTask_ConnectDraw(void)
 {
-    if (sub_02033898(sCommMan->connectionID) != 0) {
+    if (CommServerClient_GetServerPlayerCount(sCommMan->connectionID) != 0) {
         if (sub_02034984(sCommMan->connectionID)) {
             CommManager_SetTask(CommTask_ConnectingDraw, 100);
             return;
@@ -1856,7 +1856,7 @@ void CommManager_SetMaxNumConnections(int maxNumConnection)
  */
 static void CommTask_ScanPoketch(void)
 {
-    sub_02033A5C();
+    CommServerClient_UpdateServerList();
 }
 
 /**
@@ -2912,8 +2912,8 @@ void CommManager_SetErrorHandling(BOOL errorDisconnect, BOOL errorUnknown)
         }
     }
 
-    sub_02033EA8(errorDisconnect);
-    sub_02033ED4(errorDisconnect);
+    CommServerClient_SetErrorDisconnect(errorDisconnect);
+    CommServerClient_SetErrorTimeout(errorDisconnect);
 }
 
 /**
@@ -3101,7 +3101,7 @@ BOOL CommManager_CheckResetFinished(void)
         return TRUE;
     }
 
-    if (!sub_020332D0()) {
+    if (!CommServerClient_IsAllocated()) {
         return TRUE;
     }
 
