@@ -665,7 +665,7 @@ static int TradeRoom_ConnectAndSyncParties(TradeRoom *tradeRoom)
         }
         break;
     case TRADE_CONNECT_START_SYNC_2:
-        sub_0203632C(1);
+        CommSys_SetRecvLimitEnabled(1);
         CommTiming_StartSync(81);
         tradeRoom->connectStep++;
         break;

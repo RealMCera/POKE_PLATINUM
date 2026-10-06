@@ -219,7 +219,7 @@ static BOOL sub_0207DA28(FieldTask *task)
         }
         break;
     case 16:
-        sub_0203632C(0);
+        CommSys_SetRecvLimitEnabled(0);
         v2->unk_10 = BattleFrontier_LaunchWFCFacilitySelector(fieldSystem, NULL);
         v2->unk_04++;
         break;

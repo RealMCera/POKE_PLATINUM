@@ -587,9 +587,9 @@ static void BattleTower_RecordStreakToTV(BattleTower *battleTower, SaveData *sav
     party = SaveData_GetParty(saveData);
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_SINGLE) {
-        sub_0206DBB0(saveData, streak, Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[0]), 1);
+        TVSegment_SaveBattleTowerStreakRecord(saveData, streak, Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[0]), 1);
     } else {
-        sub_0206DBB0(saveData, streak, Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[0]), 0);
+        TVSegment_SaveBattleTowerStreakRecord(saveData, streak, Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[0]), 0);
     }
 }
 
@@ -605,7 +605,7 @@ static void BattleTower_UpdatePostBattleData(BattleTower *battleTower, SaveData 
         // fallthrough
     case BATTLE_TOWER_MODE_DOUBLE:
         if (streak >= 7) {
-            sub_0206CFE4(SaveData_GetTVBroadcast(saveData), tvWin, streak);
+            TVBroadcast_SetBattleTowerCornerInfo(SaveData_GetTVBroadcast(saveData), tvWin, streak);
         }
         break;
     case BATTLE_TOWER_MODE_WIFI:
@@ -1020,7 +1020,7 @@ static u16 BattleTower_GiveRibbonToParty(SaveData *saveData, enum PokemonDataPar
         }
 
         Pokemon_SetValue(mon, param, &ribbonValue);
-        sub_0206DDB8(saveData, mon, param);
+        TVSegment_SaveRibbonRecord(saveData, mon, param);
         ++updatedCount;
     }
 

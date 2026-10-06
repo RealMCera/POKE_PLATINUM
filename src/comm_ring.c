@@ -22,7 +22,7 @@ void CommRring_Write(CommRing *ring, u8 *buffer, int size, int unused)
     int i;
 
     if (CommRing_RemainingSizeBackup(ring) <= size) {
-        sub_020363BC();
+        CommSys_SetError();
         return;
     }
 

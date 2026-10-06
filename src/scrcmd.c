@@ -211,7 +211,7 @@
 #include "unk_0205DFC4.h"
 #include "map_object_animation.h"
 #include "map_object_movement.h"
-#include "unk_020722AC.h"
+#include "mailbox.h"
 #include "unk_0207DA28.h"
 #include "unk_020985E4.h"
 #include "unk_02099500.h"
@@ -4909,7 +4909,7 @@ static BOOL ScrCmd_HideObject(ScriptContext *ctx)
 
 static BOOL ScrCmd_1B3(ScriptContext *ctx)
 {
-    sub_020736D8(ctx->task);
+    Mailbox_StartFieldTask(ctx->task);
     return TRUE;
 }
 

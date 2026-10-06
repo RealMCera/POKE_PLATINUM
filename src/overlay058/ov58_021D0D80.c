@@ -1650,13 +1650,13 @@ static void ov58_021D28E4(Window *param0, int param1, u32 param2, UnkStruct_0209
 static void ov58_021D29C8(UnkStruct_02095EAC *param0)
 {
     if (CommSys_CurNetId() == 0) {
-        if (sub_02036284()) {
+        if (CommSys_IsServerQueueEmpty()) {
             param0->unk_43DC.unk_09 = param0->unk_9458;
             param0->unk_9421[0] = param0->unk_43DC;
             CommSys_SendDataServer(120, param0->unk_9421, 10 * 5);
         }
     } else {
-        if (sub_0203629C()) {
+        if (CommSys_IsQueueEmpty()) {
             CommSys_SendData(119, &param0->unk_43DC, 10);
         }
     }

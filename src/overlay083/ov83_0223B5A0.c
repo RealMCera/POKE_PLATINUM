@@ -121,7 +121,7 @@ int ov83_0223B5B0(ApplicationManager *appMan, int *param1)
     ov83_0223D150(v1, v0->ctx->trainerInfo);
 
     if (v0->unk_26) {
-        sub_0203632C(1);
+        CommSys_SetRecvLimitEnabled(1);
     }
 
     v1->unk_24 = Options_Frame(v0->ctx->options);
@@ -549,7 +549,7 @@ static int ov83_0223BCEC(PoffinBerrySelectionData *param0, UnkStruct_ov83_0223B7
     case 2:
         if (IsScreenFadeDone()) {
             if (param0->unk_26) {
-                sub_0203632C(0);
+                CommSys_SetRecvLimitEnabled(0);
             }
             (*param2)++;
         }
@@ -1062,7 +1062,7 @@ static void ov83_0223C82C(PoffinBerrySelectionData *param0, UnkStruct_ov83_0223B
     }
 
     if (param0->unk_26) {
-        sub_02035938(2);
+        CommSys_SetSendInterval(2);
     }
 }
 
@@ -1074,7 +1074,7 @@ static void ov83_0223C87C(PoffinBerrySelectionData *param0, UnkStruct_ov83_0223B
     param1->unk_1494.unk_100 = NULL;
 
     if (param0->unk_26) {
-        sub_02035938(0);
+        CommSys_SetSendInterval(0);
     }
 }
 
@@ -1097,7 +1097,7 @@ static BOOL ov83_0223C8B0(PoffinBerrySelectionData *param0, Poffin *param1, int 
 
     if (param0->unk_26 == 0) {
         v2 = Poffin_GetAttribute(param1, 0);
-        sub_0206CFCC(broadcast, v2);
+        TVBroadcast_SetPoffinCornerInfo(broadcast, v2);
     }
 
     return v3;

@@ -167,7 +167,7 @@ void TradeRoom_ReceiveChatotCry(int senderNetId, int unused, void *data, void *f
     if (CommSys_CurNetId() != senderNetId) {
         MI_CpuCopyFast(data, tradeRoom->chatotCryBuffer[senderNetId], CHATOT_CRY_SIZE);
         tradeRoom->commMilestone = TRADE_MILESTONE_CHATOT_CRY_RECEIVED;
-        sub_0203632C(0);
+        CommSys_SetRecvLimitEnabled(0);
     }
 }
 

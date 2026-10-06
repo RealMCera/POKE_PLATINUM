@@ -297,7 +297,7 @@ BOOL CommServerClient_InitServer(BOOL param0, BOOL incrementTGID, BOOL entryFlag
     WirelessManager_ResetBeaconSentCount();
 
     if (!sCommServerClient->recvFunctionSet) {
-        WirelessManager_SetRecvFunction(sub_020351F8, 14);
+        WirelessManager_SetRecvFunction(CommSys_ServerRecvCallback, 14);
         sCommServerClient->recvFunctionSet = 1;
     }
 
@@ -323,7 +323,7 @@ BOOL CommServerClient_InitClient(BOOL param0, BOOL clearScanResults)
     }
 
     if (!sCommServerClient->recvFunctionSet) {
-        WirelessManager_SetRecvFunction(sub_0203509C, 14);
+        WirelessManager_SetRecvFunction(CommSys_ClientRecvCallback, 14);
         sCommServerClient->recvFunctionSet = 1;
     }
 

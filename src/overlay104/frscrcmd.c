@@ -1573,7 +1573,7 @@ static BOOL FrontierScrCmd_GiveBattlePoints(FrontierScriptContext *ctx)
 
     broadcast = SaveData_GetTVBroadcast(fieldData->saveData);
 
-    sub_0206D0C8(broadcast, battlePoints);
+    TVBroadcast_AddBattlePoints(broadcast, battlePoints);
     GameRecords_AddToRecordValue(SaveData_GetGameRecords(fieldData->saveData), RECORD_BATTLE_POINTS_RECEIVED, battlePoints);
     WifiBattleTowerRecord_UpdateBattlePoints(SaveData_GetWifiBattleTowerRecord(fieldData->saveData), battlePoints, BATTLE_POINTS_FUNC_ADD);
 
@@ -2474,7 +2474,7 @@ static BOOL FrontierScrCmd_C8(FrontierScriptContext *ctx)
     v0 = FrontierScriptContext_GetVar(ctx);
     trainerInfo = CommInfo_TrainerInfo(1 - CommSys_CurNetId());
 
-    sub_0206D088(broadcast, v0, trainerInfo);
+    TVBroadcast_SetBattleFrontierFrontlineNewsMultiInfo(broadcast, v0, trainerInfo);
     return FALSE;
 }
 
@@ -2482,7 +2482,7 @@ static BOOL FrontierScrCmd_C9(FrontierScriptContext *ctx)
 {
     u16 v0 = FrontierScriptContext_GetVar(ctx);
 
-    sub_0203632C(v0);
+    CommSys_SetRecvLimitEnabled(v0);
     return FALSE;
 }
 

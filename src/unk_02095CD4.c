@@ -167,7 +167,7 @@ void sub_02095E28(int param0, int param1, void *param2, void *param3)
     if (CommSys_CurNetId() != param0) {
         MI_CpuCopyFast(param2, v0->unk_2E6C[param0], 1000);
         v0->unk_54 = 4;
-        sub_0203632C(0);
+        CommSys_SetRecvLimitEnabled(0);
     }
 }
 

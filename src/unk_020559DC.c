@@ -111,7 +111,7 @@ static void FieldSystem_HandleDailyEvents(FieldSystem *fieldSystem, s32 daysPass
     FieldSystem_ClearDailyHiddenItemFlags(fieldSystem);
     BattleSalon_SeedRng(fieldSystem->saveData);
     WiFiHistory_UpdateGeonetCommunicationMap(SaveData_WiFiHistory(fieldSystem->saveData));
-    sub_0206F2F0(fieldSystem->saveData);
+    TVSegment_ResetDailyRecords(fieldSystem->saveData);
 }
 
 static void sub_02055B64(FieldSystem *fieldSystem, s32 param1, const RTCTime *rtcTime)

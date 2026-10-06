@@ -669,10 +669,10 @@ static void ov65_0222DFD4(int param0)
     } else if (param0 == 16) {
         CommManager_SetState_LoginWifi();
     } else if ((param0 == 21) || (param0 == 20)) {
-        sub_0203632C(0);
+        CommSys_SetRecvLimitEnabled(0);
         CommManager_SetState_FrontierWifi();
     } else {
-        sub_0203632C(1);
+        CommSys_SetRecvLimitEnabled(1);
         CommManager_SetState_SingleBattleWifi();
     }
 }
@@ -3345,7 +3345,7 @@ static int ov65_02231200(UnkStruct_ov65_0222EBE0 *param0, int param1)
     if (CommManager_IsLoginBattleMatchWifi()) {
         CommManager_SetErrorHandling(0, 1);
 
-        sub_0203632C(0);
+        CommSys_SetRecvLimitEnabled(0);
         StartScreenFade(FADE_BOTH_SCREENS, FADE_TYPE_BRIGHTNESS_OUT, FADE_TYPE_BRIGHTNESS_OUT, COLOR_BLACK, 6, 1, HEAP_ID_54);
 
         param0->unk_3E4 = 0;
@@ -4009,7 +4009,7 @@ static int ov65_02231E64(UnkStruct_ov65_0222EBE0 *param0, int param1)
 
             param0->unk_3AC = ov65_0222DD94(v0);
 
-            sub_0203632C(0);
+            CommSys_SetRecvLimitEnabled(0);
             StartScreenFade(FADE_BOTH_SCREENS, FADE_TYPE_BRIGHTNESS_OUT, FADE_TYPE_BRIGHTNESS_OUT, COLOR_BLACK, 6, 1, HEAP_ID_54);
 
             param0->unk_3E4 = 0;
@@ -4601,7 +4601,7 @@ static int ov65_0223294C(UnkStruct_ov65_0222EBE0 *param0, int param1)
                     param0->unk_3A0 = (60 * 30);
                     ov65_0222DFD4(v2);
 
-                    sub_0203632C(0);
+                    CommSys_SetRecvLimitEnabled(0);
 
                     ov65_02232E58(param0, v2);
                     ov65_02232DC0(param0, param0->unk_3E2 - 1);

@@ -164,7 +164,7 @@ void CommPlayerMan_Delete(BOOL deletePlayerData)
         }
 
         if (sCommPlayerManager->flagsRegisteredInCurrentSession >= 5) {
-            sub_0206DF60(sCommPlayerManager->fieldSystem, sCommPlayerManager->flagsRegisteredInCurrentSession);
+            TVSegment_SaveCaptureTheFlagRecord(sCommPlayerManager->fieldSystem, sCommPlayerManager->flagsRegisteredInCurrentSession);
         }
 
         for (int netId = 0; netId < MAX_CONNECTED_PLAYERS; netId++) {
@@ -773,7 +773,7 @@ static void CommPlayer_Move(SysTask *unused0, void *unused1)
             }
 
             if (!sCommPlayerManager->onBattleGrid[netId]) {
-                keys = sub_02035E84(netId);
+                keys = CommSys_GetMovementKeys(netId);
             } else {
                 keys = 0;
             }
@@ -1575,7 +1575,7 @@ BOOL CommPlayerMan_CheckBattleGridPositions(void)
 
     if (playerCnt == connectedPlayers) {
         for (netId = 0; netId < connectedPlayers; netId++) {
-            sub_020362DC(battlePos[netId], netId);
+            CommSys_SetBattlePosition(battlePos[netId], netId);
         }
     }
 

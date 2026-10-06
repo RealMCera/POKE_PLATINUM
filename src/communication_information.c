@@ -426,19 +426,19 @@ static void CommInfo_UpdatePlayerRecord(int param0, int val)
     }
 
     if (param0 != 2) {
-        v1 = sub_020362F4(CommSys_CurNetId()) & 0x1;
+        v1 = CommSys_GetBattlePosition(CommSys_CurNetId()) & 0x1;
     }
 
     for (netId = 0; netId < CommSys_ConnectedCount(); netId++) {
         if (CommSys_IsPlayerConnected(netId) && (sCommInfo->infoState[netId] != 0)) {
             if (param0 == 0) {
-                v2 = sub_020362F4(netId) & 0x1;
+                v2 = CommSys_GetBattlePosition(netId) & 0x1;
 
                 if (v1 != v2) {
                     sCommInfo->playerRecord[netId].win += val;
                 }
             } else if (param0 == 1) {
-                v2 = sub_020362F4(netId) & 0x1;
+                v2 = CommSys_GetBattlePosition(netId) & 0x1;
 
                 if (v1 != v2) {
                     sCommInfo->playerRecord[netId].lose += val;

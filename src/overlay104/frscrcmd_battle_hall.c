@@ -363,7 +363,7 @@ BOOL FrontierScrCmd_C7(FrontierScriptContext *ctx)
 
     if (battleHall->challengeType == 0) {
         TVBroadcast *broadcast = SaveData_GetTVBroadcast(fieldData->saveData);
-        sub_0206D048(broadcast, mon);
+        TVBroadcast_SetBattleFrontierFrontlineNewsSingleInfo(broadcast, mon);
     }
 
     return FALSE;

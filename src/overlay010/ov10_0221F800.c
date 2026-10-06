@@ -1160,7 +1160,7 @@ static u8 ov10_02220A50(SysTask *param0, UnkStruct_ov10_0221FB28 *param1)
 
 static BOOL ov10_02220AD0(void)
 {
-    switch (sub_020362F4(CommSys_CurNetId())) {
+    switch (CommSys_GetBattlePosition(CommSys_CurNetId())) {
     case 0:
     case 2:
         return 1;
@@ -2363,7 +2363,7 @@ static void ov10_022227A4(TrainerIntroData *trainerIntroData)
         opponentGender1 = TrainerClass_Gender(trainerIntroData->dto->trainer[v6 ^ 1].header.trainerType);
         opponentName1 = Heap_Alloc(trainerIntroData->heapID, sizeof(u16) * (TRAINER_NAME_LEN + 1));
 
-        String_ToChars(trainerIntroData->trainerNames[sub_020362F4(v6 ^ 1)], opponentName1, TRAINER_NAME_LEN + 1);
+        String_ToChars(trainerIntroData->trainerNames[CommSys_GetBattlePosition(v6 ^ 1)], opponentName1, TRAINER_NAME_LEN + 1);
         journalEntryOnlineEvent = JournalEntry_CreateEventUnionBattle(opponentName1, opponentGender1, battleResult, trainerIntroData->heapID);
         Heap_Free(opponentName1);
     } else {
@@ -2372,7 +2372,7 @@ static void ov10_022227A4(TrainerIntroData *trainerIntroData)
             opponentGender1 = TrainerClass_Gender(trainerIntroData->dto->trainer[v6 ^ 1].header.trainerType);
             opponentName1 = Heap_Alloc(trainerIntroData->heapID, sizeof(u16) * (TRAINER_NAME_LEN + 1));
 
-            String_ToChars(trainerIntroData->trainerNames[sub_020362F4(v6 ^ 1)], opponentName1, TRAINER_NAME_LEN + 1);
+            String_ToChars(trainerIntroData->trainerNames[CommSys_GetBattlePosition(v6 ^ 1)], opponentName1, TRAINER_NAME_LEN + 1);
 
             journalEntryOnlineEvent = JournalEntry_CreateEventSingleBattle(opponentName1, opponentGender1, battleResult, trainerIntroData->heapID);
             Heap_Free(opponentName1);
@@ -2381,7 +2381,7 @@ static void ov10_022227A4(TrainerIntroData *trainerIntroData)
             opponentGender1 = TrainerClass_Gender(trainerIntroData->dto->trainer[v6 ^ 1].header.trainerType);
             opponentName1 = Heap_Alloc(trainerIntroData->heapID, sizeof(u16) * (TRAINER_NAME_LEN + 1));
 
-            String_ToChars(trainerIntroData->trainerNames[sub_020362F4(v6 ^ 1)], opponentName1, TRAINER_NAME_LEN + 1);
+            String_ToChars(trainerIntroData->trainerNames[CommSys_GetBattlePosition(v6 ^ 1)], opponentName1, TRAINER_NAME_LEN + 1);
 
             journalEntryOnlineEvent = JournalEntry_CreateEventDoubleBattle(opponentName1, opponentGender1, battleResult, trainerIntroData->heapID);
             Heap_Free(opponentName1);
@@ -2390,7 +2390,7 @@ static void ov10_022227A4(TrainerIntroData *trainerIntroData)
             opponentGender1 = TrainerClass_Gender(trainerIntroData->dto->trainer[v6 ^ 1].header.trainerType);
             opponentName1 = Heap_Alloc(trainerIntroData->heapID, sizeof(u16) * (TRAINER_NAME_LEN + 1));
 
-            String_ToChars(trainerIntroData->trainerNames[sub_020362F4(v6 ^ 1)], opponentName1, TRAINER_NAME_LEN + 1);
+            String_ToChars(trainerIntroData->trainerNames[CommSys_GetBattlePosition(v6 ^ 1)], opponentName1, TRAINER_NAME_LEN + 1);
 
             journalEntryOnlineEvent = JournalEntry_CreateEventMixSingleBattle(opponentName1, opponentGender1, battleResult, trainerIntroData->heapID);
             Heap_Free(opponentName1);

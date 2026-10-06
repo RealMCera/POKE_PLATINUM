@@ -2677,7 +2677,7 @@ static BOOL ov65_022387E8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     ov65_0223742C(param0);
 
     if ((CommManager_GetMatchmakingState() == 1) && (CommSys_IsPlayerConnected(0) == 1)) {
-        sub_0203632C(0);
+        CommSys_SetRecvLimitEnabled(0);
         ov65_022378C4(param0, param1, heapID);
         StartScreenFade(FADE_MAIN_ONLY, FADE_TYPE_BRIGHTNESS_OUT, FADE_TYPE_BRIGHTNESS_OUT, COLOR_BLACK, 6, 1, heapID);
         param0->unk_00.unk_05 = 27;

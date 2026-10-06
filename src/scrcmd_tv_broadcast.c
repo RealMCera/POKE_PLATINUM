@@ -194,13 +194,13 @@ BOOL ScrCmd_27C(ScriptContext *param0)
         Party *party = SaveData_GetParty(param0->fieldSystem->saveData);
         Pokemon *v2 = Party_GetPokemonBySlotIndex(party, ScriptContext_GetVar(param0));
 
-        sub_0206CF48(broadcast, v2, HEAP_ID_FIELD1);
+        TVBroadcast_SetAmitySquareWatchInfo(broadcast, v2, HEAP_ID_FIELD1);
     } break;
     case 1:
-        sub_0206CFB4(broadcast, ScriptContext_GetVar(param0));
+        TVBroadcast_SetAmitySquareWatchFoundItem(broadcast, ScriptContext_GetVar(param0));
         break;
     case 2:
-        sub_0206CF9C(broadcast, ScriptContext_GetVar(param0));
+        TVBroadcast_SetAmitySquareWatchFoundAccessory(broadcast, ScriptContext_GetVar(param0));
         break;
     }
 

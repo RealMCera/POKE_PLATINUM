@@ -619,7 +619,7 @@ void Sound_AdjustVolumeForVoiceChatEx(int seqID, enum SoundHandleType handleType
         break;
     }
 
-    if (sub_02036314() == TRUE) {
+    if (CommSys_IsVoiceChatEnabled() == TRUE) {
         Sound_SetInitialVolumeForHandle(handleType, (volume / 5));
     }
 }
@@ -843,7 +843,7 @@ void Sound_SetWaveOutSpeed(enum WaveOutChannel channel, u32 speed)
 
 void Sound_SetWaveOutVolume(enum WaveOutChannel channel, int volume)
 {
-    if (sub_02036314() == 1) {
+    if (CommSys_IsVoiceChatEnabled() == 1) {
         NNS_SndWaveOutSetVolume(*Sound_GetWaveOutHandle(channel), volume / 5);
     } else {
         NNS_SndWaveOutSetVolume(*Sound_GetWaveOutHandle(channel), volume);

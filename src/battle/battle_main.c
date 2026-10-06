@@ -84,7 +84,7 @@
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "unk_02038F8C.h"
-#include "unk_0207A6DC.h"
+#include "link_battle_comm.h"
 #include "unk_0208C098.h"
 #include "vram_transfer.h"
 
@@ -1083,7 +1083,7 @@ static void BattleSys_New(BattleSystem *battleSys, FieldBattleDTO *dto)
     }
 
     if (battleSys->battleType & BATTLE_TYPE_LINK) {
-        sub_0207A6DC(battleSys);
+        LinkBattleComm_Init(battleSys);
         u8 networkID = BattleSystem_GetNetworkID(battleSys);
 
         BattleMain_AssignRecordingRoles(battleSys, dto);
@@ -1619,7 +1619,7 @@ static void BattleMain_InitLinkCommScreen(ApplicationManager *appMan, FieldBattl
     linkBattleCommState->bgConfig = BgConfig_New(HEAP_ID_BATTLE);
     linkBattleCommState->window = Window_New(HEAP_ID_BATTLE, 1);
 
-    sub_0207A744(linkBattleCommState);
+    LinkBattleComm_InitCommands(linkBattleCommState);
     GXLayers_DisableEngineALayers();
 
     GXBanks banks = {
@@ -1711,7 +1711,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
     switch (linkBattleCommState->handshakeStep) {
     case 0:
         ResetScreenMasterBrightness(DS_SCREEN_MAIN);
-        sub_02036378(1);
+        CommSys_SetBattleVoiceChat(1);
         linkBattleCommState->handshakeStep++;
         break;
     case 1:
@@ -1737,62 +1737,62 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
         }
         break;
     case 4:
-        if (sub_0207A8F4(linkBattleCommState, BattleServerVersion) == 1) {
+        if (LinkBattleComm_SendSystemVersion(linkBattleCommState, BattleServerVersion) == 1) {
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 6:
-        if (sub_0207A960(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_PrepareTrainerInfo(linkBattleCommState) == TRUE) {
             CommTiming_StartSync(52);
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 7:
-        if (sub_0207A988(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_SendTrainerInfo(linkBattleCommState) == TRUE) {
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 9:
-        if (sub_0207A9CC(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_PrepareTrainer(linkBattleCommState) == TRUE) {
             CommTiming_StartSync(53);
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 10:
-        if (sub_0207A9F8(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_SendTrainer(linkBattleCommState) == TRUE) {
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 12:
-        if (sub_0207AA38(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_PrepareParty(linkBattleCommState) == TRUE) {
             CommTiming_StartSync(54);
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 13:
-        if (sub_0207AA5C(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_SendParty(linkBattleCommState) == TRUE) {
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 15:
-        if (sub_0207AAA0(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_PrepareChatotCry(linkBattleCommState) == TRUE) {
             CommTiming_StartSync(55);
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 16:
-        if (sub_0207AAC8(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_SendChatotCry(linkBattleCommState) == TRUE) {
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 18:
-        if (sub_0207AAFC(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_PreparePalPad(linkBattleCommState) == TRUE) {
             CommTiming_StartSync(56);
             linkBattleCommState->handshakeStep++;
         }
         break;
     case 19:
-        if (sub_0207AB58(linkBattleCommState) == TRUE) {
+        if (LinkBattleComm_SendPalPad(linkBattleCommState) == TRUE) {
             linkBattleCommState->handshakeStep++;
         }
         break;
@@ -1803,7 +1803,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
             if (CommSys_CurNetId()) {
                 CommTiming_StartSync(57);
                 linkBattleCommState->handshakeStep++;
-            } else if (sub_0207AB9C(linkBattleCommState, 1) == TRUE) {
+            } else if (LinkBattleComm_PrepareTrainerSlot(linkBattleCommState, 1) == TRUE) {
                 CommTiming_StartSync(57);
                 linkBattleCommState->handshakeStep++;
             }
@@ -1816,7 +1816,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
             if (CommTiming_IsSyncState(57) == TRUE) {
                 linkBattleCommState->handshakeStep++;
             }
-        } else if (sub_0207ABD0(linkBattleCommState, 1, 57) == TRUE) {
+        } else if (LinkBattleComm_SendTrainerSlot(linkBattleCommState, 1, 57) == TRUE) {
             linkBattleCommState->handshakeStep++;
         }
         break;
@@ -1824,7 +1824,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
         if (CommSys_CurNetId()) {
             CommTiming_StartSync(58);
             linkBattleCommState->handshakeStep++;
-        } else if (sub_0207AB9C(linkBattleCommState, 3) == TRUE) {
+        } else if (LinkBattleComm_PrepareTrainerSlot(linkBattleCommState, 3) == TRUE) {
             CommTiming_StartSync(58);
             linkBattleCommState->handshakeStep++;
         }
@@ -1836,7 +1836,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
             if (CommTiming_IsSyncState(58) == TRUE) {
                 linkBattleCommState->handshakeStep++;
             }
-        } else if (sub_0207ABD0(linkBattleCommState, 3, 58) == TRUE) {
+        } else if (LinkBattleComm_SendTrainerSlot(linkBattleCommState, 3, 58) == TRUE) {
             linkBattleCommState->handshakeStep++;
         }
         break;
@@ -1844,7 +1844,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
         if (CommSys_CurNetId()) {
             CommTiming_StartSync(59);
             linkBattleCommState->handshakeStep++;
-        } else if (sub_0207AC28(linkBattleCommState, 1) == TRUE) {
+        } else if (LinkBattleComm_PreparePartySlot(linkBattleCommState, 1) == TRUE) {
             CommTiming_StartSync(59);
             linkBattleCommState->handshakeStep++;
         }
@@ -1856,7 +1856,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
             if (CommTiming_IsSyncState(59) == TRUE) {
                 linkBattleCommState->handshakeStep++;
             }
-        } else if (sub_0207AC54(linkBattleCommState, 1, 59) == TRUE) {
+        } else if (LinkBattleComm_SendPartySlot(linkBattleCommState, 1, 59) == TRUE) {
             linkBattleCommState->handshakeStep++;
         }
         break;
@@ -1864,7 +1864,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
         if (CommSys_CurNetId()) {
             CommTiming_StartSync(60);
             linkBattleCommState->handshakeStep++;
-        } else if (sub_0207AC28(linkBattleCommState, 3) == TRUE) {
+        } else if (LinkBattleComm_PreparePartySlot(linkBattleCommState, 3) == TRUE) {
             CommTiming_StartSync(60);
             linkBattleCommState->handshakeStep++;
         }
@@ -1876,7 +1876,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
             if (CommTiming_IsSyncState(60) == TRUE) {
                 linkBattleCommState->handshakeStep++;
             }
-        } else if (sub_0207AC54(linkBattleCommState, 3, 60) == TRUE) {
+        } else if (LinkBattleComm_SendPartySlot(linkBattleCommState, 3, 60) == TRUE) {
             linkBattleCommState->handshakeStep++;
         }
         break;
@@ -1918,7 +1918,7 @@ static BOOL BattleMain_HandleLinkCommHandshake(ApplicationManager *appMan)
         if (PaletteData_GetSelectedBuffersMask(linkBattleCommState->paletteData) == 0) {
             result = 1;
             DestroyWaitDial(linkBattleCommState->waitDial);
-            sub_02036378(0);
+            CommSys_SetBattleVoiceChat(0);
         }
         break;
     }
@@ -1967,7 +1967,7 @@ static BOOL BattleMain_InitPartnerIntro(ApplicationManager *appMan)
     MI_CpuClearFast(battleSys->trainerIntroData, sizeof(TrainerIntroData));
     netID = CommSys_CurNetId();
 
-    switch (sub_020362F4(netID)) {
+    switch (CommSys_GetBattlePosition(netID)) {
     case 0:
     case 3:
         battleSys->trainerIntroData->party[0] = battleSys->parties[netID];
@@ -1983,7 +1983,7 @@ static BOOL BattleMain_InitPartnerIntro(ApplicationManager *appMan)
     battleSys->trainerIntroData->heapID = HEAP_ID_BATTLE;
     battleSys->trainerIntroData->mode = 0;
 
-    switch (sub_020362F4(netID)) {
+    switch (CommSys_GetBattlePosition(netID)) {
     case 0:
     case 3:
         battleSys->trainerIntroData->playerSide = 0;
@@ -2036,18 +2036,18 @@ static BOOL BattleMain_InitTrainerIntro(ApplicationManager *appMan)
 
     if (battleSys->battleType & BATTLE_TYPE_2vs2) {
         for (int i = 0; i < MAX_BATTLERS; i++) {
-            battleSys->trainerIntroData->party[sub_020362F4(i)] = battleSys->parties[i];
-            battleSys->trainerIntroData->trainerNames[sub_020362F4(i)] = TrainerInfo_NameNewString(battleSys->trainerInfo[i], HEAP_ID_BATTLE);
+            battleSys->trainerIntroData->party[CommSys_GetBattlePosition(i)] = battleSys->parties[i];
+            battleSys->trainerIntroData->trainerNames[CommSys_GetBattlePosition(i)] = TrainerInfo_NameNewString(battleSys->trainerInfo[i], HEAP_ID_BATTLE);
         }
 
         battleSys->trainerIntroData->heapID = HEAP_ID_BATTLE;
         battleSys->trainerIntroData->mode = 1;
         battleSys->trainerIntroData->playerSide = 1;
     } else {
-        battleSys->trainerIntroData->party[sub_020362F4(netID)] = battleSys->parties[netID];
-        battleSys->trainerIntroData->party[sub_020362F4(netID ^ 1)] = battleSys->parties[netID ^ 1];
-        battleSys->trainerIntroData->trainerNames[sub_020362F4(netID)] = TrainerInfo_NameNewString(battleSys->trainerInfo[netID], HEAP_ID_BATTLE);
-        battleSys->trainerIntroData->trainerNames[sub_020362F4(netID ^ 1)] = TrainerInfo_NameNewString(battleSys->trainerInfo[netID ^ 1], HEAP_ID_BATTLE);
+        battleSys->trainerIntroData->party[CommSys_GetBattlePosition(netID)] = battleSys->parties[netID];
+        battleSys->trainerIntroData->party[CommSys_GetBattlePosition(netID ^ 1)] = battleSys->parties[netID ^ 1];
+        battleSys->trainerIntroData->trainerNames[CommSys_GetBattlePosition(netID)] = TrainerInfo_NameNewString(battleSys->trainerInfo[netID], HEAP_ID_BATTLE);
+        battleSys->trainerIntroData->trainerNames[CommSys_GetBattlePosition(netID ^ 1)] = TrainerInfo_NameNewString(battleSys->trainerInfo[netID ^ 1], HEAP_ID_BATTLE);
         battleSys->trainerIntroData->heapID = HEAP_ID_BATTLE;
         battleSys->trainerIntroData->mode = 1;
         battleSys->trainerIntroData->playerSide = 0;
@@ -2121,8 +2121,8 @@ static BOOL BattleMain_HandleLinkBattleResult(ApplicationManager *appMan)
 
     if (dto->battleType & BATTLE_TYPE_2vs2) {
         for (int i = 0; i < MAX_BATTLERS; i++) {
-            trainerIntroData->party[sub_020362F4(i)] = dto->parties[i];
-            trainerIntroData->trainerNames[sub_020362F4(i)] = TrainerInfo_NameNewString(dto->trainerInfo[i], HEAP_ID_BATTLE);
+            trainerIntroData->party[CommSys_GetBattlePosition(i)] = dto->parties[i];
+            trainerIntroData->trainerNames[CommSys_GetBattlePosition(i)] = TrainerInfo_NameNewString(dto->trainerInfo[i], HEAP_ID_BATTLE);
         }
 
         trainerIntroData->heapID = HEAP_ID_BATTLE;
@@ -2135,10 +2135,10 @@ static BOOL BattleMain_HandleLinkBattleResult(ApplicationManager *appMan)
             trainerIntroData->battleResult = 3;
         }
     } else {
-        trainerIntroData->party[sub_020362F4(netID)] = dto->parties[netID];
-        trainerIntroData->party[sub_020362F4(netID ^ 1)] = dto->parties[netID ^ 1];
-        trainerIntroData->trainerNames[sub_020362F4(netID)] = TrainerInfo_NameNewString(dto->trainerInfo[netID], HEAP_ID_BATTLE);
-        trainerIntroData->trainerNames[sub_020362F4(netID ^ 1)] = TrainerInfo_NameNewString(dto->trainerInfo[netID ^ 1], HEAP_ID_BATTLE);
+        trainerIntroData->party[CommSys_GetBattlePosition(netID)] = dto->parties[netID];
+        trainerIntroData->party[CommSys_GetBattlePosition(netID ^ 1)] = dto->parties[netID ^ 1];
+        trainerIntroData->trainerNames[CommSys_GetBattlePosition(netID)] = TrainerInfo_NameNewString(dto->trainerInfo[netID], HEAP_ID_BATTLE);
+        trainerIntroData->trainerNames[CommSys_GetBattlePosition(netID ^ 1)] = TrainerInfo_NameNewString(dto->trainerInfo[netID ^ 1], HEAP_ID_BATTLE);
         trainerIntroData->heapID = HEAP_ID_BATTLE;
         trainerIntroData->mode = 2;
         trainerIntroData->playerSide = 0;
@@ -2227,9 +2227,9 @@ static void BattleMain_AssignRecordingRoles(BattleSystem *battleSys, FieldBattle
     } else {
         if ((battleSys->battleType & BATTLE_TYPE_FRONTIER) == FALSE) {
             if (battleSys->battleType & BATTLE_TYPE_2vs2) {
-                temp = sub_020362F4(netID);
+                temp = CommSys_GetBattlePosition(netID);
 
-                switch (sub_020362F4(netIDs[0])) {
+                switch (CommSys_GetBattlePosition(netIDs[0])) {
                 case 0:
                 case 2:
                     if (temp & 1) {

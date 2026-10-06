@@ -31,7 +31,7 @@ static int sub_02032954(void);
 static const CommCmdTable Unk_020E5D64[] = {
     { NULL, CommPacketSizeOf_Nothing, NULL },
     { NULL, CommPacketSizeOf_Nothing, NULL },
-    { sub_0203619C, CommPacketSizeOf_Nothing, NULL },
+    { CommSys_HandleFinishConnection, CommPacketSizeOf_Nothing, NULL },
     { CommInfo_RecvPlayerData, CommPlayerInfo_Size, NULL },
     { CommInfo_RecvPlayerDataArray, CommPlayerInfo_Size, NULL },
     { CommInfo_FinishReading, CommPacketSizeOf_Nothing, NULL },
@@ -39,9 +39,9 @@ static const CommCmdTable Unk_020E5D64[] = {
     { CommManager_ValidateConfirmationResponseMessage, CommManager_ConfirmationMessage_sizeof, NULL },
     { NULL, NULL, NULL },
     { NULL, NULL, NULL },
-    { sub_02036008, CommPacketSizeOf_NetId, NULL },
-    { sub_02036030, CommPacketSizeOf_NetId, NULL },
-    { sub_02036058, CommPacketSizeOf_NetId, NULL },
+    { CommSys_HandleSwitchRequest, CommPacketSizeOf_NetId, NULL },
+    { CommSys_HandleSwitchPrepare, CommPacketSizeOf_NetId, NULL },
+    { CommSys_HandleSwitchAck, CommPacketSizeOf_NetId, NULL },
     { sub_02032958, CommPacketSizeOf_Nothing, NULL },
     { sub_0203299C, CommPacketSizeOf_Nothing, NULL },
     { sub_020329C4, CommPacketSizeOf_Nothing, NULL },
@@ -92,7 +92,7 @@ void CommCmd_Callback(int param0, int cmd, int param2, void *param3)
         GF_ASSERT(sCommCmdManager);
 
         if (cmd > (sCommCmdManager->unk_04 + 22)) {
-            sub_020363BC();
+            CommSys_SetError();
             return;
         }
 
@@ -119,13 +119,13 @@ int CommCmd_PacketSizeOf(int cmd)
         GF_ASSERT(sCommCmdManager);
 
         if (sCommCmdManager == NULL) {
-            sub_020363BC();
+            CommSys_SetError();
             return v0;
         }
 
         if (cmd > (sCommCmdManager->unk_04 + 22)) {
             GF_ASSERT(FALSE);
-            sub_020363BC();
+            CommSys_SetError();
             return v0;
         }
 

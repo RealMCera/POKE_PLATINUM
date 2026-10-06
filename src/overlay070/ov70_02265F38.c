@@ -441,7 +441,7 @@ BOOL ov70_02265F38(UnkStruct_ov70_02263344 *param0, UnkStruct_ov70_0225DEE8 *par
         CommManager_SetState_WifiPlaza();
         CommInfo_Init(ov66_0222E0C4(ov70_0225DEE8(param1)), NULL);
         CommInfo_SetPersonalTrainerInfo(ov66_0222E918(v2));
-        sub_0203632C(0);
+        CommSys_SetRecvLimitEnabled(0);
         ov70_02266B18(v0, param0, 10, 17);
         break;
     case 10:

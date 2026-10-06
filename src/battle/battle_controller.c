@@ -26,7 +26,7 @@
 #include "party.h"
 #include "pokemon.h"
 #include "unk_0202F1D4.h"
-#include "unk_0207A6DC.h"
+#include "link_battle_comm.h"
 
 static void BattleController_SendLocalMessage(BattleSystem *battleSys, int recipient, int battler, void *message, u8 size);
 static void SendMessage(BattleSystem *battleSys, int recipient, int battler, void *message, u8 size);
@@ -202,7 +202,7 @@ static void SendMessage(BattleSystem *battleSys, int recipient, int battler, voi
             }
         }
 
-        sub_0207A81C(battleSys, recipient, battler, message, size);
+        LinkBattleComm_QueueServerMessage(battleSys, recipient, battler, message, size);
     } else {
         if (recipient == COMM_RECIPIENT_CLIENT) {
             BattleIO_EnqueueVal(battleSys->battleCtx, 0, battler, *data);

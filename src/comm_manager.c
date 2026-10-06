@@ -839,7 +839,7 @@ static void CommTask_ForceConnectUndergroundClient(void)
     CommServerClient_UpdateServerList();
 
     if (CommServerClient_GetServerPlayerCount(sCommMan->connectionID) != 0) {
-        if (sub_02034984(sCommMan->connectionID)) {
+        if (CommSys_ConnectToServer(sCommMan->connectionID)) {
             CommManager_SetTask(CommTask_ConnectingUndergroundClient, 100);
             return;
         }
@@ -1105,7 +1105,7 @@ static void CommTask_ConnectBattleClient(void)
 {
     CommServerClient_UpdateServerList();
 
-    if (sub_02034984(sCommMan->connectionID)) {
+    if (CommSys_ConnectToServer(sCommMan->connectionID)) {
         CommManager_SetTask(CommTask_ConnectingBattleClient, 10);
     }
 }
@@ -1420,7 +1420,7 @@ static void CommTask_StartForceConnectUnion2(void)
 static void CommTask_ForceConnectUnion(void)
 {
     if (CommServerClient_GetServerPlayerCount(sCommMan->connectionID) != 0) {
-        if (sub_02034984(sCommMan->connectionID)) {
+        if (CommSys_ConnectToServer(sCommMan->connectionID)) {
             CommManager_SetTask(CommTask_ConnectingUnionClient, 100);
             return;
         }
@@ -1677,7 +1677,7 @@ static void CommTask_InitDrawClient(void)
 static void CommTask_ConnectDraw(void)
 {
     if (CommServerClient_GetServerPlayerCount(sCommMan->connectionID) != 0) {
-        if (sub_02034984(sCommMan->connectionID)) {
+        if (CommSys_ConnectToServer(sCommMan->connectionID)) {
             CommManager_SetTask(CommTask_ConnectingDraw, 100);
             return;
         }
@@ -2251,7 +2251,7 @@ int CommManager_StartWifiBattle(int target)
         return FALSE;
     }
 
-    NintendoDWC_SetDataTransferCallbacks(sub_020351F8, sub_0203509C);
+    NintendoDWC_SetDataTransferCallbacks(CommSys_ServerRecvCallback, CommSys_ClientRecvCallback);
     sCommMan->wifiTarget = target;
     CommManager_SetTask(CommTask_CancelWifiBattle, 0);
     return TRUE;
@@ -2307,7 +2307,7 @@ static void CommTask_WifiBattleLogin(void)
     int ret;
     int errorRet;
 
-    NintendoDWC_SetDataTransferCallbacks(sub_020351F8, sub_0203509C);
+    NintendoDWC_SetDataTransferCallbacks(CommSys_ServerRecvCallback, CommSys_ClientRecvCallback);
 
     ret = NintendoWFC_StartConnectionWithFriends(-1, 4, 1);
 
@@ -3132,7 +3132,7 @@ BOOL CommManager_SetCommError(int error)
 void CommManager_SetState_WifiPoffin(void)
 {
     sCommMan->commType = COMM_TYPE_POFFIN_WIFI;
-    NintendoDWC_SetDataTransferCallbacks(sub_020352C0, sub_020352C0);
+    NintendoDWC_SetDataTransferCallbacks(CommSys_RecvInputWifiGroup, CommSys_RecvInputWifiGroup);
 }
 
 /**
@@ -3141,7 +3141,7 @@ void CommManager_SetState_WifiPoffin(void)
 void CommManager_SetState_WifiClub(void)
 {
     sCommMan->commType = COMM_TYPE_CLUB_WIFI;
-    NintendoDWC_SetDataTransferCallbacks(sub_020352C0, sub_020352C0);
+    NintendoDWC_SetDataTransferCallbacks(CommSys_RecvInputWifiGroup, CommSys_RecvInputWifiGroup);
 }
 
 /**
@@ -3150,7 +3150,7 @@ void CommManager_SetState_WifiClub(void)
 void CommManager_SetState_WifiPlaza(void)
 {
     sCommMan->commType = COMM_TYPE_WIFI_PLAZA;
-    NintendoDWC_SetDataTransferCallbacks(sub_020352C0, sub_020352C0);
+    NintendoDWC_SetDataTransferCallbacks(CommSys_RecvInputWifiGroup, CommSys_RecvInputWifiGroup);
 }
 
 /**
@@ -3159,7 +3159,7 @@ void CommManager_SetState_WifiPlaza(void)
 void CommManager_SetState_LoginWifi(void)
 {
     sCommMan->commType = COMM_TYPE_LOGIN_WIFI;
-    NintendoDWC_SetDataTransferCallbacks(sub_020351F8, sub_0203509C);
+    NintendoDWC_SetDataTransferCallbacks(CommSys_ServerRecvCallback, CommSys_ClientRecvCallback);
 }
 
 /**
@@ -3168,7 +3168,7 @@ void CommManager_SetState_LoginWifi(void)
 void CommManager_SetState_SingleBattleWifi(void)
 {
     sCommMan->commType = COMM_TYPE_SINGLE_BATTLE_WIFI;
-    NintendoDWC_SetDataTransferCallbacks(sub_020351F8, sub_0203509C);
+    NintendoDWC_SetDataTransferCallbacks(CommSys_ServerRecvCallback, CommSys_ClientRecvCallback);
 }
 
 /**
@@ -3187,7 +3187,7 @@ static void CommTask_StartWifiPlaza(void)
         NintendoWFC_SetFatalErrorCallback(NetworkError_DisplayFatalError);
         CommSys_SwitchTransitionTypeToParallel();
         NintendoWFC_SetVoiceChatEnabled(0);
-        sub_0203632C(0);
+        CommSys_SetRecvLimitEnabled(0);
         CommManager_SetTask(CommTask_ConnectingWifiBattle, NETWORK_TIMEOUT_FRAMES);
     }
 }
@@ -3459,7 +3459,7 @@ static void CommTask_DisconnectWifiPlazaP2P(void)
 
         if (ret) {
             CommSys_Reset();
-            sub_0203632C(0);
+            CommSys_SetRecvLimitEnabled(0);
             CommManager_SetTask(CommTask_ConnectWifiPlaza, 0);
         }
     }

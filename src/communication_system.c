@@ -27,6 +27,17 @@
 #include "unk_020363E8.h"
 #include "wireless_manager.h"
 
+// The communication system is the transport layer shared by every multiplayer
+// mode (local wireless, Wi-Fi battle/plaza and the union room). It owns the
+// send/receive ring buffers, the per-frame input (held-keys) exchange, and the
+// queue of commands that higher-level code sends to peers.
+//
+// It supports two topologies, selected by `transmissionType`:
+//   - SERVER_CLIENT: one host (net ID 0) relays commands between clients.
+//   - PARALLEL:      every console sends to and accepts data from every other.
+// A running session can switch between the two through the
+// SWITCH_TO_* transitional states; see CommSys_Transmission.
+
 enum TransmissionType {
     TRANSMISSION_TYPE_SERVER_CLIENT,
     TRANSMISSION_TYPE_PARALLEL,
@@ -34,12 +45,16 @@ enum TransmissionType {
     TRANSMISSION_TYPE_SWITCH_TO_PARALLEL
 };
 
+// How CommSys_ApplyMovementModifiers rewrites the local player's held D-pad
+// input before it is broadcast to the other consoles.
 enum MovementState {
     MOVEMENT_STATE_NORMAL = 0,
     MOVEMENT_STATE_RANDOM,
     MOVEMENT_STATE_REVERSE,
 };
 
+// Unused duplicate of UnkStruct_020322D8 (the queue-entry type defined in
+// struct_defs/struct_020322D8.h). Left in place to avoid touching the build.
 typedef struct {
     u8 *unk_00;
     UnkStruct_020322D8 *unk_04;
@@ -51,11 +66,14 @@ typedef struct {
     u8 : 6;
 } UnkStruct_020322D8_t;
 
+// In-progress reassembly state for a single incoming command. A command whose
+// payload spans several packets (or several frames) is accumulated here until
+// `receivedSize` reaches `packetSize`, at which point it is dispatched.
 typedef struct {
-    int unk_00;
-    u8 *unk_04;
-    u16 unk_08;
-    u8 unk_0A;
+    int receivedSize; // bytes of the payload received so far
+    u8 *dataBuffer;   // buffer used when the command needs reassembly
+    u16 packetSize;   // expected payload size; 0xFFFF while still unknown
+    u8 packetCommand; // command byte; 0xEE when no command is in progress
 } CommRecvPackage;
 
 typedef struct {
@@ -63,94 +81,97 @@ typedef struct {
     u8 sendBufferServer[2][192];
     u8 sendBufferCommRing[COMM_RING_BUFFER_SIZE];
     u8 sendBufferCommRingServer[384];
-    u8 *unk_488;
+    u8 *relayRingBuffer;    // backing storage for relayRing
     u8 *recvBufferRingServer;
     u8 *recvBufferRing;
     u8 *tempBuffer;
     CommRing sendRing;
     CommRing recvRing;
-    CommRing unk_4B0[8];
+    CommRing relayRing[8];  // per-player relay rings (parallel mode)
     CommRing sendRingServer;
     CommRing sendRingClient[8];
-    SysTask *unk_57C;
+    SysTask *vBlankTask;
     CommQueueMan commQueueManSend;
     CommQueueMan commQueueManSendServer;
     CommRecvPackage commRecvServer[8];
     CommRecvPackage commRecvClient;
     MATHRandContext32 rand;
-    u16 unk_63C[8];
+    u16 receivedKeys[8];    // D-pad bits decoded from each player's input
     u8 recvSpeed[8];
     u16 sendHeldKeys;
-    u8 unk_656;
+    u8 unk_656;             // never written; blocks input send when non-zero
     u8 sendSpeed;
     u8 playerMovementState;
     s8 randomPadKeyTimer;
     u16 randomPadKey;
-    BOOL unk_65C;
-    volatile int unk_660;
-    volatile int unk_664[8];
+    BOOL recvLimitEnabled;  // wait for every peer before building the next packet
+    volatile int sendCount; // outstanding Wi-Fi sends (throttles to 4)
+    volatile int sendCountPerPlayer[8];
     int allocSize;
     int maxPacketSize;
-    u16 unk_68C;
-    u8 unk_68E;
-    u8 unk_68F[8];
-    u8 unk_697[8];
-    u8 unk_69F[4];
+    u16 connectedBitmap;    // bit per connected net ID, relayed by the server
+    u8 sendSequence;        // rolling sequence nibble in the input packet header
+    u8 unk_68F[8];          // per-player receive counter; written, never read
+    u8 waitingForPacketStart[8];
+    u8 battlePositions[4];  // net ID for each battle position; 0xFF = unused
     u8 transmissionState;
-    u8 unk_6A4;
+    u8 pendingTransitionType;
     u8 transmissionType;
-    u8 unk_6A6;
-    u8 unk_6A7;
-    u8 unk_6A8;
-    u8 unk_6A9;
-    u8 unk_6AA;
-    u8 unk_6AB;
-    u8 unk_6AC;
-    u8 unk_6AD;
-    u8 unk_6AE;
+    u8 unk_6A6;             // set to 38 once, never read
+    u8 sendBufferIndex;     // which of the two sendBuffer slots is active
+    u8 serverSendBufferIndex;
+    u8 inputSendTimer;      // frames the current input packet stays "fresh"
+    u8 waitingForPacketStartClient;
+    u8 unk_6AB;             // set to 1 once, never read
+    u8 partialSend;         // a command was only partially written last time
+    u8 serverPartialSend;
+    u8 isAlone;             // no other consoles are present
     u8 wifiConnected;
-    u8 unk_6B0;
-    u8 unk_6B1;
+    u8 unk_6B0;             // cleared once, never read
+    u8 commError;           // set when an invalid/oversized command arrives
     u8 shuttingDown;
-    u8 unk_6B3;
-    u8 unk_6B4;
-    u8 unk_6B5;
+    u8 unk_6B3;             // read to pause receiving, but never set
+    u8 sendInterval;        // input packets are sent every Nth frame (0 = off)
+    u8 frameCounter;
 } CommunicationSystem;
 
-static void sub_0203463C(void);
-static void sub_0203498C(SysTask *param0, void *param1);
-static void sub_02034B50(void);
+static void CommSys_ResetState(void);
+static void CommSys_VBlankTask(SysTask *param0, void *param1);
+static void CommSys_TransmitInput(void);
 static void CommSys_UpdateServerClient(void);
-static void sub_02034F68(void);
-static void sub_02035394(BOOL param0);
-static void sub_020353B0(BOOL param0);
-static void sub_020350A4(u16 param0, u16 *param1, u16 param2);
-static void sub_02035200(u16 param0, u16 *param1, u16 param2);
+static void CommSys_TransmitInputServer(void);
+static void CommSys_SendCallbackClient(BOOL param0);
+static void CommSys_SendCallbackServer(BOOL param0);
+static void CommSys_RecvInputClient(u16 param0, u16 *param1, u16 param2);
+static void CommSys_RecvInputServer(u16 param0, u16 *param1, u16 param2);
 static BOOL CommSys_CheckRecvLimit(void);
 static void CommSys_ApplyMovementModifiers(void);
-static void sub_020353CC(void);
+static void CommSys_TransmitInputWireless(void);
 static void CommSys_RecvData(void);
 static void CommSys_RecvDataServer(void);
-static BOOL sub_020357F0(u8 *param0);
-static void sub_020358C0(u8 *param0);
-static BOOL sub_020356A0(u8 *param0, int param1);
-static BOOL sub_02035730(u8 *param0);
+static BOOL CommSys_BuildInputPacket(u8 *param0);
+static void CommSys_BuildServerPacket(u8 *param0);
+static BOOL CommSys_DecodeInput(u8 *param0, int param1);
+static BOOL CommSys_EncodeInput(u8 *param0);
 static void CommSys_Transmission(void);
-static BOOL sub_0203594C(void);
+static BOOL CommSys_ShouldThrottleSend(void);
 
-static u32 Unk_021C07C8 = 0;
+static u32 sCommSystemRawAlloc = 0; // unaligned allocation, kept for Heap_Free
 static CommunicationSystem *sCommunicationSystem = NULL;
-static volatile u8 Unk_021C07C5 = 0;
-static volatile u8 Unk_02100A1C = 4;
-static volatile u8 Unk_02100A1D = 4;
-static u8 Unk_021C07C4 = 0;
+static volatile u8 sVBlankWorkPending = 0; // main loop asks the VBlank task to run
+static volatile u8 sSendStateServer = 4;   // server send state machine; 4 = idle
+static volatile u8 sSendStateClient = 4;   // client send state machine; 4 = idle
+static u8 sServerBufferPrepared = 0;       // server packet already built this cycle
 
+// Allocates (on first call) and prepares the communication system. When
+// `shouldAlloc` is FALSE the existing instance is reused, which happens when a
+// session is re-initialized without tearing down its buffers.
 static BOOL CommSys_Init(BOOL shouldAlloc, int maxPacketSize)
 {
     int i;
     BOOL reinit = FALSE;
 
-    Unk_021C07C5 = FALSE;
+    sVBlankWorkPending = FALSE;
 
     if (shouldAlloc) {
         int maxMachines = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
@@ -161,8 +182,9 @@ static BOOL CommSys_Init(BOOL shouldAlloc, int maxPacketSize)
 
         CommTool_Init(HEAP_ID_COMMUNICATION);
 
-        Unk_021C07C8 = (u32)Heap_Alloc(HEAP_ID_COMMUNICATION, sizeof(CommunicationSystem) + 32);
-        sCommunicationSystem = (CommunicationSystem *)(32 - (Unk_021C07C8 % 32) + Unk_021C07C8);
+        sCommSystemRawAlloc = (u32)Heap_Alloc(HEAP_ID_COMMUNICATION, sizeof(CommunicationSystem) + 32);
+        // Round the allocation up to a 32-byte boundary.
+        sCommunicationSystem = (CommunicationSystem *)(32 - (sCommSystemRawAlloc % 32) + sCommSystemRawAlloc);
 
         MI_CpuClear8(sCommunicationSystem, sizeof(CommunicationSystem));
 
@@ -175,10 +197,11 @@ static BOOL CommSys_Init(BOOL shouldAlloc, int maxPacketSize)
         sCommunicationSystem->allocSize = sCommunicationSystem->maxPacketSize * maxMachines;
         sCommunicationSystem->transmissionType = TRANSMISSION_TYPE_SERVER_CLIENT;
         sCommunicationSystem->unk_6A6 = 38;
+        // Per-player receive rings are carved out of these two allocations.
         sCommunicationSystem->recvBufferRing = Heap_Alloc(HEAP_ID_COMMUNICATION, sCommunicationSystem->maxPacketSize * 2);
         sCommunicationSystem->tempBuffer = Heap_Alloc(HEAP_ID_COMMUNICATION, sCommunicationSystem->maxPacketSize);
         sCommunicationSystem->recvBufferRingServer = Heap_Alloc(HEAP_ID_COMMUNICATION, sCommunicationSystem->allocSize);
-        sCommunicationSystem->unk_488 = Heap_Alloc(HEAP_ID_COMMUNICATION, sCommunicationSystem->allocSize);
+        sCommunicationSystem->relayRingBuffer = Heap_Alloc(HEAP_ID_COMMUNICATION, sCommunicationSystem->allocSize);
 
         if (CommManager_GetCommType() == 10) {
             CommQueueMan_Init(&sCommunicationSystem->commQueueManSend, 100, &sCommunicationSystem->sendRing);
@@ -192,26 +215,28 @@ static BOOL CommSys_Init(BOOL shouldAlloc, int maxPacketSize)
         GF_ASSERT(sCommunicationSystem);
     }
 
-    sCommunicationSystem->unk_68C = 0;
+    sCommunicationSystem->connectedBitmap = 0;
 
     for (i = 0; i < 4; i++) {
-        sCommunicationSystem->unk_69F[i] = 0xff;
+        sCommunicationSystem->battlePositions[i] = 0xff;
     }
 
     if (!reinit) {
-        sub_0203463C();
+        CommSys_ResetState();
     }
 
     CommSys_Seed(&sCommunicationSystem->rand);
 
     if (!reinit) {
-        sCommunicationSystem->unk_57C = SysTask_ExecuteOnVBlank(sub_0203498C, NULL, 0);
+        sCommunicationSystem->vBlankTask = SysTask_ExecuteOnVBlank(CommSys_VBlankTask, NULL, 0);
     }
 
     sCommunicationSystem->wifiConnected = FALSE;
     return TRUE;
 }
 
+// Resets every buffer, ring and reassembly slot to its initial state. Called
+// when a session starts, resets, or changes transmission topology.
 static void CommSys_ClearData(void)
 {
     int netId, size;
@@ -229,11 +254,11 @@ static void CommSys_ClearData(void)
         CommRing_Init(&sCommunicationSystem->sendRingClient[netId], &sCommunicationSystem->recvBufferRingServer[netId * size], size);
     }
 
-    MI_CpuClear8(sCommunicationSystem->unk_488, sCommunicationSystem->allocSize);
-    MI_CpuClear8(sCommunicationSystem->unk_4B0, sizeof(CommRing) * (7 + 1));
+    MI_CpuClear8(sCommunicationSystem->relayRingBuffer, sCommunicationSystem->allocSize);
+    MI_CpuClear8(sCommunicationSystem->relayRing, sizeof(CommRing) * (7 + 1));
 
     for (netId = 0; netId < maxMachines; netId++) {
-        CommRing_Init(&sCommunicationSystem->unk_4B0[netId], &sCommunicationSystem->unk_488[netId * size], size);
+        CommRing_Init(&sCommunicationSystem->relayRing[netId], &sCommunicationSystem->relayRingBuffer[netId * size], size);
     }
 
     MI_CpuClear8(sCommunicationSystem->sendBufferCommRingServer, (192 * 2));
@@ -254,28 +279,28 @@ static void CommSys_ClearData(void)
     MI_CpuClear8(sCommunicationSystem->recvBufferRing, sCommunicationSystem->maxPacketSize * 2);
     CommRing_Init(&sCommunicationSystem->recvRing, sCommunicationSystem->recvBufferRing, sCommunicationSystem->maxPacketSize * 2);
 
-    sCommunicationSystem->unk_6AC = 0;
-    sCommunicationSystem->unk_6AD = 0;
+    sCommunicationSystem->partialSend = 0;
+    sCommunicationSystem->serverPartialSend = 0;
 
     for (netId = 0; netId < (7 + 1); netId++) {
         sCommunicationSystem->unk_68F[netId] = 0;
-        sCommunicationSystem->unk_697[netId] = 1;
-        sCommunicationSystem->unk_63C[netId] = 0;
-        sCommunicationSystem->commRecvServer[netId].unk_0A = 0xee;
-        sCommunicationSystem->commRecvServer[netId].unk_08 = 0xffff;
-        sCommunicationSystem->commRecvServer[netId].unk_04 = NULL;
-        sCommunicationSystem->commRecvServer[netId].unk_00 = 0;
-        sCommunicationSystem->unk_664[netId] = 0;
+        sCommunicationSystem->waitingForPacketStart[netId] = 1;
+        sCommunicationSystem->receivedKeys[netId] = 0;
+        sCommunicationSystem->commRecvServer[netId].packetCommand = 0xee;
+        sCommunicationSystem->commRecvServer[netId].packetSize = 0xffff;
+        sCommunicationSystem->commRecvServer[netId].dataBuffer = NULL;
+        sCommunicationSystem->commRecvServer[netId].receivedSize = 0;
+        sCommunicationSystem->sendCountPerPlayer[netId] = 0;
     }
 
-    sCommunicationSystem->unk_660 = 0;
-    sCommunicationSystem->commRecvClient.unk_0A = 0xee;
-    sCommunicationSystem->commRecvClient.unk_08 = 0xffff;
-    sCommunicationSystem->commRecvClient.unk_04 = NULL;
-    sCommunicationSystem->commRecvClient.unk_00 = 0;
-    sCommunicationSystem->unk_6AA = 1;
+    sCommunicationSystem->sendCount = 0;
+    sCommunicationSystem->commRecvClient.packetCommand = 0xee;
+    sCommunicationSystem->commRecvClient.packetSize = 0xffff;
+    sCommunicationSystem->commRecvClient.dataBuffer = NULL;
+    sCommunicationSystem->commRecvClient.receivedSize = 0;
+    sCommunicationSystem->waitingForPacketStartClient = 1;
     sCommunicationSystem->unk_6AB = 1;
-    Unk_021C07C4 = 0;
+    sServerBufferPrepared = 0;
 
     CommQueueMan_Reset(&sCommunicationSystem->commQueueManSend);
     CommQueueMan_Reset(&sCommunicationSystem->commQueueManSendServer);
@@ -283,53 +308,62 @@ static void CommSys_ClearData(void)
     sCommunicationSystem->unk_6B0 = 0;
 }
 
-static void sub_0203463C(void)
+// Full reset of the running session: rewinds both send buffers and clears all
+// data, then marks both send state machines idle.
+static void CommSys_ResetState(void)
 {
-    sCommunicationSystem->unk_6A7 = 0;
-    sCommunicationSystem->unk_6A8 = 0;
-    sCommunicationSystem->unk_65C = 1;
+    sCommunicationSystem->sendBufferIndex = 0;
+    sCommunicationSystem->serverSendBufferIndex = 0;
+    sCommunicationSystem->recvLimitEnabled = 1;
 
     CommSys_ClearData();
 
-    Unk_02100A1C = 4;
-    Unk_02100A1D = 4;
+    sSendStateServer = 4;
+    sSendStateClient = 4;
 }
 
-static void sub_02034670(void)
+// Reinitializes the shared buffers after a topology switch; the pending
+// transmission was already accounted for before this is called.
+static void CommSys_ClearDataOnTransition(void)
 {
     CommSys_ClearData();
 }
 
+// Forgets all reassembly state for one player's incoming command stream. Used
+// when a player joins so their first packet is treated as a fresh start.
 static void CommSys_ClearServerRecvData(int netId)
 {
     sCommunicationSystem->unk_68F[netId] = 0;
-    sCommunicationSystem->unk_697[netId] = 1;
-    sCommunicationSystem->unk_664[netId] = 0;
+    sCommunicationSystem->waitingForPacketStart[netId] = 1;
+    sCommunicationSystem->sendCountPerPlayer[netId] = 0;
 
     int v0 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
     int v1 = sCommunicationSystem->allocSize / v0;
 
-    CommRing_Init(&sCommunicationSystem->unk_4B0[netId], &sCommunicationSystem->unk_488[netId * v1], v1);
+    CommRing_Init(&sCommunicationSystem->relayRing[netId], &sCommunicationSystem->relayRingBuffer[netId * v1], v1);
     CommRing_Init(&sCommunicationSystem->sendRingClient[netId], &sCommunicationSystem->recvBufferRingServer[netId * v1], v1);
 
-    sCommunicationSystem->commRecvServer[netId].unk_0A = 0xee;
-    sCommunicationSystem->commRecvServer[netId].unk_08 = 0xffff;
-    sCommunicationSystem->commRecvServer[netId].unk_04 = NULL;
-    sCommunicationSystem->commRecvServer[netId].unk_00 = 0;
+    sCommunicationSystem->commRecvServer[netId].packetCommand = 0xee;
+    sCommunicationSystem->commRecvServer[netId].packetSize = 0xffff;
+    sCommunicationSystem->commRecvServer[netId].dataBuffer = NULL;
+    sCommunicationSystem->commRecvServer[netId].receivedSize = 0;
 }
 
-static void sub_02034734(void)
+// Drops the reassembly state of clients that have disconnected, so they start
+// clean if they reconnect.
+static void CommSys_ClearDisconnectedClientData(void)
 {
     int netId;
 
     for (netId = 1; netId < (7 + 1); netId++) {
-        if (!CommSys_IsPlayerConnected(netId) && !sCommunicationSystem->unk_697[netId] && !CommSys_IsAlone()) {
+        if (!CommSys_IsPlayerConnected(netId) && !sCommunicationSystem->waitingForPacketStart[netId] && !CommSys_IsAlone()) {
             CommSys_ClearServerRecvData(netId);
         }
     }
 }
 
-static void sub_02034770(int param0)
+// WirelessManager connect callback: a client with the given net ID connected.
+static void CommSys_OnClientConnect(int param0)
 {
     CommSys_ClearServerRecvData(param0);
 }
@@ -340,7 +374,7 @@ BOOL CommSys_InitServer(BOOL param0, BOOL param1, int param2, BOOL param3)
 
     if (!CommLocal_IsWifiGroup(CommManager_GetCommType())) {
         ret = CommServerClient_InitServer(param0, param1, param3);
-        WirelessManager_SetConnectCallback(sub_02034770);
+        WirelessManager_SetConnectCallback(CommSys_OnClientConnect);
     }
 
     CommSys_Init(param0, param2);
@@ -356,20 +390,24 @@ BOOL CommSys_InitClient(BOOL param0, BOOL param1, int param2)
     }
 
     CommSys_Init(param0, param2);
-    Unk_02100A1D = 4;
+    sSendStateClient = 4;
 
     return v0;
 }
 
+// Applies a topology switch once the local send state machine is idle, then
+// advances the switch handshake. The SWITCH_TO_* states hold the old topology
+// until both sides have acknowledged; CommSys_TransmissionType reports the old
+// value during that window.
 static void CommSys_UpdateTransitionType(void)
 {
     BOOL changed = FALSE;
 
     if (CommSys_CurNetId() == 0) {
-        if (Unk_02100A1C != 4) {
+        if (sSendStateServer != 4) {
             return;
         }
-    } else if (Unk_02100A1D != 4) {
+    } else if (sSendStateClient != 4) {
         return;
     }
 
@@ -384,12 +422,14 @@ static void CommSys_UpdateTransitionType(void)
     }
 
     if (changed) {
-        sub_02034670();
+        CommSys_ClearDataOnTransition();
     }
 
     CommSys_Transmission();
 }
 
+// Requests a topology change. The actual change is deferred (SWITCH_TO_*)
+// until the peer handshake completes.
 static void CommSys_SwitchTransitionType(int type)
 {
     if ((sCommunicationSystem->transmissionType == TRANSMISSION_TYPE_SERVER_CLIENT) && (type == TRANSMISSION_TYPE_PARALLEL)) {
@@ -413,6 +453,7 @@ void CommSys_SwitchTransitionTypeToServerClient(void)
     CommSys_SwitchTransitionType(TRANSMISSION_TYPE_SERVER_CLIENT);
 }
 
+// The effective topology: while switching, the previous topology still applies.
 static int CommSys_TransmissionType(void)
 {
     if (sCommunicationSystem->transmissionType == TRANSMISSION_TYPE_SWITCH_TO_SERVER_CLIENT) {
@@ -435,6 +476,8 @@ BOOL CommSys_TransitionTypeIsParallel(void)
     return FALSE;
 }
 
+// Shuts down the underlying transport and, once it has finished, frees every
+// buffer owned by the communication system.
 void CommSys_Delete(void)
 {
     BOOL v0 = FALSE;
@@ -454,42 +497,46 @@ void CommSys_Delete(void)
         CommTool_Delete();
         CommInfo_Delete();
 
-        Unk_021C07C5 = 0;
-        SysTask_Done(sCommunicationSystem->unk_57C);
-        sCommunicationSystem->unk_57C = NULL;
+        sVBlankWorkPending = 0;
+        SysTask_Done(sCommunicationSystem->vBlankTask);
+        sCommunicationSystem->vBlankTask = NULL;
 
         Heap_Free(sCommunicationSystem->recvBufferRing);
         Heap_Free(sCommunicationSystem->tempBuffer);
         Heap_Free(sCommunicationSystem->recvBufferRingServer);
-        Heap_Free(sCommunicationSystem->unk_488);
+        Heap_Free(sCommunicationSystem->relayRingBuffer);
         CommQueueMan_Delete(&sCommunicationSystem->commQueueManSendServer);
         CommQueueMan_Delete(&sCommunicationSystem->commQueueManSend);
-        Heap_Free((void *)Unk_021C07C8);
+        Heap_Free((void *)sCommSystemRawAlloc);
 
         sCommunicationSystem = NULL;
-        Unk_021C07C8 = 0;
+        sCommSystemRawAlloc = 0;
     }
 }
 
-BOOL sub_02034984(u16 param0)
+BOOL CommSys_ConnectToServer(u16 param0)
 {
     return CommServerClient_ConnectToServer(param0);
 }
 
-static void sub_0203498C(SysTask *param0, void *param1)
+// Runs on VBlank after CommSys_Update has prepared the frame: flushes the
+// local-wireless input packet and, on the host, the server broadcast.
+static void CommSys_VBlankTask(SysTask *param0, void *param1)
 {
-    if (Unk_021C07C5) {
-        sub_020353CC();
+    if (sVBlankWorkPending) {
+        CommSys_TransmitInputWireless();
 
         if (((CommSys_CurNetId() == 0) && (CommSys_IsPlayerConnected(0))) || CommSys_IsAlone()) {
             CommSys_UpdateServerClient();
         }
 
-        Unk_021C07C5 = 0;
+        sVBlankWorkPending = 0;
     }
 }
 
-static void sub_020349C4(void)
+// Deletes the system once the transport reports the session is over. The host
+// waits for any half-finished client connection first.
+static void CommSys_CheckShutdown(void)
 {
     if (!CommServerClient_IsFinished()) {
         return;
@@ -506,18 +553,23 @@ static void sub_020349C4(void)
     }
 }
 
+// Per-frame entry point: refreshes the state machines, folds the local input
+// into the outgoing packet and services both the server and client receive
+// paths. The actual wireless sends happen in the VBlank task.
 BOOL CommSys_Update(void)
 {
     CommManager_Update();
 
     if (sCommunicationSystem != NULL) {
         if (!sCommunicationSystem->shuttingDown) {
-            sCommunicationSystem->unk_6B5++;
-            Unk_021C07C5 = 0;
+            sCommunicationSystem->frameCounter++;
+            sVBlankWorkPending = 0;
             CommSys_UpdateTransitionType();
+            // Accumulate the newly held keys; bit 15 means "send movement data".
             sCommunicationSystem->sendHeldKeys |= (gSystem.heldKeys & 0x7fff);
             CommSys_ApplyMovementModifiers();
-            sub_02034B50();
+            CommSys_TransmitInput();
+            // Keep only the enable bit so keys do not leak into the next frame.
             sCommunicationSystem->sendHeldKeys &= 0x8000;
 
             if (CommSys_TransmissionType() == TRANSMISSION_TYPE_SERVER_CLIENT) {
@@ -525,23 +577,23 @@ BOOL CommSys_Update(void)
             }
 
             if ((CommSys_CurNetId() == 0 && CommSys_IsPlayerConnected(0) || CommSys_IsAlone()) && !sub_0203272C(CommManager_GetCommType())) {
-                sub_02034F68();
+                CommSys_TransmitInputServer();
             }
 
             if ((CommSys_CurNetId() == 0) || (CommSys_TransmissionType() == TRANSMISSION_TYPE_PARALLEL) || CommSys_IsAlone()) {
                 CommSys_RecvDataServer();
             }
 
-            Unk_021C07C5 = 1;
+            sVBlankWorkPending = 1;
         }
 
-        CommServerClient_Update(sCommunicationSystem->unk_68C);
+        CommServerClient_Update(sCommunicationSystem->connectedBitmap);
 
         if (CommSys_CurNetId() == 0) {
-            sub_02034734();
+            CommSys_ClearDisconnectedClientData();
         }
 
-        sub_020349C4();
+        CommSys_CheckShutdown();
     } else {
         CommServerClient_Update(0);
     }
@@ -554,69 +606,72 @@ BOOL CommSys_Update(void)
 
 void CommSys_Reset(void)
 {
-    BOOL v0 = Unk_021C07C5;
+    BOOL v0 = sVBlankWorkPending;
 
-    Unk_021C07C5 = 0;
+    sVBlankWorkPending = 0;
 
     if (sCommunicationSystem) {
-        sub_0203463C();
+        CommSys_ResetState();
     }
 
-    Unk_021C07C5 = v0;
+    sVBlankWorkPending = v0;
 }
 
 void CommSys_ResetDS(void)
 {
-    BOOL v0 = Unk_021C07C5;
+    BOOL v0 = sVBlankWorkPending;
 
-    Unk_021C07C5 = 0;
+    sVBlankWorkPending = 0;
 
     if (sCommunicationSystem) {
         sCommunicationSystem->transmissionType = 1;
-        sub_0203463C();
+        CommSys_ResetState();
     }
 
-    Unk_021C07C5 = v0;
+    sVBlankWorkPending = v0;
 }
 
 void CommSys_ResetBattleClient(void)
 {
-    BOOL v0 = Unk_021C07C5;
+    BOOL v0 = sVBlankWorkPending;
 
-    Unk_021C07C5 = 0;
+    sVBlankWorkPending = 0;
 
     if (sCommunicationSystem) {
-        sub_0203463C();
+        CommSys_ResetState();
         CommServerClient_ClearScanResults();
     }
 
-    Unk_021C07C5 = v0;
+    sVBlankWorkPending = v0;
 }
 
-static void sub_02034B50(void)
+// Builds and sends the 38-byte input packet for this frame. Wi-Fi battle
+// types use per-console sends; other Wi-Fi modes use the server broadcast;
+// local wireless delegates to CommSys_TransmitInputWireless.
+static void CommSys_TransmitInput(void)
 {
     if (sub_0203272C(CommManager_GetCommType())) {
         if (sCommunicationSystem->wifiConnected) {
-            if (sCommunicationSystem->unk_65C) {
+            if (sCommunicationSystem->recvLimitEnabled) {
                 if (!CommSys_CheckRecvLimit()) {
                     return;
                 }
 
-                if (Unk_02100A1D == 4) {
-                    sub_020357F0(sCommunicationSystem->sendBuffer[0]);
-                    Unk_02100A1D = 2;
+                if (sSendStateClient == 4) {
+                    CommSys_BuildInputPacket(sCommunicationSystem->sendBuffer[0]);
+                    sSendStateClient = 2;
                 }
             } else {
-                if (Unk_02100A1D == 4) {
-                    if (!sub_020357F0(sCommunicationSystem->sendBuffer[0])) {
+                if (sSendStateClient == 4) {
+                    if (!CommSys_BuildInputPacket(sCommunicationSystem->sendBuffer[0])) {
                         return;
                     }
 
-                    Unk_02100A1D = 2;
+                    sSendStateClient = 2;
                 }
             }
 
-            if (sub_0203594C()) {
+            if (CommSys_ShouldThrottleSend()) {
                 return;
             }
 
@@ -626,74 +681,77 @@ static void sub_02034B50(void)
 
                 for (i = 0; i < v1; i++) {
                     if (CommSys_IsPlayerConnected(i)) {
-                        sCommunicationSystem->unk_664[i]++;
+                        sCommunicationSystem->sendCountPerPlayer[i]++;
                     }
                 }
 
-                Unk_02100A1D = 4;
+                sSendStateClient = 4;
             }
         }
     } else if (CommLocal_IsWifiGroup(CommManager_GetCommType())) {
         if (sCommunicationSystem->wifiConnected) {
-            if (sCommunicationSystem->unk_65C) {
-                if (sCommunicationSystem->unk_660 > 3) {
+            if (sCommunicationSystem->recvLimitEnabled) {
+                if (sCommunicationSystem->sendCount > 3) {
                     return;
                 }
 
-                if (Unk_02100A1D == 4) {
-                    sub_020357F0(sCommunicationSystem->sendBuffer[0]);
-                    Unk_02100A1D = 2;
+                if (sSendStateClient == 4) {
+                    CommSys_BuildInputPacket(sCommunicationSystem->sendBuffer[0]);
+                    sSendStateClient = 2;
                 }
             } else {
-                if (Unk_02100A1D == 4) {
-                    if (!sub_020357F0(sCommunicationSystem->sendBuffer[0])) {
+                if (sSendStateClient == 4) {
+                    if (!CommSys_BuildInputPacket(sCommunicationSystem->sendBuffer[0])) {
                         return;
                     }
 
-                    Unk_02100A1D = 2;
+                    sSendStateClient = 2;
                 }
             }
 
-            if (sub_0203594C()) {
+            if (CommSys_ShouldThrottleSend()) {
                 return;
             }
 
             if (NintendoWFC_SendData_Server(sCommunicationSystem->sendBuffer[0], 38)) {
-                Unk_02100A1D = 4;
-                sCommunicationSystem->unk_660++;
+                sSendStateClient = 4;
+                sCommunicationSystem->sendCount++;
             }
         }
     } else if (((WirelessManager_GetState() == 4) && (CommSys_IsPlayerConnected(CommSys_CurNetId()))) || CommSys_IsAlone()) {
         while (TRUE) {
-            if (Unk_02100A1D != 4) {
+            if (sSendStateClient != 4) {
                 break;
             }
 
-            if (sCommunicationSystem->unk_660 > 3) {
+            if (sCommunicationSystem->sendCount > 3) {
                 break;
             }
 
-            sub_020357F0(sCommunicationSystem->sendBuffer[sCommunicationSystem->unk_6A7]);
-            sub_020357F0(sCommunicationSystem->sendBuffer[1 - sCommunicationSystem->unk_6A7]);
-            Unk_02100A1D = 0;
+            CommSys_BuildInputPacket(sCommunicationSystem->sendBuffer[sCommunicationSystem->sendBufferIndex]);
+            CommSys_BuildInputPacket(sCommunicationSystem->sendBuffer[1 - sCommunicationSystem->sendBufferIndex]);
+            sSendStateClient = 0;
             break;
         }
 
-        sub_020353CC();
+        CommSys_TransmitInputWireless();
     }
 }
 
-static BOOL sub_02034CF8(int param0)
+// Fills one server broadcast buffer by copying a fixed-size block from each
+// connected player's relay ring. A slot is prefixed 0xE when it carries data
+// and 0xFF when the player is absent. Returns FALSE if every slot is empty.
+static BOOL CommSys_FillServerSendBuffer(int param0)
 {
     int v0;
     int v1;
     int i, v3, v4 = 0;
 
-    v0 = sub_02036128(CommManager_GetCommType());
+    v0 = CommSys_PlayerBlockSize(CommManager_GetCommType());
     v1 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
 
     for (i = 0; i < v1; i++) {
-        CommRing_UpdateEndPos(&sCommunicationSystem->unk_4B0[i]);
+        CommRing_UpdateEndPos(&sCommunicationSystem->relayRing[i]);
 
         if (CommSys_IsPlayerConnected(i)) {
             sCommunicationSystem->sendBufferServer[param0][i * v0] = 0xe;
@@ -703,7 +761,7 @@ static BOOL sub_02034CF8(int param0)
             continue;
         }
 
-        v3 = CommRing_Read(&sCommunicationSystem->unk_4B0[i], &sCommunicationSystem->sendBufferServer[param0][i * v0], v0);
+        v3 = CommRing_Read(&sCommunicationSystem->relayRing[i], &sCommunicationSystem->sendBufferServer[param0][i * v0], v0);
 
         if (sCommunicationSystem->sendBufferServer[param0][i * v0] == 0xe) {
             v4++;
@@ -717,6 +775,9 @@ static BOOL sub_02034CF8(int param0)
     return TRUE;
 }
 
+// Host-side, parallel-mode broadcast state machine. It alternates between the
+// two 192-byte server buffers, sending one over wireless while the other is
+// being refilled and locally consumed.
 static void CommSys_UpdateServerClient(void)
 {
     int i, v2, v3;
@@ -730,51 +791,53 @@ static void CommSys_UpdateServerClient(void)
         return;
     }
 
-    v2 = sub_02036128(CommManager_GetCommType());
+    v2 = CommSys_PlayerBlockSize(CommManager_GetCommType());
     v3 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
 
-    if ((Unk_02100A1C == 2) || (Unk_02100A1C == 0)) {
-        Unk_02100A1C++;
+    if ((sSendStateServer == 2) || (sSendStateServer == 0)) {
+        sSendStateServer++;
 
-        if (CommSys_TransmissionType() == 1 && Unk_021C07C4 == 0) {
-            sub_02034CF8(sCommunicationSystem->unk_6A8);
-            Unk_021C07C4 = 1;
+        if (CommSys_TransmissionType() == 1 && sServerBufferPrepared == 0) {
+            CommSys_FillServerSendBuffer(sCommunicationSystem->serverSendBufferIndex);
+            sServerBufferPrepared = 1;
         }
 
         if (WirelessManager_GetState() == 4
             && !CommSys_IsAlone()
-            && !WirelessManager_SendMessage(sCommunicationSystem->sendBufferServer[sCommunicationSystem->unk_6A8], 192, 14, sub_020353B0)) {
-            Unk_02100A1C--;
+            && !WirelessManager_SendMessage(sCommunicationSystem->sendBufferServer[sCommunicationSystem->serverSendBufferIndex], 192, 14, CommSys_SendCallbackServer)) {
+            sSendStateServer--;
         }
 
-        if ((Unk_02100A1C == 1) || (Unk_02100A1C == 3)) {
-            Unk_021C07C4 = 0;
+        if ((sSendStateServer == 1) || (sSendStateServer == 3)) {
+            sServerBufferPrepared = 0;
 
             for (i = 0; i < v3; i++) {
                 if (CommSys_IsPlayerConnected(i)) {
-                    sCommunicationSystem->unk_664[i]++;
+                    sCommunicationSystem->sendCountPerPlayer[i]++;
                 } else if (CommSys_IsAlone() && (i == 0)) {
-                    sCommunicationSystem->unk_664[i]++;
+                    sCommunicationSystem->sendCountPerPlayer[i]++;
                 }
             }
 
-            sub_020350A4(0, (u16 *)sCommunicationSystem->sendBufferServer[sCommunicationSystem->unk_6A8], 192);
-            sCommunicationSystem->unk_6A8 = 1 - sCommunicationSystem->unk_6A8;
+            CommSys_RecvInputClient(0, (u16 *)sCommunicationSystem->sendBufferServer[sCommunicationSystem->serverSendBufferIndex], 192);
+            sCommunicationSystem->serverSendBufferIndex = 1 - sCommunicationSystem->serverSendBufferIndex;
         }
 
         if ((WirelessManager_GetState() != 4) || CommSys_IsAlone()) {
-            Unk_02100A1C++;
+            sSendStateServer++;
         }
     }
 }
 
+// TRUE while every connected player has at most 3 unacknowledged sends. Used
+// to avoid running too far ahead of the slowest peer in recv-limit mode.
 static BOOL CommSys_CheckRecvLimit(void)
 {
     int i;
     int v1 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
 
     for (i = 1; i < v1; i++) {
-        if (CommSys_IsPlayerConnected(i) && sCommunicationSystem->unk_664[i] > 3) {
+        if (CommSys_IsPlayerConnected(i) && sCommunicationSystem->sendCountPerPlayer[i] > 3) {
             return FALSE;
         }
     }
@@ -782,39 +845,42 @@ static BOOL CommSys_CheckRecvLimit(void)
     return TRUE;
 }
 
-static void sub_02034F68(void)
+// Host-side input send. In Wi-Fi modes the host sends the 192-byte server
+// packet; in local wireless it builds the broadcast and hands off to
+// CommSys_UpdateServerClient.
+static void CommSys_TransmitInputServer(void)
 {
     int i;
     int v1 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
 
     if (CommLocal_IsWifiGroup(CommManager_GetCommType())) {
         if (CommSys_IsPlayerConnected(0)) {
-            if (sCommunicationSystem->unk_65C) {
+            if (sCommunicationSystem->recvLimitEnabled) {
                 if (!CommSys_CheckRecvLimit()) {
                     return;
                 }
 
-                if (Unk_02100A1C == 4) {
+                if (sSendStateServer == 4) {
                     if (CommSys_TransmissionType() == 1) {
-                        sub_02034CF8(0);
+                        CommSys_FillServerSendBuffer(0);
                     }
 
-                    Unk_02100A1C = 2;
+                    sSendStateServer = 2;
                 }
             } else {
-                if (Unk_02100A1C == 4 && CommSys_TransmissionType() == 1 && !sub_02034CF8(0)) {
+                if (sSendStateServer == 4 && CommSys_TransmissionType() == 1 && !CommSys_FillServerSendBuffer(0)) {
                     return;
                 }
 
-                Unk_02100A1C = 2;
+                sSendStateServer = 2;
             }
 
             if (NintendoWFC_SendData_Client(sCommunicationSystem->sendBufferServer[0], 192)) {
-                Unk_02100A1C = 4;
+                sSendStateServer = 4;
 
                 for (i = 0; i < v1; i++) {
                     if (CommSys_IsPlayerConnected(i)) {
-                        sCommunicationSystem->unk_664[i]++;
+                        sCommunicationSystem->sendCountPerPlayer[i]++;
                     }
                 }
             } else {
@@ -822,7 +888,7 @@ static void sub_02034F68(void)
             }
         }
     } else if ((WirelessManager_GetState() == 4) || (CommSys_IsAlone())) {
-        if (Unk_02100A1C != 4) {
+        if (sSendStateServer != 4) {
             return;
         }
 
@@ -831,28 +897,34 @@ static void sub_02034F68(void)
         }
 
         if (CommSys_TransmissionType() == 0) {
-            sub_020358C0(sCommunicationSystem->sendBufferServer[sCommunicationSystem->unk_6A8]);
-            sub_020358C0(sCommunicationSystem->sendBufferServer[1 - sCommunicationSystem->unk_6A8]);
+            CommSys_BuildServerPacket(sCommunicationSystem->sendBufferServer[sCommunicationSystem->serverSendBufferIndex]);
+            CommSys_BuildServerPacket(sCommunicationSystem->sendBufferServer[1 - sCommunicationSystem->serverSendBufferIndex]);
         }
 
-        Unk_02100A1C = 0;
+        sSendStateServer = 0;
 
         CommSys_UpdateServerClient();
     }
 }
 
-void sub_0203509C(u16 param0, u16 *param1, u16 param2)
+// NintendoWFC client data-transfer callback (also the local-wireless receive
+// function for clients).
+void CommSys_ClientRecvCallback(u16 param0, u16 *param1, u16 param2)
 {
-    sub_020350A4(param0, param1, param2);
+    CommSys_RecvInputClient(param0, param1, param2);
 }
 
-static void sub_020350A4(u16 param0, u16 *param1, u16 param2)
+// Handles one packet received by a client. In parallel mode the packet is a
+// concatenation of per-player blocks (0xFF = absent, 0xE = empty) that are
+// demultiplexed into each player's ring; in server/client mode it is the
+// server broadcast, whose header carries the connected bitmap and a length.
+static void CommSys_RecvInputClient(u16 param0, u16 *param1, u16 param2)
 {
     u8 *v0 = (u8 *)param1;
     int i;
     int v2 = param2;
 
-    sCommunicationSystem->unk_660--;
+    sCommunicationSystem->sendCount--;
 
     if (v0 == NULL) {
         return;
@@ -869,43 +941,43 @@ static void sub_020350A4(u16 param0, u16 *param1, u16 param2)
         return;
     }
 
-    if ((sCommunicationSystem->unk_6AA) && (v0[0] & 0x1)) {
+    if ((sCommunicationSystem->waitingForPacketStartClient) && (v0[0] & 0x1)) {
         return;
     }
 
-    sCommunicationSystem->unk_6AA = 0;
+    sCommunicationSystem->waitingForPacketStartClient = 0;
 
     if (CommSys_TransmissionType() == 1) {
-        int v3 = sub_02036128(CommManager_GetCommType());
+        int v3 = CommSys_PlayerBlockSize(CommManager_GetCommType());
         int v4 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
 
         for (i = 0; i < v4; i++) {
             if (v0[0] == 0xff) {
-                sCommunicationSystem->unk_68C = sCommunicationSystem->unk_68C & ~(1 << i);
+                sCommunicationSystem->connectedBitmap = sCommunicationSystem->connectedBitmap & ~(1 << i);
             } else {
-                sCommunicationSystem->unk_68C = sCommunicationSystem->unk_68C | (1 << i);
+                sCommunicationSystem->connectedBitmap = sCommunicationSystem->connectedBitmap | (1 << i);
             }
 
             if (v0[0] == 0xff) {
                 v0 += v3;
             } else if (v0[0] == 0xe) {
                 v0 += v3;
-            } else if ((sCommunicationSystem->unk_697[i]) && (v0[0] & 0x1)) {
+            } else if ((sCommunicationSystem->waitingForPacketStart[i]) && (v0[0] & 0x1)) {
                 v0 += v3;
             } else {
                 v0++;
                 CommRring_Write(&sCommunicationSystem->sendRingClient[i], v0, v3 - 1, 1360 + i);
                 v0 += (v3 - 1);
-                sCommunicationSystem->unk_697[i] = 0;
+                sCommunicationSystem->waitingForPacketStart[i] = 0;
             }
         }
     } else {
         v0++;
-        sCommunicationSystem->unk_68C = v0[0];
-        sCommunicationSystem->unk_68C *= 256;
+        sCommunicationSystem->connectedBitmap = v0[0];
+        sCommunicationSystem->connectedBitmap *= 256;
 
         v0++;
-        sCommunicationSystem->unk_68C += v0[0];
+        sCommunicationSystem->connectedBitmap += v0[0];
 
         v0++;
         v2 -= 3;
@@ -916,40 +988,45 @@ static void sub_020350A4(u16 param0, u16 *param1, u16 param2)
     }
 }
 
-void sub_020351F8(u16 param0, u16 *buffer, u16 param2)
+// NintendoWFC server data-transfer callback (also the local-wireless receive
+// function for servers): one packet from a single client.
+void CommSys_ServerRecvCallback(u16 param0, u16 *buffer, u16 param2)
 {
-    sub_02035200(param0, buffer, param2);
+    CommSys_RecvInputServer(param0, buffer, param2);
 }
 
-static void sub_02035200(u16 param0, u16 *_buffer, u16 param2)
+// Handles one packet received from client `param0`. In parallel mode the data
+// is queued for rebroadcast; in server/client mode it is decoded as input and
+// queued as a command stream.
+static void CommSys_RecvInputServer(u16 param0, u16 *_buffer, u16 param2)
 {
     u8 *buffer = (u8 *)_buffer;
     int v1;
 
-    sCommunicationSystem->unk_664[param0]--;
+    sCommunicationSystem->sendCountPerPlayer[param0]--;
 
     if (buffer == NULL) {
         return;
     }
 
-    if ((sCommunicationSystem->unk_697[param0]) && (buffer[0] & 0x1)) {
+    if ((sCommunicationSystem->waitingForPacketStart[param0]) && (buffer[0] & 0x1)) {
         v1 = 0;
         return;
     }
 
-    sCommunicationSystem->unk_697[param0] = 0;
+    sCommunicationSystem->waitingForPacketStart[param0] = 0;
 
     if (CommSys_TransmissionType() == 1) {
-        int v2 = sub_02036128(CommManager_GetCommType());
+        int v2 = CommSys_PlayerBlockSize(CommManager_GetCommType());
         int v3 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
 
         if (!(buffer[0] & 0x2)) {
-            CommRring_Write(&sCommunicationSystem->unk_4B0[param0], buffer, v2, 1449);
+            CommRring_Write(&sCommunicationSystem->relayRing[param0], buffer, v2, 1449);
         }
 
         sCommunicationSystem->unk_68F[param0]++;
     } else {
-        sub_020356A0(buffer, param0);
+        CommSys_DecodeInput(buffer, param0);
 
         if (buffer[0] & 0x2) {
             return;
@@ -960,32 +1037,34 @@ static void sub_02035200(u16 param0, u16 *_buffer, u16 param2)
     }
 }
 
-void sub_020352C0(u16 param0, u16 *param1, u16 param2)
+// Receive function used by the Wi-Fi plaza/poffin/club games, which run in
+// parallel mode: refresh the connected bitmap and queue the player's block.
+void CommSys_RecvInputWifiGroup(u16 param0, u16 *param1, u16 param2)
 {
     u8 *buffer = (u8 *)param1;
     int v1;
 
-    sCommunicationSystem->unk_664[param0]--;
+    sCommunicationSystem->sendCountPerPlayer[param0]--;
 
     if (buffer == NULL) {
         return;
     }
 
-    if ((sCommunicationSystem->unk_697[param0]) && (buffer[0] & 0x1)) {
+    if ((sCommunicationSystem->waitingForPacketStart[param0]) && (buffer[0] & 0x1)) {
         v1 = 0;
         return;
     }
 
-    sCommunicationSystem->unk_697[param0] = 0;
+    sCommunicationSystem->waitingForPacketStart[param0] = 0;
 
     if (CommSys_TransmissionType() == 1) {
-        int v2 = sub_02036128(CommManager_GetCommType());
+        int v2 = CommSys_PlayerBlockSize(CommManager_GetCommType());
         int v3 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
 
         if (buffer[0] == 0xff) {
-            sCommunicationSystem->unk_68C = sCommunicationSystem->unk_68C & ~(1 << param0);
+            sCommunicationSystem->connectedBitmap = sCommunicationSystem->connectedBitmap & ~(1 << param0);
         } else {
-            sCommunicationSystem->unk_68C = sCommunicationSystem->unk_68C | (1 << param0);
+            sCommunicationSystem->connectedBitmap = sCommunicationSystem->connectedBitmap | (1 << param0);
         }
 
         if (buffer[0] == 0xff) {
@@ -994,35 +1073,39 @@ void sub_020352C0(u16 param0, u16 *param1, u16 param2)
             (void)0;
         } else if (buffer[0] == 0xe) {
             (void)0;
-        } else if ((sCommunicationSystem->unk_697[param0]) && (buffer[0] & 0x1)) {
+        } else if ((sCommunicationSystem->waitingForPacketStart[param0]) && (buffer[0] & 0x1)) {
             (void)0;
         } else {
             buffer++;
             CommRring_Write(&sCommunicationSystem->sendRingClient[param0], buffer, v2 - 1, 1515);
-            sCommunicationSystem->unk_697[param0] = 0;
+            sCommunicationSystem->waitingForPacketStart[param0] = 0;
         }
     }
 }
 
-static void sub_02035394(BOOL param0)
+// WirelessManager send callbacks: advance the corresponding send state once
+// the hardware confirms the transmission.
+static void CommSys_SendCallbackClient(BOOL param0)
 {
     if (param0) {
-        Unk_02100A1D++;
+        sSendStateClient++;
     } else {
         GF_ASSERT(FALSE);
     }
 }
 
-static void sub_020353B0(BOOL param0)
+static void CommSys_SendCallbackServer(BOOL param0)
 {
     if (param0) {
-        Unk_02100A1C++;
+        sSendStateServer++;
     } else {
         GF_ASSERT(FALSE);
     }
 }
 
-static void sub_020353CC(void)
+// Local-wireless input send. Unlike Wi-Fi, every console broadcasts its own
+// packet; the host additionally relays and locally consumes its own buffer.
+static void CommSys_TransmitInputWireless(void)
 {
     if (!sCommunicationSystem) {
         return;
@@ -1032,17 +1115,17 @@ static void sub_020353CC(void)
         return;
     }
 
-    int v3 = sub_02036128(CommManager_GetCommType());
+    int v3 = CommSys_PlayerBlockSize(CommManager_GetCommType());
     int v4 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
 
     if (CommSys_IsAlone()) {
-        if (Unk_02100A1D == 2 || Unk_02100A1D == 0) {
-            Unk_02100A1D++;
-            sub_02035394(1);
+        if (sSendStateClient == 2 || sSendStateClient == 0) {
+            sSendStateClient++;
+            CommSys_SendCallbackClient(1);
 
-            sub_02035200(0, (u16 *)sCommunicationSystem->sendBuffer[sCommunicationSystem->unk_6A7], v3);
-            sCommunicationSystem->unk_6A7 = 1 - sCommunicationSystem->unk_6A7;
-            sCommunicationSystem->unk_660++;
+            CommSys_RecvInputServer(0, (u16 *)sCommunicationSystem->sendBuffer[sCommunicationSystem->sendBufferIndex], v3);
+            sCommunicationSystem->sendBufferIndex = 1 - sCommunicationSystem->sendBufferIndex;
+            sCommunicationSystem->sendCount++;
             return;
         }
     }
@@ -1056,27 +1139,29 @@ static void sub_020353CC(void)
             return;
         }
 
-        if (Unk_02100A1D == 2 || Unk_02100A1D == 0) {
+        if (sSendStateClient == 2 || sSendStateClient == 0) {
             if (CommSys_CurNetId() != 0) {
-                Unk_02100A1D++;
+                sSendStateClient++;
 
-                if (!WirelessManager_SendMessage(sCommunicationSystem->sendBuffer[sCommunicationSystem->unk_6A7], v3, 14, sub_02035394)) {
-                    Unk_02100A1D--;
+                if (!WirelessManager_SendMessage(sCommunicationSystem->sendBuffer[sCommunicationSystem->sendBufferIndex], v3, 14, CommSys_SendCallbackClient)) {
+                    sSendStateClient--;
                 } else {
-                    sCommunicationSystem->unk_6A7 = 1 - sCommunicationSystem->unk_6A7;
-                    sCommunicationSystem->unk_660++;
+                    sCommunicationSystem->sendBufferIndex = 1 - sCommunicationSystem->sendBufferIndex;
+                    sCommunicationSystem->sendCount++;
                 }
             } else if (WirelessManager_GetConnectedBitmap() & 0xfffe) {
-                Unk_02100A1D++;
-                sub_02035394(1);
-                sub_02035200(0, (u16 *)sCommunicationSystem->sendBuffer[sCommunicationSystem->unk_6A7], v3);
-                sCommunicationSystem->unk_6A7 = 1 - sCommunicationSystem->unk_6A7;
-                sCommunicationSystem->unk_660++;
+                sSendStateClient++;
+                CommSys_SendCallbackClient(1);
+                CommSys_RecvInputServer(0, (u16 *)sCommunicationSystem->sendBuffer[sCommunicationSystem->sendBufferIndex], v3);
+                sCommunicationSystem->sendBufferIndex = 1 - sCommunicationSystem->sendBufferIndex;
+                sCommunicationSystem->sendCount++;
             }
         }
     }
 }
 
+// Rewrites the outgoing D-pad bits according to playerMovementState: reverse
+// flips the directions, random replaces them with a held random direction.
 static void CommSys_ApplyMovementModifiers(void)
 {
     u16 newHeldKeys = 0;
@@ -1153,23 +1238,25 @@ void CommSys_RevertPlayerMovementToNormal(void)
     sCommunicationSystem->playerMovementState = MOVEMENT_STATE_NORMAL;
 }
 
-static BOOL sub_020356A0(u8 *param0, int param1)
+// Decodes a player's movement byte into receivedKeys/recvSpeed. Bit 4 marks a
+// valid direction, bits 2-3 select it and bits 5-7 carry the move speed.
+static BOOL CommSys_DecodeInput(u8 *param0, int param1)
 {
     u8 v1[2];
 
-    sCommunicationSystem->unk_63C[param1] = 0;
+    sCommunicationSystem->receivedKeys[param1] = 0;
 
     if (0x10 == (*param0 & 0x10)) {
         v1[0] = *param0 & 0xc;
 
         if (v1[0] == 0x0) {
-            sCommunicationSystem->unk_63C[param1] |= PAD_KEY_UP;
+            sCommunicationSystem->receivedKeys[param1] |= PAD_KEY_UP;
         } else if (v1[0] == 0x4) {
-            sCommunicationSystem->unk_63C[param1] |= PAD_KEY_DOWN;
+            sCommunicationSystem->receivedKeys[param1] |= PAD_KEY_DOWN;
         } else if (v1[0] == 0x8) {
-            sCommunicationSystem->unk_63C[param1] |= PAD_KEY_LEFT;
+            sCommunicationSystem->receivedKeys[param1] |= PAD_KEY_LEFT;
         } else if (v1[0] == 0xC) {
-            sCommunicationSystem->unk_63C[param1] |= PAD_KEY_RIGHT;
+            sCommunicationSystem->receivedKeys[param1] |= PAD_KEY_RIGHT;
         }
 
         sCommunicationSystem->recvSpeed[param1] = (*param0 >> 5) & 0x7;
@@ -1183,7 +1270,9 @@ void CommSys_Dummy(void)
     return;
 }
 
-static BOOL sub_02035730(u8 *param0)
+// Packs the local held D-pad direction and move speed into the outgoing
+// movement byte. inputSendTimer keeps the direction "recent" for UI purposes.
+static BOOL CommSys_EncodeInput(u8 *param0)
 {
     if (sCommunicationSystem->unk_656) {
         return FALSE;
@@ -1193,44 +1282,48 @@ static BOOL sub_02035730(u8 *param0)
         return FALSE;
     }
 
-    if (sCommunicationSystem->unk_6A9) {
-        sCommunicationSystem->unk_6A9--;
+    if (sCommunicationSystem->inputSendTimer) {
+        sCommunicationSystem->inputSendTimer--;
     }
 
     if (sCommunicationSystem->sendHeldKeys & PAD_KEY_UP) {
         param0[0] = param0[0] | 0x0 | 0x10;
-        sCommunicationSystem->unk_6A9 = 8;
+        sCommunicationSystem->inputSendTimer = 8;
     } else if (sCommunicationSystem->sendHeldKeys & PAD_KEY_DOWN) {
         param0[0] = param0[0] | 0x4 | 0x10;
-        sCommunicationSystem->unk_6A9 = 8;
+        sCommunicationSystem->inputSendTimer = 8;
     } else if (sCommunicationSystem->sendHeldKeys & PAD_KEY_LEFT) {
         param0[0] = param0[0] | 0x8 | 0x10;
-        sCommunicationSystem->unk_6A9 = 8;
+        sCommunicationSystem->inputSendTimer = 8;
     } else if (sCommunicationSystem->sendHeldKeys & PAD_KEY_RIGHT) {
         param0[0] = param0[0] | 0xC | 0x10;
-        sCommunicationSystem->unk_6A9 = 8;
+        sCommunicationSystem->inputSendTimer = 8;
     }
 
     param0[0] |= (sCommunicationSystem->sendSpeed << 5);
     return FALSE;
 }
 
-static BOOL sub_020357F0(u8 *param0)
+// Builds the per-frame input packet. Byte 0 is a header: bit 0 means "this is
+// a continuation of a command split across packets" and bit 1 means "the send
+// queue is now empty". In parallel mode the high nibble carries a sequence
+// number used by the receivers to order blocks.
+static BOOL CommSys_BuildInputPacket(u8 *param0)
 {
-    int v1 = sub_02036128(CommManager_GetCommType());
+    int v1 = CommSys_PlayerBlockSize(CommManager_GetCommType());
     int v2 = CommLocal_MaxMachines(CommManager_GetCommType()) + 1;
 
-    if (sCommunicationSystem->unk_6AC == 0) {
+    if (sCommunicationSystem->partialSend == 0) {
         param0[0] = 0x0;
     } else {
         param0[0] = 0x1;
     }
 
     if (CommSys_TransmissionType() == 0) {
-        sub_02035730(param0);
+        CommSys_EncodeInput(param0);
     }
 
-    sCommunicationSystem->unk_6AC = 0;
+    sCommunicationSystem->partialSend = 0;
 
     if (CommQueue_IsEmpty(&sCommunicationSystem->commQueueManSend)) {
         param0[0] |= 0x2;
@@ -1245,24 +1338,27 @@ static BOOL sub_020357F0(u8 *param0)
         v3.unk_00 = &param0[1];
 
         if (!sub_02032574(&sCommunicationSystem->commQueueManSend, &v3, 1)) {
-            sCommunicationSystem->unk_6AC = 1;
+            sCommunicationSystem->partialSend = 1;
         }
 
         if (CommSys_TransmissionType() == 1) {
-            sCommunicationSystem->unk_68E++;
+            sCommunicationSystem->sendSequence++;
 
-            param0[0] |= ((sCommunicationSystem->unk_68E << 4) & 0xf0);
+            param0[0] |= ((sCommunicationSystem->sendSequence << 4) & 0xf0);
         }
     }
 
     return TRUE;
 }
 
-static void sub_020358C0(u8 *param0)
+// Builds the 192-byte server broadcast packet: 0xB marker, continuation flag,
+// the connected-player bitmap, the payload length and then the queued server
+// commands.
+static void CommSys_BuildServerPacket(u8 *param0)
 {
     param0[0] = 0xb;
 
-    if (sCommunicationSystem->unk_6AD == 0) {
+    if (sCommunicationSystem->serverPartialSend == 0) {
         param0[1] = 0x0;
     } else {
         param0[1] = 0x1;
@@ -1279,26 +1375,28 @@ static void sub_020358C0(u8 *param0)
     v2.unk_00 = &param0[5];
 
     if (sub_02032574(&sCommunicationSystem->commQueueManSendServer, &v2, 0)) {
-        sCommunicationSystem->unk_6AD = 0;
+        sCommunicationSystem->serverPartialSend = 0;
         param0[4] = (192 - 5) - v2.unk_04;
     } else {
-        sCommunicationSystem->unk_6AD = 1;
+        sCommunicationSystem->serverPartialSend = 1;
         param0[4] = 192 - 5;
     }
 }
 
-void sub_02035938(u8 param0)
+void CommSys_SetSendInterval(u8 param0)
 {
-    sCommunicationSystem->unk_6B4 = param0;
+    sCommunicationSystem->sendInterval = param0;
 }
 
-static BOOL sub_0203594C(void)
+// TRUE when the send interval is set and the current frame falls on it, which
+// makes the caller skip this frame's transmission.
+static BOOL CommSys_ShouldThrottleSend(void)
 {
-    if (sCommunicationSystem->unk_6B4 == 0) {
+    if (sCommunicationSystem->sendInterval == 0) {
         return FALSE;
     }
 
-    if ((sCommunicationSystem->unk_6B5 % sCommunicationSystem->unk_6B4) == 0) {
+    if ((sCommunicationSystem->frameCounter % sCommunicationSystem->sendInterval) == 0) {
         return TRUE;
     }
 
@@ -1316,7 +1414,7 @@ BOOL CommSys_SendDataHuge(int cmd, const void *data, int size)
     }
 
     if (CommManager_GetCommType() == 10) {
-        sub_020363BC();
+        CommSys_SetError();
     }
 
     return FALSE;
@@ -1333,7 +1431,7 @@ BOOL CommSys_SendData(int cmd, const void *data, int size)
     }
 
     if (CommManager_GetCommType() == 10) {
-        sub_020363BC();
+        CommSys_SetError();
     }
 
     return FALSE;
@@ -1359,7 +1457,7 @@ BOOL CommSys_SendDataHugeServer(int cmd, const void *data, int size)
     }
 
     if (CommManager_GetCommType() == 10) {
-        sub_020363BC();
+        CommSys_SetError();
     }
 
     return FALSE;
@@ -1368,7 +1466,7 @@ BOOL CommSys_SendDataHugeServer(int cmd, const void *data, int size)
 BOOL CommSys_SendDataServer(int cmd, const void *data, int size)
 {
     if (CommSys_CurNetId() != 0) {
-        sub_020363BC();
+        CommSys_SetError();
 
         return FALSE;
     }
@@ -1386,7 +1484,7 @@ BOOL CommSys_SendDataServer(int cmd, const void *data, int size)
     }
 
     if (CommManager_GetCommType() == 10) {
-        sub_020363BC();
+        CommSys_SetError();
     }
 
     return FALSE;
@@ -1402,15 +1500,19 @@ int CommSys_SendRingRemainingSize(void)
     return CommRing_RemainingSize(&sCommunicationSystem->sendRing);
 }
 
+// Clears the per-packet reassembly state after its command has been dispatched.
 static void CommSys_EndCallback(int netId, int command, int param2, void *param3, CommRecvPackage *param4)
 {
     CommCmd_Callback(netId, command, param2, param3);
-    param4->unk_0A = 0xee;
-    param4->unk_08 = 0xffff;
-    param4->unk_04 = NULL;
-    param4->unk_00 = 0;
+    param4->packetCommand = 0xee;
+    param4->packetSize = 0xffff;
+    param4->dataBuffer = NULL;
+    param4->receivedSize = 0;
 }
 
+// Dispatches commands out of one ring. A command may straddle several packets:
+// partial state is kept in `param3` so the read can resume where it stopped.
+// Command 17 is a hard stop and ends the drain loop.
 static void CommSys_RecvDataSingle(CommRing *ring, int netId, u8 *buffer, CommRecvPackage *param3)
 {
     int size;
@@ -1421,8 +1523,8 @@ static void CommSys_RecvDataSingle(CommRing *ring, int netId, u8 *buffer, CommRe
     while (CommRing_DataSize(ring) != 0) {
         v2 = ring->startIndex;
 
-        if (param3->unk_0A != 0xee) {
-            cmd = param3->unk_0A;
+        if (param3->packetCommand != 0xee) {
+            cmd = param3->packetCommand;
         } else {
             cmd = CommRing_ReadByte(ring);
 
@@ -1432,14 +1534,14 @@ static void CommSys_RecvDataSingle(CommRing *ring, int netId, u8 *buffer, CommRe
         }
 
         v2 = ring->startIndex;
-        param3->unk_0A = cmd;
+        param3->packetCommand = cmd;
 
-        if (param3->unk_08 != 0xffff) {
-            size = param3->unk_08;
+        if (param3->packetSize != 0xffff) {
+            size = param3->packetSize;
         } else {
             size = CommCmd_PacketSizeOf(cmd);
 
-            if (sCommunicationSystem->unk_6B1) {
+            if (sCommunicationSystem->commError) {
                 return;
             }
 
@@ -1454,24 +1556,24 @@ static void CommSys_RecvDataSingle(CommRing *ring, int netId, u8 *buffer, CommRe
                 v2 = ring->startIndex;
             }
 
-            param3->unk_08 = size;
+            param3->packetSize = size;
         }
 
         if (sub_020328D0(cmd)) {
-            if (param3->unk_04 == NULL) {
-                param3->unk_04 = sub_0203290C(cmd, netId, param3->unk_08);
+            if (param3->dataBuffer == NULL) {
+                param3->dataBuffer = sub_0203290C(cmd, netId, param3->packetSize);
             }
 
-            v3 = CommRing_Read(ring, buffer, size - param3->unk_00);
+            v3 = CommRing_Read(ring, buffer, size - param3->receivedSize);
 
-            if (param3->unk_04) {
-                MI_CpuCopy8(buffer, &param3->unk_04[param3->unk_00], v3);
+            if (param3->dataBuffer) {
+                MI_CpuCopy8(buffer, &param3->dataBuffer[param3->receivedSize], v3);
             }
 
-            param3->unk_00 += v3;
+            param3->receivedSize += v3;
 
-            if (param3->unk_00 >= size) {
-                CommSys_EndCallback(netId, cmd, size, param3->unk_04, param3);
+            if (param3->receivedSize >= size) {
+                CommSys_EndCallback(netId, cmd, size, param3->dataBuffer, param3);
 
                 if (cmd == 17) {
                     break;
@@ -1493,6 +1595,7 @@ static void CommSys_RecvDataSingle(CommRing *ring, int netId, u8 *buffer, CommRe
     }
 }
 
+// Drains commands that arrived for the local client (server/client mode).
 static void CommSys_RecvData(void)
 {
     int v0 = 0;
@@ -1512,6 +1615,7 @@ static void CommSys_RecvData(void)
     }
 }
 
+// Drains commands that arrived for the server (one ring per client).
 static void CommSys_RecvDataServer(void)
 {
     int i, v3;
@@ -1535,6 +1639,9 @@ static void CommSys_RecvDataServer(void)
     }
 }
 
+// TRUE if the given net ID is present. Wi-Fi modes use the DWC bitmap; local
+// wireless uses the host's connected bitmap, or the server-relayed bitmap that
+// a client received in the broadcast.
 BOOL CommSys_IsPlayerConnected(u16 netId)
 {
     if (!sCommunicationSystem) {
@@ -1569,7 +1676,7 @@ BOOL CommSys_IsPlayerConnected(u16 netId)
         if (v1 & (1 << netId)) {
             return TRUE;
         }
-    } else if (sCommunicationSystem->unk_68C & (1 << netId)) {
+    } else if (sCommunicationSystem->connectedBitmap & (1 << netId)) {
         return TRUE;
     }
 
@@ -1610,7 +1717,8 @@ u8 CommSys_RecvSpeed(int param0)
     return sCommunicationSystem->recvSpeed[param0];
 }
 
-u16 sub_02035E84(int param0)
+// Returns and clears the movement keys most recently decoded for a player.
+u16 CommSys_GetMovementKeys(int param0)
 {
     int v0;
 
@@ -1618,8 +1726,8 @@ u16 sub_02035E84(int param0)
         return 0;
     }
 
-    v0 = sCommunicationSystem->unk_63C[param0];
-    sCommunicationSystem->unk_63C[param0] = 0;
+    v0 = sCommunicationSystem->receivedKeys[param0];
+    sCommunicationSystem->receivedKeys[param0] = 0;
 
     return v0;
 }
@@ -1661,6 +1769,10 @@ BOOL CommSys_WriteToQueue(int cmd, const void *data, int size)
     return CommQueue_Write(&sCommunicationSystem->commQueueManSend, cmd, (u8 *)data, size, 0, 0);
 }
 
+// Topology-switch handshake, driven by transmissionState:
+//   1: host sends "prepare" (cmd 11) carrying the target type
+//   2: waiting for the client's acknowledgement
+//   3: client sends "ack" (cmd 12) and switches locally
 static void CommSys_Transmission(void)
 {
     BOOL v0 = FALSE;
@@ -1672,9 +1784,9 @@ static void CommSys_Transmission(void)
     switch (sCommunicationSystem->transmissionState) {
     case 1:
         if (CommSys_TransmissionType() == 1) {
-            v0 = CommSys_SendDataFixedSize(11, &sCommunicationSystem->unk_6A4);
+            v0 = CommSys_SendDataFixedSize(11, &sCommunicationSystem->pendingTransitionType);
         } else {
-            v0 = CommSys_SendDataServer(11, &sCommunicationSystem->unk_6A4, 1);
+            v0 = CommSys_SendDataServer(11, &sCommunicationSystem->pendingTransitionType, 1);
         }
 
         if (v0) {
@@ -1682,15 +1794,17 @@ static void CommSys_Transmission(void)
         }
         break;
     case 3:
-        if (CommSys_SendDataFixedSize(12, &sCommunicationSystem->unk_6A4)) {
-            CommSys_SwitchTransitionType(sCommunicationSystem->unk_6A4);
+        if (CommSys_SendDataFixedSize(12, &sCommunicationSystem->pendingTransitionType)) {
+            CommSys_SwitchTransitionType(sCommunicationSystem->pendingTransitionType);
             sCommunicationSystem->transmissionState = 0;
         }
         break;
     }
 }
 
-void sub_02036008(int unused0, int unused1, void *param2, void *unused3)
+// Command 10 handler (host only): a switch was requested; start the prepare
+// step. The requested type is carried in the first payload byte.
+void CommSys_HandleSwitchRequest(int unused0, int unused1, void *param2, void *unused3)
 {
     u8 *v0 = param2;
 
@@ -1699,10 +1813,12 @@ void sub_02036008(int unused0, int unused1, void *param2, void *unused3)
     }
 
     sCommunicationSystem->transmissionState = 1;
-    sCommunicationSystem->unk_6A4 = v0[0];
+    sCommunicationSystem->pendingTransitionType = v0[0];
 }
 
-void sub_02036030(int unused0, int unused1, void *param2, void *unused3)
+// Command 11 handler (clients only): the host announced the target topology;
+// remember it and queue the acknowledgement step.
+void CommSys_HandleSwitchPrepare(int unused0, int unused1, void *param2, void *unused3)
 {
     u8 *v0 = param2;
 
@@ -1710,11 +1826,13 @@ void sub_02036030(int unused0, int unused1, void *param2, void *unused3)
         return;
     }
 
-    sCommunicationSystem->unk_6A4 = v0[0];
+    sCommunicationSystem->pendingTransitionType = v0[0];
     sCommunicationSystem->transmissionState = 3;
 }
 
-void sub_02036058(int unused0, int unused1, void *param2, void *unused3)
+// Command 12 handler (host only): the client acknowledged; complete the
+// switch if we were waiting for it.
+void CommSys_HandleSwitchAck(int unused0, int unused1, void *param2, void *unused3)
 {
     u8 *v0 = param2;
 
@@ -1768,7 +1886,7 @@ BOOL CommSys_CheckError(void)
         return FALSE;
     }
 
-    if (sCommunicationSystem && sCommunicationSystem->unk_6B1) {
+    if (sCommunicationSystem && sCommunicationSystem->commError) {
         CommManager_SetErrorHandling(1, 1);
         return TRUE;
     }
@@ -1776,7 +1894,9 @@ BOOL CommSys_CheckError(void)
     return CommServerClient_CheckError();
 }
 
-u16 sub_02036128(u16 param0)
+// Size of one player's block inside a server broadcast: 12 bytes for larger
+// groups (or server/client mode) and 38 bytes otherwise.
+u16 CommSys_PlayerBlockSize(u16 param0)
 {
     if (CommLocal_MaxMachines(param0) >= 5) {
         return 12;
@@ -1802,20 +1922,22 @@ int CommType_MinPlayers(int param0)
 void CommSys_SetAlone(BOOL param0)
 {
     if (sCommunicationSystem) {
-        sCommunicationSystem->unk_6AE = param0;
+        sCommunicationSystem->isAlone = param0;
     }
 }
 
 BOOL CommSys_IsAlone(void)
 {
     if (sCommunicationSystem) {
-        return sCommunicationSystem->unk_6AE;
+        return sCommunicationSystem->isAlone;
     }
 
     return FALSE;
 }
 
-void sub_0203619C(int param0, int param1, void *param2, void *param3)
+// Command 2 handler: tells the host that this side is finished, then marks the
+// transport finished so the shutdown path can run.
+void CommSys_HandleFinishConnection(int param0, int param1, void *param2, void *param3)
 {
     u8 v0;
 
@@ -1826,6 +1948,7 @@ void sub_0203619C(int param0, int param1, void *param2, void *param3)
     CommServerClient_SetFinished();
 }
 
+// Seeds the movement RNG from the current date/time plus the VBlank counter.
 void CommSys_Seed(MATHRandContext32 *rand)
 {
     u64 seed = 0;
@@ -1847,12 +1970,12 @@ BOOL CommSys_IsCmdQueued(int cmd)
     return CommQueueMan_IsCmdInQueue(&sCommunicationSystem->commQueueManSend, cmd);
 }
 
-BOOL sub_02036284(void)
+BOOL CommSys_IsServerQueueEmpty(void)
 {
     return CommQueue_IsEmpty(&sCommunicationSystem->commQueueManSendServer);
 }
 
-BOOL sub_0203629C(void)
+BOOL CommSys_IsQueueEmpty(void)
 {
     return CommQueue_IsEmpty(&sCommunicationSystem->commQueueManSend);
 }
@@ -1867,23 +1990,27 @@ BOOL CommSys_WifiConnected(void)
     return sCommunicationSystem->wifiConnected;
 }
 
-void sub_020362DC(int param0, int param1)
+// Records which battle position a net ID occupies (set once the battle grid is
+// resolved). 0xFF means the net ID is not remapped.
+void CommSys_SetBattlePosition(int param0, int param1)
 {
     if (sCommunicationSystem) {
-        sCommunicationSystem->unk_69F[param1] = param0;
+        sCommunicationSystem->battlePositions[param1] = param0;
     }
 }
 
-int sub_020362F4(int networkId)
+// Maps a net ID to its battle position, falling back to the net ID itself when
+// no mapping has been set.
+int CommSys_GetBattlePosition(int networkId)
 {
-    if (sCommunicationSystem && sCommunicationSystem->unk_69F[networkId] != 0xff) {
-        return sCommunicationSystem->unk_69F[networkId];
+    if (sCommunicationSystem && sCommunicationSystem->battlePositions[networkId] != 0xff) {
+        return sCommunicationSystem->battlePositions[networkId];
     }
 
     return networkId;
 }
 
-BOOL sub_02036314(void)
+BOOL CommSys_IsVoiceChatEnabled(void)
 {
     if (!CommLocal_IsWifiGroup(CommManager_GetCommType())) {
         return FALSE;
@@ -1892,30 +2019,35 @@ BOOL sub_02036314(void)
     return NintendoWFC_GetVoiceChatEnabled();
 }
 
-void sub_0203632C(BOOL param0)
+// Enables/disables the "wait for every peer" send pacing. Enabling it clears
+// the outstanding-send counters so they start from a known state.
+void CommSys_SetRecvLimitEnabled(BOOL param0)
 {
     int i;
 
     if (CommLocal_IsWifiGroup(CommManager_GetCommType())) {
-        if (sCommunicationSystem->unk_65C == param0) {
+        if (sCommunicationSystem->recvLimitEnabled == param0) {
             return;
         }
 
-        sCommunicationSystem->unk_65C = param0;
+        sCommunicationSystem->recvLimitEnabled = param0;
 
         if (param0) {
-            sCommunicationSystem->unk_660 = 0;
+            sCommunicationSystem->sendCount = 0;
 
             for (i = 0; i < MAX_CONNECTED_PLAYERS; i++) {
-                sCommunicationSystem->unk_664[i] = 0;
+                sCommunicationSystem->sendCountPerPlayer[i] = 0;
             }
         }
     }
 }
 
-void sub_02036378(BOOL param0)
+// Sets the recv-limit mode used during battles and configures Wi-Fi battle
+// voice chat in the opposite sense: voice chat is disabled while recv-limit
+// mode is enabled.
+void CommSys_SetBattleVoiceChat(BOOL param0)
 {
-    sub_0203632C(param0);
+    CommSys_SetRecvLimitEnabled(param0);
 
     if (CommLocal_IsWifiGroup(CommManager_GetCommType())) {
         if (param0) {
@@ -1926,18 +2058,19 @@ void sub_02036378(BOOL param0)
     }
 }
 
-BOOL sub_020363A0(void)
+// TRUE while a recently sent movement direction is still considered current.
+BOOL CommSys_IsInputPending(void)
 {
-    if (sCommunicationSystem->unk_6A9) {
+    if (sCommunicationSystem->inputSendTimer) {
         return TRUE;
     }
 
     return FALSE;
 }
 
-void sub_020363BC(void)
+void CommSys_SetError(void)
 {
-    sCommunicationSystem->unk_6B1 = 1;
+    sCommunicationSystem->commError = 1;
 }
 
 void CommSys_StartShutdown(void)

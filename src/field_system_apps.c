@@ -1558,7 +1558,7 @@ static BOOL FieldTask_SlotMachine(FieldTask *taskMan)
 
             // Record the coins won and the play time, then persist the final
             // coin count and the best bonus-round streak.
-            sub_0206DD38(fieldSystem, Coins_GetValue(coins), taskEnv->coins, TimeElapsed(taskEnv->startTime, timeStamp) / 60);
+            TVSegment_SaveSlotMachineRecord(fieldSystem, Coins_GetValue(coins), taskEnv->coins, TimeElapsed(taskEnv->startTime, timeStamp) / 60);
             Coins_SetValue(SaveData_GetCoins(fieldSystem->saveData), taskEnv->coins);
 
             int bonusRoundsWins = SystemVars_GetConsecutiveBonusRoundWins(varsFlags);

@@ -568,7 +568,7 @@ static void FieldCommTask_StartWaitBattleRoom(void)
  */
 static void FieldCommTask_02059C8C(void)
 {
-    if (sub_020363A0() || (0 != CommPlayer_GetMovementTimer(CommSys_CurNetId()))) {
+    if (CommSys_IsInputPending() || (0 != CommPlayer_GetMovementTimer(CommSys_CurNetId()))) {
         return;
     }
 
