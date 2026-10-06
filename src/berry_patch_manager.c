@@ -284,7 +284,7 @@ static BOOL BerryPatches_CheckCollision(FieldSystem *fieldSystem, BerryWateringT
         return TRUE;
     }
 
-    return sub_0206326C(fieldSystem->mapObjMan, playerX, playerZ, 0) != NULL;
+    return MapObjectMan_FindObjectAtCoords(fieldSystem->mapObjMan, playerX, playerZ, 0) != NULL;
 }
 
 static MapObject *BerryPatches_GetAdjacentObject(FieldSystem *fieldSystem, enum FaceDirection direction)
@@ -299,7 +299,7 @@ static MapObject *BerryPatches_GetAdjacentObject(FieldSystem *fieldSystem, enum 
         playerX += 1;
     }
 
-    return sub_0206326C(fieldSystem->mapObjMan, playerX, playerZ, 0);
+    return MapObjectMan_FindObjectAtCoords(fieldSystem->mapObjMan, playerX, playerZ, 0);
 }
 
 static MapObject *BerryPatches_GetTargetPatch(FieldSystem *fieldSystem, BerryWateringTask *task)
@@ -315,7 +315,7 @@ static MapObject *BerryPatches_GetTargetPatch(FieldSystem *fieldSystem, BerryWat
         GF_ASSERT(FALSE);
     }
 
-    return sub_0206326C(fieldSystem->mapObjMan, playerX, playerZ, 0);
+    return MapObjectMan_FindObjectAtCoords(fieldSystem->mapObjMan, playerX, playerZ, 0);
 }
 
 static BOOL BerryPatches_IsBerryPatch(MapObject *mapObject)

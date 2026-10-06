@@ -2381,7 +2381,7 @@ static BOOL ScrCmd_AddFreeCamera(ScriptContext *ctx)
 
     MapObject_RecalculateObjectHeight(*cameraObject);
     MapObject_SetHidden(*cameraObject, TRUE);
-    sub_02062D80(*cameraObject, FALSE);
+    MapObject_SetStatus18(*cameraObject, FALSE);
 
     {
         const VecFx32 *cameraPos = MapObject_GetPos(*cameraObject);
@@ -2417,7 +2417,7 @@ static BOOL ScrCmd_AddCameraOverrideObject(ScriptContext *ctx)
 
     MapObject_RecalculateObjectHeight(*cameraObject);
     MapObject_SetHidden(*cameraObject, TRUE);
-    sub_02062D80(*cameraObject, FALSE);
+    MapObject_SetStatus18(*cameraObject, FALSE);
 
     return FALSE;
 }
@@ -2535,7 +2535,7 @@ static BOOL ScrCmd_Unused_06E(ScriptContext *ctx)
 {
     MapObject *mapObj = MapObjMan_GetLocalMapObjByMovementType(ctx->fieldSystem->mapObjMan, MOVEMENT_TYPE_FOLLOW_PLAYER);
 
-    sub_020633C8(mapObj, 0xfe);
+    MapObject_SetLocalIDAndStartMovement(mapObj, 0xfe);
     return FALSE;
 }
 
@@ -6519,7 +6519,7 @@ static BOOL ScrCmd_2B6(ScriptContext *ctx)
         GF_ASSERT(FALSE);
     }
 
-    sub_02062D80(mapObject, v2);
+    MapObject_SetStatus18(mapObject, v2);
     return FALSE;
 }
 

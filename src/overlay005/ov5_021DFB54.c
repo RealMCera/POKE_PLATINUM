@@ -1569,7 +1569,7 @@ void ov5_021E0E94(PlayerAvatar *playerAvatar)
 {
     MapObject *v0 = PlayerAvatar_GetMapObject(playerAvatar);
 
-    if (sub_02062DFC(v0) == 0) {
+    if (MapObject_IsDrawReady(v0) == 0) {
         return;
     }
 
@@ -1602,7 +1602,7 @@ void ov5_021E0EEC(PlayerAvatar *playerAvatar)
 {
     MapObject *v0 = PlayerAvatar_GetMapObject(playerAvatar);
 
-    if (sub_02062DFC(v0) == 0) {
+    if (MapObject_IsDrawReady(v0) == 0) {
         return;
     }
 
@@ -1683,7 +1683,7 @@ static void ov5_021E0FF0(SysTask *param0, void *param1)
     UnkStruct_ov5_021E0FF0 *v0 = param1;
     MapObject *v1 = PlayerAvatar_GetMapObject(v0->playerAvatar);
 
-    sub_02062B68(v1);
+    MapObject_CallRendererDraw(v1);
 }
 
 SysTask *ov5_021E1000(FieldSystem *fieldSystem)
@@ -1762,7 +1762,7 @@ static MapObject *ov5_021E10D4(PlayerAvatar *playerAvatar, int param1)
     int v0 = PlayerAvatar_GetXPos(playerAvatar) + MapObject_GetDxFromDir(param1);
     int v1 = PlayerAvatar_GetZPos(playerAvatar) + MapObject_GetDzFromDir(param1);
     const MapObjectManager *v2 = MapObject_MapObjectManager(PlayerAvatar_GetMapObject(playerAvatar));
-    MapObject *v3 = sub_0206326C(v2, v0, v1, 0);
+    MapObject *v3 = MapObjectMan_FindObjectAtCoords(v2, v0, v1, 0);
 
     return v3;
 }

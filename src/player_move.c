@@ -458,7 +458,7 @@ void PlayerAvatar_ForceStopMovement(PlayerAvatar *playerAvatar, int dir)
     MapObject *mapObj = PlayerAvatar_GetMapObject(playerAvatar);
 
     MapObject_TryFace(mapObj, dir);
-    sub_02062A0C(mapObj, 0x0);
+    MapObject_SetUnkA0(mapObj, 0x0);
     MapObject_UpdateCoords(mapObj);
     sub_020656DC(mapObj);
     LocalMapObj_SetAnimationCode(mapObj, MovementAction_TurnActionTowardsDir(dir, MOVEMENT_ACTION_FACE_NORTH));
