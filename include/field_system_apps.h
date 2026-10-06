@@ -1,5 +1,5 @@
-#ifndef POKEPLATINUM_UNK_0203D1B8_H
-#define POKEPLATINUM_UNK_0203D1B8_H
+#ifndef POKEPLATINUM_FIELD_SYSTEM_APPS_H
+#define POKEPLATINUM_FIELD_SYSTEM_APPS_H
 
 #include "constants/heap.h"
 #include "generated/items.h"
@@ -33,12 +33,12 @@
 #include "trainer_case.h"
 
 void FieldSystem_StartBattleProcess(FieldSystem *fieldSystem, FieldBattleDTO *dto);
-void sub_0203D1E4(FieldSystem *fieldSystem, BagContext *param1);
-BagContext *FieldSystem_OpenBag(FieldSystem *fieldSystem, ItemUseContext *param1);
+void FieldSystem_StartBagApp(FieldSystem *fieldSystem, BagContext *bagContext);
+BagContext *FieldSystem_OpenBag(FieldSystem *fieldSystem, ItemUseContext *itemUseCtx);
 void *FieldSystem_CreateBagContext(FieldSystem *fieldSystem, int pocketType);
 u16 BagContext_GetSelectedItem(void *bagContext);
-void sub_0203D2E4(FieldSystem *fieldSystem, void *param1);
-void sub_0203D30C(FieldSystem *fieldSystem, void *param1);
+void FieldSystem_OpenBerryTagApp(FieldSystem *fieldSystem, void *appArgs);
+void FieldSystem_OpenJournalApp(FieldSystem *fieldSystem, void *appArgs);
 void FieldSystem_OpenSummaryScreen(FieldSystem *fieldSystem, void *appArgs);
 
 PartyMenu *FieldSystem_OpenPartyMenu(FieldSystem *fieldSystem, FieldMoveContext *fieldMoveCtx, u8 selectedMonSlot);
@@ -46,7 +46,7 @@ PartyMenu *FieldSystem_OpenPartyMenu_SelectPokemon(int unused, FieldSystem *fiel
 PartyMenu *FieldSystem_OpenPartyMenu_SelectForTrade(int unused, FieldSystem *fieldSystem);
 PartyMenu *FieldSystem_OpenPartyMenu_SelectForDaycare(int unused, FieldSystem *fieldSystem, int selectedMonSlot);
 PartyMenu *FieldSystem_OpenPartyMenu_SelectForUnionRoomBattle(FieldTask *taskMan, enum HeapID heapID);
-PartyMenu *FieldSystem_OpenPartyMenu_SelectForContest(int unused, FieldSystem *fieldSystem, enum PokemonContestType contestType, int contestRank, int param4, int selectedMonSlot);
+PartyMenu *FieldSystem_OpenPartyMenu_SelectForContest(int unused, FieldSystem *fieldSystem, enum PokemonContestType contestType, int contestRank, int useDefaultContestRank, int selectedMonSlot);
 PartyMenu *FieldSystem_OpenPartyMenu_SelectForSpinTrade(FieldSystem *fieldSystem, int selectedMonSlot);
 PartyMenu *FieldSystem_OpenPartyMenu_SelectForItemUsage(FieldSystem *fieldSystem, enum HeapID heapID, enum Item item);
 
@@ -54,45 +54,45 @@ int PartyMenu_GetSelectedSlot(PartyMenu *partyMenu);
 int PartyMenu_GetMenuSelectionResult(PartyMenu *partyMenu);
 int PokemonSummary_GetPartySlot(PokemonSummary *monSummary);
 void *FieldSystem_GetPartyMenuMonSummary(int unused, FieldSystem *fieldSystem, int partySlot);
-PokemonSummary *sub_0203D670(FieldSystem *fieldSystem, enum HeapID heapID, int mode);
+PokemonSummary *FieldSystem_CreatePartyMonSummary(FieldSystem *fieldSystem, enum HeapID heapID, int mode);
 void *FieldSystem_OpenSummaryScreenSelectMove(enum HeapID heapID, FieldSystem *fieldSystem, u8 partyIndex);
 int PokemonSummary_GetSelectedMoveSlot(void *summary);
 void FieldSystem_OpenPokemonStorage(FieldSystem *fieldSystem, PokemonStorageSession *pokemonStorageSession);
-void sub_0203D80C(FieldTask *param0, u16 *param1, u16 *param2, u16 *param3);
-void FieldSystem_OpenEasyChat(FieldSystem *fieldSystem, EasyChatArgs *param1);
+void FieldTask_StartEasyChat(FieldTask *taskMan, u16 *wasModified, u16 *word1, u16 *word2);
+void FieldSystem_OpenEasyChat(FieldSystem *fieldSystem, EasyChatArgs *args);
 void FieldSystem_OpenTownMap(FieldSystem *fieldSystem, TownMapContext *townMapCtx);
 void *FieldSystem_OpenTownMapItem(FieldSystem *fieldSystem);
 void *FieldSystem_OpenOptionsMenu(FieldSystem *fieldSystem);
 MailAppArgs *FieldSystem_LaunchMailApp_Write(FieldSystem *fieldSystem, enum MailContext context, u8 partySlot, u8 mailType, int unusedHeapID);
 MailAppArgs *FieldSystem_LaunchMailApp_Read(FieldSystem *fieldSystem, enum MailContext context, u8 mailType, enum HeapID heapID);
-MailAppArgs *FieldSystem_LaunchMailApp_ReadHeld(FieldSystem *fieldSystem, Pokemon *param1, enum HeapID heapID);
+MailAppArgs *FieldSystem_LaunchMailApp_ReadHeld(FieldSystem *fieldSystem, Pokemon *mon, enum HeapID heapID);
 PoffinCaseAppData *FieldSystem_LaunchPoffinCaseApp(FieldSystem *fieldSystem, enum HeapID heapID);
-void FieldSystem_OpenBattleTowerRecordsApp(FieldSystem *fieldSystem, BattleTowerRecordsAppArgs *param1);
-void sub_0203DAC0(FieldTask *param0, u16 *param1, SaveData *saveData, u16 param3, u16 param4);
-BOOL sub_0203DB10(FieldSystem *fieldSystem, void *param1);
-BOOL sub_0203DB24(FieldSystem *fieldSystem, void *param1);
-BOOL sub_0203DBF0(FieldTask *param0);
-void sub_0203DDDC(FieldTask *param0);
-void sub_0203DDFC(FieldSystem *fieldSystem);
-void *sub_0203DE34(FieldSystem *fieldSystem);
-void sub_0203DE78(FieldSystem *fieldSystem, SaveData *saveData);
-void sub_0203DE88(FieldSystem *fieldSystem, SaveData *saveData);
-void sub_0203DFE8(
-    FieldTask *param0,
+void FieldSystem_OpenBattleTowerRecordsApp(FieldSystem *fieldSystem, BattleTowerRecordsAppArgs *args);
+void FieldSystem_StartDressUpApp(FieldTask *taskMan, u16 *result, SaveData *saveData, u16 pokemonSlot, u16 param4);
+BOOL FieldSystem_OpenVisualCompetition(FieldSystem *fieldSystem, void *appData);
+BOOL FieldSystem_OpenDressUpPhotoViewer(FieldSystem *fieldSystem, void *appData);
+BOOL FieldTask_UnionRoomTrade(FieldTask *taskMan);
+void FieldTask_StartUnionRoomTrade(FieldTask *taskMan);
+void FieldSystem_OpenUnionRoomDrawingApp(FieldSystem *fieldSystem);
+void *FieldSystem_OpenMixRecordsApp(FieldSystem *fieldSystem);
+void FieldSystem_OpenPalPad(FieldSystem *fieldSystem, SaveData *saveData);
+void FieldSystem_OpenVsRecorder(FieldSystem *fieldSystem, SaveData *saveData);
+void FieldTask_StartNamingScreen(
+    FieldTask *taskMan,
     enum NamingScreenType type,
-    int param2,
-    int param3,
-    int param4,
-    const u16 *param5,
-    u16 *param6);
+    int playerGenderOrMonSpecies,
+    int maxChars,
+    int partySlot,
+    const u16 *initialName,
+    u16 *result);
 void sub_0203E09C(FieldSystem *fieldSystem, TrainerCase *param1);
 void FieldSystem_OpenTrainerCase(FieldSystem *fieldSystem, TrainerCase *trainerCase);
 BOOL FieldSystem_OpenPokedex(FieldSystem *fieldSystem, PokedexOverlayArgs *args);
-void FieldSystem_LaunchChooseStarterApp(FieldSystem *fieldSystem, ChooseStarterData *param1);
+void FieldSystem_LaunchChooseStarterApp(FieldSystem *fieldSystem, ChooseStarterData *chooseStarterData);
 void FieldSystem_LaunchSignatureApp(FieldSystem *fieldSystem);
 void FieldSystem_LaunchGTSApp(FieldSystem *fieldSystem, BOOL connectToWiFi);
-void *sub_0203E1AC(FieldSystem *fieldSystem, int param1, int param2);
-void sub_0203E224(FieldSystem *fieldSystem);
+void *FieldSystem_OpenWifiBattleTowerApp(FieldSystem *fieldSystem, int mode, int param2);
+void FieldSystem_OpenGeonet(FieldSystem *fieldSystem);
 void FieldTask_StartHallOfFame(FieldSystem *fieldSystem, HallOfFameDisplayData *displayData);
 void *FieldTask_OpenPCHallOfFameScreen(FieldSystem *fieldSystem);
 void FieldSystem_StartEndCredits(FieldSystem *fieldSystem, ClearGamePlayerInfo *clearGamePlayerInfo);
@@ -100,15 +100,15 @@ void FieldSystem_OpenMoveReminderMenu(FieldSystem *fieldSystem, MoveReminderData
 void FieldTask_PlayBoatCutscene_CanalaveShip(FieldSystem *fieldSystem, void *taskEnv);
 void FieldTask_PlayBoatCutscene_SnowpointShip(FieldSystem *fieldSystem, void *taskEnv);
 void FieldSystem_HatchEgg(FieldSystem *fieldSystem);
-BOOL sub_0203E348(FieldSystem *fieldSystem, UnkStruct_0203E348 *param1);
-void sub_0203E414(FieldTask *task, int slotMachineID);
+BOOL FieldSystem_OpenSlotMachine(FieldSystem *fieldSystem, UnkStruct_0203E348 *appArgs);
+void FieldTask_StartSlotMachine(FieldTask *task, int slotMachineID);
 void AccessoryShop_Init(FieldTask *task);
 void *FieldSystem_ShowDiploma(FieldSystem *fieldSystem, enum HeapID heapID, BOOL isNatDex);
-void *FieldSystem_OpenBattleFrontierRecord(FieldSystem *fieldSystem, u8 param1, u8 param2, u16 param3, enum HeapID heapID);
+void *FieldSystem_OpenBattleFrontierRecord(FieldSystem *fieldSystem, u8 challengeType, u8 facility, u16 species, enum HeapID heapID);
 void *FieldSystem_OpenScratchOffCardsApp(FieldSystem *fieldSystem, enum HeapID heapID);
 void *FieldSystem_OpenSummaryScreenTeachMove(int unused, FieldSystem *fieldSystem, u16 partySlot, u16 move);
-void sub_0203E6C0(FieldSystem *fieldSystem, int param1, int param2);
+void FieldSystem_OpenGlobalTerminal(FieldSystem *fieldSystem, int param1, int param2);
 void FieldSystem_StartLibraryTV(FieldSystem *fieldSystem);
 void FieldSystem_StartDWWarp(FieldSystem *fieldSystem);
 
-#endif // POKEPLATINUM_UNK_0203D1B8_H
+#endif // POKEPLATINUM_FIELD_SYSTEM_APPS_H

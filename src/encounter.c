@@ -46,7 +46,7 @@
 #include "trainer_data.h"
 #include "tv_segment.h"
 #include "unk_0202F1D4.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "unk_020528D0.h"
 #include "vars_flags.h"
 

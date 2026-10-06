@@ -41,7 +41,7 @@
 #include "string_template.h"
 #include "system_flags.h"
 #include "trainer_info.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "unk_02054884.h"
 #include "unk_020559DC.h"
 #include "vars_flags.h"

@@ -1,8 +1,9 @@
-#ifndef POKEPLATINUM_UNK_020494DC_H
-#define POKEPLATINUM_UNK_020494DC_H
+#ifndef POKEPLATINUM_SCRCMD_BATTLE_TOWER_H
+#define POKEPLATINUM_SCRCMD_BATTLE_TOWER_H
 
 #include "field_script_context.h"
 
+// Battle Tower field script commands. See src/scrcmd_battle_tower.c.
 BOOL ScrCmd_InitBattleTower(ScriptContext *ctx);
 BOOL ScrCmd_SetBattleTowerNull(ScriptContext *ctx);
 BOOL ScrCmd_FreeBattleTower(ScriptContext *ctx);
@@ -23,4 +24,4 @@ BOOL ScrCmd_RemoveBattlePoints(ScriptContext *ctx);
 BOOL ScrCmd_CheckBattlePoints(ScriptContext *ctx);
 BOOL ScrCmd_GetExchangeServiceCornerItemAndCost(ScriptContext *ctx);
 
-#endif // POKEPLATINUM_UNK_020494DC_H
+#endif // POKEPLATINUM_SCRCMD_BATTLE_TOWER_H

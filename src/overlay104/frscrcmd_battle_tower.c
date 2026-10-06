@@ -29,7 +29,7 @@
 #include "sound.h"
 #include "tv_segment.h"
 #include "unk_020363E8.h"
-#include "unk_02049D08.h"
+#include "battle_tower.h"
 
 #include "constdata/const_020EA358.h"
 
@@ -92,7 +92,7 @@ BOOL FrontierScrCmd_CallBattleTowerFunction(FrontierScriptContext *ctx)
         BattleTower_UpdateGameRecordsAndJournal(battleTower, fieldData->saveData, fieldData->journalEntry);
         break;
     case BT_FUNC_UNK_39:
-        sub_0204A8C8(battleTower);
+        BattleTower_SaveWifiState(battleTower);
         break;
     case BT_FUNC_UNK_58:
         MI_CpuClear8(battleTower->unk_884, 70);

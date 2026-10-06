@@ -22,7 +22,7 @@
 #include "sound.h"
 #include "sound_playback.h"
 #include "terrain_collision_manager.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 
 #include "res/field/props/models/prop_models.naix"
 

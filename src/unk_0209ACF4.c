@@ -22,7 +22,7 @@
 #include "string_template.h"
 #include "system.h"
 #include "text.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "wifi_battle_tower_save.h"
 
 #include "res/text/bank/easy_chat.h"

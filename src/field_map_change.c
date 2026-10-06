@@ -66,7 +66,7 @@
 #include "trainer_info.h"
 #include "underground.h"
 #include "underground_map_transition.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "unk_020559DC.h"
 #include "union_room.h"
 #include "unk_0205C22C.h"
@@ -499,7 +499,7 @@ static BOOL FieldTask_LoadSavedGameMap(FieldTask *task)
         Underground_UpdateGiftPenaltyState(fieldSystem->saveData);
 
         if (Journal_CheckOpenOnContinue(SaveData_GetJournal(fieldSystem->saveData), CheckJournalAcquired(varsFlags))) {
-            sub_0203D30C(fieldSystem, NULL);
+            FieldSystem_OpenJournalApp(fieldSystem, NULL);
             *state = 4;
             break;
         }

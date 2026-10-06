@@ -23,7 +23,7 @@
 #include "trainer_case.h"
 #include "trainer_info.h"
 #include "unk_02032798.h"
-#include "unk_0205A0D8.h"
+#include "colosseum.h"
 #include "union_room.h"
 
 static int CommPacketSizeOf_TrainerCase(void);
@@ -130,8 +130,8 @@ static const CommCmdTable Unk_020F68A4[] = {
     { UnionRoom_HandlePeerActivity, CommPacketSizeOf_NetId, NULL },
     { UnionRoom_HandlePeerNoActivity, CommPacketSizeOf_Nothing, NULL },
     { UnionRoom_HandleTrainerCase, CommPacketSizeOf_TrainerCase, UnionRoom_GetTrainerCaseBuffer },
-    { sub_0205B0C0, sub_0205B0E4, sub_0205B0F4 },
-    { sub_0205B110, CommPacketSizeOf_NetId, NULL },
+    { Colosseum_HandleReceivedParty, Colosseum_PartyExchangeSize, Colosseum_GetPartyExchangeBuffer },
+    { Colosseum_HandleReceivedSlot, CommPacketSizeOf_NetId, NULL },
     { sub_02099510, CommPacketSizeOf_NetId, NULL },
     { sub_02099510, CommPacketSizeOf_NetId, NULL },
     { sub_02099510, CommPacketSizeOf_NetId, NULL },

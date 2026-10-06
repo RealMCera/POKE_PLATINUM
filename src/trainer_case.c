@@ -24,7 +24,7 @@
 #include "trainer_case_save_data.h"
 #include "trainer_info.h"
 #include "underground.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "unk_020559DC.h"
 #include "union_room.h"
 #include "vars_flags.h"

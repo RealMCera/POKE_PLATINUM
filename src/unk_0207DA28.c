@@ -31,7 +31,7 @@
 #include "poffin_berry_selection_context.h"
 #include "system_flags.h"
 #include "unk_02038FFC.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "vars_flags.h"
 #include "wifi_overlays.h"
 
@@ -180,7 +180,7 @@ static BOOL sub_0207DA28(FieldTask *task)
         v2->unk_04 = 2;
         break;
     case 6:
-        sub_0203DDDC(task);
+        FieldTask_StartUnionRoomTrade(task);
         v2->unk_04++;
         break;
     case 7:

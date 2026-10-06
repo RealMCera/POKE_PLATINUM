@@ -20,7 +20,7 @@
 #include "heap.h"
 #include "journal.h"
 #include "save_player.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "unk_0209BDF8.h"
 
 FS_EXTERN_OVERLAY(overlay109);
@@ -123,7 +123,7 @@ static BOOL sub_0209C2C0(UnkStruct_0209C1EC *param0)
         Heap_Free(param0->partyMenu);
 
         if (param0->partyMenu->menuSelectionResult == 1) {
-            param0->monSummary = sub_0203D670(param0->fieldSystem, HEAP_ID_APPLICATION, SUMMARY_MODE_NORMAL);
+            param0->monSummary = FieldSystem_CreatePartyMonSummary(param0->fieldSystem, HEAP_ID_APPLICATION, SUMMARY_MODE_NORMAL);
             param0->unk_04 = v0;
             param0->monSummary->monIndex = v0;
             FieldSystem_OpenSummaryScreen(param0->fieldSystem, param0->monSummary);

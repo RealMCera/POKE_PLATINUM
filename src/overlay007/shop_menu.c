@@ -56,7 +56,7 @@
 #include "trainer_info.h"
 #include "tv_segment.h"
 #include "underground.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "unk_0208C098.h"
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"
@@ -1605,7 +1605,7 @@ static void Shop_FinishScreenTransition(FieldTask *task)
     shopMenu->unk_04 = BagContext_CreateWithPockets(bag, sShop_BagPockets, HEAP_ID_FIELD2);
 
     BagContext_Init(shopMenu->unk_04, fieldSystem->saveData, 2, fieldSystem->bagCursor);
-    sub_0203D1E4(fieldSystem, shopMenu->unk_04);
+    FieldSystem_StartBagApp(fieldSystem, shopMenu->unk_04);
     FieldTask_InitJump(task, FieldTask_ShopMisc, shopMenu);
 
     shopMenu->state = SHOP_STATE_REINIT_FIELD_MAP;

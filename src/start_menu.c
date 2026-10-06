@@ -79,7 +79,7 @@
 #include "trainer_case.h"
 #include "trainer_info.h"
 #include "comm_server_client.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "unk_020559DC.h"
 #include "union_room.h"
 #include "unk_0205C22C.h"
@@ -1063,7 +1063,7 @@ BOOL StartMenu_ExitPartyMenu(FieldTask *fieldTask)
 
         BagContext_Init(menu->taskData, fieldSystem->saveData, BAG_MODE_GIVE_TO_MON, fieldSystem->bagCursor);
 
-        sub_0203D1E4(fieldSystem, menu->taskData);
+        FieldSystem_StartBagApp(fieldSystem, menu->taskData);
         StartMenu_SetCallback(menu, StartMenu_ExitBag);
         break;
     case PARTY_MENU_EXIT_CODE_EVOLVE_BY_ITEM:
@@ -1537,7 +1537,7 @@ static void StartMenu_ShowBerryTag(FieldTask *fieldTask, u16 berryItemID)
     BagCursor_GetFieldPocketPosition(fieldSystem->bagCursor, POCKET_BERRIES, &index, &scroll);
     BerryTagData_SetScroll(menu->taskData, scroll, index, berryTypeCount + 3);
 
-    sub_0203D2E4(fieldSystem, menu->taskData);
+    FieldSystem_OpenBerryTagApp(fieldSystem, menu->taskData);
     StartMenu_SetCallback(menu, StartMenu_ExitBerryTag);
 }
 

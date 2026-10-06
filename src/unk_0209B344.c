@@ -13,7 +13,7 @@
 #include "savedata_misc.h"
 #include "screen_fade.h"
 #include "string_template.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 
 #include "res/text/bank/easy_chat.h"
 

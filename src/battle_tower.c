@@ -1,4 +1,4 @@
-#include "unk_02049D08.h"
+#include "battle_tower.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -43,14 +43,23 @@
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"
 
-typedef struct {
-    u16 unk_00;
-    u16 unk_02;
-} UnkStruct_02049D38;
+// Battle Tower challenge state. This module owns the BattleTower object that
+// tracks an in-progress Battle Tower run: the chosen challenge mode, the
+// player's selected party, the generated opponent trainer IDs and the streak
+// bookkeeping that feeds the Battle Frontier save, game records and the WiFi
+// Battle Tower record. The field scripts drive it through the
+// BT_FUNC_* commands handled in scrcmd_battle_tower.c.
 
-static u16 sub_0204AC54(SaveData *saveData, enum PokemonDataParam param, BattleTower *battleTower);
-static u16 sub_0204ACC8(BattleTower *battleTower);
-static void sub_0204AE20(BattleTower *battleTower, SaveData *saveData, int param2);
+// A species/held-item pair used when validating a Battle Tower party. Held
+// items are only compared when the challenge requires unique held items.
+typedef struct {
+    u16 species;
+    u16 heldItem;
+} BattleTowerMonEntry;
+
+static u16 BattleTower_GiveRibbonToParty(SaveData *saveData, enum PokemonDataParam param, BattleTower *battleTower);
+static u16 BattleTower_UpdateAbilityRibbonFlag(BattleTower *battleTower);
+static void BattleTower_SaveTeamToWifiRecord(BattleTower *battleTower, SaveData *saveData, int teamIdx);
 
 u16 BattleTower_GetPartySizeForChallengeMode(u16 challengeMode)
 {
@@ -70,17 +79,19 @@ u16 BattleTower_GetPartySizeForChallengeMode(u16 challengeMode)
     return 0;
 }
 
-static BOOL sub_02049D38(UnkStruct_02049D38 *param0, u16 param1, u16 param2, int param3)
+// Returns TRUE if a matching species (and, when heldItem is non-zero, a
+// matching held item) is already present in the first count entries.
+static BOOL BattleTower_IsSpeciesAndItemInList(BattleTowerMonEntry *entries, u16 species, u16 heldItem, int count)
 {
-    int v0;
+    int i;
 
-    for (v0 = 0; v0 < param3; v0++) {
-        if (param0[v0].unk_00 == param1) {
-            if (param2 == 0) {
+    for (i = 0; i < count; i++) {
+        if (entries[i].species == species) {
+            if (heldItem == 0) {
                 continue;
             }
 
-            if (param0[v0].unk_02 == param2) {
+            if (entries[i].heldItem == heldItem) {
                 return 1;
             }
         }
@@ -89,21 +100,23 @@ static BOOL sub_02049D38(UnkStruct_02049D38 *param0, u16 param1, u16 param2, int
     return 0;
 }
 
-static BOOL sub_02049D64(UnkStruct_02049D38 *param0, int param1)
+// Returns TRUE if no two entries share a species and no two entries share a
+// non-zero held item.
+static BOOL BattleTower_AreSpeciesAndItemsUnique(BattleTowerMonEntry *entries, int count)
 {
-    int v0, v1;
+    int i, j;
 
-    for (v0 = 0; v0 < param1 - 1; v0++) {
-        for (v1 = v0 + 1; v1 < param1; v1++) {
-            if (param0[v0].unk_00 == param0[v1].unk_00) {
+    for (i = 0; i < count - 1; i++) {
+        for (j = i + 1; j < count; j++) {
+            if (entries[i].species == entries[j].species) {
                 return 0;
             }
 
-            if (param0[v0].unk_02 == 0) {
+            if (entries[i].heldItem == 0) {
                 continue;
             }
 
-            if (param0[v0].unk_02 == param0[v1].unk_02) {
+            if (entries[i].heldItem == entries[j].heldItem) {
                 return 0;
             }
         }
@@ -112,42 +125,47 @@ static BOOL sub_02049D64(UnkStruct_02049D38 *param0, int param1)
     return 1;
 }
 
-static BOOL sub_02049DB4(UnkStruct_02049D38 *param0, int param1, int param2, int param3)
+// Searches every combination of chooseCount entries drawn from the first
+// entryCount entries for one whose species and held items are all unique.
+// startCount bounds how many starting positions are tried; the caller passes
+// entryCount - chooseCount + 1, which is just enough to cover every
+// combination.
+static BOOL BattleTower_HasUniqueCombination(BattleTowerMonEntry *entries, int chooseCount, int entryCount, int startCount)
 {
-    int v0, v1, v2, v3;
-    UnkStruct_02049D38 v4[4];
+    int i, j, k, l;
+    BattleTowerMonEntry combination[4];
 
-    MI_CpuClear8(v4, sizeof(UnkStruct_02049D38) * 4);
+    MI_CpuClear8(combination, sizeof(BattleTowerMonEntry) * 4);
 
-    for (v0 = 0; v0 < param3; v0++) {
-        v4[0] = param0[v0];
+    for (i = 0; i < startCount; i++) {
+        combination[0] = entries[i];
 
-        for (v1 = v0 + 1; v1 < param2; v1++) {
-            v4[1] = param0[v1];
+        for (j = i + 1; j < entryCount; j++) {
+            combination[1] = entries[j];
 
-            if (param1 == 2) {
-                if (sub_02049D64(v4, param1)) {
+            if (chooseCount == 2) {
+                if (BattleTower_AreSpeciesAndItemsUnique(combination, chooseCount)) {
                     return 1;
                 }
 
                 continue;
             }
 
-            for (v2 = v1 + 1; v2 < param2; v2++) {
-                v4[2] = param0[v2];
+            for (k = j + 1; k < entryCount; k++) {
+                combination[2] = entries[k];
 
-                if (param1 == 3) {
-                    if (sub_02049D64(v4, param1)) {
+                if (chooseCount == 3) {
+                    if (BattleTower_AreSpeciesAndItemsUnique(combination, chooseCount)) {
                         return 1;
                     }
 
                     continue;
                 }
 
-                for (v3 = v2 + 1; v3 < param2; v3++) {
-                    v4[3] = param0[v3];
+                for (l = k + 1; l < entryCount; l++) {
+                    combination[3] = entries[l];
 
-                    if (sub_02049D64(v4, param1)) {
+                    if (BattleTower_AreSpeciesAndItemsUnique(combination, chooseCount)) {
                         return 1;
                     }
                 }
@@ -158,54 +176,58 @@ static BOOL sub_02049DB4(UnkStruct_02049D38 *param0, int param1, int param2, int
     return 0;
 }
 
-BOOL sub_02049EC4(u16 param0, SaveData *saveData, u8 param2)
+// Returns TRUE if the party contains at least requiredCount eligible Pokémon
+// that can be arranged into a team with no duplicate species (and, when
+// checkHeldItems is set, no duplicate held items). Eggs and Pokémon on the
+// Battle Frontier banlist are ignored.
+BOOL BattleTower_HasEnoughValidPokemon(u16 requiredCount, SaveData *saveData, u8 checkHeldItems)
 {
-    u8 v0, v1, v2, v3;
-    u16 v4, v5;
-    Party *v6;
-    Pokemon *v7;
-    UnkStruct_02049D38 v8[6];
+    u8 i, validCount, partyCount;
+    u16 species, heldItem;
+    Party *party;
+    Pokemon *mon;
+    BattleTowerMonEntry entries[6];
 
-    v6 = SaveData_GetParty(saveData);
-    v3 = Party_GetCurrentCount(v6);
+    party = SaveData_GetParty(saveData);
+    partyCount = Party_GetCurrentCount(party);
 
-    if (v3 < param0) {
+    if (partyCount < requiredCount) {
         return 0;
     }
 
-    for (v0 = 0, v2 = 0; v0 < v3; v0++) {
-        v7 = Party_GetPokemonBySlotIndex(v6, v0);
-        v4 = Pokemon_GetValue(v7, MON_DATA_SPECIES, NULL);
-        v5 = Pokemon_GetValue(v7, MON_DATA_HELD_ITEM, NULL);
+    for (i = 0, validCount = 0; i < partyCount; i++) {
+        mon = Party_GetPokemonBySlotIndex(party, i);
+        species = Pokemon_GetValue(mon, MON_DATA_SPECIES, NULL);
+        heldItem = Pokemon_GetValue(mon, MON_DATA_HELD_ITEM, NULL);
 
-        if (param2 == 0) {
-            v5 = 0;
+        if (checkHeldItems == 0) {
+            heldItem = 0;
         }
 
-        if (Pokemon_GetValue(v7, MON_DATA_IS_EGG, NULL) != 0) {
+        if (Pokemon_GetValue(mon, MON_DATA_IS_EGG, NULL) != 0) {
             continue;
         }
 
-        if (Pokemon_IsOnBattleFrontierBanlist(v4) == 1) {
+        if (Pokemon_IsOnBattleFrontierBanlist(species) == 1) {
             continue;
         }
 
-        if (param2 == 1) {
-            if (sub_02049D38(v8, v4, v5, v2) == 1) {
+        if (checkHeldItems == 1) {
+            if (BattleTower_IsSpeciesAndItemInList(entries, species, heldItem, validCount) == 1) {
                 continue;
             }
         }
 
-        v8[v2].unk_00 = v4;
-        v8[v2].unk_02 = v5;
-        v2++;
+        entries[validCount].species = species;
+        entries[validCount].heldItem = heldItem;
+        validCount++;
     }
 
-    if (v2 < param0) {
+    if (validCount < requiredCount) {
         return 0;
     }
 
-    return sub_02049DB4(v8, param0, v2, (v2 - param0) + 1);
+    return BattleTower_HasUniqueCombination(entries, requiredCount, validCount, (validCount - requiredCount) + 1);
 }
 
 void BattleTower_ResetSystem(void)
@@ -213,21 +235,21 @@ void BattleTower_ResetSystem(void)
     OS_ResetSystem(RESET_CLEAN);
 }
 
-void sub_02049F98(WifiBattleTowerSave *save)
+void BattleTower_InitWifiSave(WifiBattleTowerSave *save)
 {
     WifiBattleTowerSave_Init(save);
 }
 
-BOOL sub_02049FA0(WifiBattleTowerSave *save)
+BOOL BattleTower_IsWifiChallengeInProgress(WifiBattleTowerSave *save)
 {
     return WifiBattleTowerSave_GetIsInProgress(save);
 }
 
 void BattleTower_SetCommunicationClubAccessible(FieldSystem *fieldSystem)
 {
-    Location *v0 = FieldOverworldState_GetSpecialLocation(SaveData_GetFieldOverworldState(fieldSystem->saveData));
+    Location *specialLocation = FieldOverworldState_GetSpecialLocation(SaveData_GetFieldOverworldState(fieldSystem->saveData));
 
-    Location_Set(v0, fieldSystem->location->mapHeaderID, -1, PlayerAvatar_GetXPos(fieldSystem->playerAvatar), PlayerAvatar_GetZPos(fieldSystem->playerAvatar), 0);
+    Location_Set(specialLocation, fieldSystem->location->mapHeaderID, -1, PlayerAvatar_GetXPos(fieldSystem->playerAvatar), PlayerAvatar_GetZPos(fieldSystem->playerAvatar), 0);
     SystemFlag_SetCommunicationClubAccessible(SaveData_GetVarsFlags(fieldSystem->saveData));
 
     return;
@@ -238,73 +260,77 @@ void BattleTower_ClearCommunicationClubAccessible(FieldSystem *fieldSystem)
     SystemFlag_ClearCommunicationClubAccessible(SaveData_GetVarsFlags(fieldSystem->saveData));
 }
 
-u16 sub_02049FF8(SaveData *saveData, u16 param1)
+// Returns the player's latest win streak for the given challenge mode. Modes
+// 5 (unused) and 6 (WiFi) store their streak in different save slots.
+u16 BattleTower_GetLatestStreak(SaveData *saveData, u16 challengeMode)
 {
-    u16 v0;
+    u16 streak;
 
-    if (param1 == 5) {
+    if (challengeMode == 5) {
         return 0;
     }
 
-    if (param1 == 6) {
-        v0 = BattleFrontierSave_GetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_LATEST_STREAK_MODE_6);
-        return v0;
+    if (challengeMode == 6) {
+        streak = BattleFrontierSave_GetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_LATEST_STREAK_MODE_6);
+        return streak;
     }
 
-    v0 = BattleFrontierSave_GetStat(SaveData_GetBattleFrontier(saveData), 1 + param1 * 2, 0xff);
+    streak = BattleFrontierSave_GetStat(SaveData_GetBattleFrontier(saveData), 1 + challengeMode * 2, 0xff);
 
-    return v0;
+    return streak;
 }
 
-void sub_0204A030(SaveData *saveData, u8 param1)
+// Sets or clears the WiFi record's "results pending upload" flag (bit 5).
+void BattleTower_SetWifiResultsPending(SaveData *saveData, u8 pending)
 {
     WifiBattleTowerRecord *record = SaveData_GetWifiBattleTowerRecord(saveData);
 
-    if (param1 == 0) {
+    if (pending == 0) {
         WifiBattleTowerRecord_UpdateBitFlag(record, 5, 2);
     } else {
         WifiBattleTowerRecord_UpdateBitFlag(record, 5, 1);
     }
 }
 
-u16 sub_0204A050(SaveData *saveData)
+u16 BattleTower_HasWifiResultsPending(SaveData *saveData)
 {
     WifiBattleTowerRecord *record = SaveData_GetWifiBattleTowerRecord(saveData);
     return (u16)WifiBattleTowerRecord_UpdateBitFlag(record, 5, 0);
 }
 
-u16 sub_0204A064(SaveData *saveData)
+// Clears the saved WiFi challenge progress for the mode stored in the WiFi
+// save and returns that mode. Mode 5 has no progress to clear.
+u16 BattleTower_ResetWifiProgress(SaveData *saveData)
 {
-    u8 v0;
-    int v1;
+    u8 challengeMode;
     WifiBattleTowerSave *save = SaveData_GetWifiBattleTowerSave(saveData);
     WifiBattleTowerRecord *record = SaveData_GetWifiBattleTowerRecord(saveData);
-    v0 = (u8)WifiBattleTowerSave_GetField(save, 0, NULL);
+    challengeMode = (u8)WifiBattleTowerSave_GetField(save, 0, NULL);
 
-    if (v0 == 5) {
-        return v0;
+    if (challengeMode == 5) {
+        return challengeMode;
     }
 
-    if (v0 == 6) {
+    if (challengeMode == 6) {
         BattleFrontierSave_SetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_WFC_STREAK_ACTIVE, 0);
     } else {
-        WifiBattleTowerRecord_UpdateBitFlag(record, 8 + v0, 2);
+        WifiBattleTowerRecord_UpdateBitFlag(record, 8 + challengeMode, 2);
     }
 
-    WifiBattleTowerRecord_UpdateRoomNum(record, v0, 2);
-    BattleFrontierSave_SetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), BattleFrontierStats_GetTowerLatestStreakIndex(v0), 0);
+    WifiBattleTowerRecord_UpdateRoomNum(record, challengeMode, 2);
+    BattleFrontierSave_SetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), BattleFrontierStats_GetTowerLatestStreakIndex(challengeMode), 0);
 
-    if ((v0 != 4) && (v0 != 6)) {
+    if ((challengeMode != 4) && (challengeMode != 6)) {
         sub_0206C02C(saveData);
     }
 
-    return v0;
+    return challengeMode;
 }
 
-u16 sub_0204A100(SaveData *saveData)
+u16 BattleTower_HasWifiOpponentData(SaveData *saveData)
 {
-    WifiBattleTowerDownloadData *v0 = SaveData_GetWifiBattleTowerDownloadData(saveData);
-    return (u16)WifiBattleTowerDownloadData_HasOpponentData(v0);
+    WifiBattleTowerDownloadData *downloadData = SaveData_GetWifiBattleTowerDownloadData(saveData);
+    return (u16)WifiBattleTowerDownloadData_HasOpponentData(downloadData);
 }
 
 void BattleTower_SetNull(BattleTower **battleTower)
@@ -313,13 +339,16 @@ void BattleTower_SetNull(BattleTower **battleTower)
     *battleTower = NULL;
 }
 
-BattleTower *BattleTower_Init(SaveData *saveData, u16 param1, u16 challengeMode)
+// Allocates and initialises a BattleTower. When isResume is FALSE a fresh
+// challenge is started for challengeMode; otherwise the in-progress WiFi
+// challenge is restored from the WiFi save.
+BattleTower *BattleTower_Init(SaveData *saveData, u16 isResume, u16 challengeMode)
 {
-    u8 v0;
-    u16 v1, v2;
+    u8 mode;
+    u16 i, streakActive;
     BattleTower *battleTower;
     BattleFrontierSave *frontier;
-    GameRecords *v5;
+    GameRecords *gameRecords;
 
     battleTower = Heap_Alloc(HEAP_ID_FIELD2, sizeof(BattleTower));
     MI_CpuClear8(battleTower, sizeof(BattleTower));
@@ -331,23 +360,23 @@ BattleTower *BattleTower_Init(SaveData *saveData, u16 param1, u16 challengeMode)
 
     WifiBattleTowerSave_SetIsInProgress(battleTower->wifiBattleTowerSave, 0);
 
-    if (param1 == 0) {
+    if (isResume == 0) {
         battleTower->challengeMode = challengeMode;
         battleTower->partySize = (u8)BattleTower_GetPartySizeForChallengeMode(battleTower->challengeMode);
         battleTower->nextOpponentNum = 1;
         battleTower->unk_0D = 0;
 
-        for (v1 = 0; v1 < 4; v1++) {
-            battleTower->unk_2A[v1] = 0xFF;
+        for (i = 0; i < 4; i++) {
+            battleTower->unk_2A[i] = 0xFF;
         }
 
-        for (v1 = 0; v1 < BT_OPPONENTS_COUNT * 2; v1++) {
-            battleTower->trainerIDs[v1] = 0xFFFF;
+        for (i = 0; i < BT_OPPONENTS_COUNT * 2; i++) {
+            battleTower->trainerIDs[i] = 0xFFFF;
         }
 
         WifiBattleTowerSave_Init(battleTower->wifiBattleTowerSave);
-        v0 = battleTower->challengeMode;
-        WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 0, &v0);
+        mode = battleTower->challengeMode;
+        WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 0, &mode);
     } else {
         battleTower->challengeMode = (u8)WifiBattleTowerSave_GetField(battleTower->wifiBattleTowerSave, 0, NULL);
         battleTower->nextOpponentNum = (u8)WifiBattleTowerSave_GetField(battleTower->wifiBattleTowerSave, 1, NULL);
@@ -371,15 +400,15 @@ BattleTower *BattleTower_Init(SaveData *saveData, u16 param1, u16 challengeMode)
 
     if (battleTower->challengeMode != BATTLE_TOWER_MODE_5) {
         frontier = SaveData_GetBattleFrontier(saveData);
-        v5 = SaveData_GetGameRecords(saveData);
+        gameRecords = SaveData_GetGameRecords(saveData);
 
         if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
-            v2 = SystemVars_GetWiFiFrontierCleared(SaveData_GetVarsFlags(saveData));
+            streakActive = SystemVars_GetWiFiFrontierCleared(SaveData_GetVarsFlags(saveData));
         } else {
-            v2 = WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 0);
+            streakActive = WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 0);
         }
 
-        if (v2) {
+        if (streakActive) {
             if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
                 battleTower->unk_1A = BattleFrontierSave_GetStatAutoHostIdx(frontier, 113);
             } else {
@@ -390,7 +419,7 @@ BattleTower *BattleTower_Init(SaveData *saveData, u16 param1, u16 challengeMode)
             battleTower->roomNum = WifiBattleTowerRecord_UpdateRoomNum(battleTower->unk_74, battleTower->challengeMode, 0);
         }
 
-        battleTower->unk_20 = GameRecords_GetRecordValue(v5, RECORD_BATTLE_TOWER_VICTORIES);
+        battleTower->unk_20 = GameRecords_GetRecordValue(gameRecords, RECORD_BATTLE_TOWER_VICTORIES);
     }
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
@@ -414,38 +443,43 @@ void BattleTower_Free(BattleTower *battleTower)
     battleTower = NULL;
 }
 
-void sub_0204A358(BattleTower *battleTower, FieldTask *param1, void **param2)
+// Opens the party menu so the player can choose their Battle Tower party.
+void BattleTower_StartPartyMenu(BattleTower *battleTower, FieldTask *task, void **partyMenu)
 {
-    sub_0206BBFC(param1, param2, 17, 0, battleTower->partySize, battleTower->partySize, 100, 0);
+    sub_0206BBFC(task, partyMenu, 17, 0, battleTower->partySize, battleTower->partySize, 100, 0);
 }
 
-BOOL sub_0204A378(BattleTower *battleTower, void **param1, SaveData *saveData)
+// Reads the party menu result into the BattleTower's party slots. Returns
+// FALSE if the player cancelled or selected the empty slot.
+BOOL BattleTower_ReadPartyMenuSelection(BattleTower *battleTower, void **partyMenuPtr, SaveData *saveData)
 {
-    u16 v0 = 0;
-    PartyMenu *partyMenu = *param1;
-    Party *v2;
-    Pokemon *v3;
+    u16 i = 0;
+    PartyMenu *partyMenu = *partyMenuPtr;
+    Party *party;
+    Pokemon *mon;
 
     if ((partyMenu->menuSelectionResult != 0) || (partyMenu->selectedMonSlot == 7)) {
-        Heap_Free(*param1);
-        *param1 = NULL;
+        Heap_Free(*partyMenuPtr);
+        *partyMenuPtr = NULL;
         return 0;
     }
 
-    v2 = SaveData_GetParty(saveData);
+    party = SaveData_GetParty(saveData);
 
-    for (v0 = 0; v0 < battleTower->partySize; v0++) {
-        battleTower->unk_2A[v0] = partyMenu->selectionOrder[v0] - 1;
-        v3 = Party_GetPokemonBySlotIndex(v2, battleTower->unk_2A[v0]);
-        battleTower->unk_2E[v0] = Pokemon_GetValue(v3, MON_DATA_SPECIES, NULL);
-        battleTower->unk_36[v0] = Pokemon_GetValue(v3, MON_DATA_HELD_ITEM, NULL);
+    for (i = 0; i < battleTower->partySize; i++) {
+        battleTower->unk_2A[i] = partyMenu->selectionOrder[i] - 1;
+        mon = Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[i]);
+        battleTower->unk_2E[i] = Pokemon_GetValue(mon, MON_DATA_SPECIES, NULL);
+        battleTower->unk_36[i] = Pokemon_GetValue(mon, MON_DATA_HELD_ITEM, NULL);
     }
 
-    Heap_Free(*param1);
-    *param1 = NULL;
+    Heap_Free(*partyMenuPtr);
+    *partyMenuPtr = NULL;
     return 1;
 }
 
+// Returns 1 if the selected party has a duplicate species, 2 if it has a
+// duplicate held item, or 0 if it is valid.
 int BattleTower_CheckDuplicateSpeciesAndHeldItems(BattleTower *battleTower, SaveData *saveData)
 {
     u16 i = 0, j = 0;
@@ -488,7 +522,10 @@ static BOOL BattleTower_IsTrainerAlreadyUsed(u16 *trainerIDs, u16 trainerID, u16
     return FALSE;
 }
 
-void sub_0204A4C8(BattleTower *battleTower, SaveData *saveData)
+// Fills in the opponent trainer IDs for the current room, retrying whenever a
+// generated ID collides with one already used earlier in the run. Multi and
+// WiFi modes use two trainers per opponent (a pair per battle).
+void BattleTower_GenerateOpponentTrainerIDs(BattleTower *battleTower, SaveData *saveData)
 {
     int opponentNum;
     u16 trainerID, roomNum;
@@ -537,44 +574,49 @@ BOOL BattleTower_HasDefeatedSevenTrainers(BattleTower *battleTower)
     return FALSE;
 }
 
-static void sub_0204A5A0(BattleTower *battleTower, SaveData *saveData, u16 param2)
+// Records the player's streak and lead Pokémon in the TV broadcast for the
+// single and double challenge modes.
+static void BattleTower_RecordStreakToTV(BattleTower *battleTower, SaveData *saveData, u16 streak)
 {
-    Party *v0;
+    Party *party;
 
     if (battleTower->challengeMode != BATTLE_TOWER_MODE_SINGLE && battleTower->challengeMode != BATTLE_TOWER_MODE_DOUBLE) {
         return;
     }
 
-    v0 = SaveData_GetParty(saveData);
+    party = SaveData_GetParty(saveData);
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_SINGLE) {
-        sub_0206DBB0(saveData, param2, Party_GetPokemonBySlotIndex(v0, battleTower->unk_2A[0]), 1);
+        sub_0206DBB0(saveData, streak, Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[0]), 1);
     } else {
-        sub_0206DBB0(saveData, param2, Party_GetPokemonBySlotIndex(v0, battleTower->unk_2A[0]), 0);
+        sub_0206DBB0(saveData, streak, Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[0]), 0);
     }
 }
 
-static void sub_0204A5EC(BattleTower *battleTower, SaveData *saveData, u8 param2, u16 param3)
+// Per-mode bookkeeping after a battle: saves the team, records the streak in
+// the TV broadcast and, for WiFi, updates the saved challenge state.
+static void BattleTower_UpdatePostBattleData(BattleTower *battleTower, SaveData *saveData, u8 tvWin, u16 streak)
 {
-    u8 v0;
+    u8 mode;
 
     switch (battleTower->challengeMode) {
     case BATTLE_TOWER_MODE_SINGLE:
-        sub_0204AE20(battleTower, saveData, 0);
+        BattleTower_SaveTeamToWifiRecord(battleTower, saveData, 0);
+        // fallthrough
     case BATTLE_TOWER_MODE_DOUBLE:
-        if (param3 >= 7) {
-            sub_0206CFE4(SaveData_GetTVBroadcast(saveData), param2, param3);
+        if (streak >= 7) {
+            sub_0206CFE4(SaveData_GetTVBroadcast(saveData), tvWin, streak);
         }
         break;
     case BATTLE_TOWER_MODE_WIFI:
-        sub_0204AE20(battleTower, saveData, 1);
+        BattleTower_SaveTeamToWifiRecord(battleTower, saveData, 1);
         WifiBattleTowerSave_AddCounters(battleTower->wifiBattleTowerSave, battleTower->unk_28, battleTower->unk_24, battleTower->unk_26);
 
-        v0 = battleTower->challengeMode;
-        WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 0, &v0);
+        mode = battleTower->challengeMode;
+        WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 0, &mode);
 
-        v0 = battleTower->nextOpponentNum;
-        WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 1, &v0);
+        mode = battleTower->nextOpponentNum;
+        WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 1, &mode);
         WifiBattleTowerRecord_CalcRatingScore(battleTower->unk_74, battleTower->wifiBattleTowerSave);
         break;
     default:
@@ -582,12 +624,14 @@ static void sub_0204A5EC(BattleTower *battleTower, SaveData *saveData, u8 param2
     }
 }
 
+// Updates the Battle Frontier stats, game records and WiFi record after the
+// player loses a challenge (or quits mid-run).
 void BattleTower_UpdateGameRecords(BattleTower *battleTower, SaveData *saveData)
 {
-    u32 v0 = 0;
-    int v1;
-    u16 v2, v3, v4;
-    GameRecords *v5 = SaveData_GetGameRecords(saveData);
+    u32 streakValue = 0;
+    int statIndex;
+    u16 prevRecord, newRecord, streakActive;
+    GameRecords *gameRecords = SaveData_GetGameRecords(saveData);
     BattleFrontierSave *frontier = SaveData_GetBattleFrontier(saveData);
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_5) {
@@ -595,27 +639,27 @@ void BattleTower_UpdateGameRecords(BattleTower *battleTower, SaveData *saveData)
     }
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
-        v1 = STAT_TOWER_RECORD_STREAK_MODE_6;
+        statIndex = STAT_TOWER_RECORD_STREAK_MODE_6;
     } else {
-        v1 = battleTower->challengeMode * 2;
+        statIndex = battleTower->challengeMode * 2;
     }
 
-    v2 = BattleFrontierSave_GetStatAutoHostIdx(frontier, v1);
-    v3 = BattleFrontierSave_SetIfBetterAutoHostIdx(frontier, v1, battleTower->unk_1A + battleTower->unk_0D);
+    prevRecord = BattleFrontierSave_GetStatAutoHostIdx(frontier, statIndex);
+    newRecord = BattleFrontierSave_SetIfBetterAutoHostIdx(frontier, statIndex, battleTower->unk_1A + battleTower->unk_0D);
 
-    if (v3 > 1) {
-        if (v2 < v3 || (v2 == v3 && v3 % 7 == 0)) {
-            sub_0204A5A0(battleTower, saveData, v3);
+    if (newRecord > 1) {
+        if (prevRecord < newRecord || (prevRecord == newRecord && newRecord % 7 == 0)) {
+            BattleTower_RecordStreakToTV(battleTower, saveData, newRecord);
         }
     }
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
-        v4 = BattleFrontierSave_GetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_WFC_STREAK_ACTIVE);
+        streakActive = BattleFrontierSave_GetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_WFC_STREAK_ACTIVE);
     } else {
-        v4 = WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 0);
+        streakActive = WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 0);
     }
 
-    v0 = BattleFrontierSave_SetStatAutoHostIdx(frontier, v1 + 1, battleTower->unk_1A + battleTower->unk_0D);
+    streakValue = BattleFrontierSave_SetStatAutoHostIdx(frontier, statIndex + 1, battleTower->unk_1A + battleTower->unk_0D);
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
         BattleFrontierSave_SetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_WFC_STREAK_ACTIVE, 0);
@@ -623,53 +667,56 @@ void BattleTower_UpdateGameRecords(BattleTower *battleTower, SaveData *saveData)
         WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 2);
     }
 
-    GameRecords_AddToRecordValue(v5, RECORD_BATTLE_TOWER_VICTORIES, battleTower->unk_0D);
+    GameRecords_AddToRecordValue(gameRecords, RECORD_BATTLE_TOWER_VICTORIES, battleTower->unk_0D);
     WifiBattleTowerRecord_UpdateRoomNum(battleTower->unk_74, battleTower->challengeMode, 2);
 
     if (battleTower->challengeMode != BATTLE_TOWER_MODE_6) {
         GameRecords_AddToRecordValue(SaveData_GetGameRecords(saveData), RECORD_BATTLE_TOWER_CHALLENGES, 1);
     }
 
-    sub_0204ACC8(battleTower);
+    BattleTower_UpdateAbilityRibbonFlag(battleTower);
 
-    v0 += 1;
+    streakValue += 1;
 
-    if (v0 > 9999) {
-        v0 = 9999;
+    if (streakValue > 9999) {
+        streakValue = 9999;
     }
 
-    sub_0204A5EC(battleTower, saveData, 0, v0);
+    BattleTower_UpdatePostBattleData(battleTower, saveData, 0, streakValue);
 }
 
+// Updates the same records as BattleTower_UpdateGameRecords, but for the case
+// where the player defeated all seven trainers. Also writes a journal entry
+// for WiFi challenges.
 void BattleTower_UpdateGameRecordsAndJournal(BattleTower *battleTower, SaveData *saveData, JournalEntry *journalEntry)
 {
-    u32 v0 = 0;
-    int v1;
+    u32 streakValue = 0;
+    int statIndex;
     void *journalEntryOnlineEvent;
-    u16 v3, v4, v5;
-    GameRecords *v6;
+    u16 prevRecord, newRecord, streakActive;
+    GameRecords *gameRecords;
     BattleFrontierSave *frontier;
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_5) {
         return;
     }
 
-    v6 = SaveData_GetGameRecords(saveData);
+    gameRecords = SaveData_GetGameRecords(saveData);
     frontier = SaveData_GetBattleFrontier(saveData);
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
-        v1 = STAT_TOWER_RECORD_STREAK_MODE_6;
+        statIndex = STAT_TOWER_RECORD_STREAK_MODE_6;
     } else {
-        v1 = battleTower->challengeMode * 2;
+        statIndex = battleTower->challengeMode * 2;
     }
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
-        v5 = BattleFrontierSave_GetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_WFC_STREAK_ACTIVE);
+        streakActive = BattleFrontierSave_GetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_WFC_STREAK_ACTIVE);
     } else {
-        v5 = WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 0);
+        streakActive = WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 0);
     }
 
-    v0 = BattleFrontierSave_SetStatAutoHostIdx(frontier, v1 + 1, battleTower->unk_1A + battleTower->unk_0D);
+    streakValue = BattleFrontierSave_SetStatAutoHostIdx(frontier, statIndex + 1, battleTower->unk_1A + battleTower->unk_0D);
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
         BattleFrontierSave_SetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_WFC_STREAK_ACTIVE, 1);
@@ -677,19 +724,19 @@ void BattleTower_UpdateGameRecordsAndJournal(BattleTower *battleTower, SaveData 
         WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 1);
     }
 
-    v3 = BattleFrontierSave_GetStatAutoHostIdx(frontier, v1);
-    v4 = BattleFrontierSave_SetIfBetterAutoHostIdx(frontier, v1, v0);
+    prevRecord = BattleFrontierSave_GetStatAutoHostIdx(frontier, statIndex);
+    newRecord = BattleFrontierSave_SetIfBetterAutoHostIdx(frontier, statIndex, streakValue);
 
-    GameRecords_AddToRecordValue(v6, RECORD_BATTLE_TOWER_VICTORIES, 7);
+    GameRecords_AddToRecordValue(gameRecords, RECORD_BATTLE_TOWER_VICTORIES, 7);
     WifiBattleTowerRecord_UpdateRoomNum(battleTower->unk_74, battleTower->challengeMode, 3);
 
     if (battleTower->challengeMode != BATTLE_TOWER_MODE_6) {
-        GameRecords_AddToRecordValue(v6, RECORD_BATTLE_TOWER_CHALLENGES, 1);
+        GameRecords_AddToRecordValue(gameRecords, RECORD_BATTLE_TOWER_CHALLENGES, 1);
     }
 
-    GameRecords_IncrementTrainerScore(v6, TRAINER_SCORE_EVENT_UNK_14);
-    sub_0204ACC8(battleTower);
-    sub_0204A5EC(battleTower, saveData, 1, v0);
+    GameRecords_IncrementTrainerScore(gameRecords, TRAINER_SCORE_EVENT_UNK_14);
+    BattleTower_UpdateAbilityRibbonFlag(battleTower);
+    BattleTower_UpdatePostBattleData(battleTower, saveData, 1, streakValue);
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_WIFI) {
         journalEntryOnlineEvent = JournalEntry_CreateEventBattleRoom(battleTower->heapID);
@@ -697,16 +744,16 @@ void BattleTower_UpdateGameRecordsAndJournal(BattleTower *battleTower, SaveData 
     }
 }
 
-void sub_0204A8C8(BattleTower *battleTower)
+// Writes the current challenge state into the WiFi save so it can be resumed.
+void BattleTower_SaveWifiState(BattleTower *battleTower)
 {
-    u16 v0;
-    u8 v1[4];
+    u8 modeBuf[4];
 
-    v1[0] = battleTower->challengeMode;
-    WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 0, v1);
+    modeBuf[0] = battleTower->challengeMode;
+    WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 0, modeBuf);
 
-    v1[0] = battleTower->nextOpponentNum;
-    WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 1, v1);
+    modeBuf[0] = battleTower->nextOpponentNum;
+    WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 1, modeBuf);
 
     WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 5, battleTower->unk_2A);
     WifiBattleTowerSave_AddCounters(battleTower->wifiBattleTowerSave, battleTower->unk_28, battleTower->unk_24, battleTower->unk_26);
@@ -718,14 +765,16 @@ void sub_0204A8C8(BattleTower *battleTower)
         return;
     }
 
-    v1[0] = battleTower->partnerID;
-    WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 9, v1);
+    modeBuf[0] = battleTower->partnerID;
+    WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 9, modeBuf);
 
     WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 6, &(battleTower->unk_7E8[battleTower->partnerID]));
     WifiBattleTowerSave_SetField(battleTower->wifiBattleTowerSave, 7, &(battleTower->unk_838[battleTower->partnerID]));
 }
 
-void sub_0204A97C(BattleTower *battleTower)
+// Builds the partner data (team and graphics) for every possible multi-battle
+// partner.
+void BattleTower_BuildPartnerData(BattleTower *battleTower)
 {
     for (int partnerID = 0; partnerID < BT_PARTNERS_COUNT; partnerID++) {
         battleTower->unk_838[partnerID] = (u8)sub_0204B3B8(battleTower, &(battleTower->partnersDataDTO[partnerID]), FRONTIER_TRAINER_TRAINER_CHERYL_CHERYL + partnerID, battleTower->partySize, battleTower->unk_2E, battleTower->unk_36, &(battleTower->unk_7E8[partnerID]), battleTower->heapID);
@@ -747,6 +796,8 @@ u16 BattleTower_GetBeatPalmer(BattleTower *battleTower)
     return (u16)battleTower->beatPalmer;
 }
 
+// Awards Battle Points based on the challenge mode and current rank/room, then
+// adds them to the WiFi record. Returns the amount awarded.
 u16 BattleTower_GiveBattlePointsReward(BattleTower *battleTower)
 {
     u16 roomNum;
@@ -787,18 +838,19 @@ u16 BattleTower_GiveBattlePointsReward(BattleTower *battleTower)
     return battlePoints;
 }
 
-u16 sub_0204AA7C(BattleTower *battleTower, SaveData *saveData)
+// Returns TRUE if the player has reached a 50-win streak and has not yet been
+// offered the corresponding Palmer battle.
+u16 BattleTower_IsPalmerBattleAvailable(BattleTower *battleTower, SaveData *saveData)
 {
-    u8 v0, v1;
-    u16 v2, v3, v4;
+    u16 streak;
 
-    v2 = sub_02049FF8(saveData, battleTower->challengeMode);
+    streak = BattleTower_GetLatestStreak(saveData, battleTower->challengeMode);
 
-    if (v2 < 50) {
+    if (streak < 50) {
         return 0;
     }
 
-    if (v2 >= 100) {
+    if (streak >= 100) {
         if (WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 1, 0)) {
             return 0;
         }
@@ -811,11 +863,14 @@ u16 sub_0204AA7C(BattleTower *battleTower, SaveData *saveData)
     return 1;
 }
 
-u16 sub_0204AABC(BattleTower *battleTower, SaveData *saveData, u8 param2)
+// Updates the WiFi rank after a battle. operation is 0 to read the current
+// rank, 1 after a win and 2 after a loss. Returns the new rank, or 0 when the
+// rank did not change.
+u16 BattleTower_UpdateRank(BattleTower *battleTower, SaveData *saveData, u8 operation)
 {
-    u8 v0, v1;
+    u8 lossStreak, rank;
     WifiBattleTowerRecord *record = SaveData_GetWifiBattleTowerRecord(saveData);
-    static const u8 v3[] = {
+    static const u8 lossStreakThresholds[] = {
         0,
         5,
         4,
@@ -828,34 +883,34 @@ u16 sub_0204AABC(BattleTower *battleTower, SaveData *saveData, u8 param2)
         1,
     };
 
-    switch (param2) {
+    switch (operation) {
     case 0:
         return (u16)WifiBattleTowerRecord_UpdateRank(record, 0);
     case 1:
         WifiBattleTowerRecord_UpdateBitFlag(record, 4, 2);
-        v1 = WifiBattleTowerRecord_UpdateRank(record, 0);
+        rank = WifiBattleTowerRecord_UpdateRank(record, 0);
 
-        if (v1 == 10) {
+        if (rank == 10) {
             battleTower->unk_10_4 = 1;
             return 0;
         }
 
         WifiBattleTowerRecord_UpdateRank(record, 3);
 
-        if (v1 + 1 >= 5) {
+        if (rank + 1 >= 5) {
             battleTower->unk_10_4 = 1;
         }
 
         return 1;
     case 2:
-        v0 = WifiBattleTowerRecord_UpdateLossStreak(record, 3);
-        v1 = WifiBattleTowerRecord_UpdateRank(record, 0);
+        lossStreak = WifiBattleTowerRecord_UpdateLossStreak(record, 3);
+        rank = WifiBattleTowerRecord_UpdateRank(record, 0);
 
-        if (v1 == 1) {
+        if (rank == 1) {
             return 0;
         }
 
-        if (v0 >= v3[v1 - 1]) {
+        if (lossStreak >= lossStreakThresholds[rank - 1]) {
             WifiBattleTowerRecord_UpdateRank(record, 4);
             WifiBattleTowerRecord_UpdateLossStreak(record, 2);
             WifiBattleTowerRecord_UpdateBitFlag(record, 4, 2);
@@ -869,7 +924,9 @@ u16 sub_0204AABC(BattleTower *battleTower, SaveData *saveData, u8 param2)
     return 0;
 }
 
-u16 sub_0204AB68(BattleTower *battleTower, SaveData *saveData)
+// Gives the single-mode ability ribbon after defeating Palmer. Returns TRUE if
+// at least one party Pokémon received it.
+u16 BattleTower_GivePalmerRibbon(BattleTower *battleTower, SaveData *saveData)
 {
     if (battleTower->challengeMode != BATTLE_TOWER_MODE_SINGLE) {
         return 0;
@@ -877,15 +934,17 @@ u16 sub_0204AB68(BattleTower *battleTower, SaveData *saveData)
 
     switch (battleTower->beatPalmer) {
     case 1:
-        return sub_0204AC54(saveData, MON_DATA_ABILITY_RIBBON, battleTower);
+        return BattleTower_GiveRibbonToParty(saveData, MON_DATA_ABILITY_RIBBON, battleTower);
     case 2:
-        return sub_0204AC54(saveData, MON_DATA_GREAT_ABILITY_RIBBON, battleTower);
+        return BattleTower_GiveRibbonToParty(saveData, MON_DATA_GREAT_ABILITY_RIBBON, battleTower);
     }
 
     return 0;
 }
 
-u16 sub_0204ABA0(BattleTower *battleTower, SaveData *saveData)
+// Gives the challenge-mode-specific ability ribbon once the player has reached
+// the required streak (tracked by unk_10_4).
+u16 BattleTower_GiveModeAbilityRibbon(BattleTower *battleTower, SaveData *saveData)
 {
     enum PokemonDataParam param;
 
@@ -916,20 +975,22 @@ u16 sub_0204ABA0(BattleTower *battleTower, SaveData *saveData)
         break;
     }
 
-    return sub_0204AC54(saveData, param, battleTower);
+    return BattleTower_GiveRibbonToParty(saveData, param, battleTower);
 }
 
-u16 sub_0204ABF4(BattleTower *battleTower, SaveData *saveData)
+// Seeds the BattleTower RNG. A fresh seed is used when no streak is active;
+// otherwise the seed is advanced by the current room number.
+u16 BattleTower_UpdateRandomSeed(BattleTower *battleTower, SaveData *saveData)
 {
-    u8 v0;
+    u8 streakActive;
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {
-        v0 = BattleFrontierSave_GetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_WFC_STREAK_ACTIVE);
+        streakActive = BattleFrontierSave_GetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), STAT_TOWER_WFC_STREAK_ACTIVE);
     } else {
-        v0 = WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 0);
+        streakActive = WifiBattleTowerRecord_UpdateBitFlag(battleTower->unk_74, 8 + battleTower->challengeMode, 0);
     }
 
-    if (!v0) {
+    if (!streakActive) {
         battleTower->unk_08 = sub_0206C02C(saveData);
     } else {
         battleTower->unk_08 = sub_0206C068(saveData);
@@ -938,47 +999,51 @@ u16 sub_0204ABF4(BattleTower *battleTower, SaveData *saveData)
     return battleTower->unk_08 / 65535;
 }
 
-static u16 sub_0204AC54(SaveData *saveData, enum PokemonDataParam param, BattleTower *battleTower)
+// Sets the given ribbon on every party Pokémon that does not already have it.
+// Returns TRUE if at least one Pokémon was updated.
+static u16 BattleTower_GiveRibbonToParty(SaveData *saveData, enum PokemonDataParam param, BattleTower *battleTower)
 {
-    u8 v0 = 1;
-    u8 v1;
-    int v2;
-    Party *v3;
-    Pokemon *v4;
+    u8 ribbonValue = 1;
+    u8 updatedCount;
+    int i;
+    Party *party;
+    Pokemon *mon;
 
-    v3 = SaveData_GetParty(saveData);
-    v1 = 0;
+    party = SaveData_GetParty(saveData);
+    updatedCount = 0;
 
-    for (v2 = 0; v2 < battleTower->partySize; v2++) {
-        v4 = Party_GetPokemonBySlotIndex(v3, battleTower->unk_2A[v2]);
+    for (i = 0; i < battleTower->partySize; i++) {
+        mon = Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[i]);
 
-        if (Pokemon_GetValue(v4, param, NULL)) {
+        if (Pokemon_GetValue(mon, param, NULL)) {
             continue;
         }
 
-        Pokemon_SetValue(v4, param, &v0);
-        sub_0206DDB8(saveData, v4, param);
-        ++v1;
+        Pokemon_SetValue(mon, param, &ribbonValue);
+        sub_0206DDB8(saveData, mon, param);
+        ++updatedCount;
     }
 
-    if (v1 == 0) {
+    if (updatedCount == 0) {
         return 0;
     }
 
     return 1;
 }
 
-static u16 sub_0204ACC8(BattleTower *battleTower)
+// Marks the ability ribbon as earned once the current streak reaches 50. Only
+// applies to the multi/link-multi challenge modes.
+static u16 BattleTower_UpdateAbilityRibbonFlag(BattleTower *battleTower)
 {
-    u16 v0;
+    u16 streak;
 
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_5 || battleTower->challengeMode == BATTLE_TOWER_MODE_SINGLE || battleTower->challengeMode == BATTLE_TOWER_MODE_6 || battleTower->challengeMode == BATTLE_TOWER_MODE_WIFI) {
         return 0;
     }
 
-    v0 = battleTower->unk_1A + battleTower->unk_0D;
+    streak = battleTower->unk_1A + battleTower->unk_0D;
 
-    if (v0 < 50) {
+    if (streak < 50) {
         return 0;
     }
 
@@ -986,49 +1051,54 @@ static u16 sub_0204ACC8(BattleTower *battleTower)
     return 1;
 }
 
-static void sub_0204ACFC(FrontierPokemon *param0, Pokemon *mon)
+// Copies the fields needed to reconstruct a Pokémon into a FrontierPokemon.
+static void BattleTower_CopyPokemonToFrontierPokemon(FrontierPokemon *dest, Pokemon *mon)
 {
-    int v0;
+    int i;
 
-    param0->species = Pokemon_GetValue(mon, MON_DATA_SPECIES, NULL);
-    param0->form = Pokemon_GetValue(mon, MON_DATA_FORM, NULL);
-    param0->item = Pokemon_GetValue(mon, MON_DATA_HELD_ITEM, NULL);
+    dest->species = Pokemon_GetValue(mon, MON_DATA_SPECIES, NULL);
+    dest->form = Pokemon_GetValue(mon, MON_DATA_FORM, NULL);
+    dest->item = Pokemon_GetValue(mon, MON_DATA_HELD_ITEM, NULL);
 
-    for (v0 = 0; v0 < LEARNED_MOVES_MAX; v0++) {
-        param0->moves[v0] = Pokemon_GetValue(mon, MON_DATA_MOVE1 + v0, NULL);
-        param0->combinedPPUps |= ((Pokemon_GetValue(mon, MON_DATA_MOVE1_PP_UPS + v0, NULL)) << (v0 * 2));
+    for (i = 0; i < LEARNED_MOVES_MAX; i++) {
+        dest->moves[i] = Pokemon_GetValue(mon, MON_DATA_MOVE1 + i, NULL);
+        dest->combinedPPUps |= ((Pokemon_GetValue(mon, MON_DATA_MOVE1_PP_UPS + i, NULL)) << (i * 2));
     }
 
-    param0->language = Pokemon_GetValue(mon, MON_DATA_LANGUAGE, NULL);
-    param0->otID = Pokemon_GetValue(mon, MON_DATA_OT_ID, NULL);
-    param0->personality = Pokemon_GetValue(mon, MON_DATA_PERSONALITY, NULL);
-    param0->combinedIVs = Pokemon_GetValue(mon, MON_DATA_COMBINED_IVS, NULL);
+    dest->language = Pokemon_GetValue(mon, MON_DATA_LANGUAGE, NULL);
+    dest->otID = Pokemon_GetValue(mon, MON_DATA_OT_ID, NULL);
+    dest->personality = Pokemon_GetValue(mon, MON_DATA_PERSONALITY, NULL);
+    dest->combinedIVs = Pokemon_GetValue(mon, MON_DATA_COMBINED_IVS, NULL);
 
-    for (v0 = 0; v0 < 6; v0++) {
-        param0->evList[v0] = Pokemon_GetValue(mon, MON_DATA_HP_EV + v0, NULL);
+    for (i = 0; i < 6; i++) {
+        dest->evList[i] = Pokemon_GetValue(mon, MON_DATA_HP_EV + i, NULL);
     }
 
-    param0->ability = Pokemon_GetValue(mon, MON_DATA_ABILITY, NULL);
-    param0->friendship = Pokemon_GetValue(mon, MON_DATA_FRIENDSHIP, NULL);
+    dest->ability = Pokemon_GetValue(mon, MON_DATA_ABILITY, NULL);
+    dest->friendship = Pokemon_GetValue(mon, MON_DATA_FRIENDSHIP, NULL);
 
-    Pokemon_GetValue(mon, MON_DATA_NICKNAME, param0->nickname);
+    Pokemon_GetValue(mon, MON_DATA_NICKNAME, dest->nickname);
 }
 
-static void sub_0204AE20(BattleTower *battleTower, SaveData *saveData, int param2)
+// Copies the player's party into a FrontierPokemon team and stores it in the
+// WiFi record at teamIdx.
+static void BattleTower_SaveTeamToWifiRecord(BattleTower *battleTower, SaveData *saveData, int teamIdx)
 {
-    FrontierPokemon *v1 = Heap_AllocAtEnd(battleTower->heapID, sizeof(FrontierPokemon) * 3);
-    MI_CpuClear8(v1, sizeof(FrontierPokemon) * 3);
+    FrontierPokemon *mons = Heap_AllocAtEnd(battleTower->heapID, sizeof(FrontierPokemon) * 3);
+    MI_CpuClear8(mons, sizeof(FrontierPokemon) * 3);
     Party *party = SaveData_GetParty(saveData);
 
     for (int i = 0; i < 3; i++) {
-        sub_0204ACFC(&(v1[i]), Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[i]));
+        BattleTower_CopyPokemonToFrontierPokemon(&(mons[i]), Party_GetPokemonBySlotIndex(party, battleTower->unk_2A[i]));
     }
 
-    WifiBattleTowerRecord_SetTeam(battleTower->unk_74, param2, v1);
-    MI_CpuClear8(v1, sizeof(FrontierPokemon) * 3);
-    Heap_Free(v1);
+    WifiBattleTowerRecord_SetTeam(battleTower->unk_74, teamIdx, mons);
+    MI_CpuClear8(mons, sizeof(FrontierPokemon) * 3);
+    Heap_Free(mons);
 }
 
+// Maps a Battle Tower trainer ID to the IV value its Pokémon are generated
+// with. Higher IDs (later rooms) get progressively better IVs.
 u8 BattleTower_GetIVsFromTrainerID(u16 battleTowerID)
 {
     u8 ivs;
@@ -1054,6 +1124,8 @@ u8 BattleTower_GetIVsFromTrainerID(u16 battleTowerID)
     return ivs;
 }
 
+// Advances the BattleTower RNG and returns a value in [0, 65534]. Mode 6 uses
+// the global LCRNG instead of the per-record seed.
 u16 BattleTower_GetRandom(BattleTower *battleTower)
 {
     if (battleTower->challengeMode == BATTLE_TOWER_MODE_6) {

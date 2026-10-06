@@ -59,7 +59,7 @@
 #include "system_vars.h"
 #include "terrain_collision_manager.h"
 #include "unk_0203C954.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "unk_0206B9D8.h"
 #include "vars_flags.h"
 
@@ -507,7 +507,7 @@ static void UseJournalFromMenu(ItemMenuUseContext *usageContext, const ItemUseCo
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(usageContext->fieldTask);
     StartMenu *v1 = FieldTask_GetEnv(usageContext->fieldTask);
 
-    sub_0203D30C(fieldSystem, NULL);
+    FieldSystem_OpenJournalApp(fieldSystem, NULL);
     StartMenu_SetCallback(v1, StartMenu_ExitJournal);
 }
 
@@ -519,7 +519,7 @@ static BOOL UseJournalInField(ItemFieldUseContext *usageContext)
 
 static void *sub_02068A28(void *some_param)
 {
-    sub_0203D30C(some_param, NULL);
+    FieldSystem_OpenJournalApp(some_param, NULL);
     return NULL;
 }
 
@@ -616,7 +616,7 @@ static void UsePalPadFromMenu(ItemMenuUseContext *usageContext, const ItemUseCon
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(usageContext->fieldTask);
     StartMenu *menu = FieldTask_GetEnv(usageContext->fieldTask);
 
-    sub_0203DE78(fieldSystem, fieldSystem->saveData);
+    FieldSystem_OpenPalPad(fieldSystem, fieldSystem->saveData);
     menu->taskData = NULL;
     StartMenu_SetCallback(menu, StartMenu_ExitPalPad);
 }
@@ -629,7 +629,7 @@ static BOOL UsePalPadInField(ItemFieldUseContext *usageContext)
 
 static void *sub_02068BEC(void *some_param)
 {
-    sub_0203DE78(some_param, ((FieldSystem *)some_param)->saveData);
+    FieldSystem_OpenPalPad(some_param, ((FieldSystem *)some_param)->saveData);
     return NULL;
 }
 
@@ -999,7 +999,7 @@ static void UseVsRecorderFromMenu(ItemMenuUseContext *usageContext, const ItemUs
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(usageContext->fieldTask);
     StartMenu *menu = FieldTask_GetEnv(usageContext->fieldTask);
 
-    sub_0203DE88(fieldSystem, fieldSystem->saveData);
+    FieldSystem_OpenVsRecorder(fieldSystem, fieldSystem->saveData);
     menu->taskData = NULL;
     StartMenu_SetCallback(menu, StartMenu_ExitVsRecorder);
 }
@@ -1013,7 +1013,7 @@ static BOOL UseVsRecorderInField(ItemFieldUseContext *usageContext)
 static void *sub_020691CC(void *some_param)
 {
     FieldSystem_SaveStateIfCommunicationOff(some_param);
-    sub_0203DE88(some_param, ((FieldSystem *)some_param)->saveData);
+    FieldSystem_OpenVsRecorder(some_param, ((FieldSystem *)some_param)->saveData);
 
     return NULL;
 }

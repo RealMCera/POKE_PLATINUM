@@ -28,7 +28,7 @@
 #include "item_use_pokemon.h"
 #include "party.h"
 #include "scrcmd_battle_hall.h"
-#include "unk_02049D08.h"
+#include "battle_tower.h"
 #include "unk_0209BA80.h"
 #include "wifi_battle_tower_save.h"
 
@@ -312,7 +312,7 @@ BOOL FrontierScrCmd_InitBattleTower(FrontierScriptContext *ctx)
     battleTower->partnerID = BT_PARTNERS_COUNT + battleTower->partnerGender;
 
     if (CommSys_CurNetId() == 0) {
-        sub_0204A4C8(battleTower, fieldData->saveData);
+        BattleTower_GenerateOpponentTrainerIDs(battleTower, fieldData->saveData);
     }
 
     Party_HealAllMembers(SaveData_GetParty(fieldData->saveData));

@@ -65,7 +65,7 @@
 #include "unk_0203C954.h"
 #include "unk_02054884.h"
 #include "unk_02056B30.h"
-#include "unk_0205A0D8.h"
+#include "colosseum.h"
 #include "union_room.h"
 #include "vars_flags.h"
 #include "wireless_manager.h"
@@ -413,7 +413,7 @@ BOOL FieldInput_Process_Colosseum(FieldInput *input, FieldSystem *fieldSystem)
     }
 
     if (input->interact) {
-        sub_0205B2D4(fieldSystem);
+        Colosseum_ViewTrainerCase(fieldSystem);
         return TRUE;
     }
 

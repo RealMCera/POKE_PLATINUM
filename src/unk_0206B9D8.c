@@ -30,7 +30,7 @@
 #include "underground.h"
 #include "unk_020363E8.h"
 #include "unk_02038FFC.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 #include "unk_0204AEE8.h"
 #include "wifi_battle_tower_save.h"
 
@@ -221,7 +221,7 @@ void sub_0206BBFC(FieldTask *param0, void **param1, u8 param2, u8 param3, u8 par
 static int sub_0206BC48(UnkStruct_0206BC48 *param0, FieldSystem *fieldSystem)
 {
     if (WiFiList_HasValidLogin(fieldSystem->saveData)) {
-        param0->unk_08 = sub_0203E1AC(fieldSystem, param0->unk_12, param0->unk_14);
+        param0->unk_08 = FieldSystem_OpenWifiBattleTowerApp(fieldSystem, param0->unk_12, param0->unk_14);
         return 1;
     }
 

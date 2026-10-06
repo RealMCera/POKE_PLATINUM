@@ -26,7 +26,7 @@
 #include "pokemon.h"
 #include "savedata.h"
 #include "trainer_info.h"
-#include "unk_02049D08.h"
+#include "battle_tower.h"
 #include "wifi_battle_tower_save.h"
 
 const FrontierPokemon sDummyFrontierPokemon[] = {

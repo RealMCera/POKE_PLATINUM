@@ -16,7 +16,7 @@
 #include "inlines.h"
 #include "save_player.h"
 #include "trainer_info.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 
 BOOL ScrCmd_PokeMartCommon(ScriptContext *ctx)
 {

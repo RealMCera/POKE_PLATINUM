@@ -32,7 +32,7 @@
 #include "string_gf.h"
 #include "string_template.h"
 #include "trainer_info.h"
-#include "unk_02049D08.h"
+#include "battle_tower.h"
 #include "wifi_battle_tower_save.h"
 
 static BOOL sub_0204B470(BattleTower *battleTower, FrontierTrainerBase *trainerData, u16 partnerBattleTowerID, FrontierPokemon *param3, u8 partySize, u16 *param5, u16 *param6, BattleTowerPartnerData *param7, enum HeapID heapID);

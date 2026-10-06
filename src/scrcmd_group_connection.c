@@ -16,7 +16,7 @@
 #include "string_template.h"
 #include "trainer_info.h"
 #include "tv_segment.h"
-#include "unk_0203D1B8.h"
+#include "field_system_apps.h"
 
 BOOL ScrCmd_DoGroupConnectionAction(ScriptContext *ctx)
 {
@@ -57,7 +57,7 @@ BOOL ScrCmd_DoGroupConnectionAction(ScriptContext *ctx)
     }
     case GC_ACTION_OPEN_GROUP_NAMING_SCREEN: {
         const u16 *entryName = RecordMixedRNG_GetEntryName(rngCollection, RECORD_MIXED_RNG_PLAYER_ORIGINAL, RECORD_MIXED_RNG_GROUP_NAME);
-        sub_0203DFE8(ctx->task, NAMING_SCREEN_TYPE_GROUP, 0, TRAINER_NAME_LEN, 0, entryName, ScriptContext_GetVarPointer(ctx));
+        FieldTask_StartNamingScreen(ctx->task, NAMING_SCREEN_TYPE_GROUP, 0, TRAINER_NAME_LEN, 0, entryName, ScriptContext_GetVarPointer(ctx));
         return TRUE;
     }
     case GC_ACTION_JOIN_GROUP: {

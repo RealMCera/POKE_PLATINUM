@@ -32,7 +32,7 @@
 #include "underground.h"
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
-#include "unk_0205A0D8.h"
+#include "colosseum.h"
 #include "unk_02099500.h"
 
 static void FieldCommManager_RunTask(SysTask *task, void *unused);
@@ -533,7 +533,7 @@ static void FieldCommTask_WaitBattleRoomMovement(void)
 }
 
 /**
- * @brief Callback for sub_0205AB10. Effectively acts like a task, as it changes the task when called.
+ * @brief Callback for Colosseum_StartBattle. Effectively acts like a task, as it changes the task when called.
  *
  * @param param0
  * @param party
@@ -564,7 +564,7 @@ static void FieldCommTask_StartWaitBattleRoom(void)
 }
 
 /**
- * @brief Difficult to tell what this does without documenting further into unk_0205A0D8.c. Related to the 4 tiles of field events in the battle room.
+ * @brief Difficult to tell what this does without documenting further into colosseum.c. Related to the 4 tiles of field events in the battle room.
  */
 static void FieldCommTask_02059C8C(void)
 {
@@ -578,7 +578,7 @@ static void FieldCommTask_02059C8C(void)
     }
 
     CommPlayerMan_PauseFieldSystem();
-    sub_0205AB10(sFieldCommMan->fieldSystem, FieldCommManager_UnknownCallback);
+    Colosseum_StartBattle(sFieldCommMan->fieldSystem, FieldCommManager_UnknownCallback);
     FieldCommManager_SetTask(FieldCommTask_StartWaitBattleRoom, 0);
 }
 

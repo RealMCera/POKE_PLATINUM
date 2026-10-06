@@ -200,8 +200,8 @@
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "unk_02038FFC.h"
-#include "unk_0203D1B8.h"
-#include "unk_020494DC.h"
+#include "field_system_apps.h"
+#include "scrcmd_battle_tower.h"
 #include "unk_0204AEE8.h"
 #include "unk_020528D0.h"
 #include "unk_020559DC.h"
@@ -3111,7 +3111,7 @@ static BOOL ScrCmd_0A6(ScriptContext *ctx)
     u16 *destVar = ScriptContext_GetVarPointer(ctx);
     u16 v2 = ScriptContext_GetVar(ctx);
 
-    sub_0203DAC0(ctx->fieldSystem->task, destVar, ctx->fieldSystem->saveData, slot, v2);
+    FieldSystem_StartDressUpApp(ctx->fieldSystem->task, destVar, ctx->fieldSystem->saveData, slot, v2);
     return TRUE;
 }
 
@@ -3131,7 +3131,7 @@ static BOOL ScrCmd_ShowDressUpPhoto(ScriptContext *ctx)
 
     *destVar = 0;
 
-    sub_0203DB24(ctx->fieldSystem, *v0);
+    FieldSystem_OpenDressUpPhotoViewer(ctx->fieldSystem, *v0);
     ScriptContext_Pause(ctx, sub_02041CC8);
 
     return TRUE;
@@ -3153,7 +3153,7 @@ static BOOL ScrCmd_0A8(ScriptContext *ctx)
 
     *v2 = 0;
 
-    sub_0203DB24(ctx->fieldSystem, *v0);
+    FieldSystem_OpenDressUpPhotoViewer(ctx->fieldSystem, *v0);
     ScriptContext_Pause(ctx, sub_02041CC8);
 
     return TRUE;
@@ -3204,7 +3204,7 @@ static BOOL ScrCmd_SetDressUpPhotoTitle(ScriptContext *ctx)
 
 static BOOL ScrCmd_205(ScriptContext *ctx)
 {
-    sub_0203E224(ctx->fieldSystem);
+    FieldSystem_OpenGeonet(ctx->fieldSystem);
     ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExit);
 
     return TRUE;
@@ -3306,7 +3306,7 @@ static BOOL ScrCmd_0AC(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
 
-    sub_0203DDFC(fieldSystem);
+    FieldSystem_OpenUnionRoomDrawingApp(fieldSystem);
     ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExit);
 
     return TRUE;
@@ -3320,7 +3320,7 @@ static BOOL ScrCmd_OpenUnionRoomTrainerCase(ScriptContext *ctx)
 
 static BOOL ScrCmd_0AE(ScriptContext *ctx)
 {
-    sub_0203DDDC(ctx->fieldSystem->task);
+    FieldTask_StartUnionRoomTrade(ctx->fieldSystem->task);
     return TRUE;
 }
 
@@ -3328,7 +3328,7 @@ static BOOL ScrCmd_0AF(ScriptContext *ctx)
 {
     void **v0 = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
-    *v0 = sub_0203DE34(ctx->fieldSystem);
+    *v0 = FieldSystem_OpenMixRecordsApp(ctx->fieldSystem);
     ScriptContext_Pause(ctx, sub_02041CC8);
 
     return TRUE;
@@ -3453,7 +3453,7 @@ static BOOL ScrCmd_Unused_0BA(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
 
-    sub_0203DFE8(ctx->task, NAMING_SCREEN_TYPE_PLAYER, 0, TRAINER_NAME_LEN, 0, NULL, ScriptContext_GetVarPointer(ctx));
+    FieldTask_StartNamingScreen(ctx->task, NAMING_SCREEN_TYPE_PLAYER, 0, TRAINER_NAME_LEN, 0, NULL, ScriptContext_GetVarPointer(ctx));
     return TRUE;
 }
 
@@ -3466,14 +3466,14 @@ static BOOL ScrCmd_OpenPokemonNamingScreen(ScriptContext *ctx)
     Pokemon *mon = Party_GetPokemonBySlotIndex(SaveData_GetParty(fieldSystem->saveData), slot);
 
     Pokemon_GetValue(mon, MON_DATA_NICKNAME, nickname);
-    sub_0203DFE8(ctx->task, NAMING_SCREEN_TYPE_POKEMON, Pokemon_GetValue(mon, MON_DATA_SPECIES, NULL), MON_NAME_LEN, slot, nickname, ScriptContext_GetVarPointer(ctx));
+    FieldTask_StartNamingScreen(ctx->task, NAMING_SCREEN_TYPE_POKEMON, Pokemon_GetValue(mon, MON_DATA_SPECIES, NULL), MON_NAME_LEN, slot, nickname, ScriptContext_GetVarPointer(ctx));
 
     return TRUE;
 }
 
 static BOOL ScrCmd_OpenShayminTabletNamingScreen(ScriptContext *ctx)
 {
-    sub_0203DFE8(ctx->task, NAMING_SCREEN_TYPE_SHAYMIN_TABLET, 0, 10, 0, NULL, ScriptContext_GetVarPointer(ctx));
+    FieldTask_StartNamingScreen(ctx->task, NAMING_SCREEN_TYPE_SHAYMIN_TABLET, 0, 10, 0, NULL, ScriptContext_GetVarPointer(ctx));
     return TRUE;
 }
 
@@ -3508,7 +3508,7 @@ static BOOL ScrCmd_ChooseCustomMessageWord(ScriptContext *ctx)
     u16 *destVar = ScriptContext_GetVarPointer(ctx);
 
     *destVar = 0xFFFF;
-    sub_0203D80C(ctx->fieldSystem->task, resultVar, destVar, NULL);
+    FieldTask_StartEasyChat(ctx->fieldSystem->task, resultVar, destVar, NULL);
 
     return TRUE;
 }
@@ -3523,7 +3523,7 @@ static BOOL ScrCmd_ChooseTwoCustomMessageWords(ScriptContext *ctx)
     *destVar1 = 0xFFFF;
     *destVar2 = 0xFFFF;
 
-    sub_0203D80C(ctx->fieldSystem->task, resultVar, destVar1, destVar2);
+    FieldTask_StartEasyChat(ctx->fieldSystem->task, resultVar, destVar1, destVar2);
     return TRUE;
 }
 
@@ -5825,7 +5825,7 @@ static BOOL ScrCmd_267(ScriptContext *ctx)
 {
     u16 slotMachineID = ScriptContext_GetVar(ctx);
 
-    sub_0203E414(ctx->fieldSystem->task, slotMachineID);
+    FieldTask_StartSlotMachine(ctx->fieldSystem->task, slotMachineID);
     return TRUE;
 }
 
@@ -6855,7 +6855,7 @@ static BOOL ScrCmd_2F6(ScriptContext *ctx)
 
     if (WiFiList_HasValidLogin(ctx->fieldSystem->saveData)) {
         *v2 = 1;
-        sub_0203E6C0(ctx->fieldSystem, v1, v0);
+        FieldSystem_OpenGlobalTerminal(ctx->fieldSystem, v1, v0);
         ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExit);
     } else {
         *v2 = 0;
