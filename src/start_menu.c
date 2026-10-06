@@ -82,8 +82,8 @@
 #include "field_system_apps.h"
 #include "unk_020559DC.h"
 #include "union_room.h"
-#include "unk_0205C22C.h"
-#include "unk_0206B9D8.h"
+#include "union_room_trainers.h"
+#include "battle_salon.h"
 #include "vars_flags.h"
 
 #include "res/graphics/start_menu/start_menu.naix"
@@ -720,7 +720,7 @@ static void sub_0203B2EC(StartMenu *menu, FieldSystem *fieldSystem)
 {
     if (CommServerClient_IsInitialized()) {
         if (menu->inUnionRoom) {
-            sub_0205C2B0(fieldSystem->unk_80);
+            UnionRoomTrainers_RequestAllLeave(fieldSystem->unk_80);
 
             CommManager_UnionRestartSearch();
             UnionRoom_BroadcastActivity(0);
@@ -1435,7 +1435,7 @@ static BOOL StartMenu_ExitChat(FieldTask *fieldTask)
 
     EasyChatArgs_Free((EasyChatArgs *)menu->taskData);
     FieldSystem_StartFieldMap(fieldSystem);
-    sub_0205C2B0(fieldSystem->unk_80);
+    UnionRoomTrainers_RequestAllLeave(fieldSystem->unk_80);
 
     return FALSE;
 }

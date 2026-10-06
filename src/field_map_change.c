@@ -69,7 +69,7 @@
 #include "field_system_apps.h"
 #include "unk_020559DC.h"
 #include "union_room.h"
-#include "unk_0205C22C.h"
+#include "union_room_trainers.h"
 #include "vars_flags.h"
 
 #include "res/text/bank/pokemon_center_2f_common.h"
@@ -576,7 +576,7 @@ static BOOL FieldTask_LoadMapFromError(FieldTask *task)
         break;
     case 2:
         fieldSystem->unk_7C = FieldSystem_InitCommUnionRoom(fieldSystem);
-        fieldSystem->unk_80 = sub_0205C22C(fieldSystem->unk_7C);
+        fieldSystem->unk_80 = UnionRoomTrainers_New(fieldSystem->unk_7C);
         FieldTransition_StartMap(task);
         (*state)++;
         break;
@@ -1432,7 +1432,7 @@ void sub_020545EC(FieldSystem *fieldSystem)
 
     mapChangeData->location = *location;
     UnionRoom_Exit(fieldSystem);
-    sub_0205C2E0(fieldSystem->unk_80);
+    UnionRoomTrainers_Free(fieldSystem->unk_80);
     fieldSystem->mapLoadType = MAP_LOAD_TYPE_OVERWORLD;
 
     FieldSystem_CreateTask(fieldSystem, sub_02054538, mapChangeData);
@@ -1499,7 +1499,7 @@ void sub_02054708(FieldTask *task)
     Location_Set(&mapChangeData->location, MAP_HEADER_UNION_ROOM, -1, 8, 14, 0);
 
     fieldSystem->unk_7C = FieldSystem_InitCommUnionRoom(fieldSystem);
-    fieldSystem->unk_80 = sub_0205C22C(fieldSystem->unk_7C);
+    fieldSystem->unk_80 = UnionRoomTrainers_New(fieldSystem->unk_7C);
     fieldSystem->mapLoadType = MAP_LOAD_TYPE_UNION;
 
     FieldTask_InitCall(task, sub_02054648, mapChangeData);

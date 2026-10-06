@@ -1279,7 +1279,7 @@ void SecretBases_ProcessBaseExitEvent(int unused0, int unused1, void *data, void
 
         CommSys_SendMessage(43);
         secretBasesEnv->currentPlayerInBase = FALSE;
-        sub_02059638(TRUE);
+        CommPlayerMan_SetInSecretBaseTransition(TRUE);
 
         SecretBases_StartMoveToFromSecretBaseTask(secretBasesEnv->fieldSystem, event->x, event->z, event->dir, event->netID, event->forceExit);
         secretBasesEnv->currentOccupiedBaseInfo = NULL;
@@ -1738,7 +1738,7 @@ static BOOL SecretBases_MoveToFromSecretBaseTask(FieldTask *task)
             CommManUnderground_TryExitBaseTransitionState();
         }
 
-        sub_02059638(FALSE);
+        CommPlayerMan_SetInSecretBaseTransition(FALSE);
         CommPlayerMan_ResumeFieldSystem();
         Heap_Free(ctx);
 

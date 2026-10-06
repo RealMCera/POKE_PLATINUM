@@ -257,7 +257,7 @@ static void CommManUnderground_SendInitialDataTask(void)
     if (!SystemFlag_CheckHasSeenUndergroundRoarkIntro(SaveData_GetVarsFlags(fieldCommMan->fieldSystem->saveData))) {
         CommManUnderground_SetFieldCommManTask(CommManUnderground_WaitForRoarkSceneTask, 0);
     } else {
-        sub_02059524();
+        CommPlayerMan_TryResumeFieldSystem();
         CommManUnderground_SetFieldCommManTask(CommManUnderground_DelayTask, 12 * 2);
     }
 }
@@ -271,7 +271,7 @@ static void CommManUnderground_WaitForRoarkSceneTask(void)
     }
 
     CommManager_ResetUnderground();
-    sub_02059524();
+    CommPlayerMan_TryResumeFieldSystem();
 
     CommManUnderground_SetFieldCommManTask(CommManUnderground_CheckForConnectionsTask, 12 * 2);
 }
@@ -291,7 +291,7 @@ static void CommManUnderground_DelayTask(void)
 static void CommManUnderground_CheckForConnectionsTask(void)
 {
     UndergroundMan_Process();
-    sub_02059524();
+    CommPlayerMan_TryResumeFieldSystem();
 
     if (CommManager_IsConnectingUnderground()) {
         if (CommSys_CurNetId() == 0) {
@@ -331,7 +331,7 @@ static void CommManUnderground_ConnectTaskClient(void)
 
         CommInfo_InitPlayer(0);
         CommPlayer_Destroy(0, FALSE, FALSE);
-        sub_02059570();
+        CommPlayerMan_TryPauseFieldSystem();
 
         CommManUnderground_SetFieldCommManTask(CommManUnderground_WaitForDataReadTaskClient, 10);
         return;
@@ -559,7 +559,7 @@ static void CommManUnderground_MainTaskClient(void)
     FieldCommunicationManager *fieldCommMan = FieldCommManager_Get();
 
     UndergroundMan_Process();
-    sub_02059524();
+    CommPlayerMan_TryResumeFieldSystem();
 
     if (fieldCommMan->fieldSystem->task != NULL) {
         return;

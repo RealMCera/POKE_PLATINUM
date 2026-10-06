@@ -29,7 +29,7 @@
 #include "unk_020363E8.h"
 #include "battle_tower.h"
 #include "unk_0204AEE8.h"
-#include "unk_0206B9D8.h"
+#include "battle_salon.h"
 #include "unk_0209BA80.h"
 #include "wifi_battle_tower_save.h"
 
@@ -123,7 +123,7 @@ BOOL ScrCmd_CallBattleTowerFunction(ScriptContext *ctx)
         break;
     case BT_FUNC_UNK_16:
         // Hand off to a field task that writes the result to destVar later.
-        sub_0206BCE4(ctx->task, functionArgument, varID, *destVar);
+        BattleSalon_StartWifiAppTask(ctx->task, functionArgument, varID, *destVar);
         return TRUE;
     case BT_FUNC_UNK_30:
         // Open the party menu for the player to pick their Battle Tower party.
@@ -238,7 +238,7 @@ BOOL ScrCmd_1DF(ScriptContext *ctx)
     v3 = FieldSystem_GetVarPointer(ctx->fieldSystem, v0);
     // Result is a Battle Tower reward state (0-4) derived from the streak and
     // the Underground goods storage.
-    *v3 = sub_0206BDBC(ctx->fieldSystem->saveData);
+    *v3 = BattleSalon_GrantReward(ctx->fieldSystem->saveData);
 
     return FALSE;
 }
@@ -250,8 +250,8 @@ BOOL ScrCmd_1E0(ScriptContext *ctx)
 
     v0 = ScriptContext_ReadHalfWord(ctx);
     v3 = FieldSystem_GetVarPointer(ctx->fieldSystem, v0);
-    // Companion to ScrCmd_1DF; see sub_0206BF04.
-    *v3 = sub_0206BF04(ctx->fieldSystem->saveData);
+    // Companion to ScrCmd_1DF; see BattleSalon_GetRewardStatus.
+    *v3 = BattleSalon_GetRewardStatus(ctx->fieldSystem->saveData);
 
     return FALSE;
 }
@@ -316,7 +316,7 @@ BOOL ScrCmd_1E2(ScriptContext *ctx)
 
     if (sub_0205E6D8(ctx->fieldSystem->saveData) == 1) {
         // Debug build: the comm tool's reply is handled by a field task.
-        sub_0206BD88(ctx->fieldSystem->task, commandType, destVarID);
+        BattleSalon_StartCommTask(ctx->fieldSystem->task, commandType, destVarID);
     } else {
         battleTower->unk_8DA = destVarID;
         battleTower->unk_8D5 = commandType;

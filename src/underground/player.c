@@ -377,7 +377,7 @@ static void UndergroundPlayer_HandleCurrentPlayerLosingFlag(FlagEvent *event, BO
 
     UndergroundMan_ForceEndCurrentSysTask();
 
-    sub_02057FC4(FALSE);
+    CommPlayerMan_BroadcastFieldSystemActive(FALSE);
     CommPlayerMan_PauseFieldSystemWithContextBit(PAUSE_BIT_LOST_FLAG);
 
     UndergroundTextPrinter_SetPlayerNameIndex0(UndergroundMan_GetCaptureFlagTextPrinter(), CommInfo_TrainerInfo(event->netID));
@@ -683,7 +683,7 @@ int UndergroundPlayer_GetXPos(int netID)
         return 0xffff;
     } else if (CommSys_CurNetId() == netID) {
         return commPlayerMan->playerLocation[netID].x;
-    } else if (!sub_02058C40()) {
+    } else if (!CommPlayerMan_IsInputAllowed()) {
         return 0xffff;
     }
 
@@ -698,7 +698,7 @@ int UndergroundPlayer_GetZPos(int netID)
         return 0xffff;
     } else if (CommSys_CurNetId() == netID) {
         return commPlayerMan->playerLocation[netID].z;
-    } else if (!sub_02058C40()) {
+    } else if (!CommPlayerMan_IsInputAllowed()) {
         return 0xffff;
     }
 

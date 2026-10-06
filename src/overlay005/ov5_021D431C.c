@@ -21,7 +21,7 @@
 #include "screen_fade.h"
 #include "sound_playback.h"
 #include "terrain_collision_manager.h"
-#include "unk_02056B30.h"
+#include "map_transition.h"
 #include "map_object_animation.h"
 
 #include "res/field/props/models/prop_models.naix"
@@ -294,7 +294,7 @@ BOOL ov5_021D453C(FieldSystem *fieldSystem, UnkStruct_ov5_021D432C *param1)
         (param1->unk_00)++;
     } break;
     case 1:
-        sub_02056B30(fieldSystem->task, 0, 9, 1, 0x0, 6, 1, HEAP_ID_FIELD2);
+        MapTransition_StartScreenFade(fieldSystem->task, 0, 9, 1, 0x0, 6, 1, HEAP_ID_FIELD2);
         {
             int v9;
             int v10;
@@ -978,7 +978,7 @@ BOOL ov5_021D4FA0(FieldTask *param0)
         v1->unk_04 = 0;
 
         Sound_PlayEffect(SEQ_SE_DP_KAIDAN2_sseq);
-        sub_02056B30(param0, 0, 16, 0, 0x0, 6, 1, HEAP_ID_FIELD2);
+        MapTransition_StartScreenFade(param0, 0, 16, 0, 0x0, 6, 1, HEAP_ID_FIELD2);
 
         v1->unk_08 = 1;
         (v1->unk_00)++;
@@ -1045,7 +1045,7 @@ BOOL ov5_021D5020(FieldTask *param0)
             GF_ASSERT(FALSE);
         }
 
-        sub_02056B30(param0, 0, v4, 1, 0x0, 6, 1, HEAP_ID_FIELD2);
+        MapTransition_StartScreenFade(param0, 0, v4, 1, 0x0, 6, 1, HEAP_ID_FIELD2);
         v2->unk_08 = 1;
     } break;
     case 1:
@@ -1099,7 +1099,7 @@ BOOL ov5_021D5150(FieldTask *param0)
             (v2->unk_00) = 3;
         }
 
-        sub_02056B30(param0, 0, 1, 1, 0x0, 6, 1, HEAP_ID_FIELD2);
+        MapTransition_StartScreenFade(param0, 0, 1, 1, 0x0, 6, 1, HEAP_ID_FIELD2);
     } break;
     case 1:
         v0 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);

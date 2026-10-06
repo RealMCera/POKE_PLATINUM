@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_0205C22C_DECL_H
 #define POKEPLATINUM_STRUCT_0205C22C_DECL_H
 
-typedef struct UnkStruct_0205C22C_t UnkStruct_0205C22C;
+typedef struct UnionRoomTrainers UnionRoomTrainers;
 
 #endif // POKEPLATINUM_STRUCT_0205C22C_DECL_H

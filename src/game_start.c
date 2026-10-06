@@ -21,7 +21,7 @@
 #include "system_data.h"
 #include "system_flags.h"
 #include "trainer_info.h"
-#include "unk_0206B9D8.h"
+#include "battle_salon.h"
 #include "vars_flags.h"
 
 #include "constdata/const_020EA10C.h"
@@ -156,7 +156,7 @@ static void InitializeNewSave(enum HeapID heapID, SaveData *saveData, BOOL setTr
 
     rngCollection = SaveData_GetRecordMixedRNG(saveData);
     RecordMixedRNG_SetEntrySeed(rngCollection, RECORD_MIXED_RNG_PLAYER_OVERRIDE, MTRNG_Next());
-    sub_0206C008(saveData);
+    BattleSalon_SeedRng(saveData);
 
     trainerInfo = SaveData_GetTrainerInfo(saveData);
     rnd = MTRNG_Next();

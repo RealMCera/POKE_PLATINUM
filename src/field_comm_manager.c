@@ -370,7 +370,7 @@ static void FieldCommTask_ReturnToBattleRoom(void)
     if (CommTiming_IsSyncState(SYNC_CHANGE_TO_BATTLE_ROOM)) {
         void *commPlayerData = Heap_Alloc(HEAP_ID_COMMUNICATION, CommPlayer_Size());
         CommPlayerMan_Init(commPlayerData, sFieldCommMan->fieldSystem, 0);
-        sub_02059524();
+        CommPlayerMan_TryResumeFieldSystem();
         CommSys_DisableSendMovementData();
         CommTiming_StartSync(SYNC_PAUSE_BATTLE);
         FieldCommManager_SetTask(FieldCommTask_ReturnToBattleRoom_SendPos, 0);
@@ -431,7 +431,7 @@ static void FieldCommTask_ReturnToBattleRoom_WaitForScreenFade(void)
     }
 
     if (CommSys_CurNetId() == 0) {
-        if (0 == sub_0205928C()) {
+        if (0 == CommPlayerMan_StepBackFromBattleGrid()) {
             return;
         }
 
@@ -451,7 +451,7 @@ static void FieldCommTask_EnterBattleRoom(void)
     if (CommTiming_IsSyncState(SYNC_CHANGE_TO_BATTLE_ROOM)) {
         void *commPlayerData = Heap_Alloc(HEAP_ID_COMMUNICATION, CommPlayer_Size());
         CommPlayerMan_Init(commPlayerData, sFieldCommMan->fieldSystem, 0);
-        sub_02059524();
+        CommPlayerMan_TryResumeFieldSystem();
         CommTiming_StartSync(SYNC_PAUSE_BATTLE);
         FieldCommManager_SetTask(FieldCommTask_EnterBattleRoom_SendPos, 0);
         return;
@@ -520,7 +520,7 @@ static void FieldCommManager_CheckExitRoom(void)
  */
 static void FieldCommTask_WaitBattleRoomMovement(void)
 {
-    if (!sub_020590C4()) {
+    if (!CommPlayerMan_CheckBattleGridPositions()) {
         sFieldCommMan->battleRoomMovement = FALSE;
 
         u8 data = 1;

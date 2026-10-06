@@ -9,7 +9,7 @@
 #include "overlay104/ov104_0223A0C4.h"
 
 #include "savedata.h"
-#include "unk_0206B9D8.h"
+#include "battle_salon.h"
 
 u16 BattleTower_GetObjectIDFromOpponentIDInFrontierScript(BattleTower *battleTower, u16 opponentID);
 void BattleTower_SetBeatPalmer(BattleTower *battleTower, u16 value);
@@ -61,7 +61,7 @@ u16 ov104_022395B4(BattleTower *battleTower)
     ++battleTower->unk_0D;
 
     if (battleTower->challengeMode != BATTLE_TOWER_MODE_6) {
-        battleTower->unk_08 = sub_0206BFF0(battleTower->unk_08);
+        battleTower->unk_08 = BattleSalon_AdvanceRng(battleTower->unk_08);
     }
 
     return ++battleTower->nextOpponentNum;

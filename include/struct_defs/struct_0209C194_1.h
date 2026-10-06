@@ -14,7 +14,7 @@ typedef struct {
     int unk_00;
     int unk_04;
     SaveData *saveData;
-    UnkStruct_0205C22C *unk_0C;
+    UnionRoomTrainers *unk_0C;
     Options *options;
     GameRecords *records;
     JournalEntry *journalEntry;

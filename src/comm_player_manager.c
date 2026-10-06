@@ -45,17 +45,23 @@
 #include "underground.h"
 #include "map_object_animation.h"
 
+// Manages the avatars and positions of every player in a link session. The
+// server (netId 0) owns the authoritative positions in playerLocationServer
+// and simulates movement for all players; clients send their own position and
+// receive the server's view. The manager also drives the battle-room grid
+// handshake and the underground-specific per-player state.
+
 static int CommPlayerMan_GetSlideMovementSpeed(int param0, int param1);
 static BOOL CommPlayer_MoveSlide(int netId, int param1);
 static BOOL CommPlayer_SlideAnimation(int netId, int param1, int unused, int animSpeed);
 static void CommPlayer_SendDataTask(void *data);
-static void sub_02057C2C(void *data);
+static void CommPlayer_SendChangedPositions(void *data);
 static void CommPlayer_Add(u8 netId);
 static void CommPlayer_Move(SysTask *unused0, void *unused1);
 static void Task_CommPlayerManagerRun(SysTask *task, void *data);
-static void sub_02057EF8(void *unused);
+static void CommPlayer_UpdateClients(void *unused);
 static void CommPlayer_MoveClient(int netId);
-static void sub_020591A8(void);
+static void CommPlayerMan_CheckBattleGridServer(void);
 
 static CommPlayerManager *sCommPlayerManager = NULL;
 
@@ -97,12 +103,12 @@ BOOL CommPlayerMan_Init(void *dest, FieldSystem *fieldSystem, BOOL isUnderground
         sCommPlayerManager->slideAnimationDir[netId] = DIR_NONE;
         sCommPlayerManager->movementEnabled[netId] = FALSE;
         sCommPlayerManager->movementEnabled2[netId] = TRUE;
-        sCommPlayerManager->unk_F2[netId] = 0;
+        sCommPlayerManager->onBattleGrid[netId] = 0;
         sCommPlayerManager->heldFlagInfo[netId].netID = NETID_NONE;
     }
 
     sCommPlayerManager->isFieldSystemActive = FALSE;
-    sCommPlayerManager->unk_2BF = 0;
+    sCommPlayerManager->resumeHandled = 0;
     sCommPlayerManager->task = SysTask_Start(Task_CommPlayerManagerRun, NULL, 100 + 100);
 
     CommSys_EnableSendMovementData();
@@ -111,6 +117,8 @@ BOOL CommPlayerMan_Init(void *dest, FieldSystem *fieldSystem, BOOL isUnderground
     return TRUE;
 }
 
+// Tears down every player's avatar. Underground keeps the manager around (it
+// is only marked disabled) so it can be restarted when reconnecting.
 void CommPlayerMan_Disable(void)
 {
     if (sCommPlayerManager == NULL) {
@@ -143,6 +151,8 @@ void CommPlayerMan_Restart(void)
     CommPlayer_SendPos(TRUE);
 }
 
+// Frees the manager and all owned data. deletePlayerData controls whether the
+// underlying player save data is also released.
 void CommPlayerMan_Delete(BOOL deletePlayerData)
 {
     if (sCommPlayerManager != NULL) {
@@ -208,12 +218,12 @@ void CommPlayerMan_Reinit(void)
         sCommPlayerManager->slideTilesLeft[netId] = 0;
         sCommPlayerManager->movementEnabled[netId] = FALSE;
         sCommPlayerManager->movementEnabled2[netId] = TRUE;
-        sCommPlayerManager->unk_F2[netId] = 0;
+        sCommPlayerManager->onBattleGrid[netId] = 0;
         sCommPlayerManager->moveTimerServer[netId] = 0;
         sCommPlayerManager->moveTimer[netId] = 0;
     }
 
-    sCommPlayerManager->unk_2BF = 0;
+    sCommPlayerManager->resumeHandled = 0;
     CommPlayer_InitPersonal();
 
     if (sCommPlayerManager->task == NULL) {
@@ -231,6 +241,7 @@ void CommPlayerMan_Stop(void)
     sCommPlayerManager->task = NULL;
 }
 
+// Registers the local player's avatar and seeds both position copies from it.
 void CommPlayer_InitPersonal(void)
 {
     sCommPlayerManager->playerAvatar[CommSys_CurNetId()] = sCommPlayerManager->fieldSystem->playerAvatar;
@@ -243,9 +254,11 @@ void CommPlayer_InitPersonal(void)
     sCommPlayerManager->playerLocationServer[CommSys_CurNetId()].dir = PlayerAvatar_GetFacingDir(sCommPlayerManager->fieldSystem->playerAvatar);
 }
 
+// Adopts netJd's position and held-flag ownership as the local player's, used
+// when a client takes over the server's slot.
 void CommPlayer_CopyPersonal(int netJd)
 {
-    sCommPlayerManager->unk_2BF = FALSE;
+    sCommPlayerManager->resumeHandled = FALSE;
     int netId = CommSys_CurNetId();
 
     sCommPlayerManager->playerAvatar[netId] = sCommPlayerManager->fieldSystem->playerAvatar;
@@ -266,6 +279,8 @@ void CommPlayer_CopyPersonal(int netJd)
     sCommPlayerManager->heldFlagInfo[netJd].netID = NETID_NONE;
 }
 
+// Packet 22: the local player's X/Z and facing direction. param0 sets the high
+// bit of the direction byte, which asks the receiver to resend all positions.
 void CommPlayer_SendXZPos(BOOL param0, int x, int z)
 {
     u8 data[5 + 1];
@@ -301,6 +316,8 @@ void CommPlayer_SendPosServer(BOOL param0)
     CommPlayer_SendXZPos(param0, x, z);
 }
 
+// Packet 23 (server -> clients): one player's position, packed into four bytes.
+// Coordinates are clamped to the 0xf000 range the format can represent.
 static void CommPlayer_SendPosNetId(int netId, const CommPlayerLocation *playerLocation)
 {
     u8 data[COMM_PACKET_SIZE_POS_NETID + 1];
@@ -333,24 +350,28 @@ static void CommPlayer_SendPosNetId(int netId, const CommPlayerLocation *playerL
     CommSys_SendDataServer(23, data, 0);
 }
 
+// While the local player is standing still, broadcast the position once; reset
+// the latch when they start moving again.
 void CommPlayer_SendDataTask(void *data)
 {
     int v0 = PlayerAvatar_GetMoveState(sCommPlayerManager->fieldSystem->playerAvatar);
     int moveState = PlayerAvatar_GetPlayerMoveState(sCommPlayerManager->fieldSystem->playerAvatar);
 
     if ((0 == v0) && CommSys_IsPlayerConnected(CommSys_CurNetId())) {
-        if (!sCommPlayerManager->unk_2BA) {
+        if (!sCommPlayerManager->idlePositionSent) {
             CommPlayer_SendPos(TRUE);
-            sCommPlayerManager->unk_2BA = 1;
+            sCommPlayerManager->idlePositionSent = 1;
         }
     }
 
     if ((1 == v0) && (1 == moveState)) {
-        sCommPlayerManager->unk_2BA = 0;
+        sCommPlayerManager->idlePositionSent = 0;
     }
 }
 
-static void sub_02057C2C(void *data)
+// Server: send packet 23 for every active player whose position changed, or
+// for everyone when a full resend was requested.
+static void CommPlayer_SendChangedPositions(void *data)
 {
     for (int netId = 0; netId < MAX_CONNECTED_PLAYERS; netId++) {
         if (sCommPlayerManager->isActive[netId]) {
@@ -371,6 +392,8 @@ u32 CommPlayer_Size(void)
     return sizeof(CommPlayerManager);
 }
 
+// Creates the avatar for a newly connected player, unless the manager is
+// disabled.
 static void CommPlayer_Add(u8 netId)
 {
     PlayerAvatar *playerAvatar;
@@ -423,6 +446,9 @@ static void CommPlayer_Add(u8 netId)
     }
 }
 
+// Removes a player's avatar. param1 keeps the player marked active (used when
+// only the avatar is being torn down); param2 forces a full delete rather than
+// a free.
 void CommPlayer_Destroy(u8 netId, BOOL param1, BOOL param2)
 {
     if (sCommPlayerManager == NULL) {
@@ -462,6 +488,7 @@ void CommPlayer_Destroy(u8 netId, BOOL param1, BOOL param2)
     }
 }
 
+// Holding B makes the player walk, so report the slower speed to peers.
 static void CommPlayer_SendMoveSpeed()
 {
     u8 moveSpeed = 2;
@@ -473,13 +500,15 @@ static void CommPlayer_SendMoveSpeed()
     CommSys_SetSendSpeed(moveSpeed);
 }
 
+// Per-frame task: broadcast movement, simulate the server's view of all
+// players, and update clients.
 static void Task_CommPlayerManagerRun(SysTask *task, void *data)
 {
     if (CommSys_IsInitialized()) {
         CommPlayer_SendMoveSpeed();
 
         if (CommSys_CurNetId() == 0) {
-            sub_02057C2C(data);
+            CommPlayer_SendChangedPositions(data);
             CommPlayer_SendDataTask(data);
 
             if (sCommPlayerManager->playerStatuses) {
@@ -489,7 +518,7 @@ static void Task_CommPlayerManagerRun(SysTask *task, void *data)
             CommPlayer_SendDataTask(data);
         }
 
-        sub_02057EF8(data);
+        CommPlayer_UpdateClients(data);
     }
 
     for (int netId = 0; netId < MAX_CONNECTED_PLAYERS; netId++) {
@@ -503,7 +532,9 @@ static void Task_CommPlayerManagerRun(SysTask *task, void *data)
     }
 }
 
-static void sub_02057EF8(void *unused)
+// Drives each connected player's client-side movement; disconnects are cleaned
+// up by the server.
+static void CommPlayer_UpdateClients(void *unused)
 {
     for (int netId = 0; netId < MAX_CONNECTED_PLAYERS; netId++) {
         if (!CommSys_IsPlayerConnected(netId)) {
@@ -541,7 +572,9 @@ BOOL CommPlayerMan_IsFieldSystemActive(void)
     return FALSE;
 }
 
-void sub_02057FC4(BOOL param0)
+// Packet 62: tell peers whether this player's field system is active (i.e.
+// movement allowed). Always sent.
+void CommPlayerMan_BroadcastFieldSystemActive(BOOL param0)
 {
     if (sCommPlayerManager != NULL) {
         if (sCommPlayerManager->isFieldSystemActive != param0) {
@@ -552,7 +585,9 @@ void sub_02057FC4(BOOL param0)
     }
 }
 
-static void sub_02057FF0(BOOL param0)
+// Same as CommPlayerMan_BroadcastFieldSystemActive but only sends when the
+// value actually changes.
+static void CommPlayerMan_SetFieldSystemActiveIfChanged(BOOL param0)
 {
     if (sCommPlayerManager != NULL) {
         if (sCommPlayerManager->isFieldSystemActive != param0) {
@@ -562,7 +597,8 @@ static void sub_02057FF0(BOOL param0)
     }
 }
 
-void sub_02058018(int netId, int param1, void *param2, void *unused)
+// Packet 62 handler: apply the sender's movement-enabled state.
+void CommPlayer_RecvMovementEnabled(int netId, int param1, void *param2, void *unused)
 {
     u8 *buffer = (u8 *)param2;
 
@@ -575,15 +611,17 @@ void sub_02058018(int netId, int param1, void *param2, void *unused)
     }
 }
 
-void sub_0205805C(FieldSystem *fieldSystem, BOOL param1)
+// Called each frame from field input handling; runs the server's movement
+// simulation and battle-grid check.
+void CommPlayerMan_Update(FieldSystem *fieldSystem, BOOL param1)
 {
     if (sCommPlayerManager == NULL) {
         return;
     }
 
     if (!sCommPlayerManager->isUnderground) {
-        sub_02057FF0(param1);
-        sCommPlayerManager->unk_2C1 = param1;
+        CommPlayerMan_SetFieldSystemActiveIfChanged(param1);
+        sCommPlayerManager->processInput = param1;
     }
 
     if (fieldSystem->playerAvatar) {
@@ -596,11 +634,12 @@ void sub_0205805C(FieldSystem *fieldSystem, BOOL param1)
 
     if (CommSys_IsInitialized() && (CommSys_CurNetId() == 0)) {
         if (!sCommPlayerManager->isUnderground) {
-            sub_020591A8();
+            CommPlayerMan_CheckBattleGridServer();
         }
     }
 }
 
+// Maps held D-pad keys to a facing direction, or -1 if none.
 static int CommPlayer_Direction(u16 unused, u16 keys)
 {
     if (keys & PAD_KEY_LEFT) {
@@ -622,6 +661,7 @@ static int CommPlayer_Direction(u16 unused, u16 keys)
     return -1;
 }
 
+// TRUE if an object event occupies the tile.
 BOOL CommPlayer_CheckNPCCollision(int x, int z)
 {
     int npcCnt = MapHeaderData_GetNumObjectEvents(sCommPlayerManager->fieldSystem), i;
@@ -636,6 +676,8 @@ BOOL CommPlayer_CheckNPCCollision(int x, int z)
     return 0;
 }
 
+// TRUE if the tile is blocked by another player, an NPC, a secret base, or
+// terrain.
 static BOOL CommPlayer_CheckCollision(int x, int z, int netIdTarget)
 {
     if ((x != 0xffff) && (z != 0xffff)) {
@@ -663,6 +705,7 @@ static BOOL CommPlayer_CheckCollision(int x, int z, int netIdTarget)
     return TerrainCollisionManager_CheckCollision(sCommPlayerManager->fieldSystem, x, z);
 }
 
+// Slide speed (in frames per tile) increases as the slide runs out.
 static int CommPlayerMan_GetSlideMovementSpeed(int slideTilesLeft, int unused)
 {
     if (slideTilesLeft < 5) {
@@ -674,7 +717,8 @@ static int CommPlayerMan_GetSlideMovementSpeed(int slideTilesLeft, int unused)
     return 2;
 }
 
-static int sub_020581E0(int param0)
+// Frames a single step takes for each move speed.
+static int CommPlayer_GetMoveDuration(int param0)
 {
     int v0[5] = { 2, 4, 8, 16, 2 };
 
@@ -682,6 +726,7 @@ static int sub_020581E0(int param0)
     return v0[param0];
 }
 
+// Server-side movement simulation for every active player.
 static void CommPlayer_Move(SysTask *unused0, void *unused1)
 {
     u16 keys;
@@ -727,7 +772,7 @@ static void CommPlayer_Move(SysTask *unused0, void *unused1)
                 }
             }
 
-            if (!sCommPlayerManager->unk_F2[netId]) {
+            if (!sCommPlayerManager->onBattleGrid[netId]) {
                 keys = sub_02035E84(netId);
             } else {
                 keys = 0;
@@ -789,7 +834,7 @@ static void CommPlayer_Move(SysTask *unused0, void *unused1)
                     playerLocation->z = z;
                     playerLocation->dir = dir;
 
-                    sCommPlayerManager->moveTimerServer[netId] = sub_020581E0(playerLocation->moveSpeed);
+                    sCommPlayerManager->moveTimerServer[netId] = CommPlayer_GetMoveDuration(playerLocation->moveSpeed);
 
                     if (sCommPlayerManager->alteredMovementStepsLeft[netId] != 0) {
                         sCommPlayerManager->alteredMovementStepsLeft[netId]--;
@@ -805,6 +850,8 @@ static void CommPlayer_Move(SysTask *unused0, void *unused1)
     }
 }
 
+// Packet 22 handler (server side): store the sender's position. The high bit
+// of the direction byte requests a full position resend.
 void CommPlayer_RecvLocation(int netId, int unused0, void *src, void *unused1)
 {
     u8 *buffer = (u8 *)src;
@@ -845,6 +892,8 @@ void CommPlayer_RecvLocation(int netId, int unused0, void *src, void *unused1)
     }
 }
 
+// Packet 52 handler: a player left; tear down their avatar and reset their
+// info.
 void CommPlayer_RecvDelete(int unused0, int unused1, void *src, void *unused2)
 {
     u8 *buffer = (u8 *)src;
@@ -875,6 +924,8 @@ int CommPacketSizeOf_RecvLocation(void)
     return COMM_PACKET_SIZE_LOCATION;
 }
 
+// Packet 23 handler (client side): unpack a player's position and create their
+// avatar if needed.
 void CommPlayer_RecvLocationAndInit(int netId, int size, void *src, void *unused)
 {
     u8 *buffer = (u8 *)src;
@@ -885,7 +936,7 @@ void CommPlayer_RecvLocationAndInit(int netId, int size, void *src, void *unused
         return;
     }
 
-    if ((netId == CommSys_CurNetId()) && sCommPlayerManager->unk_2C3) {
+    if ((netId == CommSys_CurNetId()) && sCommPlayerManager->inSecretBaseTransition) {
         return;
     }
 
@@ -909,7 +960,9 @@ void CommPlayer_RecvLocationAndInit(int netId, int size, void *src, void *unused
     CommPlayer_Add(netJd);
 }
 
-static void sub_02058644(int netId)
+// Counts the local player's underground steps; every 50 awards a trainer
+// score.
+static void CommPlayer_RecordUndergroundStep(int netId)
 {
     Underground *underground = SaveData_GetUnderground(FieldSystem_GetSaveData(sCommPlayerManager->fieldSystem));
     SaveData_GetUndergroundRecord(FieldSystem_GetSaveData(sCommPlayerManager->fieldSystem));
@@ -925,6 +978,8 @@ static void sub_02058644(int netId)
     }
 }
 
+// Plays the slide/walk animation for a player being pushed. animSpeed selects
+// the walk speed row.
 static BOOL CommPlayer_SlideAnimation(int netId, int param1, int unused, int animSpeed)
 {
     u8 walkAnimationCode[] = {
@@ -950,7 +1005,7 @@ static BOOL CommPlayer_SlideAnimation(int netId, int param1, int unused, int ani
     LocalMapObj_CheckAnimationFinished(obj);
 
     if (LocalMapObj_IsAnimationSet(obj) == 1) {
-        sub_02058644(netId);
+        CommPlayer_RecordUndergroundStep(netId);
 
         switch (animSpeed) {
         case 0:
@@ -968,6 +1023,7 @@ static BOOL CommPlayer_SlideAnimation(int netId, int param1, int unused, int ani
     return TRUE;
 }
 
+// Client-side: walk the local avatar toward the position the server reported.
 static void CommPlayer_MoveClient(int netId)
 {
     u16 pad = 0;
@@ -990,7 +1046,7 @@ static void CommPlayer_MoveClient(int netId)
 
     if (!sCommPlayerManager->isUnderground) {
         if (netId == CommSys_CurNetId()) {
-            if (!sCommPlayerManager->unk_2C1) {
+            if (!sCommPlayerManager->processInput) {
                 return;
             }
         }
@@ -1086,19 +1142,21 @@ static void CommPlayer_MoveClient(int netId)
 
             if (pad & ~PAD_BUTTON_B) {
                 if (sCommPlayerManager->moveTimer[netId] == 0) {
-                    sCommPlayerManager->moveTimer[netId] = sub_020581E0(moveSpeed);
+                    sCommPlayerManager->moveTimer[netId] = CommPlayer_GetMoveDuration(moveSpeed);
                 }
 
                 if (sCommPlayerManager->moveTimer[netId] != 0) {
                     sCommPlayerManager->moveTimer[netId]--;
                 }
 
-                sub_02058644(netId);
+                CommPlayer_RecordUndergroundStep(netId);
             }
         }
     }
 }
 
+// Advances a player being pushed one tile per call. Returns TRUE while the
+// slide is still in progress.
 static BOOL CommPlayer_MoveSlide(int netId, int speed)
 {
     // int x, z;
@@ -1158,6 +1216,8 @@ static BOOL CommPlayer_MoveSlide(int netId, int speed)
     return TRUE;
 }
 
+// Begins a slide (trap push) in dir; hurl traps push further than normal
+// traps.
 void CommPlayer_StartSlide(int netId, int dir, BOOL isHurlTrap)
 {
     CommPlayerLocation *playerLocation = &sCommPlayerManager->playerLocationServer[netId];
@@ -1176,16 +1236,20 @@ void CommPlayer_StartSlide(int netId, int dir, BOOL isHurlTrap)
     sCommPlayerManager->movementChanged[netId] = TRUE;
 }
 
+// Cancels an in-progress slide.
 void CommPlayer_StopSlide(int netId)
 {
     sCommPlayerManager->slideTilesLeft[netId] = 0;
 }
 
+// Marks the slide as finished (0xff) so the next MoveSlide call returns
+// immediately.
 void CommPlayer_EndCurrentSlide(int netId)
 {
     sCommPlayerManager->slideTilesLeft[netId] = 0xff;
 }
 
+// Locks the avatar's facing/animation while a slide animation plays.
 void CommPlayer_StartSlideAnimation(int netId, int dir, BOOL unused)
 {
     if (sCommPlayerManager->playerAvatar[netId] == NULL) {
@@ -1200,6 +1264,7 @@ void CommPlayer_StartSlideAnimation(int netId, int dir, BOOL unused)
     sCommPlayerManager->slideAnimationDir[netId] = dir;
 }
 
+// Restores the avatar's facing/animation after a slide.
 void CommPlayer_StopSlideAnimation(int netId)
 {
     if (sCommPlayerManager->playerAvatar[netId] == NULL) {
@@ -1222,7 +1287,9 @@ int CommPacketSizeOf_RecvLocationAndInit(void)
     return COMM_PACKET_SIZE_POS_NETID;
 }
 
-BOOL sub_02058C40(void)
+// TRUE when the local player may act: alone, connected, and (underground)
+// input allowed.
+BOOL CommPlayerMan_IsInputAllowed(void)
 {
     if (CommSys_IsAlone()) {
         return TRUE;
@@ -1254,7 +1321,7 @@ int CommPlayer_GetXIfActive(int netId)
         return 0xffff;
     } else if (CommSys_CurNetId() == netId) {
         return sCommPlayerManager->playerLocation[netId].x;
-    } else if (!sub_02058C40() || !sCommPlayerManager->isActive[netId]) {
+    } else if (!CommPlayerMan_IsInputAllowed() || !sCommPlayerManager->isActive[netId]) {
         return 0xffff;
     }
 
@@ -1267,7 +1334,7 @@ int CommPlayer_GetZIfActive(int netId)
         return 0xffff;
     } else if (CommSys_CurNetId() == netId) {
         return sCommPlayerManager->playerLocation[netId].z;
-    } else if (!sub_02058C40() || !sCommPlayerManager->isActive[netId]) {
+    } else if (!CommPlayerMan_IsInputAllowed() || !sCommPlayerManager->isActive[netId]) {
         return 0xffff;
     }
 
@@ -1316,7 +1383,7 @@ int CommPlayer_GetXServerIfActive(int netId)
         return 0xffff;
     } else if (CommSys_CurNetId() == netId) {
         return sCommPlayerManager->playerLocationServer[netId].x;
-    } else if (!sub_02058C40() || !sCommPlayerManager->isActive[netId]) {
+    } else if (!CommPlayerMan_IsInputAllowed() || !sCommPlayerManager->isActive[netId]) {
         return 0xffff;
     }
 
@@ -1329,7 +1396,7 @@ int CommPlayer_GetZServerIfActive(int netId)
         return 0xffff;
     } else if (CommSys_CurNetId() == netId) {
         return sCommPlayerManager->playerLocationServer[netId].z;
-    } else if (!sub_02058C40() || !sCommPlayerManager->isActive[netId]) {
+    } else if (!CommPlayerMan_IsInputAllowed() || !sCommPlayerManager->isActive[netId]) {
         return 0xffff;
     }
 
@@ -1374,7 +1441,7 @@ int CommPlayer_GetZInFrontOfPlayerServer(int netId)
 
 int CommPlayer_Dir(int netId)
 {
-    if (!sub_02058C40() || !sCommPlayerManager->isActive[netId]) {
+    if (!CommPlayerMan_IsInputAllowed() || !sCommPlayerManager->isActive[netId]) {
         return -1;
     }
 
@@ -1383,13 +1450,14 @@ int CommPlayer_Dir(int netId)
 
 int CommPlayer_DirServer(int netId)
 {
-    if (!sub_02058C40() || !sCommPlayerManager->isActive[netId]) {
+    if (!CommPlayerMan_IsInputAllowed() || !sCommPlayerManager->isActive[netId]) {
         return -1;
     }
 
     return sCommPlayerManager->playerLocationServer[netId].dir;
 }
 
+// Turn netIdSet to face netIdTarget (server copy).
 void CommPlayer_LookTowardsServer(int netIdTarget, int netIdSet)
 {
     int dir = CommPlayer_GetOppositeDir(sCommPlayerManager->playerLocationServer[netIdTarget].dir);
@@ -1426,6 +1494,7 @@ int CommPlayerMan_GetLinkNetIDAtLocation(int xPos, int zPos)
     return NETID_NONE;
 }
 
+// Enabling/disabling movement resets the player's collision flag and speed.
 void CommPlayerMan_SetMovementEnabled(int netId, BOOL movementEnabled)
 {
     if (sCommPlayerManager->movementEnabled[netId] != movementEnabled) {
@@ -1436,6 +1505,7 @@ void CommPlayerMan_SetMovementEnabled(int netId, BOOL movementEnabled)
     }
 }
 
+// Movement is suppressed while held-flag data is being updated.
 BOOL CommPlayerMan_IsMovementEnabled(int netId)
 {
     if (sCommPlayerManager->updatingHeldFlags) {
@@ -1449,37 +1519,54 @@ BOOL CommPlayerMan_IsMovementEnabled(int netId)
     return sCommPlayerManager->movementEnabled[netId];
 }
 
-BOOL sub_020590C4(void)
+// Battle-room starting tiles, indexed by the order players are assigned to
+// them. 1v1 uses two tiles; 2v2 uses four.
+static BattleGridPosition sBattleGrid1v1[] = {
+    { 0x4, 0x7 },
+    { 0xB, 0x7 }
+};
+
+static BattleGridPosition sBattleGrid2v2[] = {
+    { 0x4, 0x6 },
+    { 0xB, 0x6 },
+    { 0x4, 0x8 },
+    { 0xB, 0x8 }
+};
+
+// Client-side check: returns TRUE once the local player is standing on one of
+// the battle-room tiles. When every connected player is on a tile, the tile
+// index each player occupies is recorded as their battle position.
+BOOL CommPlayerMan_CheckBattleGridPositions(void)
 {
-    UnkStruct_020590C4 batleGrid1v1[] = {
+    BattleGridPosition battleGrid1v1[] = {
         { 4, 7 },
         { 11, 7 }
     };
-    UnkStruct_020590C4 battleGrid2v2[] = {
+    BattleGridPosition battleGrid2v2[] = {
         { 4, 6 },
         { 11, 6 },
         { 4, 8 },
         { 11, 8 }
     };
     int connectedPlayers = CommType_MaxPlayers(CommManager_GetCommType());
-    int netId, netJd, playerCnt = 0, v6[4], v7;
-    int v8 = 0;
-    UnkStruct_020590C4 *v9;
+    int netId, netJd, playerCnt = 0, battlePos[4];
+    int localPlayerOnGrid = 0;
+    BattleGridPosition *grid;
 
     if (connectedPlayers == 2) {
-        v9 = batleGrid1v1;
+        grid = battleGrid1v1;
     } else {
-        v9 = battleGrid2v2;
+        grid = battleGrid2v2;
     }
 
     for (netId = 0; netId < connectedPlayers; netId++) {
         for (netJd = 0; netJd < connectedPlayers; netJd++) {
-            if ((CommPlayer_GetXIfActive(netJd) == v9[netId].unk_00) && (CommPlayer_GetZIfActive(netJd) == v9[netId].unk_02)) {
+            if ((CommPlayer_GetXIfActive(netJd) == grid[netId].x) && (CommPlayer_GetZIfActive(netJd) == grid[netId].z)) {
                 playerCnt++;
-                v6[netJd] = netId;
+                battlePos[netJd] = netId;
 
                 if (netJd == CommSys_CurNetId()) {
-                    v8 = 1;
+                    localPlayerOnGrid = 1;
                 }
                 break;
             }
@@ -1488,63 +1575,57 @@ BOOL sub_020590C4(void)
 
     if (playerCnt == connectedPlayers) {
         for (netId = 0; netId < connectedPlayers; netId++) {
-            sub_020362DC(v6[netId], netId);
+            sub_020362DC(battlePos[netId], netId);
         }
     }
 
-    return v8;
+    return localPlayerOnGrid;
 }
 
-void sub_02059180(int netId, int unused0, void *src, void *unused3)
+void CommPlayer_RecvBattleRoomState(int netId, int unused0, void *src, void *unused3)
 {
     u8 *buffer = src;
 
+    // State 3 means the player has left the battle grid; any other value is
+    // stashed until the server confirms the player reached their tile.
     if (buffer[0] == 3) {
-        sCommPlayerManager->unk_F2[netId] = 0;
+        sCommPlayerManager->onBattleGrid[netId] = 0;
     } else {
-        sCommPlayerManager->unk_2B4[netId] = buffer[0];
+        sCommPlayerManager->battleRoomState[netId] = buffer[0];
     }
 }
 
-static UnkStruct_020590C4 Unk_02100B6C[] = {
-    { 0x4, 0x7 },
-    { 0xB, 0x7 }
-};
-
-static UnkStruct_020590C4 Unk_02100B74[] = {
-    { 0x4, 0x6 },
-    { 0xB, 0x6 },
-    { 0x4, 0x8 },
-    { 0xB, 0x8 }
-};
-
-static void sub_020591A8(void)
+// Server-side counterpart to CommPlayerMan_CheckBattleGridPositions: once a
+// player that reported a battle-room state is standing on a grid tile, lock
+// their input and tell them (packet 95) that they are in position.
+static void CommPlayerMan_CheckBattleGridServer(void)
 {
     int connectedPlayers = CommType_MaxPlayers(CommManager_GetCommType());
     int netJd = 0;
-    UnkStruct_020590C4 *v6;
+    BattleGridPosition *grid;
     u8 netId;
 
     if (connectedPlayers == 2) {
-        v6 = Unk_02100B6C;
+        grid = sBattleGrid1v1;
     } else {
-        v6 = Unk_02100B74;
+        grid = sBattleGrid2v2;
     }
 
     for (netId = 0; netId < connectedPlayers; netId++) {
-        if (!sCommPlayerManager->unk_2B4[netId]) {
+        if (!sCommPlayerManager->battleRoomState[netId]) {
             continue;
         }
 
         for (netJd = 0; netJd < connectedPlayers; netJd++) {
-            if ((CommPlayer_GetXServerIfActive(netId) == v6[netJd].unk_00) && (CommPlayer_GetZServerIfActive(netId) == v6[netJd].unk_02)) {
-                sCommPlayerManager->unk_F2[netId] = 1;
+            if ((CommPlayer_GetXServerIfActive(netId) == grid[netJd].x) && (CommPlayer_GetZServerIfActive(netId) == grid[netJd].z)) {
+                sCommPlayerManager->onBattleGrid[netId] = 1;
                 CommSys_SendDataFixedSizeServer(95, &netId);
             }
         }
     }
 }
 
+// Face the local player toward the centre of the battle room.
 void CommPlayer_SetBattleDir(void)
 {
     int netId = CommSys_CurNetId();
@@ -1562,7 +1643,9 @@ void CommPlayer_SetBattleDir(void)
     CommPlayerMan_ForceDir();
 }
 
-BOOL sub_0205928C(void)
+// Once every player has stopped moving, step each one back off the grid and
+// re-enable movement. Returns 0 while players are still moving.
+BOOL CommPlayerMan_StepBackFromBattleGrid(void)
 {
     int connectedPlayers = CommType_MaxPlayers(CommManager_GetCommType());
     int netId = 0, dir;
@@ -1588,6 +1671,7 @@ BOOL sub_0205928C(void)
     return 1;
 }
 
+// Opposite facing direction.
 int CommPlayer_GetOppositeDir(int dir)
 {
     if (dir == FACE_UP) {
@@ -1604,12 +1688,14 @@ int CommPlayer_GetOppositeDir(int dir)
     return FACE_LEFT;
 }
 
+// Force a player to keep moving for duration steps (e.g. spin trap).
 void CommPlayerMan_SetPlayerAlteredMovement(int netId, int duration)
 {
     sCommPlayerManager->alteredMovementStepsLeft[netId] = duration;
     sCommPlayerManager->moveTimerServer[netId] = 15;
 }
 
+// Stop a player's altered movement.
 void CommPlayerMan_EndPlayerAlteredMovement(int netId)
 {
     sCommPlayerManager->alteredMovementStepsLeft[netId] = 0;
@@ -1659,6 +1745,8 @@ int CommPlayer_DirClient(int netId)
     return PlayerAvatar_GetFacingDir(sCommPlayerManager->playerAvatar[netId]);
 }
 
+// Pause the field system, recording why so it can be resumed once all reasons
+// clear.
 void CommPlayerMan_PauseFieldSystemWithContextBit(int contextBit)
 {
     if (contextBit != 0) {
@@ -1669,6 +1757,7 @@ void CommPlayerMan_PauseFieldSystemWithContextBit(int contextBit)
     sCommPlayerManager->isFieldSystemActive = FALSE;
 }
 
+// Clear one pause reason; resume the field system once none remain.
 void CommPlayerMan_ResumeFieldSystemWithContextBit(int contextBit)
 {
     if (contextBit != 0) {
@@ -1683,7 +1772,7 @@ void CommPlayerMan_ResumeFieldSystemWithContextBit(int contextBit)
     if (sCommPlayerManager->pauseBits == 0) {
         if (contextBit != PAUSE_BIT_TRAPS) {
             FieldSystem_ResumeProcessing();
-            sub_02057FC4(1);
+            CommPlayerMan_BroadcastFieldSystemActive(1);
         } else {
             FieldSystem_ResumeProcessing();
             sCommPlayerManager->isFieldSystemActive = TRUE;
@@ -1705,35 +1794,40 @@ void CommPlayerMan_PauseFieldSystem(void)
 void CommPlayerMan_ResumeFieldSystem(void)
 {
     FieldSystem_ResumeProcessing();
-    sub_02057FC4(1);
+    CommPlayerMan_BroadcastFieldSystemActive(1);
 }
 
-void sub_02059524(void)
+// Resume the field system if it has not been resumed yet and the underground
+// state allows it.
+void CommPlayerMan_TryResumeFieldSystem(void)
 {
-    if (sCommPlayerManager->unk_2BF == 0) {
+    if (sCommPlayerManager->resumeHandled == 0) {
         if (!sCommPlayerManager->isUnderground) {
             CommPlayerMan_ResumeFieldSystem();
-            sCommPlayerManager->unk_2BF = 1;
+            sCommPlayerManager->resumeHandled = 1;
         } else if (UndergroundMan_ShouldFieldSystemBeResumed(CommSys_CurNetId())) {
             CommPlayerMan_ResumeFieldSystem();
-            sCommPlayerManager->unk_2BF = 1;
+            sCommPlayerManager->resumeHandled = 1;
         } else {
             (void)0;
         }
     }
 }
 
-void sub_02059570(void)
+// Pause the field system if the underground state says it should not be
+// resumed.
+void CommPlayerMan_TryPauseFieldSystem(void)
 {
-    if (sCommPlayerManager->unk_2BF == 0) {
+    if (sCommPlayerManager->resumeHandled == 0) {
         if (sCommPlayerManager->isUnderground) {
             if (!UndergroundMan_ShouldFieldSystemBeResumed(CommSys_CurNetId())) {
-                sub_02057FC4(0);
+                CommPlayerMan_BroadcastFieldSystemActive(0);
             }
         }
     }
 }
 
+// Snap every remote avatar to the position the manager believes it is at.
 void CommPlayerMan_ForcePos(void)
 {
     int netId, x, z, dir;
@@ -1763,12 +1857,15 @@ void CommPlayerMan_ForcePos(void)
     }
 }
 
+// Lock the local player's facing for a few frames after a forced turn.
 void CommPlayerMan_ForceDir(void)
 {
     sCommPlayerManager->forceDirTimer = 8;
 }
 
-void sub_02059638(BOOL param0)
+// While set, ignore the local player's own location packets during a
+// secret-base transition.
+void CommPlayerMan_SetInSecretBaseTransition(BOOL param0)
 {
-    sCommPlayerManager->unk_2C3 = param0;
+    sCommPlayerManager->inSecretBaseTransition = param0;
 }

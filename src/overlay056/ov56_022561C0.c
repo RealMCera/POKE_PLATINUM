@@ -59,7 +59,7 @@ typedef struct {
 
 struct UnkStruct_ov56_02256468_t {
     int unk_00;
-    UnkStruct_0205C22C *unk_04;
+    UnionRoomTrainers *unk_04;
     UnionRoom *unk_08;
     FieldSystem *fieldSystem;
     TrainerInfo *unk_10;
@@ -79,7 +79,7 @@ struct UnkStruct_ov56_02256468_t {
     int unk_224;
     int unk_228;
     UnkStruct_ov56_022562EC unk_22C[3];
-    UnkStruct_0205C95C *unk_2D4;
+    UnionRoomChatLog *unk_2D4;
     UnkStruct_ov56_02256294 unk_2D8;
     int unk_2E0;
     int unk_2E4;
@@ -101,14 +101,14 @@ static void ov56_02256704(UnkStruct_ov56_02256468 *param0);
 static void ov56_022562EC(BgConfig *param0, UnkStruct_ov56_022562EC *param1);
 static void ov56_022563E8(UnkStruct_ov56_022562EC *param0);
 static void ov56_022568E0(UnkStruct_ov56_02256468 *param0);
-static void ov56_022567FC(UnkStruct_ov56_02256468 *param0, int param1, UnkStruct_0205C924 *param2);
+static void ov56_022567FC(UnkStruct_ov56_02256468 *param0, int param1, UnionRoomChatLogEntry *param2);
 static void ov56_02256D04(UnkStruct_ov56_02256468 *param0);
 static void ov56_022569E0(UnkStruct_ov56_02256468 *param0);
 static void ov56_02256994(Sprite *param0, int param1);
 static void ov56_02257098(UnkStruct_ov56_02256468 *param0);
 static void ov56_02256EE8(UnkStruct_ov56_02256468 *param0, u32 param1, EasyChatSentence *param2, TrainerInfo *param3);
 static int ov56_02256FC8(UnkStruct_ov56_02256468 *param0, EasyChatSentence *param1, int param2);
-static int ov56_022567E4(UnkStruct_0205C95C *param0, int param1);
+static int ov56_022567E4(UnionRoomChatLog *param0, int param1);
 static int ov56_022567F0(int param0, int param1);
 static int ov56_02256A68(UnkStruct_ov56_02256468 *param0);
 static int ov56_02256BC0(UnkStruct_ov56_02256468 *param0);
@@ -227,7 +227,7 @@ UnkStruct_ov56_02256468 *ov56_02256410(FieldSystem *fieldSystem)
     v0->unk_10 = SaveData_GetTrainerInfo(fieldSystem->saveData);
     v0->unk_00 = 0;
     v0->unk_2F8 = v1;
-    v0->unk_2D4 = fieldSystem->unk_80->unk_478;
+    v0->unk_2D4 = fieldSystem->unk_80->chatLog;
 
     return v0;
 }
@@ -420,7 +420,7 @@ static void ov56_02256704(UnkStruct_ov56_02256468 *param0)
     }
 }
 
-static int ov56_022567E4(UnkStruct_0205C95C *param0, int param1)
+static int ov56_022567E4(UnionRoomChatLog *param0, int param1)
 {
     param1++;
 
@@ -442,21 +442,21 @@ static int ov56_022567F0(int param0, int param1)
     return v0;
 }
 
-static void ov56_022567FC(UnkStruct_ov56_02256468 *param0, int param1, UnkStruct_0205C924 *param2)
+static void ov56_022567FC(UnkStruct_ov56_02256468 *param0, int param1, UnionRoomChatLogEntry *param2)
 {
-    param0->unk_22C[param1].unk_30 = param2->unk_10;
+    param0->unk_22C[param1].unk_30 = param2->gender;
 
     Bg_CopyToTilemapRect(param0->unk_14, 7, 0, param1 * 8, 32, 8, param0->unk_24->rawData, 0, 24 * param0->unk_22C[param1].unk_30, 32, 48);
     Window_FillTilemap(&param0->unk_22C[param1].unk_00, 0x0);
     Window_FillTilemap(&param0->unk_22C[param1].unk_10, 0x0);
     Window_FillTilemap(&param0->unk_22C[param1].unk_20, 0x0);
-    Text_AddPrinterWithParamsAndColor(&param0->unk_22C[param1].unk_00, FONT_MESSAGE, param2->unk_00, 0, 1, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
-    Text_AddPrinterWithParamsAndColor(&param0->unk_22C[param1].unk_10, FONT_MESSAGE, param2->unk_04, 0, 6, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
+    Text_AddPrinterWithParamsAndColor(&param0->unk_22C[param1].unk_00, FONT_MESSAGE, param2->trainerName, 0, 1, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
+    Text_AddPrinterWithParamsAndColor(&param0->unk_22C[param1].unk_10, FONT_MESSAGE, param2->sentenceString, 0, 6, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
     Window_ScheduleCopyToVRAM(&param0->unk_22C[param1].unk_00);
     Window_ScheduleCopyToVRAM(&param0->unk_22C[param1].unk_10);
 
-    if (param2->unk_08) {
-        Text_AddPrinterWithParamsAndColor(&param0->unk_22C[param1].unk_20, FONT_MESSAGE, param2->unk_08, 0, 1, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
+    if (param2->palPadString) {
+        Text_AddPrinterWithParamsAndColor(&param0->unk_22C[param1].unk_20, FONT_MESSAGE, param2->palPadString, 0, 1, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
     }
 
     Window_ScheduleCopyToVRAM(&param0->unk_22C[param1].unk_20);
@@ -465,8 +465,8 @@ static void ov56_022567FC(UnkStruct_ov56_02256468 *param0, int param1, UnkStruct
 static void ov56_022568E0(UnkStruct_ov56_02256468 *param0)
 {
     int v0, v1;
-    int v2 = ov56_022567F0(param0->unk_2D4->unk_34C, param0->unk_2D8.unk_04);
-    int v3 = param0->unk_2D4->unk_348;
+    int v2 = ov56_022567F0(param0->unk_2D4->startIndex, param0->unk_2D8.unk_04);
+    int v3 = param0->unk_2D4->count;
 
     if (v3 > 3) {
         v3 = 3;
@@ -479,7 +479,7 @@ static void ov56_022568E0(UnkStruct_ov56_02256468 *param0)
 
     if (param0->unk_2E8 == 1) {
         for (v0 = 0; v0 < v3; v0++) {
-            ov56_022567FC(param0, v0, &param0->unk_2D4->unk_00[v2]);
+            ov56_022567FC(param0, v0, &param0->unk_2D4->entries[v2]);
             v2 = ov56_022567E4(param0->unk_2D4, v2);
         }
 
@@ -521,7 +521,7 @@ static void ov56_02256994(Sprite *param0, int param1)
 
 static void ov56_022569E0(UnkStruct_ov56_02256468 *param0)
 {
-    param0->unk_2D8.unk_00 = param0->unk_2D4->unk_348;
+    param0->unk_2D8.unk_00 = param0->unk_2D4->count;
 
     if ((param0->unk_2D8.unk_00 > 3) && (param0->unk_2D8.unk_02 <= 3)) {
         param0->unk_2D8.unk_06 = 1;
@@ -585,8 +585,8 @@ static int ov56_02256A68(UnkStruct_ov56_02256468 *param0)
                 break;
             }
 
-            if (param0->unk_2D4->unk_348 >= (v0 - 1)) {
-                v2 = ov56_022567F0(param0->unk_2D4->unk_34C, param0->unk_2D8.unk_04 + v0 - 2);
+            if (param0->unk_2D4->count >= (v0 - 1)) {
+                v2 = ov56_022567F0(param0->unk_2D4->startIndex, param0->unk_2D8.unk_04 + v0 - 2);
 
                 for (v1 = 0; v1 < 10; v1++) {
                     v4 = CommServerClient_GetServerBssDesc(v1);
@@ -594,9 +594,9 @@ static int ov56_02256A68(UnkStruct_ov56_02256468 *param0)
                     if (v4 != NULL) {
                         v5 = (UnkStruct_0203330C *)&v4->gameInfo.userGameInfo;
 
-                        if ((param0->unk_04->unk_0C[v1].unk_01 == 2) && (v5->unk_00 == param0->unk_2D4->unk_00[v2].unk_0C)) {
+                        if ((param0->unk_04->slots[v1].phase == 2) && (v5->unk_00 == param0->unk_2D4->entries[v2].trainerId)) {
                             Sound_PlayEffect(SEQ_SE_DP_BUTTON3_sseq);
-                            param0->unk_04->unk_0C[v1].unk_03 = 1;
+                            param0->unk_04->slots[v1].startWarpEffect = 1;
                             break;
                         }
                     }
@@ -605,9 +605,9 @@ static int ov56_02256A68(UnkStruct_ov56_02256468 *param0)
                 {
                     TrainerInfo *v6 = CommServerClient_GetPersonalTrainerInfo();
 
-                    if (param0->unk_2D4->unk_00[v2].unk_0C == TrainerInfo_ID(v6)) {
+                    if (param0->unk_2D4->entries[v2].trainerId == TrainerInfo_ID(v6)) {
                         Sound_PlayEffect(SEQ_SE_DP_BUTTON3_sseq);
-                        param0->unk_04->unk_0C[50].unk_03 = 1;
+                        param0->unk_04->slots[50].startWarpEffect = 1;
                     }
                 }
             }
@@ -647,7 +647,7 @@ static int ov56_02256BC0(UnkStruct_ov56_02256468 *param0)
             }
             break;
         default:
-            if (param0->unk_2D4->unk_348 >= v0) {
+            if (param0->unk_2D4->count >= v0) {
                 if (param0->unk_228 == (v0 - 1)) {
                     if (param0->unk_22C[v0 - 1].unk_34 < 2 * 2 + 1) {
                         param0->unk_22C[v0 - 1].unk_34++;
@@ -701,7 +701,7 @@ static void ov56_02256D04(UnkStruct_ov56_02256468 *param0)
         }
     }
 
-    ov56_02256D64(param0->unk_14, param0->unk_24, param0->unk_22C, v0 - 1, param0->unk_2D4->unk_348, &param0->unk_2E4);
+    ov56_02256D64(param0->unk_14, param0->unk_24, param0->unk_22C, v0 - 1, param0->unk_2D4->count, &param0->unk_2E4);
 }
 
 static const int Unk_ov56_02257244[] = {
@@ -777,36 +777,36 @@ static String *ov56_02256E5C(PalPad *param0, u32 param1, StringTemplate *param2,
 
 static void ov56_02256EE8(UnkStruct_ov56_02256468 *param0, u32 param1, EasyChatSentence *param2, TrainerInfo *param3)
 {
-    UnkStruct_0205C95C *v0 = param0->unk_2D4;
-    PalPad *v1 = param0->unk_04->unk_474;
+    UnionRoomChatLog *v0 = param0->unk_2D4;
+    PalPad *v1 = param0->unk_04->palPad;
     int *v2;
 
-    if (v0->unk_348 == 30) {
-        v2 = &v0->unk_34C;
+    if (v0->count == 30) {
+        v2 = &v0->startIndex;
     } else {
-        v2 = &v0->unk_348;
+        v2 = &v0->count;
     }
 
-    if (v0->unk_00[*v2].unk_04 != NULL) {
-        String_Free(v0->unk_00[*v2].unk_04);
+    if (v0->entries[*v2].sentenceString != NULL) {
+        String_Free(v0->entries[*v2].sentenceString);
     }
 
-    if (v0->unk_00[*v2].unk_08 != NULL) {
-        String_Free(v0->unk_00[*v2].unk_08);
+    if (v0->entries[*v2].palPadString != NULL) {
+        String_Free(v0->entries[*v2].palPadString);
     }
 
-    String_CopyChars(v0->unk_00[*v2].unk_00, TrainerInfo_Name(param3));
+    String_CopyChars(v0->entries[*v2].trainerName, TrainerInfo_Name(param3));
 
-    v0->unk_00[*v2].unk_14 = *param2;
-    v0->unk_00[*v2].unk_0C = param1;
-    v0->unk_00[*v2].unk_10 = TrainerInfo_Gender(param3);
-    v0->unk_00[*v2].unk_04 = EasyChatSentence_ToString(param2, HEAP_ID_89);
-    v0->unk_00[*v2].unk_08 = ov56_02256E5C(v1, param1, param0->unk_18, param0->unk_1C, param0->unk_10);
+    v0->entries[*v2].sentence = *param2;
+    v0->entries[*v2].trainerId = param1;
+    v0->entries[*v2].gender = TrainerInfo_Gender(param3);
+    v0->entries[*v2].sentenceString = EasyChatSentence_ToString(param2, HEAP_ID_89);
+    v0->entries[*v2].palPadString = ov56_02256E5C(v1, param1, param0->unk_18, param0->unk_1C, param0->unk_10);
 
     (*v2)++;
 
-    if (v0->unk_34C == 30) {
-        v0->unk_34C = 0;
+    if (v0->startIndex == 30) {
+        v0->startIndex = 0;
     }
 }
 
@@ -818,21 +818,21 @@ static int ov56_02256FC8(UnkStruct_ov56_02256468 *param0, EasyChatSentence *para
         return 0;
     }
 
-    for (v0 = 0; v0 < param0->unk_2D4->unk_348; v0++) {
-        if (param2 == param0->unk_2D4->unk_00[v0].unk_0C) {
-            if (EasyChatSentence_Compare(param1, &param0->unk_2D4->unk_00[v0].unk_14)) {
+    for (v0 = 0; v0 < param0->unk_2D4->count; v0++) {
+        if (param2 == param0->unk_2D4->entries[v0].trainerId) {
+            if (EasyChatSentence_Compare(param1, &param0->unk_2D4->entries[v0].sentence)) {
                 break;
             }
         }
     }
 
-    if ((v0 != param0->unk_2D4->unk_348) && (param0->unk_2D4->unk_348 != 0)) {
+    if ((v0 != param0->unk_2D4->count) && (param0->unk_2D4->count != 0)) {
         return 0;
     }
 
-    if (param2 == param0->unk_2D4->unk_00[v0].unk_0C) {
+    if (param2 == param0->unk_2D4->entries[v0].trainerId) {
         (void)0;
-    } else if (EasyChatSentence_Compare(param1, &param0->unk_2D4->unk_00[v0].unk_14)) {
+    } else if (EasyChatSentence_Compare(param1, &param0->unk_2D4->entries[v0].sentence)) {
         (void)0;
     }
 
@@ -851,7 +851,7 @@ static void ov56_02257048(UnkStruct_ov56_02256468 *param0, TrainerInfo *param1, 
 
     if (param0->unk_2D8.unk_06) {
         if (v0) {
-            param0->unk_2D8.unk_04 = param0->unk_2D4->unk_348 - 3;
+            param0->unk_2D8.unk_04 = param0->unk_2D4->count - 3;
         }
     }
 

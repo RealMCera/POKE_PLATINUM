@@ -250,16 +250,16 @@ static void HandleFieldInput(FieldSystem *fieldSystem)
 
     switch (loadType) {
     case MAP_LOAD_TYPE_UNDERGROUND:
-        if (processInput && sub_02058C40()) {
+        if (processInput && CommPlayerMan_IsInputAllowed()) {
             FieldInput_Process_Underground(&fieldInput, fieldSystem);
         }
 
-        sub_0205805C(fieldSystem, processInput);
+        CommPlayerMan_Update(fieldSystem, processInput);
         break;
 
     case MAP_LOAD_TYPE_COLOSSEUM:
         if (processInput) {
-            if (sub_02058C40()) {
+            if (CommPlayerMan_IsInputAllowed()) {
                 if (FieldInput_Process_Colosseum(&fieldInput, fieldSystem) == TRUE) {
                     processInput = FALSE;
                 }
@@ -268,7 +268,7 @@ static void HandleFieldInput(FieldSystem *fieldSystem)
             }
         }
 
-        sub_0205805C(fieldSystem, processInput);
+        CommPlayerMan_Update(fieldSystem, processInput);
         break;
 
     case MAP_LOAD_TYPE_UNION:

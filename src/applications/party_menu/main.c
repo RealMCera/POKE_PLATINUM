@@ -61,7 +61,7 @@
 #include "touch_pad.h"
 #include "touch_screen.h"
 #include "tv_segment.h"
-#include "unk_0206B9D8.h"
+#include "battle_salon.h"
 #include "unk_0208C098.h"
 #include "vram_transfer.h"
 

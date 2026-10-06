@@ -47,7 +47,7 @@
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "union_room.h"
-#include "unk_0205C22C.h"
+#include "union_room_trainers.h"
 #include "unk_02095E98.h"
 #include "vram_transfer.h"
 #include "wireless_manager.h"
@@ -329,7 +329,7 @@ int ov58_021D1018(ApplicationManager *appMan, int *param1)
     case 1:
         CommManager_SetMaxNumConnections(1);
         CommManager_UnionRestartSearch();
-        sub_0205C2C8(v1->unk_00);
+        UnionRoomTrainers_Reset(v1->unk_00);
 
         GX_SetDispSelect(GX_DISP_SELECT_MAIN_SUB);
 

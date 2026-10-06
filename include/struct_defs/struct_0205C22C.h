@@ -11,16 +11,16 @@
 #include "player_avatar.h"
 #include "sys_task_manager.h"
 
-typedef struct UnkStruct_0205C22C_t {
-    UnionRoom *unk_00;
-    SysTask *unk_04;
+typedef struct UnionRoomTrainers {
+    UnionRoom *unionRoom;
+    SysTask *task;
     PlayerAvatar *playerAvatar;
-    UnkStruct_0205C680 unk_0C[50 + 1];
+    UnionRoomTrainer slots[50 + 1]; // 50 remote trainers, plus the player at slot 50
     FieldSystem *fieldSystem;
-    PalPad *unk_474;
-    UnkStruct_0205C95C *unk_478;
+    PalPad *palPad;
+    UnionRoomChatLog *chatLog;
     int unk_47C;
     int unk_480;
-} UnkStruct_0205C22C;
+} UnionRoomTrainers;
 
 #endif // POKEPLATINUM_STRUCT_0205C22C_H

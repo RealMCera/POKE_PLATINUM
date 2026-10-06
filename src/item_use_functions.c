@@ -60,7 +60,7 @@
 #include "terrain_collision_manager.h"
 #include "unk_0203C954.h"
 #include "field_system_apps.h"
-#include "unk_0206B9D8.h"
+#include "battle_salon.h"
 #include "vars_flags.h"
 
 #include "res/text/bank/location_names.h"

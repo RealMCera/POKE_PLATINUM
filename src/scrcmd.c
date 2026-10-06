@@ -207,7 +207,7 @@
 #include "unk_020559DC.h"
 #include "unk_0205749C.h"
 #include "union_room.h"
-#include "unk_0205C22C.h"
+#include "union_room_trainers.h"
 #include "unk_0205DFC4.h"
 #include "map_object_animation.h"
 #include "map_object_movement.h"
@@ -4263,7 +4263,7 @@ static BOOL ScrCmd_13E(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
 
-    sub_0205C2B0(fieldSystem->unk_80);
+    UnionRoomTrainers_RequestAllLeave(fieldSystem->unk_80);
     CommManager_UnionRestartSearch();
     ScriptContext_Pause(ctx, sub_020437E8);
 
@@ -4349,9 +4349,9 @@ static BOOL sub_02043938(ScriptContext *ctx)
 static BOOL ScrCmd_142(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
-    UnkStruct_0205C22C *v1 = fieldSystem->unk_80;
+    UnionRoomTrainers *v1 = fieldSystem->unk_80;
 
-    sub_0205C820(fieldSystem->mapObjMan, v1);
+    UnionRoomTrainers_ShowConnected(fieldSystem->mapObjMan, v1);
     return FALSE;
 }
 

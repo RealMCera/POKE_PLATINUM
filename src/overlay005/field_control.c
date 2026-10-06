@@ -64,7 +64,7 @@
 #include "trainer_info.h"
 #include "unk_0203C954.h"
 #include "unk_02054884.h"
-#include "unk_02056B30.h"
+#include "map_transition.h"
 #include "colosseum.h"
 #include "union_room.h"
 #include "vars_flags.h"
@@ -588,7 +588,7 @@ static BOOL Field_CheckMapTransition(FieldSystem *fieldSystem, const FieldInput 
                 HearthomeGym_CheckIfEnteredIncorrectDoor(fieldSystem, playerX, playerZ, &transitionDir);
             }
 
-            sub_02056BDC(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, transitionDir, 1);
+            MapTransition_Start(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, transitionDir, 1);
 
             return TRUE;
         }
@@ -635,14 +635,14 @@ static BOOL Field_CheckMapTransition(FieldSystem *fieldSystem, const FieldInput 
     } else if (TileBehavior_IsWarpEntranceEast(tileBehavior) || TileBehavior_IsWarpEast(tileBehavior)
         || TileBehavior_IsWarpEntranceWest(tileBehavior) || TileBehavior_IsWarpWest(tileBehavior)
         || TileBehavior_IsWarpEntranceSouth(tileBehavior) || TileBehavior_IsWarpSouth(tileBehavior)) {
-        sub_02056C18(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, input->transitionDir);
+        MapTransition_StartAuto(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, input->transitionDir);
         return TRUE;
     } else {
         return FALSE;
     }
 
     // these statements are unreachable, but required for matching
-    sub_02056BDC(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, input->transitionDir, transitionType);
+    MapTransition_Start(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, input->transitionDir, transitionType);
 
     return TRUE;
 }
@@ -796,7 +796,7 @@ static BOOL Field_CheckTransition(FieldSystem *fieldSystem, const int playerX, c
             return FALSE;
         }
 
-        sub_02056BDC(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, playerDir, 2);
+        MapTransition_Start(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, playerDir, 2);
         return TRUE;
     } else if (TileBehavior_IsEscalator(curTileBehavior) == TRUE) {
         int playerDir = PlayerAvatar_GetFacingDir(fieldSystem->playerAvatar);
@@ -806,12 +806,12 @@ static BOOL Field_CheckTransition(FieldSystem *fieldSystem, const int playerX, c
             return FALSE;
         }
 
-        sub_02056BDC(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, playerDir, 2);
+        MapTransition_Start(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, playerDir, 2);
         return TRUE;
     }
 
     if (TileBehavior_IsWarpEntranceNorth(curTileBehavior) || TileBehavior_IsWarpNorth(curTileBehavior)) {
-        sub_02056C18(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, 0);
+        MapTransition_StartAuto(fieldSystem, nextMap.mapHeaderID, nextMap.warpId, 0, 0, 0);
         return TRUE;
     }
 

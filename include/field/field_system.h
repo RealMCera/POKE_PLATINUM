@@ -106,7 +106,7 @@ typedef struct FieldSystem_t {
     const MapLoadMode *mapLoadMode;
     FieldWildBattleMetadata wildBattleMetadata;
     UnionRoom *unk_7C;
-    UnkStruct_0205C22C *unk_80;
+    UnionRoomTrainers *unk_80;
     UnkStruct_ov56_02256468 *unk_84;
     TradeRoom *tradeRoom;
     UnkStruct_ov5_021EB0E0 *unk_8C;

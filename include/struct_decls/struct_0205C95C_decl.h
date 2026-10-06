@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_0205C95C_DECL_H
 #define POKEPLATINUM_STRUCT_0205C95C_DECL_H
 
-typedef struct UnkStruct_0205C95C_t UnkStruct_0205C95C;
+typedef struct UnionRoomChatLog UnionRoomChatLog;
 
 #endif // POKEPLATINUM_STRUCT_0205C95C_DECL_H

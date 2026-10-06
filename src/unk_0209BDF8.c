@@ -21,7 +21,7 @@
 #include "heap.h"
 #include "unk_02032798.h"
 #include "union_room.h"
-#include "unk_0205C22C.h"
+#include "union_room_trainers.h"
 #include "unk_02099500.h"
 #include "wireless_manager.h"
 
@@ -64,7 +64,7 @@ void sub_0209BE64(UnkStruct_0209BDF8 *param0)
 {
     CommManager_SetMaxNumConnections(2);
     CommManager_UnionRestartSearch();
-    sub_0205C2C8(param0->unk_00->unk_14.unk_0C);
+    UnionRoomTrainers_Reset(param0->unk_00->unk_14.unk_0C);
     UnionRoom_BroadcastActivity(0);
 }
 

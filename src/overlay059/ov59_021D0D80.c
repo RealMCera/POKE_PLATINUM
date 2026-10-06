@@ -53,7 +53,7 @@
 #include "unk_020363E8.h"
 #include "unk_02038ED4.h"
 #include "union_room.h"
-#include "unk_0205C22C.h"
+#include "union_room_trainers.h"
 #include "unk_020961E8.h"
 #include "vram_transfer.h"
 #include "wireless_manager.h"
@@ -308,7 +308,7 @@ int ov59_021D0FF4(ApplicationManager *appMan, int *unused)
 
     CommManager_SetMaxNumConnections(2);
     CommManager_UnionRestartSearch();
-    sub_0205C2C8(v0->unk_08->unk_04);
+    UnionRoomTrainers_Reset(v0->unk_08->unk_04);
     MessageLoader_Free(v0->unk_28);
     StringTemplate_Free(v0->unk_24);
 

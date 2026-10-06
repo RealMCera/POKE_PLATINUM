@@ -39,7 +39,7 @@
 #include "tv_segment.h"
 #include "underground.h"
 #include "unk_0204AEE8.h"
-#include "unk_0206B9D8.h"
+#include "battle_salon.h"
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"
 
@@ -321,7 +321,7 @@ u16 BattleTower_ResetWifiProgress(SaveData *saveData)
     BattleFrontierSave_SetStatAutoHostIdx(SaveData_GetBattleFrontier(saveData), BattleFrontierStats_GetTowerLatestStreakIndex(challengeMode), 0);
 
     if ((challengeMode != 4) && (challengeMode != 6)) {
-        sub_0206C02C(saveData);
+        BattleSalon_GetFreshRng(saveData);
     }
 
     return challengeMode;
@@ -446,7 +446,7 @@ void BattleTower_Free(BattleTower *battleTower)
 // Opens the party menu so the player can choose their Battle Tower party.
 void BattleTower_StartPartyMenu(BattleTower *battleTower, FieldTask *task, void **partyMenu)
 {
-    sub_0206BBFC(task, partyMenu, 17, 0, battleTower->partySize, battleTower->partySize, 100, 0);
+    BattleSalon_StartPartyMenuTask(task, partyMenu, 17, 0, battleTower->partySize, battleTower->partySize, 100, 0);
 }
 
 // Reads the party menu result into the BattleTower's party slots. Returns
@@ -991,9 +991,9 @@ u16 BattleTower_UpdateRandomSeed(BattleTower *battleTower, SaveData *saveData)
     }
 
     if (!streakActive) {
-        battleTower->unk_08 = sub_0206C02C(saveData);
+        battleTower->unk_08 = BattleSalon_GetFreshRng(saveData);
     } else {
-        battleTower->unk_08 = sub_0206C068(saveData);
+        battleTower->unk_08 = BattleSalon_GetStreakRng(saveData);
     }
 
     return battleTower->unk_08 / 65535;
@@ -1132,6 +1132,6 @@ u16 BattleTower_GetRandom(BattleTower *battleTower)
         return LCRNG_Next();
     }
 
-    battleTower->unk_08 = sub_0206BFF0(battleTower->unk_08);
+    battleTower->unk_08 = BattleSalon_AdvanceRng(battleTower->unk_08);
     return battleTower->unk_08 / 65535;
 }

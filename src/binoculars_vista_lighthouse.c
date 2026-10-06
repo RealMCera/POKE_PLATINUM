@@ -21,7 +21,7 @@
 #include "sound_playback.h"
 #include "system.h"
 #include "system_flags.h"
-#include "unk_02056B30.h"
+#include "map_transition.h"
 #include "vars_flags.h"
 
 typedef struct VistaLighthouseBinoculars {
@@ -78,7 +78,7 @@ static BOOL Task_UseVistaLighthouseBinoculars(FieldTask *taskMan)
     case 4:
         VistaLighthouseBinoculars_SetPlayerHidden(fieldSystem->playerAvatar, TRUE);
         VistaLighthouseBinoculars_SetCamera(fieldSystem);
-        sub_02056B30(taskMan, 3, 17, 0xffff, 0x0, 6, 1, HEAP_ID_FIELD2);
+        MapTransition_StartScreenFade(taskMan, 3, 17, 0xffff, 0x0, 6, 1, HEAP_ID_FIELD2);
         Sound_PlayEffect(SEQ_SE_DP_KASYA_sseq);
         binoculars->state++;
         break;
@@ -88,7 +88,7 @@ static BOOL Task_UseVistaLighthouseBinoculars(FieldTask *taskMan)
         }
         break;
     case 6:
-        sub_02056B30(taskMan, 3, 16, 0xffff, 0x0, 6, 1, HEAP_ID_FIELD2);
+        MapTransition_StartScreenFade(taskMan, 3, 16, 0xffff, 0x0, 6, 1, HEAP_ID_FIELD2);
         Sound_PlayEffect(SEQ_SE_DP_KASYA_sseq);
         binoculars->state++;
         break;

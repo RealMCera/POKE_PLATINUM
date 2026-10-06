@@ -86,7 +86,7 @@ static const CommCmdTable Unk_020F68A4[] = {
     { SecretBases_ProcessBaseTransitionEvent, CommPacketSizeOf_BaseTransitionEvent, NULL },
     { SecretBases_ProcessGoodInteractionEvent, CommPacketSizeOf_GoodInteractionEvent, NULL }, // 60
     { SecretBases_ProcessFailedBaseEnter, CommPacketSizeOf_NetId, NULL },
-    { sub_02058018, CommPacketSizeOf_NetId, NULL },
+    { CommPlayer_RecvMovementEnabled, CommPacketSizeOf_NetId, NULL },
     { Spheres_ProcessRetrieveBuriedSphereRequest, CommPacketSizeOf_NetId, NULL },
     { Mining_ProcessMiningSpotInteract, CommPacketSizeOf_NetId, NULL },
     { Mining_ProcessConfirmStartMiningResult, CommPacketSizeOf_NetId, NULL }, // 65
@@ -118,7 +118,7 @@ static const CommCmdTable Unk_020F68A4[] = {
     { UndergroundPlayer_ProcessHeldFlagOwnerInfo, CommPacketSizeOf_TrainerInfo, NULL },
     { UndergroundPlayer_ProcessHeldFlagOwnerInfoServer, CommPacketSizeOf_HeldFlagInfo, UndergroundPlayer_GetHeldFlagInfoBuffer },
     { UndergroundPlayer_ProcessHeldFlagOwnerInfoAck, CommPacketSizeOf_NetId, NULL },
-    { sub_02059180, CommPacketSizeOf_NetId, NULL },
+    { CommPlayer_RecvBattleRoomState, CommPacketSizeOf_NetId, NULL },
     { FieldCommManager_UpdateBattleRoomMovement, CommPacketSizeOf_NetId, NULL }, // 95
     { SecretBases_ProcessFlagRankUp, CommPacketSizeOf_NetId, NULL },
     { SecretBases_ProcessFlagRankUpEvent, CommPacketSizeOf_FlagRankUpEvent, NULL },

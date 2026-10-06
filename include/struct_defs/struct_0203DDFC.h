@@ -7,7 +7,7 @@
 #include "journal.h"
 
 typedef struct {
-    UnkStruct_0205C22C *unk_00;
+    UnionRoomTrainers *unk_00;
     JournalEntry *unk_04;
     Options *options;
 } UnkStruct_0203DDFC;

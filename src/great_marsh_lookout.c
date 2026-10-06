@@ -21,7 +21,7 @@
 #include "sound_playback.h"
 #include "system.h"
 #include "system_flags.h"
-#include "unk_02056B30.h"
+#include "map_transition.h"
 #include "vars_flags.h"
 
 // Data used for the Great Marsh lookout binoculars scene.
@@ -94,7 +94,7 @@ static BOOL Task_GreatMarshLookout(FieldTask *taskMan)
             GreatMarshLookout_ShowMonSprite(lookout->spriteResources);
             lookout->timer = 0;
             Sound_PlayEffect(SEQ_SE_DP_KASYA_sseq); // binoculars switch
-            sub_02056B30(taskMan, 3, 17, 0xffff, 0x0, 6, 1, HEAP_ID_FIELD2);
+            MapTransition_StartScreenFade(taskMan, 3, 17, 0xffff, 0x0, 6, 1, HEAP_ID_FIELD2);
             lookout->state = 5;
         } else {
             MapObject_SetHidden(playerAvatar, 0);
@@ -109,7 +109,7 @@ static BOOL Task_GreatMarshLookout(FieldTask *taskMan)
             GreatMarshBinoculars_SetNextLocationWithCoords(lookout->numCycles, lookout->binocularsData);
             lookout->nextLocation = GreatMarshBinoculars_GetLocation(lookout->binocularsData);
             Sound_PlayEffect(SEQ_SE_DP_KASYA_sseq);
-            sub_02056B30(taskMan, 3, 16, 0xffff, 0x0, 6, 1, HEAP_ID_FIELD2);
+            MapTransition_StartScreenFade(taskMan, 3, 16, 0xffff, 0x0, 6, 1, HEAP_ID_FIELD2);
             lookout->state = 6;
         }
         break;

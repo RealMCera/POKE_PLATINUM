@@ -3,10 +3,12 @@
 
 #include "struct_defs/struct_0205C924.h"
 
-typedef struct UnkStruct_0205C95C_t {
-    UnkStruct_0205C924 unk_00[30];
-    int unk_348;
-    int unk_34C;
-} UnkStruct_0205C95C;
+// Ring buffer of the most recent Union Room chat messages. Once count reaches
+// 30, startIndex points at the oldest entry and is overwritten next.
+typedef struct UnionRoomChatLog {
+    UnionRoomChatLogEntry entries[30];
+    int count; // number of stored entries, saturating at 30
+    int startIndex; // index of the oldest entry once the buffer is full
+} UnionRoomChatLog;
 
 #endif // POKEPLATINUM_STRUCT_0205C95C_H
