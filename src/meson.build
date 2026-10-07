@@ -261,7 +261,7 @@ pokeplatinum_c = files(
     'rankings_machine.c',
     'field_map_change_flags.c',
     'field_move_tasks.c',
-    'unk_020711C8.c',
+    'field_move_mon.c',
     'overworld_anim_manager.c',
     'platform_lift.c',
     'persisted_map_features_init.c',

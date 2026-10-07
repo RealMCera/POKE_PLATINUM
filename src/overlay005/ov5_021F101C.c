@@ -23,13 +23,13 @@ typedef struct {
 BOOL ov5_021F101C(FieldTask *param0)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(param0);
-    UnkStruct_020711C8 *v1 = FieldTask_GetEnv(param0);
+    FieldMoveMon *v1 = FieldTask_GetEnv(param0);
     int *v2 = FieldTask_GetState(param0);
-    UnkStruct_ov5_021F101C *v3 = v1->unk_04;
+    UnkStruct_ov5_021F101C *v3 = v1->taskData;
 
     switch (*v2) {
     case 0:
-        v1->unk_04 = Heap_AllocAtEnd(HEAP_ID_FIELD2, sizeof(UnkStruct_ov5_021F101C));
+        v1->taskData = Heap_AllocAtEnd(HEAP_ID_FIELD2, sizeof(UnkStruct_ov5_021F101C));
         (*v2)++;
         break;
     case 1: {
@@ -42,7 +42,7 @@ BOOL ov5_021F101C(FieldTask *param0)
         break;
     case 2: {
         int v5 = PlayerAvatar_GetGender(fieldSystem->playerAvatar);
-        v3->unk_00 = HMCutIn_StartTask(fieldSystem, 0, v1->unk_00, v5);
+        v3->unk_00 = HMCutIn_StartTask(fieldSystem, 0, v1->mon, v5);
     }
         (*v2)++;
         break;
@@ -57,7 +57,7 @@ BOOL ov5_021F101C(FieldTask *param0)
         (*v2)++;
         break;
     case 5:
-        Heap_Free(v1->unk_04);
+        Heap_Free(v1->taskData);
         Heap_Free(v1);
         return 1;
     }
