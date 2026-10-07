@@ -29,7 +29,7 @@
 #include "string_gf.h"
 #include "system.h"
 #include "text.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 #include "res/graphics/title_screen/titledemo.naix"
 #include "res/text/bank/title_screen.h"

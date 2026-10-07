@@ -27,7 +27,7 @@
 #include "system.h"
 #include "timer.h"
 #include "touch_pad.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "wifi_list_util.h"
 #include "unk_02039814.h"
 #include "unk_02039A64.h"
@@ -69,7 +69,7 @@ void NitroMain(void)
 
     SetGBACartridgeVersion(VERSION_NONE);
     PM_GetBackLight(&sSavedBacklightState, NULL);
-    sub_0202419C();
+    G3_InitBufferSwap();
     InitRTC();
     InitApplication();
 
@@ -141,7 +141,7 @@ void NitroMain(void)
 
         UpdateRTC();
         PlayTime_IncrementTimer();
-        sub_020241CC();
+        G3_ProcessSwapBuffers();
         SysTaskManager_ExecuteTasks(gSystem.printTaskMgr);
 
         OS_WaitIrq(TRUE, OS_IE_V_BLANK);

@@ -36,7 +36,7 @@
 #include "string_template.h"
 #include "system.h"
 #include "text.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "wifi_earth_place.h"
 #include "wifi_history_save_data.h"
 

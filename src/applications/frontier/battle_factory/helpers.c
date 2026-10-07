@@ -8,7 +8,7 @@
 #include "gx_layers.h"
 #include "pokemon.h"
 #include "pokemon_sprite.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 void BattleFactoryApp_Setup3D(void)
 {

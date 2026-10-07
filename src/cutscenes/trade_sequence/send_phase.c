@@ -24,7 +24,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "text.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 #include "res/text/bank/trade.h"
 

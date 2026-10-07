@@ -49,7 +49,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "trainer_info.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "comm_tool.h"
 #include "unk_02038ED4.h"
 #include "pokemon_info_display.h"

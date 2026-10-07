@@ -14,7 +14,7 @@
 #include "pokemon_anim.h"
 #include "pokemon_sprite.h"
 #include "spider_graph.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 static void DrawConditionRects(SpiderGraphRectangle *rect);
 static void UpdateConditionVec(VecFx16 *currVec, VecFx16 *deltaVec);

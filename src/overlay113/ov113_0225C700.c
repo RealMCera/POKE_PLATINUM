@@ -60,7 +60,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "font_oam.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "vram_transfer.h"
 #include "yes_no_touch_menu.h"
 

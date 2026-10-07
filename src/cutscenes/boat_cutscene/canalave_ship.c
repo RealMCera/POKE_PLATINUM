@@ -13,7 +13,7 @@
 #include "screen_fade.h"
 #include "sound_playback.h"
 #include "system.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "app_graphics.h"
 
 #define BOAT_TRAVEL_CUTSCENE_NUM_ANIMATIONS 4

@@ -50,7 +50,7 @@
 #include "touch_pad.h"
 #include "trainer_info.h"
 #include "font_oam.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "comm_tool.h"
 #include "vram_transfer.h"
 

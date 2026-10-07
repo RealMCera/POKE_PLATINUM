@@ -16,7 +16,7 @@
 #include "sprite.h"
 #include "sys_task.h"
 #include "sys_task_manager.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 #define BG_SCALE_START    1152
 #define BG_SCALE_RATE     1

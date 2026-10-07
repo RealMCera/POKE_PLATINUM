@@ -43,7 +43,7 @@
 #include "system.h"
 #include "text.h"
 #include "touch_pad.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "vram_transfer.h"
 
 #define NUM_STARTER_OPTIONS 3

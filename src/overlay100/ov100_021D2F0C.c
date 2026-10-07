@@ -28,7 +28,7 @@
 #include "sys_task_manager.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 static void ov100_021D3084(UnkStruct_ov100_021D3084 *param0);
 static void ov100_021D3400(UnkStruct_ov100_021D3084 *param0);

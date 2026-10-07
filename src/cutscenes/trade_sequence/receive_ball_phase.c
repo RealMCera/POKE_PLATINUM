@@ -18,7 +18,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "system.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 #define CAMERA_ANGLE_X_ARRIVE 0x18E3
 #define CAMERA_ANGLE_X_EXIT   0x1150

@@ -24,7 +24,7 @@
 #include "sound_playback.h"
 #include "sprite_system.h"
 #include "sys_task.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 static void ov100_021D1808(UnkStruct_ov100_021D1808 *param0);
 static void ov100_021D1A24(UnkStruct_ov100_021D1808 *param0);

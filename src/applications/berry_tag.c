@@ -25,7 +25,7 @@
 #include "system.h"
 #include "text.h"
 #include "touch_pad.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "app_graphics.h"
 
 #include "res/graphics/berry_tag/berry_tag.naix"

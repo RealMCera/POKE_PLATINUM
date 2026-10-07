@@ -3,7 +3,7 @@
 #include "camera.h"
 #include "heap.h"
 #include "particle_system.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 static u32 ParticleHelper_AllocTexVram(u32 param0, BOOL param1);
 static u32 ParticleHelper_AllocPalVram(u32 param0, BOOL param1);

@@ -13,7 +13,7 @@
 #include "screen_fade.h"
 #include "sys_task.h"
 #include "sys_task_manager.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 #define MAIN_BG2_START_Y -384
 

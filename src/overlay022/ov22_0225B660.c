@@ -29,7 +29,7 @@
 #include "string_template.h"
 #include "system.h"
 #include "text.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "image_clips.h"
 #include "contest_util.h"
 

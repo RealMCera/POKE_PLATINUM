@@ -39,7 +39,7 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "font_oam.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 #define CAPSULE_MENU_EDIT           0
 #define CAPSULE_MENU_QUIT           1

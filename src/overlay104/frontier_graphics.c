@@ -54,7 +54,7 @@
 #include "system.h"
 #include "touch_pad.h"
 #include "trainer_info.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "vram_transfer.h"
 
 #include "res/fonts/pl_font.naix"
