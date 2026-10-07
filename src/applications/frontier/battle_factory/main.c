@@ -52,7 +52,7 @@
 #include "text.h"
 #include "trainer_info.h"
 #include "comm_tool.h"
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 #include "vram_transfer.h"
 
 #include "constdata/const_020F410C.h"
@@ -410,7 +410,7 @@ int BattleFactoryApp_Init(ApplicationManager *appMan, int *state)
     LoadAssets(app);
 
     if (BattleFactory_IsMultiplayerChallenge(app->challengeType) == TRUE) {
-        sub_0209BA80(app);
+        FrontierCommCmd_Init(app);
     }
 
     *state = 0;

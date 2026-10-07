@@ -27,7 +27,7 @@
 #include "string_template.h"
 #include "sys_task.h"
 #include "sys_task_manager.h"
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 
 #include "constdata/const_020EA358.h"
 
@@ -319,7 +319,7 @@ BOOL FrontierScrCmd_CallBattleFactoryFunction(FrontierScriptContext *ctx)
         *returnVar = battleFactory->unk_57D;
         break;
     case BF_FUNC_INIT_COMM_MANAGER:
-        sub_0209BA80(battleFactory);
+        FrontierCommCmd_Init(battleFactory);
         break;
     case BF_FUNC_IS_MULTIPLAYER_CHALLENGE:
         *returnVar = BattleFactory_IsMultiplayerChallenge(battleFactory->challengeType);

@@ -29,7 +29,7 @@
 #include "party.h"
 #include "scrcmd_battle_hall.h"
 #include "battle_tower.h"
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 #include "wifi_battle_tower_save.h"
 
 static BOOL WaitForCommResponses(FrontierScriptContext *ctx);
@@ -170,7 +170,7 @@ BOOL FrontierScrCmd_CallWFCFacilitySelectorFunction(FrontierScriptContext *ctx)
 
     switch (command) {
     case WFCFS_FUNC_INIT_COMM_MANAGER:
-        sub_0209BA80(selector);
+        FrontierCommCmd_Init(selector);
         break;
     case WFCFS_FUNC_GET_PARTNERS_FIRST_PICK:
         *returnVar = selector->partnersSelectedSpecies[0];
@@ -316,7 +316,7 @@ BOOL FrontierScrCmd_InitBattleTower(FrontierScriptContext *ctx)
     }
 
     Party_HealAllMembers(SaveData_GetParty(fieldData->saveData));
-    sub_0209BA80(battleTower);
+    FrontierCommCmd_Init(battleTower);
 
     battleTower->msgsReceived = 0;
 
