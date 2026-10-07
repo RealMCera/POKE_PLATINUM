@@ -9,11 +9,11 @@
 #include "overlay065/struct_ov65_02236760.h"
 
 #include "comm_cmd.h"
-#include "unk_02039A58.h"
+#include "wifi_comm_cmd.h"
 
 // Communication commands shared by the overlay065 WiFi apps (the Nintendo WFC
 // menu, WiFi battles and the Poffin/WiFi Plaza activity app). The command
-// manager indexes the table returned by unk_02039A58() with (cmd - 22), so its
+// manager indexes the table returned by WiFiCommCmd_GetTable() with (cmd - 22), so its
 // three entries are commands 22, 23 and 24:
 //   22: player join/leave status (UnkStruct_ov65_022366E4, fixed size)
 //   23: sync request, no payload
@@ -25,7 +25,7 @@
 // the command manager passes back to every handler.
 void WiFiComm_Init(UnkStruct_ov65_02236744 *app)
 {
-    CommCmd_Init(sub_02039A58(), sub_02039A60(), app);
+    CommCmd_Init(WiFiCommCmd_GetTable(), WiFiCommCmd_GetTableCount(), app);
 }
 
 // Registers the same table with no context, so any command that arrives while
@@ -33,7 +33,7 @@ void WiFiComm_Init(UnkStruct_ov65_02236744 *app)
 // WiFi battle starts, when no WiFi app state is registered yet.
 void WiFiComm_InitNoContext(void)
 {
-    CommCmd_Init(sub_02039A58(), sub_02039A60(), NULL);
+    CommCmd_Init(WiFiCommCmd_GetTable(), WiFiCommCmd_GetTableCount(), NULL);
 }
 
 // Packet-size callbacks for the command table. Commands 22 and 24 carry a
