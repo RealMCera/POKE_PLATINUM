@@ -30,7 +30,7 @@
 #include "g3_buffer.h"
 #include "wifi_list_util.h"
 #include "network_error.h"
-#include "unk_02039A64.h"
+#include "dwc_init_screen.h"
 #include "fatal_error_screen.h"
 
 #define RESET_COMBO (PAD_BUTTON_START | PAD_BUTTON_SELECT | PAD_BUTTON_L | PAD_BUTTON_R)
@@ -85,7 +85,7 @@ void NitroMain(void)
     Timer_Start();
 
     if (WiFiList_InitDWC(HEAP_ID_APPLICATION) == DWC_INIT_RESULT_DESTROY_OTHER_SETTING) {
-        sub_02039A64(HEAP_ID_APPLICATION, 0);
+        DwcInitScreen_Show(HEAP_ID_APPLICATION, 0);
     }
 
     if (SaveData_BackupExists(sApplication.args.saveData) == FALSE) {
