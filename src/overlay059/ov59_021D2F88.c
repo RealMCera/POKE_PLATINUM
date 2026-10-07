@@ -21,8 +21,8 @@
 #include "savedata.h"
 #include "image_clips.h"
 #include "tv_broadcast.h"
-#include "unk_02073700.h"
 #include "wifi_battle_tower_save.h"
+#include "wifi_player_profile.h"
 
 typedef struct {
     enum HeapID heapID;
@@ -123,7 +123,7 @@ static void *ov59_021D30B4(SaveData *saveData, enum HeapID heapID, u32 param2)
 {
     WifiPlayerProfile *profile = Heap_AllocAtEnd(heapID, param2);
     MI_CpuClear8(profile, param2);
-    sub_02073700(saveData, 0, profile);
+    WifiPlayerProfile_Build(saveData, 0, profile);
 
     return profile;
 }
