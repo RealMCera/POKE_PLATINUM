@@ -167,7 +167,7 @@ Static main
 	Object main.nef.p/src_wifi_list_util.c.o
 	Object main.nef.p/src_wifi_friend_registration.c.o
 	Object main.nef.p/src_network_icon.c.o
-	Object main.nef.p/src_unk_02039814.c.o
+	Object main.nef.p/src_network_error.c.o
 	Object main.nef.p/src_wifi_comm_cmd.c.o
 	Object main.nef.p/src_unk_02039A64.c.o
 	Object main.nef.p/src_map_matrix.c.o

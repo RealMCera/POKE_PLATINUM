@@ -27,7 +27,7 @@
 #include "comm_local.h"
 #include "comm_cmd.h"
 #include "comm_server_client.h"
-#include "unk_02039814.h"
+#include "network_error.h"
 #include "wireless_manager.h"
 
 typedef void (*CommTaskFunc)(void);

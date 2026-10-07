@@ -1,4 +1,4 @@
-#include "unk_02039814.h"
+#include "network_error.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -20,7 +20,7 @@
 
 #include "res/text/bank/network_errors.h"
 
-static const GXBanks Unk_020E5EFC = {
+static const GXBanks sNetworkErrorBanksConfig = {
     GX_VRAM_BG_256_AB,
     GX_VRAM_BGEXTPLTT_NONE,
     GX_VRAM_SUB_BG_NONE,
@@ -33,14 +33,14 @@ static const GXBanks Unk_020E5EFC = {
     GX_VRAM_TEXPLTT_NONE
 };
 
-static const GraphicsModes Unk_020E5ED0 = {
+static const GraphicsModes sNetworkErrorBgModeSet = {
     GX_DISPMODE_GRAPHICS,
     GX_BGMODE_0,
     GX_BGMODE_0,
     GX_BG0_AS_2D
 };
 
-static const BgTemplate Unk_020E5EE0 = {
+static const BgTemplate sNetworkErrorBgTemplate = {
     .x = 0x0,
     .y = 0x0,
     .bufferSize = 0x800,
@@ -55,7 +55,7 @@ static const BgTemplate Unk_020E5EE0 = {
     .mosaic = FALSE,
 };
 
-static const WindowTemplate Unk_020E5EC8 = {
+static const WindowTemplate sNetworkErrorWindowTemplate = {
     0x0,
     0x3,
     0x3,
@@ -65,7 +65,10 @@ static const WindowTemplate Unk_020E5EC8 = {
     0x23
 };
 
-static void sub_02039814(void)
+// VBlank interrupt handler for the network error screen. It acknowledges the
+// VBlank IRQ and waits for the pending GX DMA transfer to complete, keeping the
+// displayed screen stable.
+static void NetworkError_VBlankHandler(void)
 {
     OS_SetIrqCheckFlag(OS_IE_V_BLANK);
     MI_WaitDma(GX_DEFAULT_DMAID);
@@ -73,14 +76,17 @@ static void sub_02039814(void)
 
 void NetworkError_DisplayNetworkError(enum HeapID heapID, int networkErrorId, int errorCode)
 {
-    BgConfig *v0;
-    Window v1;
-    MessageLoader *v2;
-    String *v3;
-    String *v4;
-    StringTemplate *v5;
+    BgConfig *bgConfig;
+    Window window;
+    MessageLoader *messageLoader;
+    String *formattedString;
+    String *messageString;
+    StringTemplate *stringTemplate;
     int networkErrorMessageId;
 
+    // Select the message to print from TEXT_BANK_NETWORK_ERRORS using the
+    // caller-supplied error ID. Unrecognized IDs fall back to the generic
+    // communication error message.
     switch (networkErrorId) {
     case 0:
     default:
@@ -110,7 +116,7 @@ void NetworkError_DisplayNetworkError(enum HeapID heapID, int networkErrorId, in
     SetScreenColorBrightness(DS_SCREEN_SUB, COLOR_BLACK);
 
     (void)OS_DisableIrqMask(OS_IE_V_BLANK);
-    OS_SetIrqFunction(OS_IE_V_BLANK, sub_02039814);
+    OS_SetIrqFunction(OS_IE_V_BLANK, NetworkError_VBlankHandler);
     (void)OS_EnableIrqMask(OS_IE_V_BLANK);
 
     SetVBlankCallback(NULL, NULL);
@@ -130,42 +136,44 @@ void NetworkError_DisplayNetworkError(enum HeapID heapID, int networkErrorId, in
     GX_SetVisibleWnd(GX_WNDMASK_NONE);
     GXS_SetVisibleWnd(GX_WNDMASK_NONE);
 
-    GXLayers_SetBanks(&Unk_020E5EFC);
-    v0 = BgConfig_New(heapID);
+    GXLayers_SetBanks(&sNetworkErrorBanksConfig);
+    bgConfig = BgConfig_New(heapID);
 
-    SetAllGraphicsModes(&Unk_020E5ED0);
-    Bg_InitFromTemplate(v0, BG_LAYER_MAIN_0, &Unk_020E5EE0, 0);
-    Bg_ClearTilemap(v0, BG_LAYER_MAIN_0);
-    LoadStandardWindowGraphics(v0, BG_LAYER_MAIN_0, 512 - 9, 2, 0, heapID);
+    SetAllGraphicsModes(&sNetworkErrorBgModeSet);
+    Bg_InitFromTemplate(bgConfig, BG_LAYER_MAIN_0, &sNetworkErrorBgTemplate, 0);
+    Bg_ClearTilemap(bgConfig, BG_LAYER_MAIN_0);
+    LoadStandardWindowGraphics(bgConfig, BG_LAYER_MAIN_0, 512 - 9, 2, 0, heapID);
     Font_LoadTextPalette(PAL_LOAD_MAIN_BG, PLTT_OFFSET(1), heapID);
     Bg_ClearTilesRange(BG_LAYER_MAIN_0, 32, 0, heapID);
     Bg_MaskPalette(BG_LAYER_MAIN_0, 0x6c21);
     Bg_MaskPalette(BG_LAYER_SUB_0, 0x6c21);
 
-    v2 = MessageLoader_Init(MSG_LOADER_LOAD_ON_DEMAND, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_NETWORK_ERRORS, heapID);
-    v3 = String_Init(0x180, heapID);
-    v4 = String_Init(0x180, heapID);
+    messageLoader = MessageLoader_Init(MSG_LOADER_LOAD_ON_DEMAND, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_NETWORK_ERRORS, heapID);
+    formattedString = String_Init(0x180, heapID);
+    messageString = String_Init(0x180, heapID);
     Text_ResetAllPrinters();
-    v5 = StringTemplate_Default(heapID);
+    stringTemplate = StringTemplate_Default(heapID);
 
-    Window_AddFromTemplate(v0, &v1, &Unk_020E5EC8);
-    Window_FillRectWithColor(&v1, 15, 0, 0, 26 * 8, 18 * 8);
-    Window_DrawStandardFrame(&v1, 0, 512 - 9, 2);
+    Window_AddFromTemplate(bgConfig, &window, &sNetworkErrorWindowTemplate);
+    Window_FillRectWithColor(&window, 15, 0, 0, 26 * 8, 18 * 8);
+    Window_DrawStandardFrame(&window, 0, 512 - 9, 2);
 
-    StringTemplate_SetNumber(v5, 0, errorCode, 5, 2, 1);
-    MessageLoader_GetString(v2, networkErrorMessageId, v4);
-    StringTemplate_Format(v5, v3, v4);
+    // Substitute the error code into placeholder 0 of the selected message as a
+    // zero-padded, 5-digit number, then format it into the string used below.
+    StringTemplate_SetNumber(stringTemplate, 0, errorCode, 5, 2, 1);
+    MessageLoader_GetString(messageLoader, networkErrorMessageId, messageString);
+    StringTemplate_Format(stringTemplate, formattedString, messageString);
 
-    Text_AddPrinterWithParams(&v1, FONT_SYSTEM, v3, 0, 0, TEXT_SPEED_INSTANT, NULL);
-    String_Free(v3);
+    Text_AddPrinterWithParams(&window, FONT_SYSTEM, formattedString, 0, 0, TEXT_SPEED_INSTANT, NULL);
+    String_Free(formattedString);
 
     GXLayers_TurnBothDispOn();
     ResetScreenMasterBrightness(DS_SCREEN_MAIN);
     ResetScreenMasterBrightness(DS_SCREEN_SUB);
     BrightnessController_SetScreenBrightness(0, GX_BLEND_PLANEMASK_BG0 | GX_BLEND_PLANEMASK_BG1 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 | GX_BLEND_PLANEMASK_OBJ | GX_BLEND_PLANEMASK_BD, BRIGHTNESS_BOTH_SCREENS);
 
-    Window_Remove(&v1);
-    MessageLoader_Free(v2);
-    StringTemplate_Free(v5);
-    Heap_Free(v0);
+    Window_Remove(&window);
+    MessageLoader_Free(messageLoader);
+    StringTemplate_Free(stringTemplate);
+    Heap_Free(bgConfig);
 }
