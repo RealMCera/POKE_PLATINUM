@@ -3,9 +3,12 @@
 
 #include "struct_defs/struct_0207E060.h"
 
-typedef struct {
-    WFCTrainerInfo unk_00;
-    WFCTrainerInfo unk_24[32];
-} UnkStruct_0207DFAC;
+// Buffer of WFC trainer profiles: the local player's own profile followed by
+// the profiles received from each friend. CommManager_GetUnk00 returns this
+// buffer, and it is also the status data registered with the WFC server.
+typedef struct WFCStatusBuffer {
+    WFCTrainerInfo ownStatus;
+    WFCTrainerInfo friendStatuses[32];
+} WFCStatusBuffer;
 
 #endif // POKEPLATINUM_STRUCT_0207DFAC_H

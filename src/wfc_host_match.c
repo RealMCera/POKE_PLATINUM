@@ -1,4 +1,4 @@
-#include "unk_0207DFAC.h"
+#include "wfc_host_match.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -7,15 +7,25 @@
 
 #include "comm_manager.h"
 
-BOOL sub_0207DFAC(int param0)
+// Host-match callback registered via NintendoWFC_SetHostMatchCallback. When a
+// player tries to join the host's WFC group, the host compares its own
+// commState against the joining player's commState (stored in the friend slot
+// indexed by hostFriendIdx). The two are compatible only when they belong to
+// the same activity, so the callback returns TRUE for the known host/friend
+// state pairs and FALSE otherwise.
+BOOL WFCHostMatch_IsCompatible(int hostFriendIdx)
 {
     int v0;
     int v1;
-    UnkStruct_0207DFAC *v2 = CommManager_GetUnk00();
+    WFCStatusBuffer *v2 = CommManager_GetUnk00();
 
-    v0 = v2->unk_00.commState;
-    v1 = v2->unk_24[param0].commState;
+    v0 = v2->ownStatus.commState;
+    v1 = v2->friendStatuses[hostFriendIdx].commState;
 
+    // Each pair below is (host commState, joining player commState) for one
+    // activity. States 1-8 are the friend-side states and 9-16 the matching
+    // host-side states of the same activities; 18-27 pair adjacent host/friend
+    // states.
     if ((v0 == 12) && (v1 == 5)) {
         return 1;
     } else if ((v0 == 13) && (v1 == 6)) {
