@@ -25,6 +25,6 @@ enum BattleFrontierStatsIndex BattleFrontierStats_GetArcadeCurrentStreakIndex(u8
 enum BattleFrontierStatsIndex BattleFrontierStats_GetTowerLatestStreakIndex(u8 challengeType);
 enum BattleFrontierStatsIndex BattleFrontierStats_GetTowerRecordStreakIndex(u8 challengeType);
 int BattleFrontierStats_GetHostFriendIdx(u32 statIndex);
-u8 sub_0205E6D8(SaveData *saveData);
+u8 BattleFrontierStats_IsDebugBuild(SaveData *saveData);
 
 #endif // POKEPLATINUM_BATTLE_FRONTIER_STATS_H

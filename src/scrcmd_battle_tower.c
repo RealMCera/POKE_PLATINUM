@@ -283,7 +283,7 @@ BOOL ScrCmd_1E1(ScriptContext *ctx)
         break;
     }
 
-    if (sub_0205E6D8(ctx->fieldSystem->saveData) == 1) {
+    if (BattleFrontierStats_IsDebugBuild(ctx->fieldSystem->saveData) == 1) {
         // Debug build (VERSION_NONE game code): send through the comm tool.
         if (CommTool_SendTempData(CommSys_CurNetId(), battleTower->unk_83E) == 1) {
             *destVar = 1;
@@ -314,7 +314,7 @@ BOOL ScrCmd_1E2(ScriptContext *ctx)
     commandType = ScriptContext_GetVar(ctx);
     destVarID = ScriptContext_ReadHalfWord(ctx);
 
-    if (sub_0205E6D8(ctx->fieldSystem->saveData) == 1) {
+    if (BattleFrontierStats_IsDebugBuild(ctx->fieldSystem->saveData) == 1) {
         // Debug build: the comm tool's reply is handled by a field task.
         BattleSalon_StartCommTask(ctx->fieldSystem->task, commandType, destVarID);
     } else {
