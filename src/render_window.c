@@ -29,6 +29,14 @@
 #include "res/graphics/signposts/field_board.naix"
 #include "res/graphics/windows/pl_winframe.naix"
 
+// This module draws the standard window frames used throughout the game: the
+// menu/choice-box frames, dialogue message boxes (with their optional scroll
+// cursor and wait dial), signpost boards, and the Pokemon preview window.
+//
+// A frame is a border of 4bpp tiles written into a background layer's tilemap
+// around a rectangular window. The interior tiles are left untouched so the
+// caller can fill them with text or graphics.
+
 #define SIGNPOST_BORDER_LEFT_SIZE  1
 #define SIGNPOST_BORDER_RIGHT_SIZE 2
 #define SIGNPOST_BORDER_Y_SIZE     1
@@ -86,19 +94,19 @@ static void DrawStandardWindowFrame(BgConfig *bgConfig, u8 bgLayer, u8 x, u8 y, 
 static void DrawMessageBoxFrame(BgConfig *bgConfig, u8 bgLayer, u8 x, u8 y, u8 width, u8 height, u8 palette, u16 tile);
 static void BlitRectToBitmap(void *srcPixels, u16 srcX, u16 srcY, u16 srcWidth, u16 srcHeight, void *destPixels, u16 destWidth, u16 destHeight, u16 destX, u16 destY, u16 blitWidth, u16 blitHeight);
 static void DrawMessageBoxScrollCursor(Window *window, u16 baseTile);
-static void LoadSignpostContentTiles(BgConfig *bgConfig, u8 bgLayer, u16 offset, u8 param3, u16 narcMemberIdx, u32 heapID);
+static void LoadSignpostContentTiles(BgConfig *bgConfig, u8 bgLayer, u16 offset, u8 signpostType, u16 narcMemberIdx, u32 heapID);
 static void DrawSignpostTiles(Window *window, u16 tile, u8 palette);
 static void DrawWaitDial(WaitDial *dial, u32 drawMode);
 static void SysTask_TickWaitDial(SysTask *task, void *data);
 static void SysTask_CleanupWaitDial(SysTask *task, void *data);
 static void SysTask_HandlePokemonPreview(SysTask *task, void *data);
 static PokemonPreview *CreatePokemonPreviewTask(BgConfig *bgConfig, u8 bgLayer, u8 x, u8 y, u32 heapID);
-static void sub_0200ED50(PokemonPreview *preview, u32 heapID);
+static void SetPokemonPreviewSpriteCapacities(PokemonPreview *preview, u32 heapID);
 static void LoadPokemonPreviewResources(PokemonPreview *preview);
 static void CreatePokemonPreviewSprite(PokemonPreview *preview, u8 x, u8 y);
-static void LoadAndDrawPokemonPreviewSprite(SpriteResourceManager *param0, u16 species, u8 gender);
-static void LoadAndDrawPokemonPreviewSpriteFromStruct(SpriteResourceManager *param0, Pokemon *mon);
-static void DrawPokemonPreviewSprite(SpriteResourceManager *param0, PokemonSpriteTemplate *spriteTemplate);
+static void LoadAndDrawPokemonPreviewSprite(SpriteResourceManager *spriteManager, u16 species, u8 gender);
+static void LoadAndDrawPokemonPreviewSpriteFromStruct(SpriteResourceManager *spriteManager, Pokemon *mon);
+static void DrawPokemonPreviewSprite(SpriteResourceManager *spriteManager, PokemonSpriteTemplate *spriteTemplate);
 static void DrawPokemonPreviewWindow(PokemonPreview *preview, u8 palette, u16 tile);
 static void ErasePokemonPreviewWindow(PokemonPreview *preview);
 
@@ -191,6 +199,14 @@ void LoadStandardWindowGraphics(BgConfig *bgConfig, u8 bgLayer, u16 tileOffset, 
     }
 }
 
+// Draws the 3x3-tile standard window frame around the rectangle at (x, y).
+// The nine tiles are laid out as:
+//
+//     tile+0  tile+1  tile+2
+//     tile+3  tile+4  tile+5
+//     tile+6  tile+7  tile+8
+//
+// tile+4 is the interior and is intentionally left for the caller to fill.
 static void DrawStandardWindowFrame(BgConfig *bgConfig, u8 bgLayer, u8 x, u8 y, u8 width, u8 height, u8 palette, u16 tile)
 {
     // clang-format off
@@ -275,6 +291,15 @@ void LoadMessageBoxGraphics(BgConfig *bgConfig, u8 bgLayer, u16 tileOffset, u8 p
     }
 }
 
+// Draws the 6x3-tile dialogue message-box frame around the rectangle at (x, y).
+// The eighteen tiles are laid out as:
+//
+//     tile+0  tile+1  tile+2  tile+3  tile+4  tile+5
+//     tile+6  tile+7  tile+8  tile+9  tile+10 tile+11
+//     tile+12 tile+13 tile+14 tile+15 tile+16 tile+17
+//
+// tile+8 is the interior and is intentionally left for the caller to fill. The
+// frame is asymmetric: two border tiles on the left and three on the right.
 static void DrawMessageBoxFrame(BgConfig *bgConfig, u8 bgLayer, u8 x, u8 y, u8 width, u8 height, u8 palette, u16 tile)
 {
     // clang-format off
@@ -337,6 +362,7 @@ void Window_EraseMessageBox(Window *window, u8 skipTransfer)
     }
 }
 
+// Blits a sub-rectangle of one 4bpp bitmap into another.
 static void BlitRectToBitmap(void *srcPixels, u16 srcX, u16 srcY, u16 srcWidth, u16 srcHeight, void *destPixels, u16 destWidth, u16 destHeight, u16 destX, u16 destY, u16 blitWidth, u16 blitHeight)
 {
     Bitmap src, dest;
@@ -358,6 +384,11 @@ static void BlitRectToBitmap(void *srcPixels, u16 srcX, u16 srcY, u16 srcWidth, 
 #define SCROLL_CURSOR_FRAME_SIZE      (SCROLL_CURSOR_TILE_OFFSET(SCROLL_CURSOR_TILES_PER_FRAME))
 #define SCROLL_CURSOR_GRAPHICS_SIZE   (SCROLL_CURSOR_FRAME_SIZE * SCROLL_CURSOR_FRAME_COUNT)
 
+// Builds the animated scroll cursor (the blinking down arrow shown when a
+// message waits for player input) and loads it into the tiles immediately
+// following the message-box frame (baseTile + 18). Each of the three frames is
+// a 2x2-tile block; the message box's right-edge tiles are copied underneath so
+// the cursor blends into the frame.
 static void DrawMessageBoxScrollCursor(Window *window, u16 baseTile)
 {
     // must forward-declare these to match
@@ -406,6 +437,9 @@ static void DrawMessageBoxScrollCursor(Window *window, u16 baseTile)
     Heap_Free(cursorBlit);
 }
 
+// Replaces every fully transparent pixel in the first 18 tiles of a message-box
+// frame with the given tile index, so the frame can be drawn over a background
+// that would otherwise show through it.
 void ReplaceTransparentTiles(BgConfig *bgConfig, u8 bgLayer, u16 bgBaseTile, u8 withTile, u8 messageBoxFrame, u32 heapID)
 {
     void *tiles;
@@ -493,6 +527,8 @@ static void LoadSignpostContentTiles(BgConfig *bgConfig, u8 bgLayer, u16 offset,
         heapID);
 }
 
+// Draws the signpost board frame. Like the message box it uses eighteen tiles,
+// but the left border is nine tiles wide to make room for the signpost content.
 static void DrawSignpostFrame(BgConfig *bgConfig, u8 bgLayer, u8 x, u8 y, u8 width, u8 height, u8 palette, u16 tile)
 {
     // clang-format off
@@ -593,6 +629,10 @@ void Window_EraseSignpost(Window *window, u8 signpostType, u8 skipTransfer)
     }
 }
 
+// Creates the animated wait dial shown in the bottom-right corner of a message
+// box while the game is busy. The dial is an 8-frame 2x2-tile animation loaded
+// into the same tile slot as the scroll cursor (baseTile + 18); the original
+// tiles are saved so they can be restored when the dial is destroyed.
 void *Window_AddWaitDial(Window *window, u32 baseTile)
 {
     WaitDial *dial;
@@ -658,6 +698,8 @@ void *Window_AddWaitDial(Window *window, u32 baseTile)
     return dial;
 }
 
+// Loads the current dial frame and, depending on drawMode, either draws it into
+// the tilemap, only loads its tiles, or restores the saved message-box tiles.
 static void DrawWaitDial(WaitDial *dial, u32 drawMode)
 {
     u8 bgLayer = Window_GetBgLayer(dial->window);
@@ -737,7 +779,7 @@ u8 *DrawPokemonPreview(BgConfig *bgConfig, u8 bgLayer, u8 x, u8 y, u8 palette, u
 {
     PokemonPreview *preview = CreatePokemonPreviewTask(bgConfig, bgLayer, x, y, heapID);
 
-    sub_0200ED50(preview, heapID);
+    SetPokemonPreviewSpriteCapacities(preview, heapID);
     LoadPokemonPreviewResources(preview);
     CreatePokemonPreviewSprite(preview, x, y);
     LoadAndDrawPokemonPreviewSprite(&preview->spriteManager, species, gender);
@@ -751,7 +793,7 @@ u8 *DrawPokemonPreviewFromStruct(BgConfig *bgConfig, u8 bgLayer, u8 x, u8 y, u8 
 {
     PokemonPreview *preview = CreatePokemonPreviewTask(bgConfig, bgLayer, x, y, heapID);
 
-    sub_0200ED50(preview, heapID);
+    SetPokemonPreviewSpriteCapacities(preview, heapID);
     LoadPokemonPreviewResources(preview);
     CreatePokemonPreviewSprite(preview, x, y);
     LoadAndDrawPokemonPreviewSpriteFromStruct(&preview->spriteManager, mon);
@@ -802,10 +844,12 @@ static PokemonPreview *CreatePokemonPreviewTask(BgConfig *bgConfig, u8 bgLayer, 
     return preview;
 }
 
-static void sub_0200ED50(PokemonPreview *preview, u32 heapID)
+// Reserves room in the preview's sprite resource manager for a single
+// character, palette, cell, and animation set.
+static void SetPokemonPreviewSpriteCapacities(PokemonPreview *preview, u32 heapID)
 {
-    SpriteResourceCapacities v0 = { 1, 1, 1, 1, 0, 0 };
-    SpriteResourceManager_SetCapacities(&preview->spriteManager, &v0, 1, heapID);
+    SpriteResourceCapacities capacities = { 1, 1, 1, 1, 0, 0 };
+    SpriteResourceManager_SetCapacities(&preview->spriteManager, &capacities, 1, heapID);
 }
 
 static void LoadPokemonPreviewResources(PokemonPreview *preview)
@@ -847,23 +891,23 @@ static void CreatePokemonPreviewSprite(PokemonPreview *preview, u8 x, u8 y)
     GXLayers_EngineBToggleLayers(GX_PLANEMASK_OBJ, TRUE);
 }
 
-static void LoadAndDrawPokemonPreviewSprite(SpriteResourceManager *param0, u16 species, u8 gender)
+static void LoadAndDrawPokemonPreviewSprite(SpriteResourceManager *spriteManager, u16 species, u8 gender)
 {
-    void *buf = PokemonSpriteManager_New(param0->heapID);
+    void *buf = PokemonSpriteManager_New(spriteManager->heapID);
 
     PokemonSpriteTemplate sprite;
     BuildPokemonSpriteTemplate(&sprite, species, gender, FACE_FRONT, FALSE, NULL, NULL);
-    DrawPokemonPreviewSprite(param0, &sprite);
+    DrawPokemonPreviewSprite(spriteManager, &sprite);
     PokemonSpriteManager_Free(buf);
 }
 
-static void LoadAndDrawPokemonPreviewSpriteFromStruct(SpriteResourceManager *param0, Pokemon *mon)
+static void LoadAndDrawPokemonPreviewSpriteFromStruct(SpriteResourceManager *spriteManager, Pokemon *mon)
 {
-    void *buf = PokemonSpriteManager_New(param0->heapID);
+    void *buf = PokemonSpriteManager_New(spriteManager->heapID);
 
     PokemonSpriteTemplate sprite;
     Pokemon_BuildSpriteTemplate(&sprite, mon, FACE_FRONT);
-    DrawPokemonPreviewSprite(param0, &sprite);
+    DrawPokemonPreviewSprite(spriteManager, &sprite);
     PokemonSpriteManager_Free(buf);
 }
 
@@ -873,7 +917,7 @@ static void LoadAndDrawPokemonPreviewSpriteFromStruct(SpriteResourceManager *par
 #define POKEMON_SPRITE_FRAME_SIZE_BYTES   (TILE_SIZE_4BPP * POKEMON_SPRITE_FRAME_SIZE_TILES)
 #define POKEMON_SPRITE_WHOLE_SIZE_BYTES   (POKEMON_SPRITE_FRAME_SIZE_BYTES * 2)
 
-static void DrawPokemonPreviewSprite(SpriteResourceManager *param0, PokemonSpriteTemplate *spriteTemplate)
+static void DrawPokemonPreviewSprite(SpriteResourceManager *spriteManager, PokemonSpriteTemplate *spriteTemplate)
 {
     u8 *buf;
     u32 offset;
@@ -881,17 +925,17 @@ static void DrawPokemonPreviewSprite(SpriteResourceManager *param0, PokemonSprit
     NNSG2dImageProxy *imageProxy;
     const NNSG2dImagePaletteProxy *paletteProxy;
 
-    buf = Heap_Alloc(param0->heapID, POKEMON_SPRITE_WHOLE_SIZE_BYTES);
+    buf = Heap_Alloc(spriteManager->heapID, POKEMON_SPRITE_WHOLE_SIZE_BYTES);
 
     // frame 0
     TileRegion frame0Region = FRAME_0_REGION;
-    CharacterSprite_LoadSpriteRegion(spriteTemplate->narcID, spriteTemplate->character, param0->heapID, &frame0Region, buf);
+    CharacterSprite_LoadSpriteRegion(spriteTemplate->narcID, spriteTemplate->character, spriteManager->heapID, &frame0Region, buf);
 
     // frame 1
     TileRegion frame1Region = FRAME_1_REGION;
-    CharacterSprite_LoadSpriteRegion(spriteTemplate->narcID, spriteTemplate->character, param0->heapID, &frame1Region, buf + POKEMON_SPRITE_FRAME_SIZE_BYTES);
+    CharacterSprite_LoadSpriteRegion(spriteTemplate->narcID, spriteTemplate->character, spriteManager->heapID, &frame1Region, buf + POKEMON_SPRITE_FRAME_SIZE_BYTES);
 
-    charResource = SpriteResourceCollection_Find(param0->resourceCollections[SPRITE_RESOURCE_CHAR], POKEMON_PREVIEW_RESOURCE_ID);
+    charResource = SpriteResourceCollection_Find(spriteManager->resourceCollections[SPRITE_RESOURCE_CHAR], POKEMON_PREVIEW_RESOURCE_ID);
     imageProxy = SpriteTransfer_GetImageProxy(charResource);
     offset = NNS_G2dGetImageLocation(imageProxy, NNS_G2D_VRAM_TYPE_2DMAIN);
 
@@ -900,8 +944,8 @@ static void DrawPokemonPreviewSprite(SpriteResourceManager *param0, PokemonSprit
 
     Heap_Free(buf);
 
-    buf = CharacterSprite_LoadPalette(spriteTemplate->narcID, spriteTemplate->palette, param0->heapID);
-    plttResource = SpriteResourceCollection_Find(param0->resourceCollections[SPRITE_RESOURCE_PLTT], POKEMON_PREVIEW_RESOURCE_ID);
+    buf = CharacterSprite_LoadPalette(spriteTemplate->narcID, spriteTemplate->palette, spriteManager->heapID);
+    plttResource = SpriteResourceCollection_Find(spriteManager->resourceCollections[SPRITE_RESOURCE_PLTT], POKEMON_PREVIEW_RESOURCE_ID);
     paletteProxy = SpriteTransfer_GetPaletteProxy(plttResource, imageProxy);
     offset = NNS_G2dGetImagePaletteLocation(paletteProxy, NNS_G2D_VRAM_TYPE_2DMAIN);
 
@@ -911,6 +955,8 @@ static void DrawPokemonPreviewSprite(SpriteResourceManager *param0, PokemonSprit
     Heap_Free(buf);
 }
 
+// Draws the 10x10-tile frame around the Pokemon preview sprite. The nine frame
+// tiles are corners and edges; tile+4 is the interior where the sprite appears.
 static void DrawPokemonPreviewWindow(PokemonPreview *preview, u8 palette, u16 tile)
 {
     Bg_FillTilemapRect(preview->bgConfig,
