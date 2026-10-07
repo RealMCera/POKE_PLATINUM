@@ -165,7 +165,7 @@ pokeplatinum_c = files(
     'spawn_locations.c',
     'field_overworld_weather.c',
     'start_menu.c',
-    'unk_0203C954.c',
+    'field_event.c',
     'field_system.c',
     'location.c',
     'field_system_apps.c',

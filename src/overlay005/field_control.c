@@ -62,7 +62,7 @@
 #include "terrain_collision_manager.h"
 #include "trainer_encounter.h"
 #include "trainer_info.h"
-#include "unk_0203C954.h"
+#include "field_event.h"
 #include "unk_02054884.h"
 #include "map_transition.h"
 #include "colosseum.h"
@@ -259,7 +259,7 @@ BOOL FieldInput_Process(const FieldInput *input, FieldSystem *fieldSystem)
         if (PersistedMapFeatures_IsCurrentDynamicMap(fieldSystem, DYNAMIC_MAP_FEATURES_DISTORTION_WORLD) == TRUE) {
             validInteraction = Field_DistortionInteract(fieldSystem, &object);
         } else {
-            validInteraction = sub_0203CA40(fieldSystem, &object);
+            validInteraction = FieldEvent_TryGetFacingInteractableObject(fieldSystem, &object);
         }
 
         if (validInteraction == TRUE) {
@@ -341,7 +341,7 @@ static BOOL Field_CheckSign(FieldSystem *fieldSystem)
 {
     MapObject *object;
 
-    if (sub_0203CBE0(fieldSystem, &object) == TRUE) {
+    if (FieldEvent_IsFacingSignpost(fieldSystem, &object) == TRUE) {
         ScriptManager_Set(fieldSystem, MapObject_GetScript(object), object);
         return TRUE;
     }
@@ -402,7 +402,7 @@ BOOL FieldInput_Process_Colosseum(FieldInput *input, FieldSystem *fieldSystem)
     if (input->interact) {
         MapObject *object;
 
-        if (sub_0203CA40(fieldSystem, &object) == TRUE && MapObject_GetMovementType(object) != 0x1) {
+        if (FieldEvent_TryGetFacingInteractableObject(fieldSystem, &object) == TRUE && MapObject_GetMovementType(object) != 0x1) {
             if (PlayerAvatar_CheckForceStopMovement(fieldSystem->playerAvatar) == TRUE) {
                 PlayerAvatar_ForceStopMovement(fieldSystem->playerAvatar, PlayerAvatar_GetFacingDir(fieldSystem->playerAvatar));
             }
@@ -457,7 +457,7 @@ BOOL FieldInput_Process_UnionRoom(const FieldInput *input, FieldSystem *fieldSys
     if (input->interact) {
         MapObject *object;
 
-        if (sub_0203CA40(fieldSystem, &object) == TRUE) {
+        if (FieldEvent_TryGetFacingInteractableObject(fieldSystem, &object) == TRUE) {
             if (PlayerAvatar_CheckForceStopMovement(fieldSystem->playerAvatar) == TRUE) {
                 PlayerAvatar_ForceStopMovement(fieldSystem->playerAvatar, PlayerAvatar_GetFacingDir(fieldSystem->playerAvatar));
             }
@@ -494,7 +494,7 @@ int FieldInput_Process_BattleTower(const FieldInput *input, FieldSystem *fieldSy
     if (input->interact) {
         MapObject *object;
 
-        if (sub_0203CA40(fieldSystem, &object) == TRUE) {
+        if (FieldEvent_TryGetFacingInteractableObject(fieldSystem, &object) == TRUE) {
             if (PlayerAvatar_CheckForceStopMovement(fieldSystem->playerAvatar) == TRUE) {
                 PlayerAvatar_ForceStopMovement(fieldSystem->playerAvatar, PlayerAvatar_GetFacingDir(fieldSystem->playerAvatar));
             }
@@ -766,7 +766,7 @@ static BOOL Field_ProcessStep(FieldSystem *fieldSystem)
 
 static BOOL Field_CheckCoordEvent(FieldSystem *fieldSystem)
 {
-    u16 event = sub_0203CC14(fieldSystem, MapHeaderData_GetCoordEvents(fieldSystem), MapHeaderData_GetNumCoordEvents(fieldSystem));
+    u16 event = FieldEvent_GetInteractedCoordEventScript(fieldSystem, MapHeaderData_GetCoordEvents(fieldSystem), MapHeaderData_GetNumCoordEvents(fieldSystem));
 
     if (event != 0xffff) {
         ScriptManager_Set(fieldSystem, event, NULL);

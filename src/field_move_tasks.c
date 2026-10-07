@@ -38,7 +38,7 @@
 #include "system_flags.h"
 #include "terrain_collision_manager.h"
 #include "trainer_info.h"
-#include "unk_0203C954.h"
+#include "field_event.h"
 #include "field_system_apps.h"
 #include "unk_020711C8.h"
 #include "vars_flags.h"
@@ -246,7 +246,7 @@ void FieldMoves_SetUsableMoves(FieldSystem *fieldSystem, FieldMoveContext *field
         return;
     }
 
-    sub_0203C9D4(fieldSystem, &mapObj);
+    FieldEvent_FindFacingMapObject(fieldSystem, &mapObj);
     fieldMoveContext->mapObj = mapObj;
 
     if (mapObj != NULL) {
