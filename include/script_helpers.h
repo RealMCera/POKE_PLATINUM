@@ -1,5 +1,5 @@
-#ifndef POKEPLATINUM_UNK_0205DFC4_H
-#define POKEPLATINUM_UNK_0205DFC4_H
+#ifndef POKEPLATINUM_SCRIPT_HELPERS_H
+#define POKEPLATINUM_SCRIPT_HELPERS_H
 
 #include "struct_decls/map_object.h"
 
@@ -15,4 +15,4 @@ BOOL HasAllLegendaryTitansInParty(SaveData *saveData);
 void MapObject_Shake(FieldTask *task, MapObject *mapObj, u16 times, u16 speed, u16 xOffset, u16 zOffset);
 void MapObject_Flicker(FieldTask *task, MapObject *mapObj, u16 times, u16 delay);
 
-#endif // POKEPLATINUM_UNK_0205DFC4_H
+#endif // POKEPLATINUM_SCRIPT_HELPERS_H

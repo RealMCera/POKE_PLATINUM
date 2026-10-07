@@ -34,7 +34,7 @@
 #include "savedata.h"
 #include "script_manager.h"
 #include "string_template.h"
-#include "unk_0205DFC4.h"
+#include "script_helpers.h"
 #include "comm_field_cmd.h"
 #include "wifi_battle_tower_save.h"
 

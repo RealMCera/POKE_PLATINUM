@@ -208,7 +208,7 @@
 #include "wifi_lobby_task.h"
 #include "union_room.h"
 #include "union_room_trainers.h"
-#include "unk_0205DFC4.h"
+#include "script_helpers.h"
 #include "map_object_animation.h"
 #include "map_object_movement.h"
 #include "mailbox.h"

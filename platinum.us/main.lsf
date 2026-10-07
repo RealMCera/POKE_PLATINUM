@@ -245,7 +245,7 @@ Static main
 	Object main.nef.p/src_underground_map_transition.c.o
 	Object main.nef.p/src_field_message.c.o
 	Object main.nef.p/src_map_tile_behavior.c.o
-	Object main.nef.p/src_unk_0205DFC4.c.o
+	Object main.nef.p/src_script_helpers.c.o
 	Object main.nef.p/src_battle_frontier_stats.c.o
 	Object main.nef.p/src_player_avatar.c.o
 	Object main.nef.p/src_player_move.c.o

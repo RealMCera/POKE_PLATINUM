@@ -1,4 +1,4 @@
-#include "unk_0205DFC4.h"
+#include "script_helpers.h"
 
 #include <nitro.h>
 
@@ -37,6 +37,12 @@ typedef struct MapObjectFlickerData {
 static u8 GetPartnerGameCode(void);
 u8 sub_0205E6D8(SaveData *saveData);
 
+/**
+ * @brief Return the number of decimal digits needed to represent @p number.
+ *
+ * Counts digits by successive division, returning 1-8. Values of 100,000,000
+ * or more fall through to the default and report 1 digit.
+ */
 u16 GetNumberDigitCount(u32 number)
 {
     if (number / 10 == 0) {
@@ -60,6 +66,11 @@ u16 GetNumberDigitCount(u32 number)
     return 1;
 }
 
+/**
+ * @brief Check whether @p item is a TM or HM.
+ *
+ * @return TRUE if @p item lies in the contiguous TM01..HM08 item range.
+ */
 u16 Item_IsTMHM(u16 item)
 {
     if (item >= ITEM_TM01 && item <= ITEM_HM08) {
@@ -69,6 +80,17 @@ u16 Item_IsTMHM(u16 item)
     return FALSE;
 }
 
+/**
+ * @brief Select Rowan's local Pokédex rating message for the number of species seen.
+ *
+ * Picks the message whose threshold @p pokemonSeen has reached. Once the local
+ * dex goal is met, the completion message depends on whether the player has
+ * already reached Eterna City.
+ *
+ * @param pokemonSeen      Number of local Pokédex species seen.
+ * @param reachedEternaCity Non-zero if the player has arrived at Eterna City.
+ * @return Message ID from the pokedex_ratings text bank.
+ */
 u16 Pokedex_GetRatingMessageID_Local(u16 pokemonSeen, u16 reachedEternaCity)
 {
     if (pokemonSeen <= 15) {
@@ -126,6 +148,16 @@ u16 Pokedex_GetRatingMessageID_Local(u16 pokemonSeen, u16 reachedEternaCity)
     }
 }
 
+/**
+ * @brief Select Oak's national Pokédex rating message for the number of species caught.
+ *
+ * Picks the message whose threshold @p pokemonCaught has reached. The 410-caught
+ * and complete-national-dex messages have separate male and female variants.
+ *
+ * @param pokemonCaught Number of national Pokédex species caught.
+ * @param playerGender  Non-zero for the female player character.
+ * @return Message ID from the pokedex_ratings text bank.
+ */
 u16 Pokedex_GetRatingMessageID_National(u16 pokemonCaught, u16 playerGender)
 {
     if (pokemonCaught <= 39) {
@@ -211,6 +243,12 @@ u16 Pokedex_GetRatingMessageID_National(u16 pokemonCaught, u16 playerGender)
     }
 }
 
+/**
+ * @brief Find the party slot of the first Pokémon that is not an egg.
+ *
+ * @return Slot index of the first non-egg party member, or 0 if every party
+ *         member is an egg (or the party is empty).
+ */
 u16 SaveData_GetFirstNonEggInParty(SaveData *saveData)
 {
     u16 i, partyCount = Party_GetCurrentCount(SaveData_GetParty(saveData));
@@ -226,6 +264,14 @@ u16 SaveData_GetFirstNonEggInParty(SaveData *saveData)
     return 0;
 }
 
+/**
+ * @brief Check whether the party contains all three legendary titans.
+ *
+ * The titans are Regirock, Regice and Registeel; each must appear at least once
+ * in the party.
+ *
+ * @return TRUE if all three titans are present.
+ */
 BOOL HasAllLegendaryTitansInParty(SaveData *saveData)
 {
     int i, j, titansInParty = 0;
@@ -255,6 +301,13 @@ BOOL HasAllLegendaryTitansInParty(SaveData *saveData)
     return FALSE;
 }
 
+/**
+ * @brief Field task that animates a map object shaking back and forth.
+ *
+ * Offsets the sprite along X and Z by a sine wave whose angle advances by
+ * @c speed each frame; one full 360-degree cycle counts as one shake. Frees the
+ * task data and finishes once @c times cycles have elapsed.
+ */
 static BOOL Task_ShakeMapObject(FieldTask *task)
 {
     VecFx32 pos;
@@ -286,6 +339,16 @@ static BOOL Task_ShakeMapObject(FieldTask *task)
     return FALSE;
 }
 
+/**
+ * @brief Start a field task that shakes a map object.
+ *
+ * @param task    Field task used to run the shake animation.
+ * @param mapObj  Map object to shake.
+ * @param times   Number of full shake cycles.
+ * @param speed   Degrees added to the sine angle each frame.
+ * @param xOffset Horizontal shake amplitude (pixels).
+ * @param zOffset Depth shake amplitude (pixels).
+ */
 void MapObject_Shake(FieldTask *task, MapObject *mapObj, u16 times, u16 speed, u16 xOffset, u16 zOffset)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
@@ -302,6 +365,12 @@ void MapObject_Shake(FieldTask *task, MapObject *mapObj, u16 times, u16 speed, u
     FieldTask_InitCall(fieldSystem->task, Task_ShakeMapObject, shakeData);
 }
 
+/**
+ * @brief Field task that toggles a map object's visibility to make it flicker.
+ *
+ * Toggles the hidden flag every @c delay frames; frees the task data and
+ * finishes after @c times toggles.
+ */
 static BOOL Task_FlickerMapObject(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
@@ -322,6 +391,14 @@ static BOOL Task_FlickerMapObject(FieldTask *task)
     return FALSE;
 }
 
+/**
+ * @brief Start a field task that flickers a map object.
+ *
+ * @param task   Field task used to run the flicker animation.
+ * @param mapObj Map object to flicker.
+ * @param times  Number of visibility toggles.
+ * @param delay  Frames between toggles.
+ */
 void MapObject_Flicker(FieldTask *task, MapObject *mapObj, u16 times, u16 delay)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);

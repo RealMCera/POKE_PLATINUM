@@ -232,7 +232,7 @@ pokeplatinum_c = files(
     'underground_map_transition.c',
     'field_message.c',
     'map_tile_behavior.c',
-    'unk_0205DFC4.c',
+    'script_helpers.c',
     'battle_frontier_stats.c',
     'player_avatar.c',
     'player_move.c',
