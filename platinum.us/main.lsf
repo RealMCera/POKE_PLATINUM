@@ -169,7 +169,7 @@ Static main
 	Object main.nef.p/src_network_icon.c.o
 	Object main.nef.p/src_network_error.c.o
 	Object main.nef.p/src_wifi_comm_cmd.c.o
-	Object main.nef.p/src_unk_02039A64.c.o
+	Object main.nef.p/src_dwc_init_screen.c.o
 	Object main.nef.p/src_map_matrix.c.o
 	Object main.nef.p/src_map_header.c.o
 	Object main.nef.p/src_map_header_data.c.o
