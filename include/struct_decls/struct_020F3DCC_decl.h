@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_020F3DCC_DECL_H
 #define POKEPLATINUM_STRUCT_020F3DCC_DECL_H
 
-typedef struct UnkStruct_020F3DCC_t UnkStruct_020F3DCC;
+typedef struct VsRecorderMenuEntry_t VsRecorderMenuEntry;
 
 #endif // POKEPLATINUM_STRUCT_020F3DCC_DECL_H

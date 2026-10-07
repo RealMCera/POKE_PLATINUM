@@ -31,7 +31,7 @@ void ov62_02230C28(SysTask *param0, void *param1);
 void ov62_02230E68(ManagedSprite *param0, s16 param1, s16 param2);
 void ov62_02230E74(ManagedSprite *param0, s16 *param1, s16 *param2);
 void ov62_02230E80(UnkStruct_0208C06C *param0);
-void ov62_02230FC8(UnkStruct_0208C06C *param0, UnkStruct_ov62_022307C0_sub1 *param1, int param2, const UnkStruct_020F3DCC *param3);
+void ov62_02230FC8(UnkStruct_0208C06C *param0, UnkStruct_ov62_022307C0_sub1 *param1, int param2, const VsRecorderMenuEntry *param3);
 void ov62_0223113C(UnkStruct_0208C06C *param0);
 void ov62_0223118C(UnkStruct_ov62_022312B0 *param0, UnkStruct_ov62_0223118C *param1, int param2);
 void ov62_0223124C(UnkStruct_ov62_022312B0 *param0, UnkStruct_ov62_0223118C *param1, int param2);

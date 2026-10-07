@@ -31,8 +31,8 @@ typedef struct {
     VsRecorderRing *unk_6F0;
     VsRecorderRing *unk_6F4;
     UnkStruct_ov62_02230C28 unk_6F8[6];
-    const UnkStruct_020F3DCC *unk_818;
-    const UnkStruct_020F3DCC *unk_81C[5];
+    const VsRecorderMenuEntry *unk_818;
+    const VsRecorderMenuEntry *unk_81C[5];
     SaveData *saveData;
     u16 unk_834;
     u16 unk_836;

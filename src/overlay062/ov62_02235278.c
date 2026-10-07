@@ -158,7 +158,7 @@ static BOOL ov62_02235478(UnkStruct_0208C06C *param0)
 {
     BOOL v0;
 
-    switch (param0->unk_818[param0->unk_534.unk_1B0].unk_10) {
+    switch (param0->unk_818[param0->unk_534.unk_1B0].action) {
     default:
         v0 = 1;
         break;
@@ -301,8 +301,8 @@ static BOOL ov62_02235580(UnkStruct_0208C06C *param0)
                             v5->unk_04 = v5->unk_00;
                             v5->unk_06 = (25 + (36 * (5 - 1)));
 
-                            ManagedSprite_SetAnim(param0->unk_534.unk_00[v4].unk_00, param0->unk_818[param0->unk_534.unk_1B0].unk_0C);
-                            ov62_02230FC8(param0, &param0->unk_534.unk_00[param0->unk_534.unk_1A4], param0->unk_818[param0->unk_534.unk_1B0].unk_08, &param0->unk_818[param0->unk_534.unk_1B0]);
+                            ManagedSprite_SetAnim(param0->unk_534.unk_00[v4].unk_00, param0->unk_818[param0->unk_534.unk_1B0].spriteAnimID);
+                            ov62_02230FC8(param0, &param0->unk_534.unk_00[param0->unk_534.unk_1A4], param0->unk_818[param0->unk_534.unk_1B0].labelMessageID, &param0->unk_818[param0->unk_534.unk_1B0]);
                             FontOAM_SetDrawFlag(param0->unk_534.unk_00[param0->unk_534.unk_1A4].unk_14, 1);
                             ManagedSprite_SetDrawFlag(param0->unk_534.unk_00[v4].unk_00, 1);
                         } else {
@@ -336,7 +336,7 @@ static BOOL ov62_02235580(UnkStruct_0208C06C *param0)
         v0->unk_04 = 0;
         break;
     case 2: {
-        if (param0->unk_818[param0->unk_534.unk_1B0].unk_20 == NULL) {
+        if (param0->unk_818[param0->unk_534.unk_1B0].children == NULL) {
             ov62_0222FC1C(param0);
         } else {
             ov62_0222FB60(param0, 5);

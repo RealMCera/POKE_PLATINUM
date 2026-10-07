@@ -25,7 +25,7 @@
 #include "sound.h"
 #include "system_flags.h"
 #include "battle_recording.h"
-#include "unk_0208C010.h"
+#include "vs_recorder_graphics.h"
 #include "vars_flags.h"
 #include "wifi_overlays.h"
 
@@ -118,7 +118,7 @@ static void VsRecorder_Init(ApplicationManager *appMan, int mode)
     v0->vsRecorder->unk_868 = &v0->playbackRequest;
     v0->vsRecorder->saveData = v0->saveData;
     v0->vsRecorder->unk_00 = mode;
-    v0->vsRecorder->unk_81C[v0->vsRecorder->unk_534.unk_1A4] = sub_0208C034(v0->vsRecorder, v0->vsRecorder->unk_00);
+    v0->vsRecorder->unk_81C[v0->vsRecorder->unk_534.unk_1A4] = VsRecorderGraphics_GetMenuForMode(v0->vsRecorder, v0->vsRecorder->unk_00);
 
     int eventType;
 

@@ -31,7 +31,7 @@
 #include "text.h"
 #include "font_oam.h"
 #include "player_profile.h"
-#include "unk_0208C010.h"
+#include "vs_recorder_graphics.h"
 
 static const u8 Unk_ov62_022488A8[][5] = {
     { 0x5, 0xA, 0xF, 0x14, 0x19 },
@@ -408,7 +408,7 @@ void ov62_0223088C(UnkStruct_0208C06C *param0)
 
         ManagedSprite_TickFrame(v1->unk_C8[v0].unk_00);
         ov62_02230E68(v1->unk_C8[v0].unk_00, v2.x, v2.y);
-        ManagedSprite_SetDrawFlag(v1->unk_C8[v0].unk_00, param0->unk_818[v0].unk_00);
+        ManagedSprite_SetDrawFlag(v1->unk_C8[v0].unk_00, param0->unk_818[v0].enabled);
     }
 
     v0 = 0;
@@ -445,14 +445,14 @@ void ov62_02230A5C(UnkStruct_0208C06C *param0)
     int v0;
 
     for (v0 = 0; v0 < 5; v0++) {
-        ManagedSprite_SetDrawFlag(param0->unk_534.unk_C8[v0].unk_00, param0->unk_818[v0].unk_00);
+        ManagedSprite_SetDrawFlag(param0->unk_534.unk_C8[v0].unk_00, param0->unk_818[v0].enabled);
 
-        if (param0->unk_818[v0].unk_00 == 0) {
+        if (param0->unk_818[v0].enabled == 0) {
             continue;
         }
 
-        ManagedSprite_SetAnim(param0->unk_534.unk_C8[v0].unk_00, param0->unk_818[v0].unk_0C);
-        ov62_02230FC8(param0, &param0->unk_534.unk_C8[v0], param0->unk_818[v0].unk_08, &param0->unk_818[v0]);
+        ManagedSprite_SetAnim(param0->unk_534.unk_C8[v0].unk_00, param0->unk_818[v0].spriteAnimID);
+        ov62_02230FC8(param0, &param0->unk_534.unk_C8[v0], param0->unk_818[v0].labelMessageID, &param0->unk_818[v0]);
     }
 }
 
@@ -475,8 +475,8 @@ void ov62_02230AF0(UnkStruct_0208C06C *param0)
     }
 
     for (v0 = 0; v0 < param0->unk_534.unk_1A4; v0++) {
-        ManagedSprite_SetAnim(param0->unk_534.unk_00[v0].unk_00, param0->unk_534.unk_190[v0]->unk_0C);
-        ov62_02230FC8(param0, &param0->unk_534.unk_00[v0], param0->unk_534.unk_190[v0]->unk_08, param0->unk_534.unk_190[v0]);
+        ManagedSprite_SetAnim(param0->unk_534.unk_00[v0].unk_00, param0->unk_534.unk_190[v0]->spriteAnimID);
+        ov62_02230FC8(param0, &param0->unk_534.unk_00[v0], param0->unk_534.unk_190[v0]->labelMessageID, param0->unk_534.unk_190[v0]);
         FontOAM_SetXY(param0->unk_534.unk_00[v0].unk_14, 36, -8);
         FontOAM_SetDrawFlag(param0->unk_534.unk_00[v0].unk_14, 1);
         ManagedSprite_SetDrawFlag(param0->unk_534.unk_00[v0].unk_00, 1);
@@ -686,7 +686,7 @@ void ov62_02230E80(UnkStruct_0208C06C *param0)
     }
 }
 
-void ov62_02230FC8(UnkStruct_0208C06C *param0, UnkStruct_ov62_022307C0_sub1 *param1, int param2, const UnkStruct_020F3DCC *param3)
+void ov62_02230FC8(UnkStruct_0208C06C *param0, UnkStruct_ov62_022307C0_sub1 *param1, int param2, const VsRecorderMenuEntry *param3)
 {
     String *v0;
     MessageLoader *v1;
@@ -698,12 +698,12 @@ void ov62_02230FC8(UnkStruct_0208C06C *param0, UnkStruct_ov62_022307C0_sub1 *par
     v1 = param0->unk_14.unk_34;
 
     if (param2 == 8) {
-        if (param0->unk_88C[param3->unk_18] == NULL) {
+        if (param0->unk_88C[param3->dataIndex] == NULL) {
             v0 = MessageLoader_GetNewString(v1, param2);
         } else {
             v3 = ov62_02231690(HEAP_ID_102);
             v4 = MessageLoader_GetNewString(param0->unk_14.unk_34, 7);
-            v5 = PlayerProfile_GetName(param0->unk_88C[param3->unk_18], HEAP_ID_102);
+            v5 = PlayerProfile_GetName(param0->unk_88C[param3->dataIndex], HEAP_ID_102);
             ov62_022349A8(param0, v5);
             v0 = String_Init(255, HEAP_ID_102);
 
@@ -714,12 +714,12 @@ void ov62_02230FC8(UnkStruct_0208C06C *param0, UnkStruct_ov62_022307C0_sub1 *par
             StringTemplate_Free(v3);
         }
     } else if (param2 == 41) {
-        if (param0->unk_88C[param3->unk_18] == NULL) {
+        if (param0->unk_88C[param3->dataIndex] == NULL) {
             v0 = MessageLoader_GetNewString(v1, param2);
         } else {
             v3 = ov62_02231690(HEAP_ID_102);
             v4 = MessageLoader_GetNewString(param0->unk_14.unk_34, 7);
-            v5 = PlayerProfile_GetName(param0->unk_88C[param3->unk_18], HEAP_ID_102);
+            v5 = PlayerProfile_GetName(param0->unk_88C[param3->dataIndex], HEAP_ID_102);
             ov62_022349A8(param0, v5);
             v0 = String_Init(255, HEAP_ID_102);
 
@@ -920,7 +920,7 @@ void ov62_0223146C(UnkStruct_0208C06C *param0)
 {
     ov62_022306B8(param0);
     ov62_02230060(param0);
-    sub_0208C06C(param0);
+    VsRecorderGraphics_CountEnabledEntries(param0);
     ov62_0223088C(param0);
     ov62_02230B9C(param0, 1);
     ov62_02230A5C(param0);
@@ -933,7 +933,7 @@ void ov62_022314A8(UnkStruct_0208C06C *param0)
 {
     ov62_022306B8(param0);
     ov62_02230060(param0);
-    sub_0208C06C(param0);
+    VsRecorderGraphics_CountEnabledEntries(param0);
     ov62_0223088C(param0);
     ov62_02230B9C(param0, 1);
     ov62_02230A5C(param0);

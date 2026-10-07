@@ -35,7 +35,7 @@
 #include "image_clips.h"
 #include "vs_recorder_ring.h"
 #include "vs_recorder.h"
-#include "unk_0208C010.h"
+#include "vs_recorder_graphics.h"
 #include "vram_transfer.h"
 
 static void ov62_0222F670(BgConfig *param0);
@@ -129,7 +129,7 @@ void ov62_0222F2C0(UnkStruct_0208C06C *param0)
     }
 
     ov62_022338A8(param0);
-    sub_0208C06C(param0);
+    VsRecorderGraphics_CountEnabledEntries(param0);
     ov62_022300D8(param0);
     ov62_022337D4(param0);
 }
@@ -586,7 +586,7 @@ void ov62_0222FB6C(UnkStruct_0208C06C *param0, int param1)
 
 void ov62_0222FB74(UnkStruct_0208C06C *param0)
 {
-    sub_0208C06C(param0);
+    VsRecorderGraphics_CountEnabledEntries(param0);
     ov62_02230A5C(param0);
 
     param0->unk_534.unk_1B0 = 0;
@@ -596,7 +596,7 @@ BOOL ov62_0222FB90(UnkStruct_0208C06C *param0)
 {
     param0->unk_81C[param0->unk_534.unk_1A4] = param0->unk_818;
     param0->unk_534.unk_190[param0->unk_534.unk_1A4] = &param0->unk_818[param0->unk_534.unk_1B0];
-    param0->unk_818 = param0->unk_818[param0->unk_534.unk_1B0].unk_20;
+    param0->unk_818 = param0->unk_818[param0->unk_534.unk_1B0].children;
     param0->unk_534.unk_1A4++;
     param0->unk_534.unk_1B0 = 0;
 
@@ -620,7 +620,7 @@ BOOL ov62_0222FBF8(UnkStruct_0208C06C *param0)
 
 void ov62_0222FC1C(UnkStruct_0208C06C *param0)
 {
-    int v0 = param0->unk_818[param0->unk_534.unk_1B0].unk_10;
+    int v0 = param0->unk_818[param0->unk_534.unk_1B0].action;
 
     switch (v0) {
     case 0:
@@ -682,7 +682,7 @@ void ov62_0222FC1C(UnkStruct_0208C06C *param0)
 
 BOOL ov62_0222FD3C(UnkStruct_0208C06C *param0)
 {
-    int v0 = param0->unk_818[param0->unk_534.unk_1B0].unk_18;
+    int v0 = param0->unk_818[param0->unk_534.unk_1B0].dataIndex;
     BOOL v1 = 1;
 
     switch (param0->unk_00) {
@@ -759,10 +759,10 @@ static void ov62_0222FE1C(u32 param0, enum TouchScreenButtonState param1, void *
         VsRecorderRing_SetPosition(v0->unk_6F0, v2 + (15 + 1), v3);
         VsRecorderRing_SetTargetPosition(v0->unk_6F0, v2 + (15 + 1), v3);
 
-        v0->unk_86C = v0->unk_818[v0->unk_534.unk_1B0].unk_18;
-        ov62_0222FB60(v0, v0->unk_818[v0->unk_534.unk_1B0].unk_14);
+        v0->unk_86C = v0->unk_818[v0->unk_534.unk_1B0].dataIndex;
+        ov62_0222FB60(v0, v0->unk_818[v0->unk_534.unk_1B0].nextState);
 
-        if (v0->unk_818[v0->unk_534.unk_1B0].unk_14 == 2) {
+        if (v0->unk_818[v0->unk_534.unk_1B0].nextState == 2) {
             VsRecorder_SetPlaybackRequest(v0->unk_868, 0, 0);
         } else {
             ov62_02230014(v0);
@@ -803,7 +803,7 @@ void ov62_0222FF7C(UnkStruct_0208C06C *param0)
     }
 
     for (v0 = 0; v0 < 5; v0++) {
-        if (param0->unk_818[v0].unk_00 == 0) {
+        if (param0->unk_818[v0].enabled == 0) {
             param0->unk_534.unk_C8[v0].unk_10->rect.top = 0;
             param0->unk_534.unk_C8[v0].unk_10->rect.bottom = 0;
             param0->unk_534.unk_C8[v0].unk_10->rect.left = 0;
