@@ -91,6 +91,12 @@
 #include "res/text/bank/location_names.h"
 #include "res/text/bank/start_menu.h"
 
+// The field start menu, opened with the X button. It builds the list of options
+// available in the current field context, draws the option window and its icons,
+// and runs a state machine that launches the selected application (Pokédex,
+// party menu, bag, trainer case, save, options, ...) before returning to the
+// field. Options that do not apply to the current context are hidden via a
+// bitmask of HIDE_OPTION_* flags (see StartMenu_Get*HiddenOptions).
 enum StartMenuOption {
     START_MENU_OPTION_POKEDEX = 0,
     START_MENU_OPTION_POKEMON,
@@ -147,7 +153,7 @@ static void StartMenu_InitMenu(FieldTask *fieldTask);
 static BOOL StartMenu_Select(FieldTask *fieldTask);
 static u32 StartMenu_MakeOptionList(StartMenu *menu, u8 *listOut);
 static void StartMenu_Close(StartMenu *menu);
-static void sub_0203B2EC(StartMenu *menu, FieldSystem *fieldSystem);
+static void StartMenu_LeaveUnionRoom(StartMenu *menu, FieldSystem *fieldSystem);
 static void StartMenu_PrintBallCount(FieldTask *fieldTask);
 static void StartMenu_EraseBallCount(FieldTask *fieldTask);
 static void StartMenu_ApplicationStart(FieldTask *fieldTask);
@@ -180,6 +186,9 @@ static void StartMenu_Evolve(FieldTask *fieldTask);
 static BOOL StartMenu_SelectRetire(FieldTask *fieldTask);
 static void StartMenu_ProcessGivenMail(FieldSystem *fieldSystem, StartMenu *menu, u8 mode);
 
+// Maps each menu option to its text-bank entry and the task function that runs
+// when the option is chosen. The exit option uses MENU_CANCEL as a sentinel
+// callback so that StartMenu_Select can treat it like a cancel input.
 typedef struct StartMenuAction {
     u32 bankEntry;
     void *callback;
@@ -273,6 +282,9 @@ BOOL FieldSystem_IsInValidLocation(FieldSystem *fieldSystem)
 #define HIDE_OPTION_CHAT         (1 << 7)
 #define HIDE_OPTION_RETIRE       (1 << 8)
 
+// Entry point for the normal field menu. Picks the set of hidden options based
+// on the current field context (Safari Game, Pal Park, Battle Tower/Salon, or
+// the default overworld set), then starts the menu task.
 void StartMenu_Open(FieldSystem *fieldSystem)
 {
     StartMenu *menu = StartMenu_New();
@@ -324,6 +336,9 @@ void StartMenu_OpenColosseum(FieldSystem *fieldSystem)
     FieldSystem_CreateTask(fieldSystem, StartMenu_Main, menu);
 }
 
+// Entry point used when the menu is opened from a script. Unlike StartMenu_Open
+// it also handles the Colosseum and Union Room map-load types, and it jumps the
+// existing field task into the menu rather than creating a new one.
 void StartMenu_OpenFromScript(FieldSystem *fieldSystem)
 {
     Sound_PlayEffect(SEQ_SE_DP_WIN_OPEN_sseq);
@@ -360,6 +375,10 @@ static StartMenu *StartMenu_New(void)
     return menu;
 }
 
+// Default overworld gating: hide the Pokédex until it is obtained, the Pokémon
+// option until a starter is chosen, and the Bag until it is acquired. Amity
+// Square additionally hides the Pokémon and Bag options. Chat and Retire are
+// only available in the contexts that explicitly enable them.
 static u32 StartMenu_GetNormalHiddenOptions(FieldSystem *fieldSystem)
 {
     u32 hideFlags = 0;
@@ -412,6 +431,10 @@ static u32 StartMenu_GetColosseumHiddenOptions(FieldSystem *fieldSystem)
     return HIDE_OPTION_SAVE | HIDE_OPTION_POKEDEX | HIDE_OPTION_CHAT | HIDE_OPTION_RETIRE;
 }
 
+// State machine driving the menu. It initializes the menu, waits for a
+// selection, runs the chosen application, and then either reinitializes the
+// menu (returning from an application) or tears it down and restores field
+// movement.
 static BOOL StartMenu_Main(FieldTask *fieldTask)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(fieldTask);
@@ -466,7 +489,7 @@ static BOOL StartMenu_Main(FieldTask *fieldTask)
         break;
     case START_MENU_STATE_9:
         if (IsScreenFadeDone()) {
-            sub_0203B2EC(menu, fieldSystem);
+            StartMenu_LeaveUnionRoom(menu, fieldSystem);
             Heap_Free(menu);
             MapObjectMan_UnpauseAllMovement(fieldSystem->mapObjMan);
             return TRUE;
@@ -490,7 +513,7 @@ static BOOL StartMenu_Main(FieldTask *fieldTask)
         MapObjectMan_UnpauseAllMovement(fieldSystem->mapObjMan);
         return TRUE;
     case START_MENU_STATE_END:
-        sub_0203B2EC(menu, fieldSystem);
+        StartMenu_LeaveUnionRoom(menu, fieldSystem);
         StartMenu_Close(menu);
         Window_EraseStandardFrame(&menu->primaryWindow, TRUE);
         Window_Remove(&menu->primaryWindow);
@@ -514,6 +537,10 @@ static BOOL StartMenu_Main(FieldTask *fieldTask)
     return FALSE;
 }
 
+// Constructs the menu: builds the option list, creates the option window and
+// its standard frame, loads the option strings (formatting the Trainer Card
+// entry with the player's name), creates the Menu, and spawns the cursor/icon
+// sprites. The cursor is restored to the option last highlighted by the player.
 static void StartMenu_InitMenu(FieldTask *fieldTask)
 {
     // need to be declared here to match
@@ -587,6 +614,8 @@ static void StartMenu_InitMenu(FieldTask *fieldTask)
         }                                                  \
     } while (0)
 
+// Builds the ordered list of visible options from the hide-option bitmask. The
+// order here is the order the options appear in the menu.
 static u32 StartMenu_MakeOptionList(StartMenu *menu, u8 *listOut)
 {
     u32 optionCount = 0;
@@ -681,6 +710,9 @@ static void StartMenu_EraseBallCount(FieldTask *fieldTask)
     Window_Remove(&menu->secondaryWindow);
 }
 
+// Reads the menu input. Moving the cursor updates the cursor sprite and the
+// active icon's animation/palette; choosing an option dispatches to the task
+// function stored in sStartMenuActions, while cancel/exit ends the menu.
 static BOOL StartMenu_Select(FieldTask *fieldTask)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(fieldTask);
@@ -716,7 +748,9 @@ static BOOL StartMenu_Select(FieldTask *fieldTask)
     return TRUE;
 }
 
-static void sub_0203B2EC(StartMenu *menu, FieldSystem *fieldSystem)
+// When the menu was opened inside the Union Room, tell the other trainers that
+// this player is leaving and restart the room's search/broadcast state.
+static void StartMenu_LeaveUnionRoom(StartMenu *menu, FieldSystem *fieldSystem)
 {
     if (CommServerClient_IsInitialized()) {
         if (menu->inUnionRoom) {
