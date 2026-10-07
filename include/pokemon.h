@@ -127,10 +127,55 @@ BOOL BoxPokemon_EnterDecryptionContext(BoxPokemon *boxMon);
  */
 BOOL BoxPokemon_ExitDecryptionContext(BoxPokemon *boxMon, BOOL encrypt);
 
+/**
+ * @brief Initializes a Pokemon with the given species, level, IVs and identity.
+ *
+ * @param mon
+ * @param monSpecies
+ * @param monLevel
+ * @param monIVs             Fixed IV to apply to every stat, or INIT_IVS_RANDOM to roll them
+ * @param useMonPersonalityParam If FALSE, a random personality is generated
+ * @param monPersonality     Personality to use when useMonPersonalityParam is TRUE
+ * @param monOTIDSource      One of OTID_NOT_SET, OTID_SET or OTID_NOT_SHINY
+ * @param monOTID            Original Trainer ID to use when monOTIDSource is OTID_SET
+ */
 void Pokemon_InitWith(Pokemon *mon, int monSpecies, int monLevel, int monIVs, BOOL useMonPersonalityParam, u32 monPersonality, int monOTIDSource, u32 monOTID);
-void sub_02074044(Pokemon *mon, u16 monSpecies, u8 monLevel, u8 monIVs, u8 monNature);
-void sub_02074088(Pokemon *mon, u16 monSpecies, u8 monLevel, u8 monIVs, u8 gender, u8 param5, u8 param6);
-u32 sub_02074128(u16 monSpecies, u8 gender, u8 param2);
+
+/**
+ * @brief Initializes a Pokemon whose personality is rerolled until it has the given nature.
+ *
+ * @param mon
+ * @param monSpecies
+ * @param monLevel
+ * @param monIVs
+ * @param monNature
+ */
+void Pokemon_InitWithNature(Pokemon *mon, u16 monSpecies, u8 monLevel, u8 monIVs, u8 monNature);
+
+/**
+ * @brief Initializes a Pokemon whose personality is rerolled until it has the
+ * given gender, nature and Unown letter.
+ *
+ * @param mon
+ * @param monSpecies
+ * @param monLevel
+ * @param monIVs
+ * @param gender
+ * @param monNature
+ * @param unownLetter   Unown letter + 1, or 0 to leave the letter unconstrained
+ */
+void Pokemon_InitWithGenderNatureLetter(Pokemon *mon, u16 monSpecies, u8 monLevel, u8 monIVs, u8 gender, u8 monNature, u8 unownLetter);
+
+/**
+ * @brief Computes a personality value that encodes the given nature and gender.
+ *
+ * @param monSpecies
+ * @param gender
+ * @param monNature
+ * @return A personality value with the requested nature and gender
+ */
+u32 Pokemon_GetPersonalityForGenderAndNature(u16 monSpecies, u8 gender, u8 monNature);
+
 void Pokemon_InitAndCalcStats(Pokemon *mon, u16 monSpecies, u8 monLevel, u32 monCombinedIVs, u32 monPersonality);
 
 /**
@@ -842,12 +887,30 @@ BOOL CanPokemonFormLearnTM(u16 monSpecies, int monForm, u8 tmID);
  */
 void Pokemon_CalcAbility(Pokemon *mon);
 
-void sub_020780C4(Pokemon *mon, u32 monPersonality);
+/**
+ * @brief Replaces a Pokemon's personality value while preserving its data.
+ *
+ * The data blocks are shuffled according to the personality, so the blocks are
+ * copied into their new positions before the Pokemon is re-encrypted.
+ *
+ * @param mon
+ * @param monPersonality The new personality value
+ */
+void Pokemon_SetPersonality(Pokemon *mon, u32 monPersonality);
 
 BOOL Pokemon_IsOnBattleFrontierBanlist(u16 species);
 u16 Pokemon_GetBattleFrontierBanlistEntry(u8 index);
 BOOL Pokemon_IsBannedFromBattleFrontier(Pokemon *mon);
-BOOL sub_0207884C(BoxPokemon *boxMon, TrainerInfo *param1, enum HeapID heapID);
+
+/**
+ * @brief Checks whether a BoxPokemon's Original Trainer matches the given trainer.
+ *
+ * @param boxMon
+ * @param trainerInfo
+ * @param heapID        Heap used for the temporary name strings
+ * @return TRUE if the OT ID, gender and name all match
+ */
+BOOL BoxPokemon_BelongsToPlayer(BoxPokemon *boxMon, TrainerInfo *trainerInfo, enum HeapID heapID);
 int SpriteSystem_TrainerClassBackSpriteIndex(enum TrainerClass trainerClass);
 void Pokemon_ClearBallCapsuleData(Pokemon *mon);
 void BoxPokemon_RestorePP(BoxPokemon *boxMon);
@@ -916,7 +979,26 @@ void PokemonSprite_LoadXOffsetShadow(NARC *narc, s8 *xOffsetShadow, u16 species)
  */
 void PokemonSprite_LoadShadowSize(NARC *narc, u8 *shadowSize, u16 species);
 BOOL Pokemon_SetBallSeal(int param0, Pokemon *mon, enum HeapID heapID);
-void sub_02078B40(Pokemon *mon, UnkStruct_02078B40 *param1);
-void sub_02078E0C(UnkStruct_02078B40 *param0, Pokemon *mon);
+
+/**
+ * @brief Copies a Pokemon into a flat, unencrypted box-format struct.
+ *
+ * Used to store a party inside a battle recording. The Pokemon is temporarily
+ * decrypted if it was not already, and re-encrypted afterwards.
+ *
+ * @param mon
+ * @param[out] dest The struct to populate
+ */
+void Pokemon_Serialize(Pokemon *mon, UnkStruct_02078B40 *dest);
+
+/**
+ * @brief Rebuilds a Pokemon from a flat, unencrypted box-format struct.
+ *
+ * The inverse of Pokemon_Serialize. The resulting Pokemon is left encrypted.
+ *
+ * @param src The struct to read
+ * @param[out] mon The Pokemon to populate
+ */
+void Pokemon_Deserialize(UnkStruct_02078B40 *src, Pokemon *mon);
 
 #endif // POKEPLATINUM_POKEMON_H

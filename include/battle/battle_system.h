@@ -34,7 +34,7 @@
 #include "string_gf.h"
 #include "string_template.h"
 #include "trainer_info.h"
-#include "unk_0201567C.h"
+#include "palette_animator.h"
 
 #define ENEMY_IN_SLOT_RIGHT 0
 #define ENEMY_IN_SLOT_LEFT  2

@@ -655,7 +655,7 @@ void Contest_InitOpponentMon(const UnkStruct_ov6_02248BE8 *opponentData, Pokemon
 {
     int i;
     u16 move;
-    u32 personality = sub_02074128(opponentData->unk_14, opponentData->unk_20_12, 0);
+    u32 personality = Pokemon_GetPersonalityForGenderAndNature(opponentData->unk_14, opponentData->unk_20_12, 0);
     Pokemon_InitWith(mon, opponentData->unk_14, 10, INIT_IVS_RANDOM, TRUE, personality, OTID_NOT_SHINY, 0xf0f0f0f);
 
     for (i = 0; i < LEARNED_MOVES_MAX; i++) {

@@ -264,7 +264,7 @@ static BOOL UndergroundMan_GetQueuedPlayerMessage(String *dest)
     }
 
     for (int netID = 0; netID < MAX_CONNECTED_PLAYERS; netID++) {
-        if (sub_02032DE0(netID)) {
+        if (CommInfo_HasPlayerData(netID)) {
             TrainerInfo *trainerInfo = CommInfo_TrainerInfo(netID);
             CommInfo_SetReceiveEnd(netID);
 

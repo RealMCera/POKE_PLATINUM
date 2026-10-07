@@ -22,47 +22,64 @@
 #include "wifi_history_save_data.h"
 #include "wifi_list.h"
 
+// Tracks the identity and per-player state of everyone connected in a
+// multiplayer session. Communication code broadcasts each connected player's
+// CommPlayerInfo to the others; this module buffers the results and exposes
+// them to the rest of the game (overworld, battles, Wi-Fi club, ...).
+
+// The wire format broadcast for a single player. It bundles every piece of
+// identity and session metadata other players need.
 typedef struct CommPlayerInfo {
-    u8 regulationBuffer[32];
-    u8 trainerInfoBuffer[32];
-    DWCFriendData friendData;
-    u16 unk_4C[8];
+    u8 regulationBuffer[32]; // BattleRegulation_Copy destination
+    u8 trainerInfoBuffer[32]; // backing store for trainerInfo[netId]
+    DWCFriendData friendData; // built from this player's Wi-Fi user data
+    u16 groupName[8]; // UNION_GROUP_NAME_LEN + 1, from the mixed-records entry
     u8 macAddress[6];
     u8 netId;
     u8 country;
     u8 region;
-    u8 hasGiftPenalty;
+    u8 hasGiftPenalty; // 1 when gift exchange is disabled for this player
 } CommPlayerInfo;
 
+// Link battle / trade tally accumulated against a connected player. It is
+// merged into that player's Wi-Fi friend record by CommInfo_SavePlayerRecord.
 typedef struct CommPlayerRecord {
     u16 win;
     u16 lose;
     u16 trades;
 } CommPlayerRecord;
 
+// Per-player receive state machine. A player starts EMPTY. When their data
+// arrives the state becomes BEGIN_RECEIVE; the game consumes it and calls
+// CommInfo_MarkDataRead to move to RECEIVE; CommInfo_SetReceiveEnd moves it to
+// END_RECEIVE once it has been fully handled.
 enum InfoState {
     INFO_STATE_EMPTY = 0,
-    INFO_STATE_BEGIN_RECIEVE,
-    INFO_STATE_RECIEVE,
-    INFO_STATE_END_RECIEVE,
+    INFO_STATE_BEGIN_RECEIVE,
+    INFO_STATE_RECEIVE,
+    INFO_STATE_END_RECEIVE,
     INFO_STATE_MAX
 };
 
+// Global session state, allocated once by CommInfo_Init. There is one entry per
+// connected-player index (netId).
 typedef struct CommunicationInformation {
-    TrainerInfo *personalTrainerInfo;
-    const BattleRegulation *regulation;
+    TrainerInfo *personalTrainerInfo; // optional override; see CommInfo_SetPersonalTrainerInfo
+    const BattleRegulation *regulation; // shared regulation, or NULL to send none
     SaveData *saveData;
     CommPlayerInfo playerInfo[MAX_CONNECTED_PLAYERS];
-    TrainerInfo *trainerInfo[MAX_CONNECTED_PLAYERS];
+    TrainerInfo *trainerInfo[MAX_CONNECTED_PLAYERS]; // aliases into playerInfo[].trainerInfoBuffer
     CommPlayerRecord playerRecord[MAX_CONNECTED_PLAYERS];
-    u8 infoState[MAX_CONNECTED_PLAYERS];
+    u8 infoState[MAX_CONNECTED_PLAYERS]; // enum InfoState
     u8 dataFinishedReading;
-    u8 dataRecvFlag;
-    u8 curNetId;
+    u8 dataRecvFlag; // set when remote data arrives; drives the server broadcast
+    u8 curNetId; // most recently received netId
 } CommunicationInformation;
 
 static CommunicationInformation *sCommInfo;
 
+// Allocates the global session state and seeds player 0 (the local player) from
+// save data. Safe to call more than once; later calls are ignored.
 void CommInfo_Init(SaveData *saveData, const BattleRegulation *regulation)
 {
     int netId;
@@ -75,6 +92,7 @@ void CommInfo_Init(SaveData *saveData, const BattleRegulation *regulation)
     sCommInfo = Heap_Alloc(HEAP_ID_COMMUNICATION, sizeof(CommunicationInformation));
     MI_CpuClear8(sCommInfo, sizeof(CommunicationInformation));
 
+    // Point each trainerInfo slot at its backing store inside playerInfo.
     for (netId = 0; netId < MAX_CONNECTED_PLAYERS; netId++) {
         sCommInfo->trainerInfo[netId] = (TrainerInfo *)&sCommInfo->playerInfo[netId].trainerInfoBuffer[0];
         CommInfo_InitPlayer(netId);
@@ -111,13 +129,16 @@ BOOL CommInfo_IsInitialized(void)
     return sCommInfo != NULL;
 }
 
+// Fills in this console's own CommPlayerInfo (trainer info, group name, Wi-Fi
+// data, country/region and regulation) and broadcasts it to the other players
+// with command 3.
 void CommInfo_SendPlayerInfo(void)
 {
     u16 netId = CommSys_CurNetId();
     TrainerInfo *trainerInfo;
-    const u16 *v2;
-    RecordMixedRNG *v3 = SaveData_GetRecordMixedRNG(sCommInfo->saveData);
-    WiFiList *v4 = SaveData_GetWiFiList(sCommInfo->saveData);
+    const u16 *groupName;
+    RecordMixedRNG *recordMixedRNG = SaveData_GetRecordMixedRNG(sCommInfo->saveData);
+    WiFiList *wiFiList = SaveData_GetWiFiList(sCommInfo->saveData);
     WiFiHistory *wiFiHistory = SaveData_WiFiHistory(sCommInfo->saveData);
 
     if (sCommInfo->personalTrainerInfo) {
@@ -129,16 +150,18 @@ void CommInfo_SendPlayerInfo(void)
     TrainerInfo_Copy(trainerInfo, sCommInfo->trainerInfo[netId]);
     OS_GetMacAddress(&sCommInfo->playerInfo[netId].macAddress[0]);
 
-    v2 = RecordMixedRNG_GetEntryName(v3, 1, 0);
+    // Entry 1 is the group currently in use; name choice 0 is the group name.
+    groupName = RecordMixedRNG_GetEntryName(recordMixedRNG, 1, 0);
 
-    MI_CpuCopy8(v2, sCommInfo->playerInfo[netId].unk_4C, sizeof(sCommInfo->playerInfo[netId].unk_4C));
+    MI_CpuCopy8(groupName, sCommInfo->playerInfo[netId].groupName, sizeof(sCommInfo->playerInfo[netId].groupName));
 
     sCommInfo->playerInfo[netId].country = WiFiHistory_GetCountry(wiFiHistory);
     sCommInfo->playerInfo[netId].region = WiFiHistory_GetRegion(wiFiHistory);
     sCommInfo->playerInfo[netId].hasGiftPenalty = Underground_CanExchangeGifts(sCommInfo->saveData);
-    sCommInfo->playerInfo[netId].hasGiftPenalty = 1 - sCommInfo->playerInfo[netId].hasGiftPenalty; // did they not know about the ! operator?
+    // Store the inverse: a gift penalty applies when gifts cannot be exchanged.
+    sCommInfo->playerInfo[netId].hasGiftPenalty = 1 - sCommInfo->playerInfo[netId].hasGiftPenalty;
 
-    DWC_CreateExchangeToken(WiFiList_GetUserData(v4), &sCommInfo->playerInfo[netId].friendData);
+    DWC_CreateExchangeToken(WiFiList_GetUserData(wiFiList), &sCommInfo->playerInfo[netId].friendData);
     MI_CpuClear8(sCommInfo->playerInfo[netId].regulationBuffer, 32);
 
     if (sCommInfo->regulation) {
@@ -148,11 +171,13 @@ void CommInfo_SendPlayerInfo(void)
     CommSys_SendData(3, &sCommInfo->playerInfo[netId], sizeof(CommPlayerInfo));
 }
 
+// Size of one player's wire entry, used by the command handlers.
 int CommPlayerInfo_Size(void)
 {
     return sizeof(CommPlayerInfo);
 }
 
+// Command callback signalling that the incoming data stream has been read.
 void CommInfo_FinishReading(int unused0, int unused1, void *unused2, void *unused3)
 {
     if (sCommInfo) {
@@ -167,7 +192,10 @@ BOOL CommInfo_IsDataFinishedReading(void)
     return sCommInfo->dataFinishedReading;
 }
 
-void CommInfo_RecvPlayerDataArray(int netId, int param1, void *src, void *unused)
+// Receives a batch of CommPlayerInfo entries (command 4), sent by the host via
+// CommInfo_ServerSendArray. `src` is a single entry; the authoritative netId is
+// read from the payload itself.
+void CommInfo_RecvPlayerDataArray(int netId, int unused1, void *src, void *unused3)
 {
     CommPlayerInfo *playerInfo = (CommPlayerInfo *)src;
 
@@ -186,16 +214,21 @@ void CommInfo_RecvPlayerDataArray(int netId, int param1, void *src, void *unused
         return;
     }
 
-    if (sCommInfo->infoState[sCommInfo->curNetId] < INFO_STATE_RECIEVE) {
-        sCommInfo->infoState[sCommInfo->curNetId] = INFO_STATE_BEGIN_RECIEVE;
+    // Only a player that has not already been marked as read (or beyond) is
+    // announced; this console's own entry is considered handled immediately.
+    if (sCommInfo->infoState[sCommInfo->curNetId] < INFO_STATE_RECEIVE) {
+        sCommInfo->infoState[sCommInfo->curNetId] = INFO_STATE_BEGIN_RECEIVE;
 
         if (CommSys_CurNetId() == sCommInfo->curNetId) {
-            sCommInfo->infoState[sCommInfo->curNetId] = INFO_STATE_END_RECIEVE;
+            sCommInfo->infoState[sCommInfo->curNetId] = INFO_STATE_END_RECEIVE;
         }
     }
 }
 
-void CommInfo_RecvPlayerData(int netId, int param1, void *src, void *param3)
+// Receives one player's CommPlayerInfo sent directly (command 3). Unlike
+// CommInfo_RecvPlayerDataArray, the netId comes from the caller/command
+// dispatch rather than the payload.
+void CommInfo_RecvPlayerData(int netId, int unused1, void *src, void *unused3)
 {
     if (!sCommInfo) {
         return;
@@ -204,15 +237,20 @@ void CommInfo_RecvPlayerData(int netId, int param1, void *src, void *param3)
     MI_CpuCopy8(src, &sCommInfo->playerInfo[netId], sizeof(CommPlayerInfo));
     CommServerClient_SetPlayerMacAddress(&sCommInfo->playerInfo[netId].macAddress[0], netId);
 
-    sCommInfo->infoState[netId] = INFO_STATE_BEGIN_RECIEVE;
+    sCommInfo->infoState[netId] = INFO_STATE_BEGIN_RECEIVE;
 
     if (CommSys_CurNetId() == netId) {
-        sCommInfo->infoState[netId] = INFO_STATE_END_RECIEVE;
+        sCommInfo->infoState[netId] = INFO_STATE_END_RECEIVE;
     } else {
+        // Another player's data arrived: ask the host to rebroadcast the full
+        // roster so every client learns about everyone.
         sCommInfo->dataRecvFlag = TRUE;
     }
 }
 
+// Host-side (netId 0) broadcast of the full roster. Called once new remote data
+// has arrived (dataRecvFlag) and no array send is already queued. Each known
+// player is queued as command 4, then command 5 marks the array complete.
 BOOL CommInfo_ServerSendArray(void)
 {
     int netId;
@@ -242,48 +280,56 @@ BOOL CommInfo_ServerSendArray(void)
     return FALSE;
 }
 
+// True while a remote roster broadcast is pending.
 BOOL CommInfo_IsReceivingData(void)
 {
     return sCommInfo->dataRecvFlag;
 }
 
+// Clears one player's slot back to the EMPTY state.
 void CommInfo_InitPlayer(int netId)
 {
     TrainerInfo_Init(sCommInfo->trainerInfo[netId]);
     sCommInfo->infoState[netId] = INFO_STATE_EMPTY;
 }
 
-BOOL sub_02032DC4(int netId)
+// True if this player's data has arrived but has not yet been consumed.
+BOOL CommInfo_HasNewData(int netId)
 {
-    return sCommInfo->infoState[netId] == INFO_STATE_BEGIN_RECIEVE;
+    return sCommInfo->infoState[netId] == INFO_STATE_BEGIN_RECEIVE;
 }
 
-BOOL sub_02032DE0(int netId)
+// True while a player's data is available to read (received but not finalized).
+BOOL CommInfo_HasPlayerData(int netId)
 {
-    return sCommInfo->infoState[netId] == INFO_STATE_RECIEVE || sCommInfo->infoState[netId] == INFO_STATE_BEGIN_RECIEVE;
+    return sCommInfo->infoState[netId] == INFO_STATE_RECEIVE || sCommInfo->infoState[netId] == INFO_STATE_BEGIN_RECEIVE;
 }
 
-BOOL sub_02032E00(int netId)
+// True once the game has consumed this player's data.
+BOOL CommInfo_IsDataRead(int netId)
 {
-    return sCommInfo->infoState[netId] == INFO_STATE_RECIEVE;
+    return sCommInfo->infoState[netId] == INFO_STATE_RECEIVE;
 }
 
-void sub_02032E1C(int netId)
+// Marks a player's received data as consumed by the game.
+void CommInfo_MarkDataRead(int netId)
 {
-    sCommInfo->infoState[netId] = INFO_STATE_RECIEVE;
+    sCommInfo->infoState[netId] = INFO_STATE_RECEIVE;
 }
 
+// Marks a player as fully handled so it is no longer counted or announced.
 void CommInfo_SetReceiveEnd(int netId)
 {
-    sCommInfo->infoState[netId] = INFO_STATE_END_RECIEVE;
+    sCommInfo->infoState[netId] = INFO_STATE_END_RECEIVE;
 }
 
+// Returns the first netId with unread data, or 0xff when there is none.
 int CommInfo_NewNetworkId(void)
 {
     int netId;
 
     for (netId = 0; netId < MAX_CONNECTED_PLAYERS; netId++) {
-        if (sCommInfo->infoState[netId] == INFO_STATE_BEGIN_RECIEVE) {
+        if (sCommInfo->infoState[netId] == INFO_STATE_BEGIN_RECEIVE) {
             return netId;
         }
     }
@@ -291,31 +337,35 @@ int CommInfo_NewNetworkId(void)
     return 0xff;
 }
 
+// Counts players whose data has reached at least the read state.
 int CommInfo_CountReceived(void)
 {
     int netId;
-    int cnt = 0;
+    int count = 0;
 
     for (netId = 0; netId < MAX_CONNECTED_PLAYERS; netId++) {
         switch (sCommInfo->infoState[netId]) {
-        case INFO_STATE_RECIEVE:
-        case INFO_STATE_END_RECIEVE:
-            cnt++;
+        case INFO_STATE_RECEIVE:
+        case INFO_STATE_END_RECEIVE:
+            count++;
             break;
         }
     }
 
-    return cnt;
+    return count;
 }
 
-BOOL sub_02032E90(void)
+// Drops the cached data of players that are no longer connected. netId 0 is
+// kept while alone so the local player's own entry survives a solo session.
+// Returns TRUE if at least one player was cleared.
+BOOL CommInfo_ClearDisconnectedPlayers(void)
 {
     int netId;
-    BOOL ret = FALSE;
+    BOOL cleared = FALSE;
 
     if (sCommInfo) {
         if (CommSys_ConnectedCount() == 0) {
-            return ret;
+            return cleared;
         }
 
         for (netId = 0; netId < MAX_CONNECTED_PLAYERS; netId++) {
@@ -323,14 +373,16 @@ BOOL sub_02032E90(void)
                 && !(netId == 0 && CommSys_IsAlone())
                 && sCommInfo->infoState[netId] != 0) {
                 CommInfo_InitPlayer(netId);
-                ret = TRUE;
+                cleared = TRUE;
             }
         }
     }
 
-    return ret;
+    return cleared;
 }
 
+// Returns a connected player's trainer info, or NULL if their data has not been
+// received or has already been finalized.
 TrainerInfo *CommInfo_TrainerInfo(int netId)
 {
     if (!sCommInfo) {
@@ -338,15 +390,17 @@ TrainerInfo *CommInfo_TrainerInfo(int netId)
     }
 
     switch (sCommInfo->infoState[netId]) {
-    case INFO_STATE_BEGIN_RECIEVE:
-    case INFO_STATE_RECIEVE:
-    case INFO_STATE_END_RECIEVE:
+    case INFO_STATE_BEGIN_RECEIVE:
+    case INFO_STATE_RECEIVE:
+    case INFO_STATE_END_RECEIVE:
         return sCommInfo->trainerInfo[netId];
     }
 
     return NULL;
 }
 
+// Returns a connected player's DWC friend data, or NULL if their data has not
+// been received.
 DWCFriendData *CommInfo_DWCFriendData(int netId)
 {
     if (sCommInfo->infoState[netId] != INFO_STATE_EMPTY) {
@@ -356,20 +410,25 @@ DWCFriendData *CommInfo_DWCFriendData(int netId)
     return NULL;
 }
 
-int sub_02032F40(int param0)
+// Looks up the Wi-Fi friend-list slot matching the given netId's friend data,
+// or MAX_FRIENDS if the player is not in the list.
+int CommInfo_FindFriendSlotForNetId(int netId)
 {
-    return WiFiFriend_FindSlotForNetId(sCommInfo->saveData, param0);
+    return WiFiFriend_FindSlotForNetId(sCommInfo->saveData, netId);
 }
 
-u16 *sub_02032F54(int netId)
+// Returns a connected player's mixed-records group name, or NULL if their data
+// has not been received.
+u16 *CommInfo_GroupName(int netId)
 {
     if (sCommInfo->infoState[netId] != 0) {
-        return sCommInfo->playerInfo[netId].unk_4C;
+        return sCommInfo->playerInfo[netId].groupName;
     }
 
     return NULL;
 }
 
+// Returns a connected player's Wi-Fi country code, or 0 if unknown.
 int CommInfo_PlayerCountry(int netId)
 {
     if (sCommInfo->infoState[netId] != 0) {
@@ -379,6 +438,7 @@ int CommInfo_PlayerCountry(int netId)
     return 0;
 }
 
+// Returns a connected player's Wi-Fi region code, or 0 if unknown.
 int CommInfo_PlayerRegion(int netId)
 {
     if (sCommInfo->infoState[netId] != 0) {
@@ -388,6 +448,7 @@ int CommInfo_PlayerRegion(int netId)
     return 0;
 }
 
+// True if gift exchange with this player is penalized.
 BOOL CommInfo_PlayerHasGiftPenalty(int netID)
 {
     if (sCommInfo->infoState[netID] != INFO_STATE_EMPTY) {
@@ -397,6 +458,8 @@ BOOL CommInfo_PlayerHasGiftPenalty(int netID)
     return FALSE;
 }
 
+// Verifies that every pair of adjacent connected players is using the same
+// battle regulation. Returns TRUE when all known players agree.
 BOOL CommInfo_CheckBattleRegulation(void)
 {
     int netId, i;
@@ -416,44 +479,56 @@ BOOL CommInfo_CheckBattleRegulation(void)
     return TRUE;
 }
 
-static void CommInfo_UpdatePlayerRecord(int param0, int val)
+// Kind of record CommInfo_UpdatePlayerRecord accumulates.
+enum PlayerRecordType {
+    PLAYER_RECORD_TYPE_WIN = 0,
+    PLAYER_RECORD_TYPE_LOSE,
+    PLAYER_RECORD_TYPE_TRADE,
+};
+
+// Adds `value` to the appropriate record of every connected player. Win and
+// lose are only credited against opponents: a player's battle side is its
+// battle-position parity, so players on the same parity are teammates.
+static void CommInfo_UpdatePlayerRecord(int recordType, int value)
 {
     int netId;
-    int v1, v2;
+    int ownPosition, playerPosition;
 
     if (sCommInfo == NULL) {
         return;
     }
 
-    if (param0 != 2) {
-        v1 = CommSys_GetBattlePosition(CommSys_CurNetId()) & 0x1;
+    if (recordType != PLAYER_RECORD_TYPE_TRADE) {
+        ownPosition = CommSys_GetBattlePosition(CommSys_CurNetId()) & 0x1;
     }
 
     for (netId = 0; netId < CommSys_ConnectedCount(); netId++) {
         if (CommSys_IsPlayerConnected(netId) && (sCommInfo->infoState[netId] != 0)) {
-            if (param0 == 0) {
-                v2 = CommSys_GetBattlePosition(netId) & 0x1;
+            if (recordType == PLAYER_RECORD_TYPE_WIN) {
+                playerPosition = CommSys_GetBattlePosition(netId) & 0x1;
 
-                if (v1 != v2) {
-                    sCommInfo->playerRecord[netId].win += val;
+                if (ownPosition != playerPosition) {
+                    sCommInfo->playerRecord[netId].win += value;
                 }
-            } else if (param0 == 1) {
-                v2 = CommSys_GetBattlePosition(netId) & 0x1;
+            } else if (recordType == PLAYER_RECORD_TYPE_LOSE) {
+                playerPosition = CommSys_GetBattlePosition(netId) & 0x1;
 
-                if (v1 != v2) {
-                    sCommInfo->playerRecord[netId].lose += val;
+                if (ownPosition != playerPosition) {
+                    sCommInfo->playerRecord[netId].lose += value;
                 }
             } else {
-                sCommInfo->playerRecord[netId].trades += val;
+                sCommInfo->playerRecord[netId].trades += value;
             }
         }
     }
 }
 
+// Merges the accumulated win/lose/trade tallies into the Wi-Fi friend list,
+// then clears them so they are not counted twice.
 void CommInfo_SavePlayerRecord(SaveData *saveData)
 {
-    WiFiList *v0 = SaveData_GetWiFiList(saveData);
-    int netId, v2, v3;
+    WiFiList *wiFiList = SaveData_GetWiFiList(saveData);
+    int netId, matchResult, slot;
 
     for (netId = 0; netId < CommSys_ConnectedCount(); netId++) {
         DWCFriendData *friendData = CommInfo_DWCFriendData(netId);
@@ -462,14 +537,14 @@ void CommInfo_SavePlayerRecord(SaveData *saveData)
             continue;
         }
 
-        v2 = WiFiFriend_FindSlot(saveData, friendData, &v3);
+        matchResult = WiFiFriend_FindSlot(saveData, friendData, &slot);
 
-        switch (v2) {
-        case 0:
-        case 1:
-            GF_ASSERT(v3 >= 0);
+        switch (matchResult) {
+        case WIFI_FRIEND_MATCH_FOUND:
+        case WIFI_FRIEND_MATCH_PROFILE:
+            GF_ASSERT(slot >= 0);
 
-            WiFiList_AddFriendRecord(v0, v3, sCommInfo->playerRecord[netId].win, sCommInfo->playerRecord[netId].lose, sCommInfo->playerRecord[netId].trades);
+            WiFiList_AddFriendRecord(wiFiList, slot, sCommInfo->playerRecord[netId].win, sCommInfo->playerRecord[netId].lose, sCommInfo->playerRecord[netId].trades);
             break;
         }
     }
@@ -481,23 +556,27 @@ void CommInfo_SavePlayerRecord(SaveData *saveData)
     }
 }
 
-void sub_020331B4(SaveData *saveData, int param1)
+// Records the result of a link battle: `result` is 1 for a win or -1 for a
+// loss, then persists the updated records.
+void CommInfo_RecordBattleResult(SaveData *saveData, int result)
 {
-    if (param1 == 1) {
-        CommInfo_UpdatePlayerRecord(0, 1);
-    } else if (param1 == -1) {
-        CommInfo_UpdatePlayerRecord(1, 1);
+    if (result == 1) {
+        CommInfo_UpdatePlayerRecord(PLAYER_RECORD_TYPE_WIN, 1);
+    } else if (result == -1) {
+        CommInfo_UpdatePlayerRecord(PLAYER_RECORD_TYPE_LOSE, 1);
     }
 
     CommInfo_SavePlayerRecord(saveData);
 }
 
-void CommInfo_SetTradeResult(SaveData *saveData, int val)
+// Adds `count` trades against every connected player and persists the records.
+void CommInfo_SetTradeResult(SaveData *saveData, int count)
 {
-    CommInfo_UpdatePlayerRecord(2, val);
+    CommInfo_UpdatePlayerRecord(PLAYER_RECORD_TYPE_TRADE, count);
     CommInfo_SavePlayerRecord(saveData);
 }
 
+// Overrides the trainer info sent for the local player, bypassing save data.
 void CommInfo_SetPersonalTrainerInfo(TrainerInfo *trainerInfo)
 {
     sCommInfo->personalTrainerInfo = trainerInfo;

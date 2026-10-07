@@ -13,6 +13,7 @@
 #include "nintendo_wfc/main.h"
 
 #include "comm_manager.h"
+#include "comm_queue.h"
 #include "comm_ring.h"
 #include "communication_information.h"
 #include "heap.h"
@@ -20,7 +21,6 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "system.h"
-#include "unk_020322D8.h"
 #include "unk_0203266C.h"
 #include "unk_02032798.h"
 #include "comm_server_client.h"
@@ -53,12 +53,12 @@ enum MovementState {
     MOVEMENT_STATE_REVERSE,
 };
 
-// Unused duplicate of UnkStruct_020322D8 (the queue-entry type defined in
+// Unused duplicate of CommQueueEntry (the queue-entry type defined in
 // struct_defs/struct_020322D8.h). Left in place to avoid touching the build.
 typedef struct {
     u8 *unk_00;
-    UnkStruct_020322D8 *unk_04;
-    UnkStruct_020322D8 *unk_08;
+    CommQueueEntry *unk_04;
+    CommQueueEntry *unk_08;
     u16 unk_0C;
     u8 unk_0E;
     u8 unk_0F_0 : 1;
@@ -1332,12 +1332,12 @@ static BOOL CommSys_BuildInputPacket(u8 *param0)
             return FALSE;
         }
     } else {
-        UnkStruct_0203233C v3;
+        CommQueueWriter v3;
 
-        v3.unk_04 = v1 - 1;
-        v3.unk_00 = &param0[1];
+        v3.remaining = v1 - 1;
+        v3.cursor = &param0[1];
 
-        if (!sub_02032574(&sCommunicationSystem->commQueueManSend, &v3, 1)) {
+        if (!CommQueueMan_Flush(&sCommunicationSystem->commQueueManSend, &v3, 1)) {
             sCommunicationSystem->partialSend = 1;
         }
 
@@ -1369,14 +1369,14 @@ static void CommSys_BuildServerPacket(u8 *param0)
     param0[2] = v1 >> 8;
     param0[3] = v1 & 0xff;
 
-    UnkStruct_0203233C v2;
+    CommQueueWriter v2;
 
-    v2.unk_04 = 192 - 5;
-    v2.unk_00 = &param0[5];
+    v2.remaining = 192 - 5;
+    v2.cursor = &param0[5];
 
-    if (sub_02032574(&sCommunicationSystem->commQueueManSendServer, &v2, 0)) {
+    if (CommQueueMan_Flush(&sCommunicationSystem->commQueueManSendServer, &v2, 0)) {
         sCommunicationSystem->serverPartialSend = 0;
-        param0[4] = (192 - 5) - v2.unk_04;
+        param0[4] = (192 - 5) - v2.remaining;
     } else {
         sCommunicationSystem->serverPartialSend = 1;
         param0[4] = 192 - 5;

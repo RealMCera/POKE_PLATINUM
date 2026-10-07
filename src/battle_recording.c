@@ -631,7 +631,7 @@ static void BattleRecording_SerializeParty(const Party *party, BattleRecordingPa
     // Store each Pokémon in the compact box format used by the recording.
     for (v0 = 0; v0 < recordingParty->count; v0++) {
         v1 = Party_GetPokemonBySlotIndex(party, v0);
-        sub_02078B40(v1, &recordingParty->mons[v0]);
+        Pokemon_Serialize(v1, &recordingParty->mons[v0]);
     }
 }
 
@@ -646,7 +646,7 @@ static void BattleRecording_DeserializeParty(BattleRecordingParty *recordingPart
     Party_InitWithCapacity(party, recordingParty->capacity);
 
     for (v0 = 0; v0 < recordingParty->count; v0++) {
-        sub_02078E0C(&recordingParty->mons[v0], v1);
+        Pokemon_Deserialize(&recordingParty->mons[v0], v1);
         // Ball capsules are not part of a recording.
         Pokemon_SetValue(v1, MON_DATA_BALL_CAPSULE_ID, &v2);
         Party_AddPokemon(party, v1);

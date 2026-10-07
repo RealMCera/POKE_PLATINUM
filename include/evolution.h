@@ -17,7 +17,7 @@
 #include "pokemon_anim.h"
 #include "poketch.h"
 #include "string_template.h"
-#include "unk_0201567C.h"
+#include "palette_animator.h"
 
 typedef struct EvolutionData {
     BgConfig *bgConfig;

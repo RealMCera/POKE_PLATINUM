@@ -691,7 +691,7 @@ static void ov7_0224A53C(CommClubManager *man)
 
     man->unk_97 = 1;
 
-    sub_02032E1C(0);
+    CommInfo_MarkDataRead(0);
     CommClubMan_SetTask(ov7_0224A72C);
 }
 
@@ -861,7 +861,7 @@ static void ov7_0224A7D0(SysTask *task, void *param1)
     ov7_0224A64C(commClubMan);
 
     for (v2 = 0; v2 < (7 + 1); v2++) {
-        if (sub_02032DC4(v2) && (v2 != 0)) {
+        if (CommInfo_HasNewData(v2) && (v2 != 0)) {
             sCommClubMan->unk_80[v2] = 1;
             sCommClubMan->unk_98 = 1;
         } else if ((NULL != CommInfo_TrainerInfo(v2)) && !sCommClubMan->unk_80[v2]) {
@@ -1001,7 +1001,7 @@ static void ov7_0224A97C(SysTask *task, void *param1)
             }
         }
 
-        sub_02032E1C(commClubMan->unk_95);
+        CommInfo_MarkDataRead(commClubMan->unk_95);
         sub_02036594(2, commClubMan->unk_95);
 
         if (CommClubMan_MaxPlayers() == CommInfo_CountReceived()) {

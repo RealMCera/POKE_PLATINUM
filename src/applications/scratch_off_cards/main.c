@@ -36,7 +36,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "touch_screen.h"
-#include "unk_0201567C.h"
+#include "palette_animator.h"
 #include "vram_transfer.h"
 #include "yes_no_touch_menu.h"
 
@@ -1062,7 +1062,7 @@ static void FreeAssets(ScratchOffCardApp *app)
 
     ScratchOffCardsApp_FreeSprites(&app->spriteMan);
 
-    sub_02015760(app->paletteAnimator);
+    PaletteAnimator_Free(app->paletteAnimator);
     MessageLoader_Free(app->msgLoader);
     StringTemplate_Free(app->strTemplate);
     String_Free(app->displayStr);
@@ -1108,7 +1108,7 @@ static void LoadAssets(ScratchOffCardApp *app)
 
     app->specialChars = FontSpecialChars_Init(15, 14, 0, HEAP_ID_SCRATCH_OFF_CARD_APP);
     ScratchOffCardsApp_InitWindows(app->bgConfig, app->windows);
-    app->paletteAnimator = sub_0201567C(NULL, 1, 12, HEAP_ID_SCRATCH_OFF_CARD_APP);
+    app->paletteAnimator = PaletteAnimator_New(NULL, 1, 12, HEAP_ID_SCRATCH_OFF_CARD_APP);
 
     LoadScratchCellsCharData(app);
     InitScratchCellsBackup(app);

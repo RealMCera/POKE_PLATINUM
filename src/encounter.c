@@ -231,12 +231,12 @@ static void SetLinkBattleResult(int resultMask, FieldSystem *fieldSystem)
     switch (resultMask & 0xF) {
     case BATTLE_RESULT_WIN:
     case BATTLE_RESULT_ENEMY_FLED:
-        sub_020331B4(fieldSystem->saveData, 1);
+        CommInfo_RecordBattleResult(fieldSystem->saveData, 1);
         break;
 
     case BATTLE_RESULT_LOSE:
     case BATTLE_RESULT_PLAYER_FLED:
-        sub_020331B4(fieldSystem->saveData, -1);
+        CommInfo_RecordBattleResult(fieldSystem->saveData, -1);
         break;
     }
 }

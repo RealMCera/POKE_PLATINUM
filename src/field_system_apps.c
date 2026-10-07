@@ -66,7 +66,7 @@
 #include "overlay058/ov58_021D0D80.h"
 #include "overlay059/ov59_021D0D80.h"
 #include "overlay064/ov64_0222DCE0.h"
-#include "overlay092/ov92_021D0D80.h"
+#include "overlay092/geonet.h"
 #include "overlay101/ov101_021D0D80.h"
 #include "savedata/save_table.h"
 #include "wifi_battle_tower/application.h"
@@ -1405,9 +1405,9 @@ void *FieldSystem_OpenWifiBattleTowerApp(FieldSystem *fieldSystem, int mode, int
 
 // Geonet app (overlay92), opened from the Global Terminal.
 static const ApplicationManagerTemplate gGeonetAppTemplate = {
-    ov92_021D0D80,
-    ov92_021D0EB8,
-    ov92_021D1478,
+    Geonet_Init,
+    Geonet_Main,
+    Geonet_Exit,
     FS_OVERLAY_ID(overlay92)
 };
 

@@ -449,7 +449,7 @@ BOOL ov70_02265F38(UnkStruct_ov70_02263344 *param0, UnkStruct_ov70_0225DEE8 *par
         ov70_02266CF0(&v0->unk_3C, param1, 0);
 
         CommInfo_SendPlayerInfo();
-        sub_02032E1C(CommSys_CurNetId());
+        CommInfo_MarkDataRead(CommSys_CurNetId());
 
         ov70_02262E88(param0, 11);
         break;
@@ -462,7 +462,7 @@ BOOL ov70_02265F38(UnkStruct_ov70_02263344 *param0, UnkStruct_ov70_0225DEE8 *par
             int v14;
 
             while ((v14 = CommInfo_NewNetworkId()) != 0xff) {
-                sub_02032E1C(v14);
+                CommInfo_MarkDataRead(v14);
             }
         }
 

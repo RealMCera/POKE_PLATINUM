@@ -60,7 +60,7 @@ Static main
 	Object main.nef.p/src_easy_chat_words.c.o
 	Object main.nef.p/src_password_word_bank.c.o
 	Object main.nef.p/src_software_sprite.c.o
-	Object main.nef.p/src_unk_0201567C.c.o
+	Object main.nef.p/src_palette_animator.c.o
 	Object main.nef.p/src_poffin_types.c.o
 	Object main.nef.p/src_yes_no_touch_menu.c.o
 	Object main.nef.p/src_pokemon_anim.c.o
@@ -154,7 +154,7 @@ Static main
 	Object main.nef.p/src_wifi_plaza_question_data.c.o
 	Object main.nef.p/src_wireless_manager.c.o
 	Object main.nef.p/src_comm_ring.c.o
-	Object main.nef.p/src_unk_020322D8.c.o
+	Object main.nef.p/src_comm_queue.c.o
 	Object main.nef.p/src_unk_0203266C.c.o
 	Object main.nef.p/src_unk_02032798.c.o
 	Object main.nef.p/src_communication_information.c.o
@@ -1395,7 +1395,7 @@ Overlay move_reminder
 Overlay overlay92
 {
 	After main
-	Object main.nef.p/src_overlay092_ov92_021D0D80.c.o
+	Object main.nef.p/src_overlay092_geonet.c.o
 }
 
 Overlay cutscenes

@@ -198,7 +198,7 @@ static void GivePokemon(FieldSystem *fieldSystem, GiftData *dummy)
         personality = giftPersonality;
     }
 
-    sub_020780C4(mon, personality);
+    Pokemon_SetPersonality(mon, personality);
     u32 tmp = Pokemon_GetGender(mon);
 
     Pokemon_SetValue(mon, MON_DATA_GENDER, &tmp);

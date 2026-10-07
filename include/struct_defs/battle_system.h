@@ -37,7 +37,7 @@
 #include "string_template.h"
 #include "sys_task_manager.h"
 #include "trainer_info.h"
-#include "unk_0201567C.h"
+#include "palette_animator.h"
 
 struct BattleSystem {
     G3DPipelineBuffers *pipelineBuffers;

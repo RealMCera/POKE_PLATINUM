@@ -148,9 +148,9 @@ EvolutionData *Evolution_Begin(Party *party, Pokemon *mon, int targetSpecies, Op
     PaletteData_StartFade(evolutionData->paletteData, PLTTBUF_MAIN_BG_F | PLTTBUF_SUB_BG_F | PLTTBUF_MAIN_OBJ_F | PLTTBUF_SUB_OBJ_F, 0xFFFF, 1, 16, 0, 0);
     PokemonSpriteManager_StartFadeAll(evolutionData->monSpriteMan, 16, 0, 0, 0);
 
-    evolutionData->unk_58 = sub_0201567C(evolutionData->paletteData, 0, 11, heapID);
+    evolutionData->unk_58 = PaletteAnimator_New(evolutionData->paletteData, 0, 11, heapID);
 
-    sub_02015738(evolutionData->unk_58, 1);
+    PaletteAnimator_SetMode(evolutionData->unk_58, 1);
     SysTask_Start(SysTask_Evolution, evolutionData, 0);
     RenderControlFlags_SetCanABSpeedUpPrint(TRUE);
     NetworkIcon_Init();
@@ -196,7 +196,7 @@ void Evolution_Free(EvolutionData *evolutionData)
     StringTemplate_Free(evolutionData->strTemplate);
     Heap_Free(evolutionData->string);
     Heap_Free(evolutionData->monSummary);
-    sub_02015760(evolutionData->unk_58);
+    PaletteAnimator_Free(evolutionData->unk_58);
     Heap_Free(evolutionData->bgConfig);
     NARC_dtor(evolutionData->narc);
     Heap_Free(evolutionData);
@@ -294,7 +294,7 @@ static void Evolution_Main(EvolutionData *evolutionData)
     case EVOLUTION_STATE_START_RESET_SCREEN_BRIGHTNESS:
         ResetScreenMasterBrightness(DS_SCREEN_MAIN);
         ResetScreenMasterBrightness(DS_SCREEN_SUB);
-        sub_02015738(evolutionData->unk_58, 0);
+        PaletteAnimator_SetMode(evolutionData->unk_58, 0);
 
         if (evolutionData->flags & 0x2) {
             evolutionData->state = EVOLUTION_STATE_PRINT_WHAT;
@@ -339,7 +339,7 @@ static void Evolution_Main(EvolutionData *evolutionData)
             && Sound_IsPokemonCryPlaying() == FALSE
             && PokemonAnimManager_HasAnimCompleted(evolutionData->monAnimMan, 0) == TRUE
             && PokemonSprite_IsAnimActive(evolutionData->monSprites[0]) == FALSE) {
-            sub_02015738(evolutionData->unk_58, 1);
+            PaletteAnimator_SetMode(evolutionData->unk_58, 1);
             Sound_PlayBasicBGM(SEQ_SHINKA_sseq);
             evolutionData->delay = 20;
             evolutionData->state = EVOLUTION_STATE_START_FADE;

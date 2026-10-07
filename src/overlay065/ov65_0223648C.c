@@ -979,10 +979,10 @@ static void ov65_02237034(UnkStruct_ov65_022367A8 *param0, const WiFiCommAppArgs
     }
 
     for (v0 = 0; v0 < v1; v0++) {
-        if ((v0 == 0) && (sub_02032DE0(v0) == 1)) {
+        if ((v0 == 0) && (CommInfo_HasPlayerData(v0) == 1)) {
             ov65_0223709C(param0, &param0->unk_30, param1, v0, heapID);
         } else {
-            if (sub_02032E00(v0) == 1) {
+            if (CommInfo_IsDataRead(v0) == 1) {
                 ov65_0223709C(param0, &param0->unk_30, param1, v0, heapID);
             } else {
                 ov65_022371FC(&param0->unk_30, param1, v0, heapID);
@@ -1258,9 +1258,9 @@ static BOOL ov65_02237550(UnkStruct_ov65_022367A8 *param0, u32 heapID)
     v1--;
 
     for (v0 = v1; v0 >= 0; v0--) {
-        if (sub_02032DC4(v0) == 1) {
+        if (CommInfo_HasNewData(v0) == 1) {
             ov65_022376A0(param0, v0, heapID);
-        } else if (sub_02032E00(v0) == 0) {
+        } else if (CommInfo_IsDataRead(v0) == 0) {
             v2 = 0;
         }
     }
@@ -1277,7 +1277,7 @@ static void ov65_0223758C(UnkStruct_ov65_022367A8 *param0)
     v1.unk_04 = 0;
 
     for (v0 = 1; v0 < 4; v0++) {
-        if (sub_02032DC4(v0) == 1) {
+        if (CommInfo_HasNewData(v0) == 1) {
             v1.unk_00 = v0;
             v2 = CommSys_SendData(22, &v1, sizeof(UnkStruct_ov65_022366E4));
             GF_ASSERT(v2 == 1);
@@ -1295,7 +1295,7 @@ static void ov65_022375CC(UnkStruct_ov65_022367A8 *param0)
     v1.unk_04 = 0;
 
     for (v0 = 1; v0 < 4; v0++) {
-        if (sub_02032DE0(v0) == 1) {
+        if (CommInfo_HasPlayerData(v0) == 1) {
             v1.unk_00 = v0;
             v2 = CommSys_SendData(22, &v1, sizeof(UnkStruct_ov65_022366E4));
             GF_ASSERT(v2 == 1);
@@ -1321,7 +1321,7 @@ static BOOL ov65_02237628(UnkStruct_ov65_022367A8 *param0)
 
     for (v0 = 0; v0 < 4; v0++) {
         if (param0->unk_00.unk_14[v0] == 1) {
-            if (sub_02032E00(param0->unk_00.unk_18[v0]) == 1) {
+            if (CommInfo_IsDataRead(param0->unk_00.unk_18[v0]) == 1) {
                 v1 = 1;
             }
 
@@ -1369,8 +1369,8 @@ static void ov65_02237698(UnkStruct_ov65_022367A8 *param0)
 
 static void ov65_022376A0(UnkStruct_ov65_022367A8 *param0, u32 param1, u32 heapID)
 {
-    if (sub_02032E00(param1) == 0) {
-        sub_02032E1C(param1);
+    if (CommInfo_IsDataRead(param1) == 0) {
+        CommInfo_MarkDataRead(param1);
 
         param0->unk_00.unk_25 = param1;
 
@@ -1449,7 +1449,7 @@ static void ov65_0223782C(UnkStruct_ov65_022367A8 *param0)
 
     for (v0 = 0; v0 < 4; v0++) {
         if (param0->unk_00.unk_25 + 1 < v0) {
-            if (sub_02032DC4(v0) == 1) {
+            if (CommInfo_HasNewData(v0) == 1) {
                 ov65_02237808(param0, v0);
                 CommInfo_InitPlayer(v0);
             }
@@ -1463,7 +1463,7 @@ static void ov65_02237860(UnkStruct_ov65_022367A8 *param0, u32 heapID)
 
     for (v0 = 0; v0 < 4; v0++) {
         if (param0->unk_00.unk_28[v0] == 1) {
-            if (sub_02032DE0(v0) == 1) {
+            if (CommInfo_HasPlayerData(v0) == 1) {
                 ov65_022376A0(param0, v0, heapID);
                 param0->unk_00.unk_28[v0] = 0;
                 param0->unk_00.unk_12 = 1;
@@ -1555,7 +1555,7 @@ static void ov65_02237970(UnkStruct_ov65_022367A8 *param0)
         if (v0 == 0) {
             v4 = param0->unk_00.unk_00->unk_00.unk_21;
         } else {
-            v3 = sub_02032F40(v0);
+            v3 = CommInfo_FindFriendSlotForNetId(v0);
             GF_ASSERT(v3 != 32);
             v4 = param0->unk_00.unk_00->unk_24[v3].unk_21;
         }
@@ -1656,7 +1656,7 @@ static BOOL ov65_02237AC0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
 
         if (v1 != 0xff) {
             if (param0->unk_00.unk_06 != 0) {
-                if (sub_02032F40(v1) == 32) {
+                if (CommInfo_FindFriendSlotForNetId(v1) == 32) {
                     v2.unk_00 = v1;
                     v2.unk_04 = 0;
 
@@ -2215,7 +2215,7 @@ static BOOL ov65_022381E4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
     if (CommSys_IsPlayerConnected(0) == 0) {
         param0->unk_00.unk_05 = 15;
     } else {
-        if (sub_02032E00(0)) {
+        if (CommInfo_IsDataRead(0)) {
             param0->unk_00.unk_05 = 2;
         }
     }
@@ -2594,7 +2594,7 @@ static BOOL ov65_02238660(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
 
 static BOOL ov65_022386D0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
-    param0->unk_00.unk_26 = sub_02032F40(0);
+    param0->unk_00.unk_26 = CommInfo_FindFriendSlotForNetId(0);
 
     GF_ASSERT(param0->unk_00.unk_26 != 32);
     ov65_0223726C(&param0->unk_30, param1, 0, 0, heapID);

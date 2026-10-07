@@ -75,7 +75,7 @@
 #include "system.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_0201567C.h"
+#include "palette_animator.h"
 
 #include "res/text/bank/battle_strings.h"
 
@@ -3822,7 +3822,7 @@ static void Task_PlayerShowBagMenu(SysTask *task, void *data)
     switch (bagMenuData->state) {
     case 0:
         bagMenuData->isCursorEnabled = BattleSubscreen_GetSuppressActivationSFX(BattleSystem_GetBattleSubscreen(bagMenuData->battleSys));
-        sub_02015738(BattleSystem_GetPaletteAnimator(bagMenuData->battleSys), 1);
+        PaletteAnimator_SetMode(BattleSystem_GetPaletteAnimator(bagMenuData->battleSys), 1);
         PaletteData_StartFade(paletteData, PLTTBUF_MAIN_BG_F | PLTTBUF_MAIN_OBJ_F, 0xC00, -8, 0, 7, 0);
         PaletteData_StartFade(paletteData, PLTTBUF_SUB_BG_F | PLTTBUF_SUB_OBJ_F, 0xFFFF, -8, 0, 16, 0);
         bagMenuData->state++;
@@ -3938,7 +3938,7 @@ static void Task_PlayerShowBagMenu(SysTask *task, void *data)
         break;
     case 7:
         if (PaletteData_GetSelectedBuffersMask(paletteData) == 0) {
-            sub_02015738(BattleSystem_GetPaletteAnimator(bagMenuData->battleSys), 0);
+            PaletteAnimator_SetMode(BattleSystem_GetPaletteAnimator(bagMenuData->battleSys), 0);
 
             if (bagMenuData->battleBagCtx->selectedBattleBagItem) {
                 bagMenuData->state = 9;
@@ -4391,7 +4391,7 @@ static void Task_PlayerShowPartyMenu(SysTask *task, void *data)
         Window_LoadTiles(window);
 
         partyMenuData->isCursorEnabled = BattleSubscreen_GetSuppressActivationSFX(BattleSystem_GetBattleSubscreen(partyMenuData->battleSys));
-        sub_02015738(BattleSystem_GetPaletteAnimator(partyMenuData->battleSys), 1);
+        PaletteAnimator_SetMode(BattleSystem_GetPaletteAnimator(partyMenuData->battleSys), 1);
         PaletteData_StartFade(paletteData, PLTTBUF_MAIN_BG_F | PLTTBUF_MAIN_OBJ_F, 0xC00, -8, 0, 7, 0);
         PaletteData_StartFade(paletteData, PLTTBUF_SUB_BG_F | PLTTBUF_SUB_OBJ_F, 0xFFFF, -8, 0, 16, 0);
         partyMenuData->state++;
@@ -4507,7 +4507,7 @@ static void Task_PlayerShowPartyMenu(SysTask *task, void *data)
         break;
     case 3:
         if (PaletteData_GetSelectedBuffersMask(paletteData) == 0) {
-            sub_02015738(BattleSystem_GetPaletteAnimator(partyMenuData->battleSys), 0);
+            PaletteAnimator_SetMode(BattleSystem_GetPaletteAnimator(partyMenuData->battleSys), 0);
 
             if (partyMenuData->battlePartyCtx->selectedPartyIndex == 6) {
                 BattleController_EmitPartyMenuResult(partyMenuData->battleSys, partyMenuData->battler, 0xFF);
@@ -5093,7 +5093,7 @@ static void Task_FadeOut(SysTask *task, void *data)
 
     switch (fadeOutData->state) {
     case 0:
-        sub_02015738(BattleSystem_GetPaletteAnimator(fadeOutData->battleSys), 1);
+        PaletteAnimator_SetMode(BattleSystem_GetPaletteAnimator(fadeOutData->battleSys), 1);
         PaletteData_StartFade(paletteData, PLTTBUF_MAIN_BG_F | PLTTBUF_SUB_BG_F | PLTTBUF_MAIN_OBJ_F | PLTTBUF_SUB_OBJ_F, 0xFFFF, 1, 0, 16, 0);
         PokemonSpriteManager_StartFadeAll(monSpriteMan, 0, 16, 0, 0);
         Sound_FadeOutBGM(0, 16);
@@ -5373,7 +5373,7 @@ static void SysTask_SetupUI(SysTask *task, void *data)
         }
         break;
     case 3:
-        sub_02015738(BattleSystem_GetPaletteAnimator(uiSetupTaskData->battleSys), 0);
+        PaletteAnimator_SetMode(BattleSystem_GetPaletteAnimator(uiSetupTaskData->battleSys), 0);
         Heap_Free(data);
         SysTask_Done(task);
         break;

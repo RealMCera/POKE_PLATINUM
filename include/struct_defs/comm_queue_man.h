@@ -6,13 +6,17 @@
 
 #include "comm_ring.h"
 
+// Manages the outgoing command queue for one communication channel. Commands
+// are stored in a fixed-size array of CommQueueEntry; `queue` links the entries
+// waiting to be sent and `current` holds the entry that was partially
+// transmitted by the last flush.
 typedef struct CommQueueMan {
-    UnkStruct_02032318 unk_00;
-    UnkStruct_02032318 unk_08;
-    UnkStruct_020322D8 *unk_10;
-    CommRing *unk_14;
-    void *unk_18;
-    int unk_1C;
+    CommQueueList queue;     // entries waiting to be sent
+    CommQueueList queueAlt;  // second list; never used (see CommQueue_Write)
+    CommQueueEntry *current; // entry left partially sent by the last flush
+    CommRing *ring;          // ring holding payloads copied out of `data`
+    CommQueueEntry *entries; // backing array of `capacity` entries
+    int capacity;            // number of entries in `entries`
 } CommQueueMan;
 
 #endif // POKEPLATINUM_STRUCT_DEF_COMM_QUEUE_MAN_H

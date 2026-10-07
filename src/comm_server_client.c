@@ -679,7 +679,7 @@ static void CommServerClient_UpdatePlayerCount(void)
 static void CommServerClient_UpdateConnection(u16 timestamp)
 {
     int state = WirelessManager_GetState();
-    int recvFinished = sub_02032E90();
+    int recvFinished = CommInfo_ClearDisconnectedPlayers();
 
     CommServerClient_UpdatePlayerCount();
 

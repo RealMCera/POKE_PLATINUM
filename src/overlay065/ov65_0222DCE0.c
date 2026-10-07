@@ -3354,7 +3354,7 @@ static int ov65_02231200(UnkStruct_ov65_0222EBE0 *param0, int param1)
 
         CommInfo_SendPlayerInfo();
 
-        sub_02032E1C(CommSys_CurNetId());
+        CommInfo_MarkDataRead(CommSys_CurNetId());
         param1 = 2;
     }
 

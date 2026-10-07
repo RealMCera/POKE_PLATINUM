@@ -45,7 +45,7 @@
 #include "system.h"
 #include "text.h"
 #include "font_oam.h"
-#include "unk_0201567C.h"
+#include "palette_animator.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/naming_screen/namein.naix"
@@ -1150,10 +1150,10 @@ static BOOL NamingScreen_Init(ApplicationManager *appMan, int *state)
         }
 
         sNamingScreenDummy = namingScreen;
-        // sub_0201567C creates a systask which changes the palette from the current palette to
+        // PaletteAnimator_New creates a systask which changes the palette from the current palette to
         // a single color (white in this case) and back at a regular interval, effectively
         // blinking the touchscreen icon.
-        namingScreen->touchscreenIconBlinker = sub_0201567C(NULL, 1, 12, HEAP_ID_NAMING_SCREEN_APP);
+        namingScreen->touchscreenIconBlinker = PaletteAnimator_New(NULL, 1, 12, HEAP_ID_NAMING_SCREEN_APP);
 
         (*state) = NMS_APP_STATE_WAIT_FADE_IN;
         return TRUE;
@@ -2972,7 +2972,7 @@ static int NamingScreen_ProcessCharacterInput(NamingScreen *namingScreen, charco
         }
         break;
     case NMS_BUTTON_OK:
-        sub_02015760(namingScreen->touchscreenIconBlinker);
+        PaletteAnimator_Free(namingScreen->touchscreenIconBlinker);
         Sprite_SetDrawFlag(namingScreen->uiSprites[NMS_SPRITE_CURSOR], isButtonInput);
 
         if (!namingScreen->printedFromBattleGMM) {

@@ -164,7 +164,7 @@ void WiFiFriend_SavePlayerToSlot(SaveData *saveData, int netId, int slot, enum H
     }
 
     string = String_Init(120, heapID);
-    String_CopyChars(string, sub_02032F54(netId));
+    String_CopyChars(string, CommInfo_GroupName(netId));
     WiFiList_SetFriendGroupName(wiFiList, slot, string);
     String_Free(string);
     WiFiList_SetFriendField(wiFiList, slot, WIFI_LIST_FRIEND_FIELD_APPEARANCE, TrainerInfo_Appearance(trainerInfo));

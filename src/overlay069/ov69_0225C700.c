@@ -786,19 +786,19 @@ static void ov69_0225C980(UnkStruct_ov69_0225CA7C *param0, const UnkStruct_ov66_
 
     {
         void *v1;
-        UnkStruct_ov92_021D1530 *v2;
+        WiFiEarthPlaceEntry *v2;
         u32 v3;
         int v4, v5;
 
         v1 = LoadMemberFromOpenNARC_OutFileSize(v0, 18, 0, heapID, 0, &v3);
-        v2 = (UnkStruct_ov92_021D1530 *)v1;
+        v2 = (WiFiEarthPlaceEntry *)v1;
         v5 = v3 / 6;
 
         v2++;
 
         for (v4 = 1; v4 < v5; v4++) {
-            if (v2->unk_00 != 2) {
-                ov69_0225CA7C(param0, param0->unk_00.unk_00, v2->unk_02, v2->unk_04, v4, 0, param1);
+            if (v2->type != 2) {
+                ov69_0225CA7C(param0, param0->unk_00.unk_00, v2->longitude, v2->latitude, v4, 0, param1);
                 param0->unk_00.unk_00++;
             }
 

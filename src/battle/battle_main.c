@@ -614,8 +614,8 @@ static void BattleMain_InitGraphics(ApplicationManager *appMan)
     PaletteData_FillBufferRange(battleSys->paletteData, PLTTBUF_SUB_BG, PLTTSEL_FADED, 0, 0, 255);
     PaletteData_FillBufferRange(battleSys->paletteData, PLTTBUF_SUB_OBJ, PLTTSEL_FADED, 0xFFFF, 0, 255);
 
-    battleSys->paletteAnimator = sub_0201567C(battleSys->paletteData, 0, 11, HEAP_ID_BATTLE);
-    sub_02015738(battleSys->paletteAnimator, 1);
+    battleSys->paletteAnimator = PaletteAnimator_New(battleSys->paletteData, 0, 11, HEAP_ID_BATTLE);
+    PaletteAnimator_SetMode(battleSys->paletteAnimator, 1);
 
     battleSys->taskDrawSprites = SysTask_Start(SysTask_DrawSprites, battleSys, 60000);
     battleSys->taskUpdateRedHPSound = SysTask_Start(SysTask_UpdateRedHPSound, battleSys, 50000);
@@ -707,7 +707,7 @@ static void BattleMain_CopyBattleSysToDTOAndFree(ApplicationManager *appMan)
         Heap_Free(battleSys->trainerInfo[battlerId]);
     }
 
-    sub_02015760(battleSys->paletteAnimator);
+    PaletteAnimator_Free(battleSys->paletteAnimator);
     Bag_Copy(battleSys->bag, dto->bag);
     Heap_Free(battleSys->bag);
     Pokedex_Copy(battleSys->pokedex, dto->pokedex);

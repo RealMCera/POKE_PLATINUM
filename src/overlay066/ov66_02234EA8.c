@@ -53,18 +53,18 @@ static void ov66_02234F2C(NARC *param0, u32 param1, u16 param2, u8 param3, fx32 
 
     {
         void *v1;
-        UnkStruct_ov92_021D1530 *v2;
+        WiFiEarthPlaceEntry *v2;
         u32 v3;
         int v4;
 
         v1 = LoadMemberFromOpenNARC_OutFileSize(param0, 18, 0, param1, 0, &v3);
-        v2 = (UnkStruct_ov92_021D1530 *)v1;
+        v2 = (WiFiEarthPlaceEntry *)v1;
         v4 = v3 / 6;
 
         GF_ASSERT(param2 < v4);
 
-        if (v2[param2].unk_00 != 2) {
-            *param4 = v2[param2].unk_04;
+        if (v2[param2].type != 2) {
+            *param4 = v2[param2].latitude;
             v0 = 1;
         }
 

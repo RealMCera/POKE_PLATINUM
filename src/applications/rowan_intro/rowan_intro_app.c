@@ -40,7 +40,7 @@
 #include "text.h"
 #include "text_banks.h"
 #include "trainer_info.h"
-#include "unk_0201567C.h"
+#include "palette_animator.h"
 #include "yes_no_touch_menu.h"
 
 #include "res/text/bank/rowan_intro.h"
@@ -691,7 +691,7 @@ static void RowanIntro_InitMessageStructs(RowanIntro *manager)
 
     Text_ResetAllPrinters();
 
-    manager->unk_60 = sub_0201567C(NULL, 0, 6, manager->heapID);
+    manager->unk_60 = PaletteAnimator_New(NULL, 0, 6, manager->heapID);
     manager->strFormatter = StringTemplate_Default(manager->heapID);
     manager->displayMessageState = DM_STATE_INIT;
     manager->displayTextBlockState = DTB_STATE_INIT;
@@ -701,7 +701,7 @@ static void RowanIntro_InitMessageStructs(RowanIntro *manager)
 static void RowanIntro_FreeMessageStructs(RowanIntro *manager)
 {
     StringTemplate_Free(manager->strFormatter);
-    sub_02015760(manager->unk_60);
+    PaletteAnimator_Free(manager->unk_60);
     MessageLoader_Free(manager->msgLoader);
 }
 
