@@ -4,8 +4,8 @@
 #include "struct_decls/map_object.h"
 
 // Movement-type behaviors for overworld map objects. Each behavior is a set of
-// init/update/free callbacks registered in the Unk_020EE3A8 table in
-// unk_020EDBAC.c and selected by the object's movement type. The state for each
+// init/update/free callbacks registered in the gMovementTypeCallbacks table in
+// movement_action_data.c and selected by the object's movement type. The state for each
 // behavior lives in the map object's opaque unk_D8 scratch buffer.
 //
 // This module covers the "standard" behaviors: looking around, wandering,

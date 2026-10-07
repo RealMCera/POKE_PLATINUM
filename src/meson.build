@@ -347,7 +347,7 @@ pokeplatinum_c = files(
     'union_room_spin_trade.c',
     'battle_subscreen_cursor.c',
     'wifi_comm.c',
-    'unk_020EDBAC.c',
+    'movement_action_data.c',
     'rowan_intro_app_template.c',
     'dummy/dummy.c',
     'nintendo_wfc/main.c',

@@ -22,7 +22,7 @@
 #include "map_object_animation.h"
 
 // This module implements the movement behaviors (selected through the
-// Unk_020EE3A8 table in unk_020EDBAC.c) for several overworld NPCs:
+// gMovementTypeCallbacks table in movement_action_data.c) for several overworld NPCs:
 //   - MOVEMENT_TYPE_FOLLOW_PLAYER: a partner trainer / follower that trails the
 //     player, stepping onto the tile the player just left.
 //   - MOVEMENT_TYPE_FOLLOW_PARTNER_TRAINER: an object that mirrors the movement
