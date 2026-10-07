@@ -11,8 +11,12 @@
 
 #include "overlay_manager.h"
 
+// Passed as the entry point offset to BattleFrontier_ChangeScene to keep the
+// current script and only reload the scene's messages.
 #define NO_NEW_ENTRY_POINT 0xffff
 
+// Called with the sub-app's arguments once a sub-app launched through
+// BattleFrontier_RunSubApp has finished.
 typedef void (*BattleFrontierSubAppCallback)(void *);
 
 extern const ApplicationManagerTemplate gBattleFrontierAppTemplate;
@@ -24,11 +28,11 @@ void BattleFrontier_SetFacilityStruct(BattleFrontier *frontier, void *facilityDa
 void BattleFrontier_RunSubApp(BattleFrontier *frontier, const ApplicationManagerTemplate *appTemplate, void *appArgs, BOOL freeArgsAfter, BattleFrontierSubAppCallback finishCallback);
 void BattleFrontier_ExitFrontier(BattleFrontier *frontier);
 void BattleFrontier_ChangeScene(BattleFrontier *frontier, u16 sceneID, u16 entryPointOffset);
-UnkStruct_ov104_0223C688 *sub_0209B9CC(BattleFrontier *frontier);
-UnkStruct_ov104_0223C634 *sub_0209B9D0(BattleFrontier *frontier);
-UnkStruct_ov104_0223C634 *sub_0209B9D4(BattleFrontier *frontier, int param1);
-UnkStruct_ov104_0223D3B0 *sub_0209B9E0(BattleFrontier *frontier);
-void sub_0209B9EC(BattleFrontier *frontier);
+FrontierObjectGfx *BattleFrontier_GetObjectGfxList(BattleFrontier *frontier);
+FrontierObject *BattleFrontier_GetObjects(BattleFrontier *frontier);
+FrontierObject *BattleFrontier_GetObject(BattleFrontier *frontier, int index);
+FrontierSpriteStateBuffer *BattleFrontier_GetSpriteStateBuffer(BattleFrontier *frontier);
+void BattleFrontier_ClearSpriteStateBuffer(BattleFrontier *frontier);
 FieldFrontierDTO *BattleFrontier_LaunchWFCFacilitySelector(FieldSystem *fieldSystem, void *data);
 
 #endif // POKEPLATINUM_BATTLE_FRONTIER_H

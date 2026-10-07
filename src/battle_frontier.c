@@ -24,27 +24,39 @@
 #include "save_player.h"
 #include "system.h"
 
+// This module is the application manager for the Battle Frontier. It owns the
+// Frontier script manager and graphics layer and drives a small state machine
+// (see BattleFrontier_Main) that runs the current scene's script, launches
+// sub-applications on request, and swaps scenes. It also provides the entry
+// point used by the Wi-Fi menu to open the WFC facility selector.
+//
+// Sub-apps (battle facilities, naming screens, party menus, ...) are launched
+// through BattleFrontier_RunSubApp. While a sub-app runs, the Frontier graphics
+// and overlays are torn down and later rebuilt, so the app caches the loaded
+// object graphics and the state of its managed sprites and restores them when
+// the sub-app returns.
+
 FS_EXTERN_OVERLAY(overlay63);
 FS_EXTERN_OVERLAY(overlay104);
 FS_EXTERN_OVERLAY(battle_factory_app);
 
 typedef struct BattleFrontier {
-    FieldFrontierDTO *fieldData;
-    ApplicationManager *appMan;
-    void *appArgs;
-    BattleFrontierSubAppCallback finishCallback;
-    u8 freeArgsAfter;
-    FrontierScriptManager *scriptMan;
-    FrontierGraphics *graphics;
+    FieldFrontierDTO *fieldData; // data handed over from the field system
+    ApplicationManager *appMan; // active sub-app, or NULL when none is running
+    void *appArgs; // arguments passed to the active sub-app
+    BattleFrontierSubAppCallback finishCallback; // called when the sub-app finishes
+    u8 freeArgsAfter; // whether appArgs should be freed once the sub-app finishes
+    FrontierScriptManager *scriptMan; // runs the current scene's script
+    FrontierGraphics *graphics; // Frontier rendering layer
     u8 unused;
-    u8 isGraphicsInitialized;
-    u8 changeScript;
-    u16 offsetID;
-    u8 exitBattleFrontier;
-    UnkStruct_ov104_0223C688 unk_24[24];
-    UnkStruct_ov104_0223C634 unk_6C[32];
-    UnkStruct_ov104_0223D8F0 unk_78C[32];
-    UnkStruct_ov104_0223D3B0 unk_98C;
+    u8 isGraphicsInitialized; // graphics are currently allocated
+    u8 changeScript; // a scene change has been requested
+    u16 offsetID; // entry point offset for the pending scene change
+    u8 exitBattleFrontier; // the whole Frontier app has been asked to exit
+    FrontierObjectGfx objectGfxList[24]; // cached object-event graphics resources
+    FrontierObject objects[32]; // Frontier map objects
+    FrontierObjectMovement unk_78C[32]; // unused
+    FrontierSpriteStateBuffer spriteStateBuffer; // saved managed-sprite state
 } BattleFrontier;
 
 static BOOL BattleFrontier_Init(ApplicationManager *appMan, int *state);
@@ -54,7 +66,7 @@ static void InitFrontierGraphics(BattleFrontier *frontier);
 static void FreeFrontierGraphics(BattleFrontier *frontier);
 static void LoadBattleFrontierOverlays(void);
 static void UnloadBattleFrontierOverlays(void);
-static void sub_0209B8E8(BattleFrontier *frontier);
+static void ClearFrontierObjects(BattleFrontier *frontier);
 
 const ApplicationManagerTemplate gBattleFrontierAppTemplate = {
     BattleFrontier_Init,
@@ -70,8 +82,8 @@ static BOOL BattleFrontier_Init(ApplicationManager *appMan, int *state)
     BattleFrontier *frontier = ApplicationManager_NewData(appMan, sizeof(BattleFrontier), HEAP_ID_FIELD2);
     MI_CpuClear8(frontier, sizeof(BattleFrontier));
 
-    sub_0209B8E8(frontier);
-    sub_0209B9EC(frontier);
+    ClearFrontierObjects(frontier);
+    BattleFrontier_ClearSpriteStateBuffer(frontier);
 
     frontier->fieldData = ApplicationManager_Args(appMan);
     GF_ASSERT(frontier->fieldData != NULL);
@@ -84,6 +96,15 @@ static BOOL BattleFrontier_Init(ApplicationManager *appMan, int *state)
     return TRUE;
 }
 
+// State machine:
+//   0 -> 1  first frame
+//   1       run the current scene's script; watch for exit, scene change, or
+//           a launched sub-app
+//   2       finish the application
+//   3       tear down graphics/overlays before running a sub-app
+//   4       run the sub-app, then rebuild graphics/overlays and restore state
+//   5       tear down graphics/objects before a scene change
+//   6       rebuild graphics and load the new scene
 int BattleFrontier_Main(ApplicationManager *appMan, int *state)
 {
     BattleFrontier *frontier = ApplicationManager_Data(appMan);
@@ -108,6 +129,7 @@ int BattleFrontier_Main(ApplicationManager *appMan, int *state)
         }
 
         if (FrontierScriptManager_RunScript(frontier->scriptMan) == TRUE) {
+            // The scene's script has ended; B backs out of the Frontier.
             if (JOY_NEW(PAD_BUTTON_B)) {
                 *state = 2;
             }
@@ -120,6 +142,8 @@ int BattleFrontier_Main(ApplicationManager *appMan, int *state)
     case 2:
         return TRUE;
     case 3:
+        // Save the sprite state, then release the graphics and overlays so the
+        // sub-app can use them.
         ov104_0223C634(frontier->graphics);
         FreeFrontierGraphics(frontier);
         UnloadBattleFrontierOverlays();
@@ -142,6 +166,7 @@ int BattleFrontier_Main(ApplicationManager *appMan, int *state)
             frontier->finishCallback = NULL;
             frontier->appArgs = NULL;
 
+            // Rebuild the graphics and restore the sprites saved in state 3.
             InitFrontierGraphics(frontier);
             ov104_0223C688(frontier->graphics);
             *state = 1;
@@ -149,16 +174,19 @@ int BattleFrontier_Main(ApplicationManager *appMan, int *state)
         break;
     case 5:
         FreeFrontierGraphics(frontier);
-        sub_0209B8E8(frontier);
+        ClearFrontierObjects(frontier);
         *state = 6;
         break;
     case 6:
         InitFrontierGraphics(frontier);
 
         if (frontier->offsetID == NO_NEW_ENTRY_POINT) {
+            // Same scene, new message bank only.
             FrontierScriptManager_UpdateMessageLoader(frontier->scriptMan, frontier->fieldData->sceneID, HEAP_ID_FIELD2);
         } else {
-            UnkStruct_ov104_0222E8C8 *v2 = ov104_0222E8C8(frontier->scriptMan, HEAP_ID_FIELD2);
+            // Rebuild the script manager for the new scene, carrying the local
+            // script variables across.
+            FrontierScriptLocalVars *v2 = ov104_0222E8C8(frontier->scriptMan, HEAP_ID_FIELD2);
             FrontierScriptManager_Free(frontier->scriptMan);
 
             frontier->scriptMan = FrontierScriptManager_New(frontier, HEAP_ID_FIELD2, frontier->fieldData->sceneID);
@@ -199,16 +227,19 @@ static void FreeFrontierGraphics(BattleFrontier *frontier)
     frontier->isGraphicsInitialized = FALSE;
 }
 
-static void sub_0209B8E8(BattleFrontier *frontier)
+// Resets the cached object graphics list and the map object array. The object
+// graphics slots use 0xFFFF as their empty marker; the objects' local IDs use
+// the same marker.
+static void ClearFrontierObjects(BattleFrontier *frontier)
 {
     for (int v0 = 0; v0 < 24; v0++) {
-        frontier->unk_24[v0].unk_00 = 0xffff;
+        frontier->objectGfxList[v0].gfxID = 0xffff;
     }
 
-    MI_CpuClear8(frontier->unk_6C, sizeof(UnkStruct_ov104_0223C634) * 32);
+    MI_CpuClear8(frontier->objects, sizeof(FrontierObject) * 32);
 
     for (int v0 = 0; v0 < 32; v0++) {
-        frontier->unk_6C[v0].unk_08.unk_04 = 0xffff;
+        frontier->objects[v0].params.unk_04 = 0xffff;
     }
 }
 
@@ -246,6 +277,10 @@ void BattleFrontier_SetFacilityStruct(BattleFrontier *frontier, void *facilityDa
     frontier->fieldData->facilityData = facilityData;
 }
 
+// Queues a sub-application to run. The sub-app is executed from state 4 of
+// BattleFrontier_Main, after the Frontier graphics and overlays have been
+// released. finishCallback (if any) is invoked with appArgs once it finishes,
+// and appArgs is freed afterwards when freeArgsAfter is set.
 void BattleFrontier_RunSubApp(BattleFrontier *frontier, const ApplicationManagerTemplate *appTemplate, void *appArgs, BOOL freeArgsAfter, BattleFrontierSubAppCallback finishCallback)
 {
     GF_ASSERT(frontier->appMan == NULL);
@@ -260,6 +295,9 @@ void BattleFrontier_ExitFrontier(BattleFrontier *frontier)
     frontier->exitBattleFrontier = TRUE;
 }
 
+// Requests a scene change. The new scene is loaded from state 6 of
+// BattleFrontier_Main; entryPointOffset selects the script entry point, or
+// NO_NEW_ENTRY_POINT to keep the current script and only reload messages.
 void BattleFrontier_ChangeScene(BattleFrontier *frontier, u16 sceneID, u16 entryPointOffset)
 {
     frontier->fieldData->sceneID = sceneID;
@@ -267,35 +305,40 @@ void BattleFrontier_ChangeScene(BattleFrontier *frontier, u16 sceneID, u16 entry
     frontier->offsetID = entryPointOffset;
 }
 
-UnkStruct_ov104_0223C688 *sub_0209B9CC(BattleFrontier *frontier)
+FrontierObjectGfx *BattleFrontier_GetObjectGfxList(BattleFrontier *frontier)
 {
-    return frontier->unk_24;
+    return frontier->objectGfxList;
 }
 
-UnkStruct_ov104_0223C634 *sub_0209B9D0(BattleFrontier *frontier)
+FrontierObject *BattleFrontier_GetObjects(BattleFrontier *frontier)
 {
-    return frontier->unk_6C;
+    return frontier->objects;
 }
 
-UnkStruct_ov104_0223C634 *sub_0209B9D4(BattleFrontier *frontier, int param1)
+FrontierObject *BattleFrontier_GetObject(BattleFrontier *frontier, int index)
 {
-    return &frontier->unk_6C[param1];
+    return &frontier->objects[index];
 }
 
-UnkStruct_ov104_0223D3B0 *sub_0209B9E0(BattleFrontier *frontier)
+FrontierSpriteStateBuffer *BattleFrontier_GetSpriteStateBuffer(BattleFrontier *frontier)
 {
-    return &frontier->unk_98C;
+    return &frontier->spriteStateBuffer;
 }
 
-void sub_0209B9EC(BattleFrontier *frontier)
+// Empties the saved managed-sprite state. Called on init and after the state
+// has been restored following a sub-app.
+void BattleFrontier_ClearSpriteStateBuffer(BattleFrontier *frontier)
 {
-    MI_CpuClear8(&frontier->unk_98C, sizeof(UnkStruct_ov104_0223D3B0_sub1));
+    MI_CpuClear8(&frontier->spriteStateBuffer, sizeof(FrontierSpriteState));
 
     for (int v0 = 0; v0 < 8; v0++) {
-        frontier->unk_98C.unk_00[v0] = 0xffff;
+        frontier->spriteStateBuffer.spriteIDs[v0] = 0xffff;
     }
 }
 
+// Entry point used by the Wi-Fi menu to open the WFC facility selector. Builds
+// the Frontier DTO from the field system and starts the Frontier app as a child
+// process, beginning at the WFC facility selector scene.
 FieldFrontierDTO *BattleFrontier_LaunchWFCFacilitySelector(FieldSystem *fieldSystem, void *data)
 {
     FieldFrontierDTO *fieldData = Heap_AllocAtEnd(HEAP_ID_FIELD2, sizeof(FieldFrontierDTO));

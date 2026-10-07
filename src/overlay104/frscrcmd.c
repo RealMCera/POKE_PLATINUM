@@ -166,7 +166,7 @@ static BOOL FrontierScrCmd_23(FrontierScriptContext *ctx);
 static BOOL FrontierScrCmd_24(FrontierScriptContext *ctx);
 static BOOL FrontierScrCmd_25(FrontierScriptContext *ctx);
 static BOOL FrontierScrCmd_ApplyMovement(FrontierScriptContext *ctx);
-static void FrontierSystem_StartAnimation(u16 localID, UnkStruct_ov104_0223C634 *object, const FrontierAnimCmd *animCmd, UnkStruct_ov63_0222D77C *param3, u8 *movementCount, enum HeapID heapID);
+static void FrontierSystem_StartAnimation(u16 localID, FrontierObject *object, const FrontierAnimCmd *animCmd, UnkStruct_ov63_0222D77C *param3, u8 *movementCount, enum HeapID heapID);
 static BOOL FrontierScrCmd_WaitMovement(FrontierScriptContext *ctx);
 static BOOL WaitForMovement(FrontierScriptContext *ctx);
 static BOOL FrontierScrCmd_InitNewBattleRecording(FrontierScriptContext *ctx);
@@ -757,35 +757,35 @@ static BOOL FrontierScrCmd_22(FrontierScriptContext *ctx)
     FrontierScriptManager *v0 = ctx->scriptMan;
     FrontierGraphics *v1 = BattleFrontier_GetGraphics(v0->frontier);
     const u8 *currScriptPtr;
-    UnkStruct_ov104_0223C688 v3;
+    FrontierObjectGfx v3;
     s32 offset = FrontierScriptContext_ReadWord(ctx);
     currScriptPtr = ctx->scriptPtr;
 
     ctx->scriptPtr = (u8 *)(ctx->scriptPtr + offset);
 
     while (TRUE) {
-        v3.unk_00 = FrontierScriptContext_GetVar(ctx);
+        v3.gfxID = FrontierScriptContext_GetVar(ctx);
 
-        if (v3.unk_00 == 0xFD13) {
+        if (v3.gfxID == 0xFD13) {
             break;
         }
 
         v3.unk_02 = FrontierScriptContext_ReadByte(ctx);
 
-        if (v3.unk_00 == 0xEEEE) {
+        if (v3.gfxID == 0xEEEE) {
             FieldFrontierDTO *fieldData = BattleFrontier_GetFieldData(v0->frontier);
             const TrainerInfo *trainerInfo = SaveData_GetTrainerInfo(fieldData->saveData);
-            v3.unk_00 = BattleFrontier_GetPlayerObjEventGfx(trainerInfo);
+            v3.gfxID = BattleFrontier_GetPlayerObjEventGfx(trainerInfo);
 
             ov104_0223D0EC(v1, &v3);
-        } else if (v3.unk_00 == 0xEEEF) {
+        } else if (v3.gfxID == 0xEEEF) {
             if (CommSys_IsInitialized() == TRUE) {
                 const TrainerInfo *trainerInfo;
                 int connectedCount = CommSys_ConnectedCount(), i;
 
                 for (i = 0; i < connectedCount; i++) {
                     trainerInfo = CommInfo_TrainerInfo(i);
-                    v3.unk_00 = BattleFrontier_GetPlayerObjEventGfx(trainerInfo);
+                    v3.gfxID = BattleFrontier_GetPlayerObjEventGfx(trainerInfo);
                     ov104_0223D0EC(v1, &v3);
                 }
             } else {
@@ -816,7 +816,7 @@ static BOOL FrontierScrCmd_24(FrontierScriptContext *ctx)
     FrontierGraphics *v1 = BattleFrontier_GetGraphics(v0->frontier);
     const u8 *currScriptPtr;
     s32 offset = FrontierScriptContext_ReadWord(ctx);
-    UnkStruct_ov104_0223D570 v4;
+    FrontierObjectParams v4;
     int v5;
 
     currScriptPtr = ctx->scriptPtr;
@@ -901,7 +901,7 @@ static BOOL FrontierScrCmd_ApplyMovement(FrontierScriptContext *ctx)
     FrontierGraphics *graphics = BattleFrontier_GetGraphics(scriptMan->frontier);
     u16 localID = FrontierScriptContext_GetVar(ctx);
     u32 offset = FrontierScriptContext_ReadWord(ctx);
-    UnkStruct_ov104_0223C634 *object = ov104_0223D5A8(scriptMan->frontier, localID);
+    FrontierObject *object = ov104_0223D5A8(scriptMan->frontier, localID);
 
     if (object == NULL) {
         GF_ASSERT(FALSE);
@@ -914,7 +914,7 @@ static BOOL FrontierScrCmd_ApplyMovement(FrontierScriptContext *ctx)
     return FALSE;
 }
 
-static void FrontierSystem_StartAnimation(u16 localID, UnkStruct_ov104_0223C634 *object, const FrontierAnimCmd *animCmd, UnkStruct_ov63_0222D77C *param3, u8 *movementCount, enum HeapID heapID)
+static void FrontierSystem_StartAnimation(u16 localID, FrontierObject *object, const FrontierAnimCmd *animCmd, UnkStruct_ov63_0222D77C *param3, u8 *movementCount, enum HeapID heapID)
 {
     FrontierAnimData *data = Heap_Alloc(heapID, sizeof(FrontierAnimData));
     MI_CpuClear8(data, sizeof(FrontierAnimData));

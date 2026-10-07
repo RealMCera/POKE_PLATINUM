@@ -27,7 +27,7 @@ typedef struct FrontierAnimData {
     u8 *totalMovementCount;
     const FrontierAnimCmd *animCmd;
     UnkStruct_ov63_0222D77C *unk_10;
-    UnkStruct_ov104_0223C634 *frontierObj;
+    FrontierObject *frontierObj;
 } FrontierAnimData;
 
 void FrontierShowMessage(FrontierScriptManager *scriptMan, const MessageLoader *msgLoader, u16 messageID, u8 canSpeedUp, FrontierMessageOptions *msgOptions);
