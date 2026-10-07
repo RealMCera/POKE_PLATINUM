@@ -324,7 +324,7 @@ BOOL FieldInput_Process(const FieldInput *input, FieldSystem *fieldSystem)
         }
     }
 
-    if (input->registeredItem && sub_02069238(fieldSystem) == TRUE) {
+    if (input->registeredItem && ItemUseFunction_UseRegisteredItem(fieldSystem) == TRUE) {
         return TRUE;
     }
 
@@ -470,7 +470,7 @@ BOOL FieldInput_Process_UnionRoom(const FieldInput *input, FieldSystem *fieldSys
     }
 
     if (input->movement && TileBehavior_IsWarpPanel(Field_CurrentTileBehavior(fieldSystem))) {
-        sub_020545EC(fieldSystem);
+        FieldSystem_StartUnionRoomExitTask(fieldSystem);
         return TRUE;
     }
 
@@ -527,7 +527,7 @@ int FieldInput_Process_BattleTower(const FieldInput *input, FieldSystem *fieldSy
         return TRUE;
     }
 
-    if (input->registeredItem && sub_02069238(fieldSystem) == TRUE) {
+    if (input->registeredItem && ItemUseFunction_UseRegisteredItem(fieldSystem) == TRUE) {
         return TRUE;
     }
 

@@ -217,7 +217,7 @@
 #include "unk_02099500.h"
 #include "frontier_easy_chat.h"
 #include "unk_0209B344.h"
-#include "unk_0209C194.h"
+#include "union_room_spin_trade.h"
 #include "vars_flags.h"
 #include "wifi_list.h"
 
@@ -2940,7 +2940,7 @@ static BOOL ScriptContext_WaitForPokemonStorageClose(ScriptContext *ctx)
 }
 
 // Pause callback that drives the union room communication session created by
-// ScrCmd_2C6 (sub_0209C1EC) until it has finished. The session frees itself,
+// ScrCmd_2C6 (UnionRoomSpinTrade_New) until it has finished. The session frees itself,
 // so only the script member pointer is cleared here.
 static BOOL ScriptContext_WaitForCommAppToFinish(ScriptContext *ctx)
 {
@@ -2948,7 +2948,7 @@ static BOOL ScriptContext_WaitForCommAppToFinish(ScriptContext *ctx)
 
     void **partyManagementData = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
-    if (sub_0209C238(*partyManagementData) == 0) {
+    if (UnionRoomSpinTrade_Update(*partyManagementData) == 0) {
         return FALSE;
     }
 
@@ -3528,7 +3528,7 @@ static BOOL ScrCmd_2C6(ScriptContext *ctx)
 {
     void **v0 = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
-    *v0 = sub_0209C1EC(ctx->fieldSystem);
+    *v0 = UnionRoomSpinTrade_New(ctx->fieldSystem);
     ScriptContext_Pause(ctx, ScriptContext_WaitForCommAppToFinish);
 
     return TRUE;
@@ -3640,7 +3640,7 @@ static BOOL ScrCmd_WarpToColosseum(ScriptContext *ctx)
 
 static BOOL ScrCmd_204(ScriptContext *ctx)
 {
-    sub_02054864(ctx->fieldSystem->task);
+    FieldSystem_StartColosseumExitTask(ctx->fieldSystem->task);
     return TRUE;
 }
 
@@ -4499,7 +4499,7 @@ static BOOL ScriptContext_WaitForUnionRoomActivity(ScriptContext *ctx)
 
 static BOOL ScrCmd_153(ScriptContext *ctx)
 {
-    sub_02054708(ctx->fieldSystem->task);
+    FieldSystem_StartUnionRoomEntryTask(ctx->fieldSystem->task);
     return TRUE;
 }
 
@@ -5079,7 +5079,7 @@ static BOOL ScrCmd_GiveJournal(ScriptContext *ctx)
 
     SystemFlag_HandleJournalAcquired(SaveData_GetVarsFlags(fieldSystem->saveData), HANDLE_FLAG_SET);
     fieldSystem->journalEntry = Journal_GetSavedPage(SaveData_GetJournal(fieldSystem->saveData), 1);
-    sub_02053494(fieldSystem);
+    FieldMapChange_SaveJournalTitle(fieldSystem);
 
     return FALSE;
 }

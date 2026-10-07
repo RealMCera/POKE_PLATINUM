@@ -5,12 +5,12 @@
 
 #include "struct_defs/comm_cmd_table.h"
 
-#include "unk_0209C390.h"
+#include "wifi_comm.h"
 
 static const CommCmdTable Unk_020E5F24[] = {
-    { sub_0209C3D0, sub_0209C3C8, NULL },
-    { sub_0209C3E0, sub_0209C3C4, NULL },
-    { sub_0209C3F0, sub_0209C3CC, NULL }
+    { WiFiComm_RecvPlayerStatus, WiFiComm_PlayerStatusPacketSize, NULL },
+    { WiFiComm_RecvSyncRequest, WiFiComm_SyncPacketSize, NULL },
+    { WiFiComm_RecvVoiceChat, WiFiComm_VoiceChatPacketSize, NULL }
 };
 
 const CommCmdTable *sub_02039A58(void)

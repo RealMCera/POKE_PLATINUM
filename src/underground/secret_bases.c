@@ -1656,7 +1656,7 @@ static BOOL SecretBases_MoveToFromSecretBaseTask(FieldTask *task)
         nextLocation.x = ctx->x;
         nextLocation.z = ctx->z;
         nextLocation.faceDirection = ctx->dir;
-        sub_020544F0(task, &nextLocation);
+        FieldTask_ChangeMapByLocationKeepTerrain(task, &nextLocation);
         ctx->state++;
         break;
     case MOVE_STATE_RESUME_FIELD_MAP:

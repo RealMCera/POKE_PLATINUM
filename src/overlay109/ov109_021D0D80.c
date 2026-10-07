@@ -268,7 +268,7 @@ typedef struct UnkStruct_ov109_021D0F70_t {
     UnkStruct_ov109_021D2D78 *unk_28;
     UnkStruct_ov109_021D0F70_sub1 unk_2C;
     u8 unk_AC[32];
-    UnkStruct_0209C194 *unk_CC;
+    UnionRoomSpinTradeSession *unk_CC;
     UnionRoomComm *unk_D0;
     UnkStruct_ov109_021D2AE4 unk_D4;
     UnkStruct_ov109_021D1334 unk_190;
@@ -423,7 +423,7 @@ static int (*const Unk_ov109_021D59D8[3])(UnkStruct_ov109_021D2FE0 *);
 int ov109_021D0D80(ApplicationManager *appMan, int *param1)
 {
     UnkStruct_ov109_021D0F70 *v0;
-    UnkStruct_0209C194 *v1 = ApplicationManager_Args(appMan);
+    UnionRoomSpinTradeSession *v1 = ApplicationManager_Args(appMan);
 
     CommManager_SetErrorHandling(1, 1);
     SetVBlankCallback(NULL, NULL);
@@ -434,10 +434,10 @@ int ov109_021D0D80(ApplicationManager *appMan, int *param1)
     v0 = ApplicationManager_NewData(appMan, sizeof(UnkStruct_ov109_021D0F70), HEAP_ID_95);
     memset(v0, 0, sizeof(UnkStruct_ov109_021D0F70));
 
-    v1->unk_38 = v0;
+    v1->spinAppData = v0;
     v0->unk_CC = v1;
-    v0->unk_D0 = v1->unk_34;
-    v0->unk_24 = SaveData_GetParty(v0->unk_CC->unk_14.saveData);
+    v0->unk_D0 = v1->comm;
+    v0->unk_24 = SaveData_GetParty(v0->unk_CC->context.saveData);
     v0->unk_D80 = NARC_ctor(NARC_INDEX_DATA__GURU2, HEAP_ID_95);
 
     VramTransfer_New(8, HEAP_ID_95);
@@ -454,7 +454,7 @@ int ov109_021D0D80(ApplicationManager *appMan, int *param1)
         UnkStruct_ov109_021D2AE4 *v5 = &v0->unk_D4;
 
         do {
-            if (v0->unk_CC->unk_0C & (1 << v2)) {
+            if (v0->unk_CC->connectedBitmap & (1 << v2)) {
                 if (v2 == v4) {
                     break;
                 }
@@ -465,7 +465,7 @@ int ov109_021D0D80(ApplicationManager *appMan, int *param1)
             v2++;
         } while (v2 < 5);
 
-        v5->unk_40 = (FX32_ONE * (Unk_ov109_021D5C44[v0->unk_CC->unk_08][v3]));
+        v5->unk_40 = (FX32_ONE * (Unk_ov109_021D5C44[v0->unk_CC->connectedCount][v3]));
     }
 
     v0->unk_1C = Sound_GetCurrentBGM();
@@ -713,7 +713,7 @@ static int ov109_021D1164(UnkStruct_ov109_021D0F70 *param0)
 
 static int ov109_021D117C(UnkStruct_ov109_021D0F70 *param0)
 {
-    if (UnionRoomComm_Send(param0->unk_D0, 14, &param0->unk_CC->unk_04, 4)) {
+    if (UnionRoomComm_Send(param0->unk_D0, 14, &param0->unk_CC->selectedMonSlot, 4)) {
         param0->unk_00 = 13;
     }
 
@@ -960,7 +960,7 @@ static int ov109_021D1460(UnkStruct_ov109_021D0F70 *param0)
     }
 
     if (param0->unk_2C.unk_0C) {
-        if (UnionRoomComm_Send(param0->unk_CC->unk_34, 10, &param0->unk_2C.unk_0C, 1) == 1) {
+        if (UnionRoomComm_Send(param0->unk_CC->comm, 10, &param0->unk_2C.unk_0C, 1) == 1) {
             param0->unk_2C.unk_0C = 0;
         }
     }
@@ -1040,7 +1040,7 @@ static int ov109_021D1570(UnkStruct_ov109_021D0F70 *param0)
     }
 
     if (param0->unk_2C.unk_0C) {
-        if (UnionRoomComm_Send(param0->unk_CC->unk_34, 10, &param0->unk_2C.unk_0C, 1) == 1) {
+        if (UnionRoomComm_Send(param0->unk_CC->comm, 10, &param0->unk_2C.unk_0C, 1) == 1) {
             param0->unk_2C.unk_0C = 0;
         }
     }
@@ -1281,7 +1281,7 @@ static int ov109_021D1918(UnkStruct_ov109_021D0F70 *param0)
 
         ov109_021D2714(param0, 3, v0);
 
-        BOOL removedItem = Bag_TryAddItem(SaveData_GetBag(param0->unk_CC->unk_14.saveData), v0, 1, HEAP_ID_95);
+        BOOL removedItem = Bag_TryAddItem(SaveData_GetBag(param0->unk_CC->context.saveData), v0, 1, HEAP_ID_95);
         Sound_PlayFanfare(SEQ_FANFA4_sseq);
 
         if (removedItem == TRUE) {
@@ -1335,9 +1335,9 @@ static int ov109_021D1A14(UnkStruct_ov109_021D0F70 *param0)
 {
     void *journalEntryOnlineEvent = JournalEntry_CreateEventMisc(95, ONLINE_EVENT_SPIN_TRADE);
 
-    JournalEntry_SaveData(param0->unk_CC->unk_14.journalEntry, journalEntryOnlineEvent, JOURNAL_ONLINE_EVENT);
-    GameRecords_IncrementRecordValue(param0->unk_CC->unk_14.records, RECORD_UNK_119);
-    GameRecords_IncrementTrainerScore(param0->unk_CC->unk_14.records, TRAINER_SCORE_EVENT_UNK_45);
+    JournalEntry_SaveData(param0->unk_CC->context.journalEntry, journalEntryOnlineEvent, JOURNAL_ONLINE_EVENT);
+    GameRecords_IncrementRecordValue(param0->unk_CC->context.records, RECORD_UNK_119);
+    GameRecords_IncrementTrainerScore(param0->unk_CC->context.records, TRAINER_SCORE_EVENT_UNK_45);
     ov109_021D2634(param0, 11);
     CommTiming_StartSync(202);
 
@@ -1362,7 +1362,7 @@ static int ov109_021D1A6C(UnkStruct_ov109_021D0F70 *param0)
 static int ov109_021D1AA8(UnkStruct_ov109_021D0F70 *param0)
 {
     int v0 = sub_02038EDC(
-        param0->unk_CC->unk_14.saveData, 2, &param0->unk_04);
+        param0->unk_CC->context.saveData, 2, &param0->unk_04);
 
     if (v0) {
         gSystem.inhibitReset = 0;
@@ -1983,8 +1983,8 @@ static void ov109_021D24F8(UnkStruct_ov109_021D0F70 *param0)
     UnkStruct_ov109_021D24F8 *v1 = &param0->unk_C9C;
 
     LoadStandardWindowGraphics(param0->unk_D84, BG_LAYER_MAIN_1, 1, 15, 0, HEAP_ID_95);
-    LoadMessageBoxGraphics(param0->unk_D84, BG_LAYER_MAIN_1, 1 + 9, 14, param0->unk_CC->unk_14.unk_04, HEAP_ID_95);
-    PaletteData_LoadBufferFromFileStart(param0->unk_D9C, NARC_INDEX_GRAPHIC__PL_WINFRAME, GetMessageBoxPaletteNARCMember(param0->unk_CC->unk_14.unk_04), HEAP_ID_95, PLTTBUF_MAIN_BG, PALETTE_SIZE_BYTES, PLTT_DEST(14));
+    LoadMessageBoxGraphics(param0->unk_D84, BG_LAYER_MAIN_1, 1 + 9, 14, param0->unk_CC->context.messageBoxFrame, HEAP_ID_95);
+    PaletteData_LoadBufferFromFileStart(param0->unk_D9C, NARC_INDEX_GRAPHIC__PL_WINFRAME, GetMessageBoxPaletteNARCMember(param0->unk_CC->context.messageBoxFrame), HEAP_ID_95, PLTTBUF_MAIN_BG, PALETTE_SIZE_BYTES, PLTT_DEST(14));
     PaletteData_LoadBufferFromFileStart(param0->unk_D9C, NARC_INDEX_GRAPHIC__PL_FONT, 7, HEAP_ID_95, PLTTBUF_MAIN_BG, PALETTE_SIZE_BYTES, PLTT_DEST(15));
 
     v1->unk_04 = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_SPIN_TRADE, HEAP_ID_95);
@@ -1998,7 +1998,7 @@ static void ov109_021D24F8(UnkStruct_ov109_021D0F70 *param0)
         param0->unk_2C.unk_6C[v0] = String_Init(7 + 1, HEAP_ID_95);
     }
 
-    ov109_021D27AC(param0, param0->unk_CC->unk_08);
+    ov109_021D27AC(param0, param0->unk_CC->connectedCount);
 }
 
 static void ov109_021D25E8(UnkStruct_ov109_021D0F70 *param0)
@@ -2235,7 +2235,7 @@ static void ov109_021D29CC(UnkStruct_ov109_021D0F70 *param0)
     UnkStruct_ov109_021D2AE4 *v2 = &param0->unk_D4;
     NARC *v3 = param0->unk_D80;
 
-    v0 = param0->unk_CC->unk_08;
+    v0 = param0->unk_CC->connectedCount;
     v1 = Unk_ov109_021D5A80[v0];
 
     Simple3D_LoadModelFromSet(&v2->unk_54, 0, v3, v1, HEAP_ID_95, 0);
@@ -3375,7 +3375,7 @@ static BOOL ov109_021D3AB8(UnkStruct_ov109_021D0F70 *param0, u16 param1)
 static BOOL ov109_021D3ACC(UnkStruct_ov109_021D0F70 *param0)
 {
     int v0 = 0;
-    int v1 = param0->unk_CC->unk_08 - 1;
+    int v1 = param0->unk_CC->connectedCount - 1;
     u32 v2 = param0->unk_D0->participantBitmap;
 
     while (v2) {
@@ -3439,7 +3439,7 @@ static void ov109_021D3B70(UnkStruct_ov109_021D0F70 *param0, int param1)
     v2 = param0->unk_24;
     v3 = (Party *)UnionRoomComm_GetRecvTrainerData(param0->unk_D0, param1);
 
-    v0 = param0->unk_CC->unk_04;
+    v0 = param0->unk_CC->selectedMonSlot;
     v1 = param0->unk_2C.unk_18[param1];
 
     v4 = Party_GetPokemonBySlotIndex(v2, v0);

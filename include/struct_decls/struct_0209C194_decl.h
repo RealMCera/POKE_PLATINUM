@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_0209C194_DECL_H
 #define POKEPLATINUM_STRUCT_0209C194_DECL_H
 
-typedef struct UnkStruct_0209C194_t UnkStruct_0209C194;
+typedef struct UnionRoomSpinTradeSession UnionRoomSpinTradeSession;
 
 #endif // POKEPLATINUM_STRUCT_0209C194_DECL_H

@@ -76,29 +76,44 @@
 
 FS_EXTERN_OVERLAY(underground);
 
+// This module owns the field map-change machinery: the FieldTasks that tear
+// down the current map, load the next one, and rebuild its objects, terrain
+// collision, and overworld state. It also handles the special transitions into
+// and out of the underground, the Union Room, and the Battle Frontier
+// Colosseum.
+
+// Task environment for a plain map change (FieldTask_ChangeMap): the
+// destination and the task's own state counter.
 typedef struct MapChangeData {
     int state;
     Location nextLocation;
-    UnkStruct_ov5_021D432C *unk_18;
+    UnkStruct_ov5_021D432C *unk_18; // unused
 } MapChangeData;
 
+// Task environment for the lightweight map change used when moving between
+// secret bases (FieldTask_ChangeMapSubKeepTerrain).
 typedef struct MapChangeSubData {
     int state;
     Location nextLocation;
 } MapChangeSubData;
 
+// Task environment for a Fly map change. `task` is the landing animation task
+// started once the new map is loaded.
 typedef struct MapChangeFlyData {
     int state;
     SysTask *task;
     Location location;
-    UnkStruct_ov5_021D432C *unk_1C;
+    UnkStruct_ov5_021D432C *unk_1C; // unused
 } MapChangeFlyData;
 
+// Task environment for recovering from an error (e.g. a corrupted save) by
+// warping to the Union Room.
 typedef struct MapChangeFromErrorData {
     BOOL finishedFlag;
     Location location;
 } MapChangeFromErrorData;
 
+// Task environment for a Teleport / Escape Rope / Dig map change.
 typedef struct MapChangeFieldWarpData {
     int state;
     enum FieldWarpType fieldWarpType;
@@ -106,18 +121,22 @@ typedef struct MapChangeFieldWarpData {
     Location location;
 } MapChangeFieldWarpData;
 
+// Task environment for a warp-panel map change, which plays a warp animation
+// before and after the map swap.
 typedef struct MapChangeWarpData {
     int state;
     BOOL warpFinished;
     Location nextLocation;
 } MapChangeWarpData;
 
+// Task environment for entering or leaving the Union Room.
 typedef struct MapChangeUnionData {
     int state;
-    BOOL unk_04;
+    BOOL warpFinished;
     Location location;
 } MapChangeUnionData;
 
+// States for FieldTask_MapChangeToUnderground.
 enum EnterUndergroundState {
     ENTER_UNDERGROUND_INIT = 0,
     ENTER_UNDERGROUND_INIT_CONFIRM_COMMS_MENU,
@@ -134,6 +153,7 @@ enum EnterUndergroundState {
     ENTER_UNDERGROUND_END,
 };
 
+// States for FieldTask_MapChangeFromUnderground.
 enum ExitUndergroundState {
     EXIT_UNDERGROUND_INIT = 0,
     EXIT_UNDERGROUND_FADE_OUT_BGM,
@@ -150,7 +170,7 @@ static BOOL FieldTask_LoadNewGameSpawn(FieldTask *task);
 static void FieldMapChange_SetNewLocation(FieldSystem *fieldSystem, const Location *param1);
 static void FieldMapChange_InitTerrainCollisionManager(FieldSystem *fieldSystem);
 static void FieldMapChange_RemoveTerrainCollisionManager(FieldSystem *fieldSystem);
-static void sub_020534BC(FieldSystem *fieldSystem);
+static void FieldMapChange_SaveJournalTitleForSpecialLocation(FieldSystem *fieldSystem);
 static BOOL FieldTask_MapChangeFly(FieldTask *task);
 static void FieldTask_FinishFly(FieldTask *task);
 static BOOL FieldTransition_FinishMapFly(FieldTask *task);
@@ -184,7 +204,10 @@ static const WindowTemplate sYesNoWindowTemplate = {
     .baseTile = BASE_TILE_YES_NO_MENU
 };
 
-static void sub_020530C8(FieldSystem *fieldSystem)
+// Keeps fieldSystem->mapLoadType in sync with the current map: entering a
+// Battle Tower map selects the Battle Tower load type, and leaving one falls
+// back to the overworld load type.
+static void FieldMapChange_UpdateMapLoadTypeForBattleTower(FieldSystem *fieldSystem)
 {
     BOOL inBattleTower;
 
@@ -230,6 +253,8 @@ static void FieldMapChange_SetNewLocation(FieldSystem *fieldSystem, const Locati
         fieldSystem->location->z = warpEvent->z;
 
         if (warpEvent->destWarpID == 0x100) {
+            // destWarpID 0x100 is a sentinel meaning "warp to the special
+            // location" (the destination stored in the overworld state).
             Location *v3, *entrance;
 
             v3 = FieldOverworldState_GetSpecialLocation(fieldState);
@@ -245,6 +270,9 @@ void FieldMapChange_Set3DDisplay(FieldSystem *fieldSystem)
     gSystem.whichScreenIs3D = fieldSystem->mapLoadMode->unk_00_12;
 }
 
+// Refreshes the overworld state after a map change. When `noWarp` is set the
+// player did not warp (e.g. a map connection), so warp-only state such as the
+// black-out warp and persisted map features is left alone.
 void FieldMapChange_UpdateGameData(FieldSystem *fieldSystem, BOOL noWarp)
 {
     enum MapHeaderID mapHeaderID = fieldSystem->location->mapHeaderID;
@@ -272,6 +300,7 @@ void FieldMapChange_UpdateGameData(FieldSystem *fieldSystem, BOOL noWarp)
     VarsFlags *varsFlags = SaveData_GetVarsFlags(fieldSystem->saveData);
     u16 weather = FieldSystem_GetWeather(fieldSystem, mapHeaderID);
 
+    // Defog and Flash suppress the fog and dark-flash weather respectively.
     if ((weather == OVERWORLD_WEATHER_FOG && SystemFlag_CheckDefogActive(varsFlags) == TRUE)
         || (weather == OVERWORLD_WEATHER_DARK_FLASH && SystemFlag_CheckFlashActive(varsFlags) == TRUE)) {
         weather = OVERWORLD_WEATHER_CLEAR;
@@ -302,7 +331,7 @@ void FieldMapChange_UpdateGameData(FieldSystem *fieldSystem, BOOL noWarp)
     fieldSystem->wildBattleMetadata.wildMonDefeated = 0;
 }
 
-void FieldMapChange_UpdateGameDataDistortionWorld(FieldSystem *fieldSystem, BOOL param1)
+void FieldMapChange_UpdateGameDataDistortionWorld(FieldSystem *fieldSystem, BOOL noWarp)
 {
     enum MapHeaderID mapHeaderID = fieldSystem->location->mapHeaderID;
     FieldOverworldState *fieldState = SaveData_GetFieldOverworldState(fieldSystem->saveData);
@@ -310,7 +339,7 @@ void FieldMapChange_UpdateGameDataDistortionWorld(FieldSystem *fieldSystem, BOOL
     FieldBGM_ClearOverride(fieldSystem);
     FieldSystem_ClearLocalFlags(fieldSystem);
 
-    if (!param1) {
+    if (!noWarp) {
         FieldSystem_InitFlagsWarp(fieldSystem);
     } else {
         FieldSystem_InitFlagsOnMapChange(fieldSystem);
@@ -318,15 +347,15 @@ void FieldMapChange_UpdateGameDataDistortionWorld(FieldSystem *fieldSystem, BOOL
 
     SystemVars_ResetVsSeeker(SaveData_GetVarsFlags(fieldSystem->saveData));
 
-    if (!param1) {
+    if (!noWarp) {
         sub_020559DC(fieldSystem);
     }
 
-    if (!param1) {
+    if (!noWarp) {
         PersistedMapFeatures_Init(MiscSaveBlock_GetPersistedMapFeatures(fieldSystem->saveData));
     }
 
-    if (!param1) {
+    if (!noWarp) {
         u16 warpId = GetMapBlackOutWarpId(mapHeaderID);
 
         if (warpId != 0) {
@@ -375,7 +404,7 @@ static void FieldMapChange_LoadObjects(FieldSystem *fieldSystem)
 
 static void FieldMapChange_InitTerrainCollisionManager(FieldSystem *fieldSystem)
 {
-    sub_020530C8(fieldSystem);
+    FieldMapChange_UpdateMapLoadTypeForBattleTower(fieldSystem);
     GF_ASSERT(fieldSystem->terrainCollisionMan == NULL);
     MapMatrix_Load(fieldSystem->location->mapHeaderID, fieldSystem->mapMatrix);
 
@@ -414,7 +443,8 @@ static void FieldMapChange_RemoveTerrainCollisionManager(FieldSystem *fieldSyste
     fieldSystem->mapLoadMode = NULL;
 }
 
-void sub_02053494(FieldSystem *fieldSystem)
+// Records the current map as the title of the active journal page.
+void FieldMapChange_SaveJournalTitle(FieldSystem *fieldSystem)
 {
     if (fieldSystem->journalEntry != NULL) {
         void *v0 = JournalEntry_CreateTitle(fieldSystem->location->mapHeaderID, 11);
@@ -422,7 +452,9 @@ void sub_02053494(FieldSystem *fieldSystem)
     }
 }
 
-static void sub_020534BC(FieldSystem *fieldSystem)
+// Records the special location (rather than the current map) as the journal
+// title, used when the player is warped somewhere else on load.
+static void FieldMapChange_SaveJournalTitleForSpecialLocation(FieldSystem *fieldSystem)
 {
     if (fieldSystem->journalEntry != NULL) {
         FieldOverworldState *owState = SaveData_GetFieldOverworldState(fieldSystem->saveData);
@@ -437,6 +469,8 @@ static void Location_SetToPlayerLocation(Location *location, const FieldSystem *
     Location_Set(location, fieldSystem->location->mapHeaderID, WARP_ID_NONE, PlayerAvatar_GetXPos(fieldSystem->playerAvatar), PlayerAvatar_GetZPos(fieldSystem->playerAvatar), DIR_SOUTH);
 }
 
+// The save is considered to be inside the Union Room when the player is on the
+// Pokémon Center 2F tile where the Union Room entrance sits.
 static BOOL FieldSystem_IsSaveInUnionRoom(const FieldSystem *fieldSystem)
 {
     return MapHeader_IsPokemonCenter2F(fieldSystem->location->mapHeaderID)
@@ -444,6 +478,8 @@ static BOOL FieldSystem_IsSaveInUnionRoom(const FieldSystem *fieldSystem)
         && fieldSystem->location->z == 6;
 }
 
+// Points the special location at the tile just outside the Union Room so the
+// player is placed there when the save is loaded.
 static void FieldSystem_SetLocationToUnionRoomExit(FieldSystem *fieldSystem)
 {
     Location *exit = FieldOverworldState_GetSpecialLocation(SaveData_GetFieldOverworldState(fieldSystem->saveData));
@@ -525,7 +561,7 @@ static BOOL FieldTask_LoadSavedGameMap(FieldTask *task)
             FieldMapChange_LoadObjects(fieldSystem);
         }
 
-        sub_02053494(fieldSystem);
+        FieldMapChange_SaveJournalTitle(fieldSystem);
         FieldSystem_RandomizeRoamingPokemonLocations(fieldSystem);
         *state = 2;
         break;
@@ -571,7 +607,7 @@ static BOOL FieldTask_LoadMapFromError(FieldTask *task)
         FieldMapChange_InitTerrainCollisionManager(fieldSystem);
         FieldMapChange_UpdateGameData(fieldSystem, 0);
         FieldMapChange_CreateObjects(fieldSystem);
-        sub_020534BC(fieldSystem);
+        FieldMapChange_SaveJournalTitleForSpecialLocation(fieldSystem);
         (*state)++;
         break;
     case 2:
@@ -1066,14 +1102,14 @@ static BOOL FieldTask_MapChangeWarp(FieldTask *task)
     return FALSE;
 }
 
-void FieldSystem_StartMapChangeWarpTask(FieldSystem *fieldSystem, int param1, int param2)
+void FieldSystem_StartMapChangeWarpTask(FieldSystem *fieldSystem, int mapHeaderID, int warpId)
 {
     Location nextLocation;
     MapChangeWarpData *mapChangeWarpData = Heap_AllocAtEnd(HEAP_ID_FIELD2, sizeof(MapChangeWarpData));
 
     MI_CpuClear8(mapChangeWarpData, sizeof(MapChangeWarpData));
 
-    Location_Set(&nextLocation, param1, param2, 0, 0, PlayerAvatar_GetFacingDir(fieldSystem->playerAvatar));
+    Location_Set(&nextLocation, mapHeaderID, warpId, 0, 0, PlayerAvatar_GetFacingDir(fieldSystem->playerAvatar));
     mapChangeWarpData->nextLocation = nextLocation;
     FieldSystem_CreateTask(fieldSystem, FieldTask_MapChangeWarp, mapChangeWarpData);
 }
@@ -1097,6 +1133,10 @@ MapChangeUndergroundContext *MapChangeUndergroundContext_New(FieldSystem *fieldS
         ctx->mapHeaderID = MAP_HEADER_UNDERGROUND;
         ctx->dummy = -1;
 
+        // Map the player's overworld tile position onto the underground's
+        // secret base grid. Each base spans a 2x2 block of map matrices, so
+        // the matrix indices are halved; the parity selects which of the four
+        // entry tiles (8 or 23) within the base to land on.
         int matrixX = location->x / MAP_TILES_COUNT_X - 1;
         int matrixZ = location->z / MAP_TILES_COUNT_Z - 6;
 
@@ -1339,7 +1379,10 @@ static BOOL FieldTask_StartUndergroundMapTransition(FieldTask *task, enum UGMapT
     return isDone;
 }
 
-static BOOL sub_02054494(FieldTask *task)
+// Lightweight map change used when moving between secret bases: the terrain
+// collision manager and game data are left untouched because the underground
+// map is already loaded.
+static BOOL FieldTask_ChangeMapSubKeepTerrain(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
     MapChangeSubData *mapChangeSub = FieldTask_GetEnv(task);
@@ -1363,7 +1406,8 @@ static BOOL sub_02054494(FieldTask *task)
     return 0;
 }
 
-void sub_020544F0(FieldTask *task, const Location *nextLocation)
+// Starts a map change that keeps the current terrain collision manager.
+void FieldTask_ChangeMapByLocationKeepTerrain(FieldTask *task, const Location *nextLocation)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
     MapChangeSubData *mapChangeData = Heap_AllocAtEnd(HEAP_ID_FIELD2, sizeof(MapChangeSubData));
@@ -1376,10 +1420,12 @@ void sub_020544F0(FieldTask *task, const Location *nextLocation)
     mapChangeData->state = 0;
     mapChangeData->nextLocation = *nextLocation;
 
-    FieldTask_InitCall(task, sub_02054494, mapChangeData);
+    FieldTask_InitCall(task, FieldTask_ChangeMapSubKeepTerrain, mapChangeData);
 }
 
-static BOOL sub_02054538(FieldTask *task)
+// Plays the warp animation, swaps to the stored overworld location, and fades
+// back in after leaving the Union Room.
+static BOOL FieldTask_ExitUnionRoom(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
     MapChangeUnionData *mapChangeData = FieldTask_GetEnv(task);
@@ -1389,11 +1435,11 @@ static BOOL sub_02054538(FieldTask *task)
     switch (*state) {
     case 0:
         FieldBGM_TryFadeIn(fieldSystem, v3->mapHeaderID);
-        FieldSystem_StartWarpAnimation(fieldSystem, 1, &mapChangeData->unk_04);
+        FieldSystem_StartWarpAnimation(fieldSystem, 1, &mapChangeData->warpFinished);
         (*state)++;
         break;
     case 1:
-        if (mapChangeData->unk_04) {
+        if (mapChangeData->warpFinished) {
             FieldTransition_FinishMap(task);
             (*state)++;
         }
@@ -1423,7 +1469,9 @@ static BOOL sub_02054538(FieldTask *task)
     return FALSE;
 }
 
-void sub_020545EC(FieldSystem *fieldSystem)
+// Tears down the Union Room and starts the task that returns the player to the
+// overworld location saved in the special location slot.
+void FieldSystem_StartUnionRoomExitTask(FieldSystem *fieldSystem)
 {
     Location *location = FieldOverworldState_GetSpecialLocation(SaveData_GetFieldOverworldState(fieldSystem->saveData));
     MapChangeUnionData *mapChangeData = Heap_AllocAtEnd(HEAP_ID_FIELD2, sizeof(MapChangeUnionData));
@@ -1435,11 +1483,12 @@ void sub_020545EC(FieldSystem *fieldSystem)
     UnionRoomTrainers_Free(fieldSystem->unk_80);
     fieldSystem->mapLoadType = MAP_LOAD_TYPE_OVERWORLD;
 
-    FieldSystem_CreateTask(fieldSystem, sub_02054538, mapChangeData);
+    FieldSystem_CreateTask(fieldSystem, FieldTask_ExitUnionRoom, mapChangeData);
     fieldSystem->unk_7C = NULL;
 }
 
-static BOOL sub_02054648(FieldTask *task)
+// Fades out, loads the Union Room, and fades back in.
+static BOOL FieldTask_EnterUnionRoom(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
     MapChangeUnionData *mapChangeData = FieldTask_GetEnv(task);
@@ -1470,12 +1519,12 @@ static BOOL sub_02054648(FieldTask *task)
         (*state)++;
         break;
     case 4:
-        mapChangeData->unk_04 = 0;
-        FieldSystem_StartWarpAnimation(fieldSystem, 0, &mapChangeData->unk_04);
+        mapChangeData->warpFinished = 0;
+        FieldSystem_StartWarpAnimation(fieldSystem, 0, &mapChangeData->warpFinished);
         (*state)++;
         break;
     case 5:
-        if (mapChangeData->unk_04) {
+        if (mapChangeData->warpFinished) {
             (*state)++;
         }
         break;
@@ -1487,7 +1536,9 @@ static BOOL sub_02054648(FieldTask *task)
     return FALSE;
 }
 
-void sub_02054708(FieldTask *task)
+// Saves the player's overworld position, sets up the Union Room communication
+// state, and starts the task that warps into the Union Room.
+void FieldSystem_StartUnionRoomEntryTask(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
     Location *location = FieldOverworldState_GetSpecialLocation(SaveData_GetFieldOverworldState(fieldSystem->saveData));
@@ -1502,7 +1553,7 @@ void sub_02054708(FieldTask *task)
     fieldSystem->unk_80 = UnionRoomTrainers_New(fieldSystem->unk_7C);
     fieldSystem->mapLoadType = MAP_LOAD_TYPE_UNION;
 
-    FieldTask_InitCall(task, sub_02054648, mapChangeData);
+    FieldTask_InitCall(task, FieldTask_EnterUnionRoom, mapChangeData);
 }
 
 static BOOL FieldTask_ChangeMapColosseum(FieldTask *task)
@@ -1559,7 +1610,9 @@ void FieldTask_StartChangeMapColosseum(FieldTask *task, enum MapHeaderID mapHead
     FieldTask_InitCall(task, FieldTask_ChangeMapColosseum, mapChangeData);
 }
 
-void sub_02054864(FieldTask *task)
+// Returns the player from the Battle Frontier Colosseum to the overworld
+// location saved in the special location slot.
+void FieldSystem_StartColosseumExitTask(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
     Location *location = FieldOverworldState_GetSpecialLocation(SaveData_GetFieldOverworldState(fieldSystem->saveData));

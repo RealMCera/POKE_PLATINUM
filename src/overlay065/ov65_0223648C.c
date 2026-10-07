@@ -55,7 +55,7 @@
 #include "text.h"
 #include "trainer_info.h"
 #include "unk_020363E8.h"
-#include "unk_0209C390.h"
+#include "wifi_comm.h"
 #include "vram_transfer.h"
 
 FS_EXTERN_OVERLAY(overlay63);
@@ -407,7 +407,7 @@ int ov65_0223648C(ApplicationManager *appMan, int *param1)
     v0->unk_00.unk_04 = ov65_02236794(&v0->unk_00);
     v0->unk_00.unk_06 = 0xff;
 
-    sub_0209C390(v0);
+    WiFiComm_Init(v0);
 
     ov65_0223760C(v0);
     ov65_022367A8(v0, v1, HEAP_ID_96);

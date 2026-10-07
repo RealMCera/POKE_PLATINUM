@@ -13,11 +13,14 @@
 #include "menu.h"
 #include "string.h"
 
+// State shared by the tasks that move the player into and out of the
+// underground. `state` drives the enter/exit state machines; `transitionState`
+// drives the hole/ascend animation sub-task.
 typedef struct MapChangeUndergroundContext {
     int state;
     int transitionState;
     enum MapHeaderID mapHeaderID;
-    int dummy;
+    int dummy; // unused
     int destX;
     int destZ;
     BOOL animationDone;
@@ -30,29 +33,29 @@ typedef struct MapChangeUndergroundContext {
 } MapChangeUndergroundContext;
 
 void FieldMapChange_Set3DDisplay(FieldSystem *fieldSystem);
-void FieldMapChange_UpdateGameData(FieldSystem *fieldSystem, BOOL param1);
-void FieldMapChange_UpdateGameDataDistortionWorld(FieldSystem *fieldSystem, BOOL param1);
-void sub_02053494(FieldSystem *fieldSystem);
+void FieldMapChange_UpdateGameData(FieldSystem *fieldSystem, BOOL noWarp);
+void FieldMapChange_UpdateGameDataDistortionWorld(FieldSystem *fieldSystem, BOOL noWarp);
+void FieldMapChange_SaveJournalTitle(FieldSystem *fieldSystem);
 void FieldSystem_SetLoadNewGameSpawnTask(FieldSystem *fieldSystem);
 void FieldSystem_SetLoadSavedGameMapTask(FieldSystem *fieldSystem);
 void FieldSystem_StartLoadMapFromErrorTask(FieldSystem *fieldSystem);
-void FieldSystem_StartChangeMapTask(FieldTask *task, const Location *param1);
-void FieldTask_ChangeMapByLocation(FieldTask *task, const Location *param1);
+void FieldSystem_StartChangeMapTask(FieldTask *task, const Location *nextLocation);
+void FieldTask_ChangeMapByLocation(FieldTask *task, const Location *nextLocation);
 void FieldTask_ChangeMapToLocation(FieldTask *task, enum MapHeaderID mapHeaderID, int warpId, int x, int z, int dir);
 void FieldTask_StartMapChangeFull(FieldTask *task, enum MapHeaderID mapHeaderID, int warpId, int x, int z, int dir);
 void FieldTask_StartMapChangeFly(FieldSystem *fieldSystem, enum MapHeaderID mapHeaderID, int warpId, int x, int z, int dir);
 void FieldTask_ChangeMapChangeFly(FieldTask *task, enum MapHeaderID mapHeaderID, int warpId, int x, int z, int dir);
-void FieldTask_ChangeMapByFieldWarp(FieldTask *task, const Location *location, enum FieldWarpType param2);
-void FieldSystem_StartMapChangeWarpTask(FieldSystem *fieldSystem, int param1, int param2);
+void FieldTask_ChangeMapByFieldWarp(FieldTask *task, const Location *location, enum FieldWarpType fieldWarpType);
+void FieldSystem_StartMapChangeWarpTask(FieldSystem *fieldSystem, int mapHeaderID, int warpId);
 MapChangeUndergroundContext *MapChangeUndergroundContext_New(FieldSystem *fieldSystem);
 void FieldTask_SetUndergroundMapChange(FieldSystem *fieldSystem);
 BOOL FieldTask_MapChangeToUnderground(FieldTask *task);
 BOOL FieldTask_MapChangeFromUnderground(FieldTask *task);
 FieldTaskFunc FieldMapChange_GetMapChangeUndergroundTask(const FieldSystem *fieldSystem);
-void sub_020544F0(FieldTask *task, const Location *param1);
-void sub_020545EC(FieldSystem *fieldSystem);
-void sub_02054708(FieldTask *task);
+void FieldTask_ChangeMapByLocationKeepTerrain(FieldTask *task, const Location *nextLocation);
+void FieldSystem_StartUnionRoomExitTask(FieldSystem *fieldSystem);
+void FieldSystem_StartUnionRoomEntryTask(FieldTask *task);
 void FieldTask_StartChangeMapColosseum(FieldTask *task, enum MapHeaderID mapHeaderID, int warpId, int x, int z, int dir);
-void sub_02054864(FieldTask *task);
+void FieldSystem_StartColosseumExitTask(FieldTask *task);
 
 #endif // POKEPLATINUM_FIELD_MAP_CHANGE_H

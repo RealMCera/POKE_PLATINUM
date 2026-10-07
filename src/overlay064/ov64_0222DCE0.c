@@ -60,7 +60,7 @@
 #include "system_flags.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_0203909C.h"
+#include "wifi_friend_registration.h"
 #include "unk_020890F4.h"
 #include "vars_flags.h"
 #include "vram_transfer.h"
@@ -777,7 +777,7 @@ static u32 ov64_0222E09C(UnkStruct_ov64_0222E060 *param0, String *param1, String
                     return 1;
                 }
 
-                v8 = sub_02039140(param0->saveData, v4, &v9);
+                v8 = WiFiFriend_FindSlotByFriendKey(param0->saveData, v4, &v9);
 
                 if (v8 == 0) {
                     return 2;

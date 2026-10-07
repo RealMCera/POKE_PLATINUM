@@ -81,9 +81,9 @@
 #include "unk_02030CE8.h"
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
-#include "unk_0203909C.h"
+#include "wifi_friend_registration.h"
 #include "unk_0207DFAC.h"
-#include "unk_0209C390.h"
+#include "wifi_comm.h"
 #include "vars_flags.h"
 #include "vram_transfer.h"
 #include "wifi_history_save_data.h"
@@ -4261,7 +4261,7 @@ static int ov65_022323C0(UnkStruct_ov65_0222EBE0 *param0, int param1)
     if (ov65_022321A8(param0)) {
         (void)0;
     } else if (CommTiming_IsSyncState(18) && (ov65_02232390(param0) == 1)) {
-        sub_020391DC(param0->saveData, v1, HEAP_ID_54);
+        WiFiFriend_UpdateConnectedPlayers(param0->saveData, v1, HEAP_ID_54);
         ov65_02232DFC(param0);
 
         v2 = ov65_02234FA8(param0, NintendoWFC_GetHostFriendIdx());
@@ -6124,7 +6124,7 @@ static BOOL ov65_02234FCC(UnkStruct_ov65_0222EBE0 *param0, int param1, int param
         NintendoWFC_ManageSecondaryHeap(0, HEAP_ID_PARTY_MENU1);
     }
 
-    sub_0209C3AC();
+    WiFiComm_InitNoContext();
 
     return CommManager_StartWifiBattle(param1);
 }

@@ -29,7 +29,7 @@
 #include "string_template.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_0203909C.h"
+#include "wifi_friend_registration.h"
 #include "wifi_list.h"
 
 typedef struct {
@@ -62,7 +62,7 @@ static BOOL ov5_021EA874(UnkStruct_ov5_021EAE78 *param0)
     DWCFriendData *v2 = WiFiList_GetFriendData(SaveData_GetWiFiList(param0->saveData), 0);
     DWCFriendData *v3;
 
-    if (0 == sub_020391DC(param0->saveData, param0->unk_4C, HEAP_ID_FIELD1)) {
+    if (0 == WiFiFriend_UpdateConnectedPlayers(param0->saveData, param0->unk_4C, HEAP_ID_FIELD1)) {
         return 1;
     }
 
@@ -107,7 +107,7 @@ static BOOL ov5_021EA8F0(UnkStruct_ov5_021EAE78 *param0)
 
         for (v0 = 0; v0 < 32; v0++) {
             if (!WiFiList_IsValidFriendData(v2, v0)) {
-                sub_02039298(param0->saveData, param0->unk_8C, v0, HEAP_ID_FIELD1, 0);
+                WiFiFriend_SavePlayerToSlot(param0->saveData, param0->unk_8C, v0, HEAP_ID_FIELD1, 0);
                 break;
             }
         }
@@ -150,7 +150,7 @@ static BOOL ov5_021EA9F8(UnkStruct_ov5_021EAE78 *param0)
 
         for (v2 = 0; v2 < 32; v2++) {
             if (!WiFiList_IsValidFriendData(v4, v2)) {
-                sub_02039298(param0->saveData, param0->unk_8C, v2, HEAP_ID_FIELD1, 0);
+                WiFiFriend_SavePlayerToSlot(param0->saveData, param0->unk_8C, v2, HEAP_ID_FIELD1, 0);
                 break;
             }
         }
@@ -354,7 +354,7 @@ static BOOL ov5_021EAD38(UnkStruct_ov5_021EAE78 *param0)
     } else if (v4 == 0) {
         BattleFrontierSave_ClearFriendStatsAndShift(SaveData_GetBattleFrontier(param0->saveData), param0->unk_90);
         WiFiList_DeleteFriend(v0, param0->unk_90);
-        sub_02039298(param0->saveData, param0->unk_8C, 32 - 1, HEAP_ID_FIELD1, 0);
+        WiFiFriend_SavePlayerToSlot(param0->saveData, param0->unk_8C, 32 - 1, HEAP_ID_FIELD1, 0);
         param0->unk_48 = 1;
     } else {
         v1 = CommInfo_TrainerInfo(param0->unk_8C);

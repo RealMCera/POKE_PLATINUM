@@ -9,7 +9,7 @@
 // Communication command handler for the Union Room (overlay 109). It owns the
 // command table registered with CommCmd_Init and exposes the send entry point
 // plus the per-player party-data buffers used by the spin-trade flow.
-UnionRoomComm *UnionRoomComm_New(UnkStruct_0209C194 *app, enum HeapID heapID);
+UnionRoomComm *UnionRoomComm_New(UnionRoomSpinTradeSession *app, enum HeapID heapID);
 void UnionRoomComm_Free(UnionRoomComm *comm);
 void UnionRoomComm_Init(UnionRoomComm *comm);
 void UnionRoomComm_Reset(UnionRoomComm *comm);

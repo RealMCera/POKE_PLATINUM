@@ -39,7 +39,7 @@
 #include "system.h"
 #include "tv_segment.h"
 #include "unk_020363E8.h"
-#include "unk_0203909C.h"
+#include "wifi_friend_registration.h"
 #include "vram_transfer.h"
 #include "wifi_list.h"
 
@@ -576,7 +576,7 @@ static int ov83_0223BCEC(PoffinBerrySelectionData *param0, UnkStruct_ov83_0223B7
             for (v4 = 0; v4 < param1->unk_1488; v4++) {
                 v5 = param1->unk_1494.unk_130[v4];
                 v8 = CommInfo_DWCFriendData(v5);
-                v6 = sub_0203909C(param0->ctx->saveData, v8, &v7);
+                v6 = WiFiFriend_FindSlot(param0->ctx->saveData, v8, &v7);
 
                 switch (v6) {
                 case 0:

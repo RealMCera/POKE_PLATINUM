@@ -25,7 +25,7 @@ typedef struct UnkStruct_ov109_021D5140_t {
     int unk_00;
     int unk_04;
     int unk_08;
-    UnkStruct_0209C194 *unk_0C;
+    UnionRoomSpinTradeSession *unk_0C;
     UnionRoomComm *unk_10;
     BgConfig *unk_14;
     BOOL unk_18;

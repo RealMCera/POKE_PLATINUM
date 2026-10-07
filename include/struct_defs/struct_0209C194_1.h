@@ -10,15 +10,18 @@
 #include "journal.h"
 #include "savedata.h"
 
+// Subset of game state copied into a UnionRoomSpinTradeSession. It is filled
+// from the FieldSystem when the spin trade field task starts and read by both
+// overlay109 apps.
 typedef struct {
-    int unk_00;
-    int unk_04;
+    int unk_00; // Unused.
+    int messageBoxFrame; // Message box frame style (Options_Frame).
     SaveData *saveData;
-    UnionRoomTrainers *unk_0C;
+    UnionRoomTrainers *trainers; // Union Room trainer manager (FieldSystem::unk_80).
     Options *options;
     GameRecords *records;
     JournalEntry *journalEntry;
     FieldSystem *fieldSystem;
-} UnkStruct_0209C194_1;
+} UnionRoomSpinTradeContext;
 
 #endif // POKEPLATINUM_STRUCT_0209C194_1_H

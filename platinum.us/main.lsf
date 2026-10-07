@@ -165,7 +165,7 @@ Static main
 	Object main.nef.p/src_unk_02038ED4.c.o
 	Object main.nef.p/src_unk_02038F8C.c.o
 	Object main.nef.p/src_unk_02038FFC.c.o
-	Object main.nef.p/src_unk_0203909C.c.o
+	Object main.nef.p/src_wifi_friend_registration.c.o
 	Object main.nef.p/src_network_icon.c.o
 	Object main.nef.p/src_unk_02039814.c.o
 	Object main.nef.p/src_unk_02039A58.c.o
@@ -363,9 +363,9 @@ Static main
 	Object main.nef.p/src_battle_frontier.c.o
 	Object main.nef.p/src_unk_0209BA80.c.o
 	Object main.nef.p/src_union_room_comm.c.o
-	Object main.nef.p/src_unk_0209C194.c.o
+	Object main.nef.p/src_union_room_spin_trade.c.o
 	Object main.nef.p/src_unk_0209C370.c.o
-	Object main.nef.p/src_unk_0209C390.c.o
+	Object main.nef.p/src_wifi_comm.c.o
 	Library libspl.a
 	Library libwvr.a
 	Library libdwcbm.a

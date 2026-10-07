@@ -65,6 +65,15 @@
 
 #include "res/text/bank/location_names.h"
 
+// Item usage dispatch. Every item that can be used (from the bag menu or from
+// the field) is assigned a "use function" index by its data; this module maps
+// that index to three callbacks: one to use the item from the bag menu, one to
+// use it directly in the field, and one to check whether it can be used at all.
+// The field checks all read from an ItemUseContext snapshot so they see a
+// consistent view of the map and player state.
+
+// The three callbacks for one item use-function index. Any entry may be NULL
+// when that use case does not apply to the item.
 typedef struct ItemUseFuncDat {
     ItemMenuUseFunc useItemFromMenuFunc;
     ItemFieldUseFunc useItemInFieldFunc;
@@ -112,11 +121,11 @@ static BOOL UseVsSeekerInField(ItemFieldUseContext *usageContext);
 static BOOL UseAzureFluteInField(ItemFieldUseContext *usageContext);
 static BOOL UseVsRecorderInField(ItemFieldUseContext *usageContext);
 static BOOL UseGracideaInField(ItemFieldUseContext *usageContext);
-static void *sub_02068BEC(void *some_param);
-static void *sub_02068B9C(void *some_param);
-static void *sub_02068708(void *some_param);
-static void *sub_02068A28(void *some_param);
-static void *sub_020691CC(void *some_param);
+static void *OpenPalPadApp(void *some_param);
+static void *ItemUse_OpenPoffinCaseApp(void *some_param);
+static void *OpenTownMapApp(void *some_param);
+static void *OpenJournalApp(void *some_param);
+static void *OpenVsRecorderApp(void *some_param);
 static void *OpenPartyMenuForGracidea(void *fieldSystem);
 static enum ItemUseCheckResult CanUseBicycle(const ItemUseContext *usageContext);
 static enum ItemUseCheckResult CanUseExplorerKit(const ItemUseContext *usageContext);
@@ -133,7 +142,7 @@ static BOOL PrintRegisteredKeyItemUseMessage(FieldTask *task);
 static void RegisteredItem_CreateGoToAppTask(ItemFieldUseContext *usageContext, void *param1);
 static BOOL RegisteredItem_GoToApp(FieldTask *task);
 static BOOL WarpWithEscapeRope(FieldTask *task);
-static BOOL sub_020685AC(FieldTask *task);
+static BOOL RunItemScriptTask(FieldTask *task);
 static void PrintRegisteredKeyItemError(ItemFieldUseContext *usageContext, u32 param1);
 
 // clang-format off
@@ -166,6 +175,8 @@ static const ItemUseFuncDat sItemUseFuncs[] = {
 };
 // clang-format on
 
+// Returns the callback of the requested kind for an item use-function index.
+// The return value is cast to the matching function-pointer type by the caller.
 u32 ItemUseFunction_Get(u16 funcType, u16 functionIdx)
 {
     if (funcType == ITEM_FUNC_USE_FROM_MENU) {
@@ -177,6 +188,9 @@ u32 ItemUseFunction_Get(u16 funcType, u16 functionIdx)
     return (u32)sItemUseFuncs[functionIdx].canUseItemFunc;
 }
 
+// Fills `ctxOut` with a snapshot of the player's surroundings for the item
+// can-use checks. The tile behavior is sampled at the player's current tile and
+// at the tile directly in front of them.
 void ItemUseContext_Init(FieldSystem *fieldSystem, ItemUseContext *ctxOut)
 {
     if (PlayerAvatar_DistortionGravityChanged(fieldSystem->playerAvatar) == TRUE) {
@@ -219,6 +233,9 @@ void ItemUseContext_Init(FieldSystem *fieldSystem, ItemUseContext *ctxOut)
     ctxOut->playerAvatar = fieldSystem->playerAvatar;
 }
 
+// Distortion World variant of ItemUseContext_Init. Gravity there is handled by
+// the player avatar rather than the terrain collision manager, so the tile
+// behaviors are queried from the avatar instead.
 static void ItemUseContext_InitForDistortionWorld(FieldSystem *fieldSystem, ItemUseContext *ctxOut)
 {
     ctxOut->fieldSystem = fieldSystem;
@@ -234,58 +251,64 @@ static void ItemUseContext_InitForDistortionWorld(FieldSystem *fieldSystem, Item
     ctxOut->playerAvatar = fieldSystem->playerAvatar;
 }
 
-static UnkStruct_0206851C *sub_0206851C(u32 param0, u16 param1, u16 param2, u16 param3, u16 param4)
+// Allocates the argument block for a field script started by an item.
+static ItemScriptContext *ItemScriptContext_New(u32 scriptID, u16 param0, u16 param1, u16 param2, u16 param3)
 {
-    UnkStruct_0206851C *v0 = Heap_Alloc(HEAP_ID_FIELD3, sizeof(UnkStruct_0206851C));
+    ItemScriptContext *ctx = Heap_Alloc(HEAP_ID_FIELD3, sizeof(ItemScriptContext));
 
-    v0->unk_00 = param0;
-    v0->unk_04 = param1;
-    v0->unk_06 = param2;
-    v0->unk_08 = param3;
-    v0->unk_0A = param4;
+    ctx->scriptID = scriptID;
+    ctx->param0 = param0;
+    ctx->param1 = param1;
+    ctx->param2 = param2;
+    ctx->param3 = param3;
 
-    return v0;
+    return ctx;
 }
 
-static void sub_02068540(ItemMenuUseContext *usageContext, const ItemUseContext *additionalContext, u32 param2)
+// Starts a script from the bag menu: hands the script context to the start
+// menu, which runs it as a new task.
+static void RunItemScriptFromMenu(ItemMenuUseContext *usageContext, const ItemUseContext *additionalContext, u32 scriptID)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(usageContext->fieldTask);
     StartMenu *menu = FieldTask_GetEnv(usageContext->fieldTask);
 
     FieldSystem_StartFieldMap(fieldSystem);
 
-    menu->callback = sub_020685AC;
-    menu->taskData = sub_0206851C(param2, usageContext->item, 0, 0, 0);
+    menu->callback = RunItemScriptTask;
+    menu->taskData = ItemScriptContext_New(scriptID, usageContext->item, 0, 0, 0);
     menu->state = START_MENU_STATE_NEW_TASK;
 }
 
-static void sub_02068584(ItemFieldUseContext *usageContext, u32 param1)
+// Starts a script directly from the field, without going through the menu.
+static void RunItemScriptInField(ItemFieldUseContext *usageContext, u32 scriptID)
 {
-    void *v0 = sub_0206851C(param1, usageContext->unk_28, 0, 0, 0);
-    FieldSystem_CreateTask(usageContext->fieldSystem, sub_020685AC, v0);
+    void *ctx = ItemScriptContext_New(scriptID, usageContext->item, 0, 0, 0);
+    FieldSystem_CreateTask(usageContext->fieldSystem, RunItemScriptTask, ctx);
 }
 
-static BOOL sub_020685AC(FieldTask *task)
+// Field task that starts the item's script and copies its parameters into the
+// script's SCRIPT_DATA_PARAMETER_* slots, then frees the context.
+static BOOL RunItemScriptTask(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
-    UnkStruct_0206851C *v1 = FieldTask_GetEnv(task);
-    int *v2 = FieldTask_GetState(task);
-    MapObject *v3;
+    ItemScriptContext *ctx = FieldTask_GetEnv(task);
+    int *state = FieldTask_GetState(task);
+    MapObject *mapObj;
 
-    switch (*v2) {
+    switch (*state) {
     case 0:
-        sub_0203C9D4(fieldSystem, &v3);
-        ScriptManager_Start(task, v1->unk_00, v3, NULL);
+        sub_0203C9D4(fieldSystem, &mapObj);
+        ScriptManager_Start(task, ctx->scriptID, mapObj, NULL);
 
-        *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_0) = v1->unk_04;
-        *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_1) = v1->unk_06;
-        *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_2) = v1->unk_08;
-        *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_3) = v1->unk_0A;
+        *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_0) = ctx->param0;
+        *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_1) = ctx->param1;
+        *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_2) = ctx->param2;
+        *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_3) = ctx->param3;
 
-        (*v2)++;
+        (*state)++;
         break;
     case 1:
-        Heap_Free(v1);
+        Heap_Free(ctx);
         return TRUE;
     }
 
@@ -328,11 +351,14 @@ static void UseTownMapFromMenu(ItemMenuUseContext *usageContext, const ItemUseCo
 
 static BOOL UseTownMapInField(ItemFieldUseContext *usageContext)
 {
-    RegisteredItem_CreateGoToAppTask(usageContext, sub_02068708);
+    RegisteredItem_CreateGoToAppTask(usageContext, OpenTownMapApp);
     return TRUE;
 }
 
-static void *sub_02068708(void *fieldSystem)
+// Field application work constructors for registered items. Each opens the
+// corresponding app and returns its work object, which RegisteredItem_GoToApp
+// frees once the app exits.
+static void *OpenTownMapApp(void *fieldSystem)
 {
     return FieldSystem_OpenTownMapItem(fieldSystem);
 }
@@ -422,6 +448,9 @@ static BOOL UseBicycleInField(ItemFieldUseContext *usageContext)
     return FALSE;
 }
 
+// Toggles the bicycle: if the player is already cycling (state 0x1) they
+// dismount and the map BGM is restored; otherwise they mount and the bicycle
+// theme overrides the map BGM. The radar chain is cleared when mounting.
 static BOOL MountOrUnmountBicycle(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
@@ -463,6 +492,9 @@ static BOOL MountOrUnmountBicycle(FieldTask *task)
     return FALSE;
 }
 
+// The bicycle can be mounted almost anywhere, but it cannot be dismounted
+// while the game forces biking (gates, Cycling Road, bike bridges), and it
+// cannot be used in very tall grass, mud, or while surfing.
 static enum ItemUseCheckResult CanUseBicycle(const ItemUseContext *usageContext)
 {
     VarsFlags *v0 = SaveData_GetVarsFlags(usageContext->fieldSystem->saveData);
@@ -513,13 +545,13 @@ static void UseJournalFromMenu(ItemMenuUseContext *usageContext, const ItemUseCo
 
 static BOOL UseJournalInField(ItemFieldUseContext *usageContext)
 {
-    RegisteredItem_CreateGoToAppTask(usageContext, sub_02068A28);
+    RegisteredItem_CreateGoToAppTask(usageContext, OpenJournalApp);
     return TRUE;
 }
 
-static void *sub_02068A28(void *some_param)
+static void *OpenJournalApp(void *fieldSystem)
 {
-    FieldSystem_OpenJournalApp(some_param, NULL);
+    FieldSystem_OpenJournalApp(fieldSystem, NULL);
     return NULL;
 }
 
@@ -565,6 +597,8 @@ static enum ItemUseCheckResult CanUseBerry(const ItemUseContext *usageContext)
     return ITEM_USE_CAN_USE;
 }
 
+// Using a berry on an empty patch plants it (berry tree interaction script);
+// otherwise it is treated as a healing item to feed to a party Pokémon.
 static void UseBerryFromMenu(ItemMenuUseContext *usageContext, const ItemUseContext *additionalContext)
 {
     FieldSystem *fieldSystem;
@@ -575,7 +609,7 @@ static void UseBerryFromMenu(ItemMenuUseContext *usageContext, const ItemUseCont
     v1 = FieldTask_GetEnv(usageContext->fieldTask);
 
     if (additionalContext->berryPatchFlags & BERRY_PATCH_FLAG_EMPTY) {
-        sub_02068540(usageContext, additionalContext, SCRIPT_ID(BERRY_TREE_INTERACTIONS, 1));
+        RunItemScriptFromMenu(usageContext, additionalContext, SCRIPT_ID(BERRY_TREE_INTERACTIONS, 1));
     } else {
         UseHealingItemFromMenu(usageContext, additionalContext);
     }
@@ -602,13 +636,13 @@ static void UsePoffinCaseFromMenu(ItemMenuUseContext *usageContext, const ItemUs
 
 static BOOL UsePoffinCaseInField(ItemFieldUseContext *usageContext)
 {
-    RegisteredItem_CreateGoToAppTask(usageContext, sub_02068B9C);
+    RegisteredItem_CreateGoToAppTask(usageContext, ItemUse_OpenPoffinCaseApp);
     return TRUE;
 }
 
-static void *sub_02068B9C(void *some_param)
+static void *ItemUse_OpenPoffinCaseApp(void *fieldSystem)
 {
-    return FieldSystem_LaunchPoffinCaseApp(some_param, HEAP_ID_FIELD2);
+    return FieldSystem_LaunchPoffinCaseApp(fieldSystem, HEAP_ID_FIELD2);
 }
 
 static void UsePalPadFromMenu(ItemMenuUseContext *usageContext, const ItemUseContext *additionalContext)
@@ -623,13 +657,13 @@ static void UsePalPadFromMenu(ItemMenuUseContext *usageContext, const ItemUseCon
 
 static BOOL UsePalPadInField(ItemFieldUseContext *usageContext)
 {
-    RegisteredItem_CreateGoToAppTask(usageContext, sub_02068BEC);
+    RegisteredItem_CreateGoToAppTask(usageContext, OpenPalPadApp);
     return TRUE;
 }
 
-static void *sub_02068BEC(void *some_param)
+static void *OpenPalPadApp(void *fieldSystem)
 {
-    FieldSystem_OpenPalPad(some_param, ((FieldSystem *)some_param)->saveData);
+    FieldSystem_OpenPalPad(fieldSystem, ((FieldSystem *)fieldSystem)->saveData);
     return NULL;
 }
 
@@ -657,6 +691,8 @@ static BOOL UsePokeRadarInField(ItemFieldUseContext *usageContext)
     return FALSE;
 }
 
+// The Poké Radar can only be used while standing in tall grass, and not while
+// cycling (player state 0x1) or with a partner.
 static enum ItemUseCheckResult CanUsePokeRadar(const ItemUseContext *usageContext)
 {
     if (usageContext->hasPartner == TRUE) {
@@ -676,15 +712,16 @@ static enum ItemUseCheckResult CanUsePokeRadar(const ItemUseContext *usageContex
 
 static void UseSprayDuckFromMenu(ItemMenuUseContext *usageContext, const ItemUseContext *additionalContext)
 {
-    sub_02068540(usageContext, additionalContext, SCRIPT_ID(BERRY_TREE_INTERACTIONS, 2));
+    RunItemScriptFromMenu(usageContext, additionalContext, SCRIPT_ID(BERRY_TREE_INTERACTIONS, 2));
 }
 
 static BOOL UseSprayDuckInField(ItemFieldUseContext *usageContext)
 {
-    sub_02068584(usageContext, SCRIPT_ID(BERRY_TREE_INTERACTIONS, 2));
+    RunItemScriptInField(usageContext, SCRIPT_ID(BERRY_TREE_INTERACTIONS, 2));
     return FALSE;
 }
 
+// The Sprayduck can only water a patch that currently holds a berry.
 static enum ItemUseCheckResult CanUseSprayDuck(const ItemUseContext *usageContext)
 {
     if (usageContext->hasPartner == TRUE) {
@@ -700,9 +737,11 @@ static enum ItemUseCheckResult CanUseSprayDuck(const ItemUseContext *usageContex
 
 static void UseMulchFromMenu(ItemMenuUseContext *usageContext, const ItemUseContext *additionalContext)
 {
-    sub_02068540(usageContext, additionalContext, SCRIPT_ID(BERRY_TREE_INTERACTIONS, 3));
+    RunItemScriptFromMenu(usageContext, additionalContext, SCRIPT_ID(BERRY_TREE_INTERACTIONS, 3));
 }
 
+// Mulch can only be applied to a patch that accepts it (e.g. one that is not
+// already mulched).
 static enum ItemUseCheckResult CanUseMulch(const ItemUseContext *usageContext)
 {
     if (usageContext->berryPatchFlags & BERRY_PATCH_FLAG_CAN_MULCH) {
@@ -738,12 +777,12 @@ static void UseHoneyFromMenu(ItemMenuUseContext *usageContext, const ItemUseCont
 
 static void UseVsSeekerFromMenu(ItemMenuUseContext *usageContext, const ItemUseContext *additionalContext)
 {
-    sub_02068540(usageContext, additionalContext, SCRIPT_ID(VS_SEEKER, 0));
+    RunItemScriptFromMenu(usageContext, additionalContext, SCRIPT_ID(VS_SEEKER, 0));
 }
 
 static BOOL UseVsSeekerInField(ItemFieldUseContext *usageContext)
 {
-    sub_02068584(usageContext, SCRIPT_ID(VS_SEEKER, 0));
+    RunItemScriptInField(usageContext, SCRIPT_ID(VS_SEEKER, 0));
     return FALSE;
 }
 
@@ -816,6 +855,9 @@ static BOOL UseSuperRodInField(ItemFieldUseContext *usageContext)
     return FALSE;
 }
 
+// Fishing requires surfable water on the tile the player faces. It is blocked
+// throughout the Distortion World, and on an elevated bridge the player must
+// step down before casting.
 static enum ItemUseCheckResult CanUseFishingRod(const ItemUseContext *usageContext)
 {
     if (usageContext->hasPartner == TRUE) {
@@ -851,48 +893,52 @@ static enum ItemUseCheckResult CanUseFishingRod(const ItemUseContext *usageConte
     return ITEM_USE_CANNOT_USE_GENERIC;
 }
 
+// Shows the registered item's usage message (e.g. "The Bicycle can be used
+// here.") and waits for the player to dismiss it.
 static BOOL UseBagMessageItem(ItemFieldUseContext *usageContext)
 {
-    UnkStruct_02068EFC *v0 = Heap_Alloc(HEAP_ID_FIELD2, sizeof(UnkStruct_02068EFC));
+    ItemUseMessageContext *msgCtx = Heap_Alloc(HEAP_ID_FIELD2, sizeof(ItemUseMessageContext));
 
-    v0->unk_16 = 0;
-    v0->unk_10 = String_Init(128, HEAP_ID_FIELD2);
+    msgCtx->state = 0;
+    msgCtx->string = String_Init(128, HEAP_ID_FIELD2);
 
-    BagContext_FormatUsageMessage(usageContext->fieldSystem->saveData, v0->unk_10, Bag_GetRegisteredItem(SaveData_GetBag(usageContext->fieldSystem->saveData)), HEAP_ID_FIELD2);
-    FieldSystem_CreateTask(usageContext->fieldSystem, PrintRegisteredKeyItemUseMessage, v0);
+    BagContext_FormatUsageMessage(usageContext->fieldSystem->saveData, msgCtx->string, Bag_GetRegisteredItem(SaveData_GetBag(usageContext->fieldSystem->saveData)), HEAP_ID_FIELD2);
+    FieldSystem_CreateTask(usageContext->fieldSystem, PrintRegisteredKeyItemUseMessage, msgCtx);
 
     return FALSE;
 }
 
+// Field task that prints a registered item message and waits for a key press
+// before tearing the window down. Shared by the usage and error messages.
 static BOOL PrintRegisteredKeyItemUseMessage(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
-    UnkStruct_02068EFC *v1 = FieldTask_GetEnv(task);
+    ItemUseMessageContext *msgCtx = FieldTask_GetEnv(task);
 
-    switch (v1->unk_16) {
+    switch (msgCtx->state) {
     case 0:
         MapObjectMan_PauseAllMovement(fieldSystem->mapObjMan);
-        FieldMessage_AddWindow(fieldSystem->bgConfig, &v1->unk_00, 3);
+        FieldMessage_AddWindow(fieldSystem->bgConfig, &msgCtx->window, 3);
 
         const Options *options = SaveData_GetOptions(fieldSystem->saveData);
 
-        FieldMessage_DrawWindow(&v1->unk_00, options);
-        v1->unk_14 = FieldMessage_Print(&v1->unk_00, v1->unk_10, options, 1);
-        v1->unk_16++;
+        FieldMessage_DrawWindow(&msgCtx->window, options);
+        msgCtx->printState = FieldMessage_Print(&msgCtx->window, msgCtx->string, options, 1);
+        msgCtx->state++;
         break;
     case 1:
-        if (FieldMessage_FinishedPrinting(v1->unk_14) == TRUE) {
+        if (FieldMessage_FinishedPrinting(msgCtx->printState) == TRUE) {
             if (gSystem.pressedKeys & (PAD_KEY | PAD_BUTTON_A | PAD_BUTTON_B)) {
-                Window_EraseMessageBox(&v1->unk_00, 0);
-                v1->unk_16++;
+                Window_EraseMessageBox(&msgCtx->window, 0);
+                msgCtx->state++;
             }
         }
         break;
     case 2:
         MapObjectMan_UnpauseAllMovement(fieldSystem->mapObjMan);
-        Window_Remove(&v1->unk_00);
-        String_Free(v1->unk_10);
-        Heap_Free(v1);
+        Window_Remove(&msgCtx->window);
+        String_Free(msgCtx->string);
+        Heap_Free(msgCtx);
 
         return TRUE;
     }
@@ -962,12 +1008,12 @@ static BOOL WarpWithEscapeRope(FieldTask *task)
 
 static void UseAzureFluteFromMenu(ItemMenuUseContext *usageContext, const ItemUseContext *additionalContext)
 {
-    sub_02068540(usageContext, additionalContext, SCRIPT_ID(COMMON_SCRIPTS, 39));
+    RunItemScriptFromMenu(usageContext, additionalContext, SCRIPT_ID(COMMON_SCRIPTS, 39));
 }
 
 static BOOL UseAzureFluteInField(ItemFieldUseContext *usageContext)
 {
-    sub_02068584(usageContext, SCRIPT_ID(COMMON_SCRIPTS, 39));
+    RunItemScriptInField(usageContext, SCRIPT_ID(COMMON_SCRIPTS, 39));
     return FALSE;
 }
 
@@ -1006,14 +1052,14 @@ static void UseVsRecorderFromMenu(ItemMenuUseContext *usageContext, const ItemUs
 
 static BOOL UseVsRecorderInField(ItemFieldUseContext *usageContext)
 {
-    RegisteredItem_CreateGoToAppTask(usageContext, sub_020691CC);
+    RegisteredItem_CreateGoToAppTask(usageContext, OpenVsRecorderApp);
     return TRUE;
 }
 
-static void *sub_020691CC(void *some_param)
+static void *OpenVsRecorderApp(void *fieldSystem)
 {
-    FieldSystem_SaveStateIfCommunicationOff(some_param);
-    FieldSystem_OpenVsRecorder(some_param, ((FieldSystem *)some_param)->saveData);
+    FieldSystem_SaveStateIfCommunicationOff(fieldSystem);
+    FieldSystem_OpenVsRecorder(fieldSystem, ((FieldSystem *)fieldSystem)->saveData);
 
     return NULL;
 }
@@ -1038,7 +1084,11 @@ static void *OpenPartyMenuForGracidea(void *fieldSystem)
     return FieldSystem_OpenPartyMenu_SelectForItemUsage(fieldSystem, HEAP_ID_FIELD2, ITEM_GRACIDEA);
 }
 
-BOOL sub_02069238(FieldSystem *fieldSystem)
+// Uses the item registered to the Select button directly in the field. Returns
+// TRUE if the press was handled (even if the item could not be used), FALSE if
+// there is nothing to do. The item's can-use check runs first; on failure an
+// error message is shown instead of using the item.
+BOOL ItemUseFunction_UseRegisteredItem(FieldSystem *fieldSystem)
 {
     ItemFieldUseContext *usageContext;
     ItemFieldUseFunc useInField;
@@ -1068,16 +1118,16 @@ BOOL sub_02069238(FieldSystem *fieldSystem)
     memset(usageContext, 0, sizeof(ItemFieldUseContext));
 
     usageContext->fieldSystem = fieldSystem;
-    usageContext->unk_28 = item;
+    usageContext->item = item;
 
-    ItemUseContext_Init(fieldSystem, &usageContext->unk_04);
+    ItemUseContext_Init(fieldSystem, &usageContext->useContext);
 
     usageResult = 0;
 
     if (checkUse == NULL) {
         usageResult = useInField(usageContext);
     } else {
-        u32 usageCheckResult = checkUse(&usageContext->unk_04);
+        u32 usageCheckResult = checkUse(&usageContext->useContext);
 
         if (usageCheckResult == 0) {
             usageResult = useInField(usageContext);
@@ -1086,6 +1136,8 @@ BOOL sub_02069238(FieldSystem *fieldSystem)
         }
     }
 
+    // The use function takes ownership of the context when it starts a task;
+    // otherwise nothing was started and the context can be freed here.
     if (usageResult == 0) {
         Heap_Free(usageContext);
     }
@@ -1093,32 +1145,37 @@ BOOL sub_02069238(FieldSystem *fieldSystem)
     return TRUE;
 }
 
+// Shows the message explaining why the registered item cannot be used.
 static void PrintRegisteredKeyItemError(ItemFieldUseContext *usageContext, u32 error)
 {
-    UnkStruct_02068EFC *v0 = Heap_Alloc(HEAP_ID_FIELD2, sizeof(UnkStruct_02068EFC));
+    ItemUseMessageContext *msgCtx = Heap_Alloc(HEAP_ID_FIELD2, sizeof(ItemUseMessageContext));
 
-    v0->unk_16 = 0;
-    v0->unk_10 = String_Init(128, HEAP_ID_FIELD2);
+    msgCtx->state = 0;
+    msgCtx->string = String_Init(128, HEAP_ID_FIELD2);
 
-    BagContext_FormatErrorMessage(SaveData_GetTrainerInfo(usageContext->fieldSystem->saveData), v0->unk_10, usageContext->unk_28, error, HEAP_ID_FIELD2);
-    FieldSystem_CreateTask(usageContext->fieldSystem, PrintRegisteredKeyItemUseMessage, v0);
+    BagContext_FormatErrorMessage(SaveData_GetTrainerInfo(usageContext->fieldSystem->saveData), msgCtx->string, usageContext->item, error, HEAP_ID_FIELD2);
+    FieldSystem_CreateTask(usageContext->fieldSystem, PrintRegisteredKeyItemUseMessage, msgCtx);
 }
 
+// Field task that fades out, launches the registered item's field application,
+// waits for it to exit, then fades the field map back in. The app's work object
+// is freed once the app is done; the poffin case owns its work object and frees
+// it through PoffinCaseAppData_Free instead.
 static BOOL RegisteredItem_GoToApp(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
-    ItemFieldUseContext *v1 = FieldTask_GetEnv(task);
+    ItemFieldUseContext *usageContext = FieldTask_GetEnv(task);
 
-    switch (v1->unk_2A) {
+    switch (usageContext->state) {
     case 0:
         MapObjectMan_PauseAllMovement(fieldSystem->mapObjMan);
         FieldMap_FadeScreen(FADE_TYPE_BRIGHTNESS_OUT);
-        v1->unk_2A = 1;
+        usageContext->state = 1;
         break;
     case 1:
         if (IsScreenFadeDone()) {
-            v1->unk_24 = v1->unk_20(fieldSystem);
-            v1->unk_2A = 2;
+            usageContext->appWork = usageContext->appCtor(fieldSystem);
+            usageContext->state = 2;
         }
         break;
     case 2:
@@ -1126,28 +1183,28 @@ static BOOL RegisteredItem_GoToApp(FieldTask *task)
             break;
         }
 
-        if (v1->unk_24 != NULL) {
-            if (v1->unk_20 == sub_02068B9C) {
-                PoffinCaseAppData_Free(v1->unk_24);
+        if (usageContext->appWork != NULL) {
+            if (usageContext->appCtor == ItemUse_OpenPoffinCaseApp) {
+                PoffinCaseAppData_Free(usageContext->appWork);
             } else {
-                Heap_Free(v1->unk_24);
+                Heap_Free(usageContext->appWork);
             }
         }
 
         FieldSystem_StartFieldMap(fieldSystem);
-        v1->unk_2A = 3;
+        usageContext->state = 3;
         break;
     case 3:
         if (FieldSystem_IsRunningFieldMap(fieldSystem)) {
             MapObjectMan_PauseAllMovement(fieldSystem->mapObjMan);
             FieldMap_FadeScreen(FADE_TYPE_BRIGHTNESS_IN);
-            v1->unk_2A = 4;
+            usageContext->state = 4;
         }
         break;
     case 4:
         if (IsScreenFadeDone()) {
             MapObjectMan_UnpauseAllMovement(fieldSystem->mapObjMan);
-            Heap_Free(v1);
+            Heap_Free(usageContext);
             return TRUE;
         }
         break;
@@ -1156,8 +1213,9 @@ static BOOL RegisteredItem_GoToApp(FieldTask *task)
     return FALSE;
 }
 
-static void RegisteredItem_CreateGoToAppTask(ItemFieldUseContext *usageContext, void *param1)
+// Records the app constructor and starts the task that will run it.
+static void RegisteredItem_CreateGoToAppTask(ItemFieldUseContext *usageContext, void *appCtor)
 {
-    usageContext->unk_20 = param1;
+    usageContext->appCtor = appCtor;
     FieldSystem_CreateTask(usageContext->fieldSystem, RegisteredItem_GoToApp, usageContext);
 }

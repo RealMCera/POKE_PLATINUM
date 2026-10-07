@@ -165,7 +165,7 @@ int ov109_021D3D50(ApplicationManager *appMan, int *param1)
 {
     UnkStruct_ov109_021D5140 *v0;
     NARC *v1;
-    UnkStruct_0209C194 *v2 = ApplicationManager_Args(appMan);
+    UnionRoomSpinTradeSession *v2 = ApplicationManager_Args(appMan);
 
     switch (*param1) {
     case 0:
@@ -185,9 +185,9 @@ int ov109_021D3D50(ApplicationManager *appMan, int *param1)
         v0 = ApplicationManager_NewData(appMan, sizeof(UnkStruct_ov109_021D5140), HEAP_ID_95);
         memset(v0, 0, sizeof(UnkStruct_ov109_021D5140));
 
-        v2->unk_3C = v0;
+        v2->groupAppData = v0;
         v0->unk_0C = v2;
-        v0->unk_10 = v2->unk_34;
+        v0->unk_10 = v2->comm;
         v0->unk_14 = BgConfig_New(HEAP_ID_95);
         v0->unk_34 = StringTemplate_Default(HEAP_ID_95);
         v0->unk_38 = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_UNK_0377, HEAP_ID_95);
@@ -204,7 +204,7 @@ int ov109_021D3D50(ApplicationManager *appMan, int *param1)
         ov109_021D4518(v0);
         ov109_021D45F4(v0);
         Sound_SetSceneAndPlayBGM(SOUND_SCENE_SUB_52, SEQ_NONE, 0);
-        UnionRoomComm_Init(v2->unk_34);
+        UnionRoomComm_Init(v2->comm);
         CommManager_SetState_SpinTrade();
         CommManager_SetMaxNumConnections(3);
 
@@ -314,9 +314,9 @@ int ov109_021D3F9C(ApplicationManager *appMan, int *param1)
 
     SetVBlankCallback(NULL, NULL);
 
-    v1->unk_0C->unk_10 = v1->unk_08;
-    v1->unk_0C->unk_08 = ov109_021D548C();
-    v1->unk_0C->unk_0C = ov109_021D54A8();
+    v1->unk_0C->groupConfirmed = v1->unk_08;
+    v1->unk_0C->connectedCount = ov109_021D548C();
+    v1->unk_0C->connectedBitmap = ov109_021D54A8();
 
     ov109_021D4294(v1);
     ApplicationManager_FreeData(appMan);
@@ -567,7 +567,7 @@ static void ov109_021D4300(UnkStruct_ov109_021D5140 *param0, NARC *param1)
     Graphics_LoadTilemapToBgLayer(NARC_INDEX_GRAPHIC__POKETCH, 11, v0, 6, 0, 0, 1, HEAP_ID_95);
     Graphics_LoadTilesToBgLayerFromOpenNARC(param1, 2, v0, 1, 0, 32 * 8 * 0x20, 1, HEAP_ID_95);
     Graphics_LoadTilemapToBgLayerFromOpenNARC(param1, 3, v0, 1, 0, 32 * 24 * 2, 1, HEAP_ID_95);
-    LoadMessageBoxGraphics(v0, BG_LAYER_MAIN_0, 1, 10, Options_Frame(param0->unk_0C->unk_14.options), HEAP_ID_95);
+    LoadMessageBoxGraphics(v0, BG_LAYER_MAIN_0, 1, 10, Options_Frame(param0->unk_0C->context.options), HEAP_ID_95);
     LoadStandardWindowGraphics(v0, BG_LAYER_MAIN_0, 1 + (18 + 12), 11, 0, HEAP_ID_95);
 }
 
@@ -1032,7 +1032,7 @@ static int ov109_021D4C7C(UnkStruct_ov109_021D5140 *param0, int param1)
 
 static int ov109_021D4CA8(UnkStruct_ov109_021D5140 *param0, int param1)
 {
-    ov109_021D59A8(param0->unk_0C->unk_14.saveData, param0->unk_FE4);
+    ov109_021D59A8(param0->unk_0C->context.saveData, param0->unk_FE4);
 
     param0->unk_3B8 = 27;
 
@@ -1044,11 +1044,11 @@ static int ov109_021D4CC8(UnkStruct_ov109_021D5140 *param0, int param1)
     gSystem.inhibitReset = 1;
 
     void *journalEntryOnlineEvent = JournalEntry_CreateEventMixedRecords(95);
-    JournalEntry_SaveData(param0->unk_0C->unk_14.journalEntry, journalEntryOnlineEvent, JOURNAL_ONLINE_EVENT);
+    JournalEntry_SaveData(param0->unk_0C->context.journalEntry, journalEntryOnlineEvent, JOURNAL_ONLINE_EVENT);
 
     journalEntryOnlineEvent = JournalEntry_CreateEventMisc(95, ONLINE_EVENT_SPIN_TRADE);
-    JournalEntry_SaveData(param0->unk_0C->unk_14.journalEntry, journalEntryOnlineEvent, JOURNAL_ONLINE_EVENT);
-    GameRecords_IncrementTrainerScore(param0->unk_0C->unk_14.records, TRAINER_SCORE_EVENT_UNK_20);
+    JournalEntry_SaveData(param0->unk_0C->context.journalEntry, journalEntryOnlineEvent, JOURNAL_ONLINE_EVENT);
+    GameRecords_IncrementTrainerScore(param0->unk_0C->context.records, TRAINER_SCORE_EVENT_UNK_20);
     sub_02038ED4(&param0->unk_414);
     param0->unk_3B8 = 28;
 
@@ -1061,7 +1061,7 @@ static int ov109_021D4D20(UnkStruct_ov109_021D5140 *param0, int param1)
         (void)0;
     }
 
-    if (sub_02038EDC(param0->unk_0C->unk_14.saveData, 2, &param0->unk_414)) {
+    if (sub_02038EDC(param0->unk_0C->context.saveData, 2, &param0->unk_414)) {
         Sound_StopEffect(1624, 8);
         ov109_021D55A8(param0, 13, 0);
         ov109_021D48EC(param0, 29);

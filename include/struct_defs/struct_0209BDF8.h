@@ -8,7 +8,7 @@
 // via CommCmd_Init. It tracks the local player's readiness, the set of players
 // taking part in a trade, and per-player party data buffers.
 typedef struct UnionRoomComm {
-    UnkStruct_0209C194 *app; // Owning Union Room application.
+    UnionRoomSpinTradeSession *app; // Owning Union Room application.
     u8 sendBuffer[24]; // Staging area for an outgoing command packet.
     int sendDisabled; // When 1, UnionRoomComm_Send refuses to send. Never set.
     int receivedCount; // Incremented by the (never-sent) count command.

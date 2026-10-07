@@ -74,7 +74,7 @@
 #include "unk_020363E8.h"
 #include "unk_02038ED4.h"
 #include "unk_02038F8C.h"
-#include "unk_0203909C.h"
+#include "wifi_friend_registration.h"
 #include "unk_02092494.h"
 #include "vars_flags.h"
 #include "vram_transfer.h"
@@ -1807,7 +1807,7 @@ static int TradeRoom_HandleDeleteFriendConfirm(TradeRoom *tradeRoom)
     case MENU_YES:
         BattleFrontierSave_ClearFriendStatsAndShift(SaveData_GetBattleFrontier(tradeRoom->saveData), tradeRoom->friendToDeleteSlot);
         WiFiList_DeleteFriend(tradeRoom->wifiList, tradeRoom->friendToDeleteSlot);
-        sub_02039298(tradeRoom->saveData, tradeRoom->registrationTargetNetId, 32 - 1, HEAP_ID_TRADE_ROOM, 0);
+        WiFiFriend_SavePlayerToSlot(tradeRoom->saveData, tradeRoom->registrationTargetNetId, 32 - 1, HEAP_ID_TRADE_ROOM, 0);
         tradeRoom->subStepCallback = TradeRoom_ProcessPendingFriendRegistration;
         break;
     case MENU_CANCEL: {
@@ -1915,7 +1915,7 @@ static int TradeRoom_HandleRegisterFriendConfirm(TradeRoom *tradeRoom)
 
         for (i = 0; i < MAX_FRIENDS; i++) {
             if (!WiFiList_IsValidFriendData(tradeRoom->wifiList, i)) {
-                sub_02039298(tradeRoom->saveData, tradeRoom->registrationTargetNetId, i, HEAP_ID_TRADE_ROOM, 0);
+                WiFiFriend_SavePlayerToSlot(tradeRoom->saveData, tradeRoom->registrationTargetNetId, i, HEAP_ID_TRADE_ROOM, 0);
                 break;
             }
         }
@@ -1979,7 +1979,7 @@ static int TradeRoom_ProcessPendingFriendRegistration(TradeRoom *tradeRoom)
 
     for (int i = 0; i < MAX_FRIENDS; i++) {
         if (!WiFiList_IsValidFriendData(wifiList, i)) {
-            sub_02039298(tradeRoom->saveData, tradeRoom->registrationTargetNetId, i, HEAP_ID_TRADE_ROOM, 0);
+            WiFiFriend_SavePlayerToSlot(tradeRoom->saveData, tradeRoom->registrationTargetNetId, i, HEAP_ID_TRADE_ROOM, 0);
             break;
         }
     }
@@ -1990,7 +1990,7 @@ static int TradeRoom_ProcessPendingFriendRegistration(TradeRoom *tradeRoom)
 
 static int TradeRoom_CheckForFriendRegistration(TradeRoom *tradeRoom)
 {
-    if (0 == sub_020391DC(tradeRoom->saveData, tradeRoom->pendingRegistrationFlags, HEAP_ID_TRADE_ROOM)) {
+    if (0 == WiFiFriend_UpdateConnectedPlayers(tradeRoom->saveData, tradeRoom->pendingRegistrationFlags, HEAP_ID_TRADE_ROOM)) {
         CommTiming_StartSync(19);
         TradeRoom_PrintMessage(&tradeRoom->windows[23], TradeRoom_Text_WaitingForFriend, FONT_MESSAGE, tradeRoom->msgLoader, tradeRoom->strTemplate);
         tradeRoom->subStepCallback = TradeRoom_WaitForCancelSync;

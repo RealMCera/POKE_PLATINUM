@@ -18,7 +18,7 @@
 #include "trainer_info.h"
 #include "underground.h"
 #include "comm_server_client.h"
-#include "unk_0203909C.h"
+#include "wifi_friend_registration.h"
 #include "wifi_history_save_data.h"
 #include "wifi_list.h"
 
@@ -358,7 +358,7 @@ DWCFriendData *CommInfo_DWCFriendData(int netId)
 
 int sub_02032F40(int param0)
 {
-    return sub_02039390(sCommInfo->saveData, param0);
+    return WiFiFriend_FindSlotForNetId(sCommInfo->saveData, param0);
 }
 
 u16 *sub_02032F54(int netId)
@@ -462,7 +462,7 @@ void CommInfo_SavePlayerRecord(SaveData *saveData)
             continue;
         }
 
-        v2 = sub_0203909C(saveData, friendData, &v3);
+        v2 = WiFiFriend_FindSlot(saveData, friendData, &v3);
 
         switch (v2) {
         case 0:

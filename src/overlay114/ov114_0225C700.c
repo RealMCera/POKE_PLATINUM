@@ -50,7 +50,7 @@
 #include "text.h"
 #include "trainer_info.h"
 #include "unk_020363E8.h"
-#include "unk_0203909C.h"
+#include "wifi_friend_registration.h"
 #include "contest_util.h"
 #include "vram_transfer.h"
 #include "wifi_list.h"
@@ -3526,7 +3526,7 @@ static void ov114_0225F890(UnkStruct_ov114_0225E854 *param0)
     for (v1 = 0; v1 < param0->unk_0C.unk_08; v1++) {
         v2 = param0->unk_0C.unk_04[v1];
         v5 = CommInfo_DWCFriendData(v2);
-        v3 = sub_0203909C(param0->unk_0C.saveData, v5, &v4);
+        v3 = WiFiFriend_FindSlot(param0->unk_0C.saveData, v5, &v4);
 
         switch (v3) {
         case 0:
