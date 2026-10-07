@@ -337,7 +337,7 @@ Static main
 	Object main.nef.p/src_applications_mail.c.o
 	Object main.nef.p/src_applications_capsule_menu_main.c.o
 	Object main.nef.p/src_egg_hatch.c.o
-	Object main.nef.p/src_unk_020985E4.c.o
+	Object main.nef.p/src_spear_pillar_task.c.o
 	Object main.nef.p/src_pokedex_language.c.o
 	Object main.nef.p/src_pokedex_heightweight.c.o
 	Object main.nef.p/src_pokedex_data_index.c.o

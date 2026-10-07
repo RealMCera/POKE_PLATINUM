@@ -320,7 +320,7 @@ pokeplatinum_c = files(
     'applications/mail.c',
     'applications/capsule_menu/main.c',
     'egg_hatch.c',
-    'unk_020985E4.c',
+    'spear_pillar_task.c',
     'pokedex_language.c',
     'pokedex_heightweight.c',
     'pokedex_data_index.c',

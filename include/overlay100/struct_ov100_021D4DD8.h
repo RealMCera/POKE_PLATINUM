@@ -10,7 +10,7 @@ typedef struct {
     int unk_04;
     void *unk_08;
     UnkStruct_ov100_021D46C8 unk_0C;
-    UnkStruct_020985E4 *unk_D0;
+    SpearPillarTaskArgs *unk_D0;
 } UnkStruct_ov100_021D4DD8;
 
 #endif // POKEPLATINUM_STRUCT_OV100_021D4DD8_H

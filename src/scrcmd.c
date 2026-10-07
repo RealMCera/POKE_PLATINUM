@@ -213,7 +213,7 @@
 #include "map_object_movement.h"
 #include "mailbox.h"
 #include "wifi_menu.h"
-#include "unk_020985E4.h"
+#include "spear_pillar_task.h"
 #include "comm_field_cmd.h"
 #include "frontier_easy_chat.h"
 #include "easy_chat_task.h"
@@ -6945,7 +6945,7 @@ static BOOL ScrCmd_2F7(ScriptContext *ctx)
 
 static BOOL ScrCmd_2FB(ScriptContext *ctx)
 {
-    sub_020985E4(ctx->task, ctx->fieldSystem->saveData);
+    SpearPillarTask_Start(ctx->task, ctx->fieldSystem->saveData);
     return TRUE;
 }
 

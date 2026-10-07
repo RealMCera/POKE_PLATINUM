@@ -12,7 +12,7 @@
 
 #include "narc.h"
 
-int ov100_021D46C8(UnkStruct_ov100_021D46C8 *param0, UnkStruct_020985E4 *param1, int param2);
+int ov100_021D46C8(UnkStruct_ov100_021D46C8 *param0, SpearPillarTaskArgs *param1, int param2);
 void ov100_021D4788(UnkStruct_ov100_021D46C8 *param0);
 void ov100_021D47A0(UnkStruct_ov100_021D46C8 *param0);
 void ov100_021D4844(UnkStruct_ov100_021D46C8 *param0);

@@ -139,7 +139,7 @@ static void ov100_021D3084(UnkStruct_ov100_021D3084 *param0)
     Easy3DObject_SetVisible(&param0->unk_0C.unk_624[1].unk_00, 0);
     Easy3DObject_SetVisible(&param0->unk_0C.unk_16FC[1].unk_00, 0);
 
-    if (TrainerInfo_Gender(param0->unk_1D2C->unk_08) != 1) {
+    if (TrainerInfo_Gender(param0->unk_1D2C->trainerInfo) != 1) {
         ov100_021D4AC8(&param0->unk_0C.unk_13EC[0], 61, param0->unk_1D28->unk_00);
         ov100_021D4B4C(0, &param0->unk_0C.unk_13EC[0], 62, param0->unk_1D28->unk_00, &param0->unk_1D28->unk_1C);
     } else {

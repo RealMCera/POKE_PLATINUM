@@ -26,7 +26,7 @@
 #include "text.h"
 #include "trainer_info.h"
 
-int ov100_021D46C8(UnkStruct_ov100_021D46C8 *param0, UnkStruct_020985E4 *param1, int param2)
+int ov100_021D46C8(UnkStruct_ov100_021D46C8 *param0, SpearPillarTaskArgs *param1, int param2)
 {
     int v0;
     MessageLoader *v1;
@@ -38,7 +38,7 @@ int ov100_021D46C8(UnkStruct_ov100_021D46C8 *param0, UnkStruct_020985E4 *param1,
     v2 = MessageLoader_GetNewString(v1, param2);
 
     if (param2 == 22) {
-        String *v5 = TrainerInfo_NameNewString(param1->unk_08, 111);
+        String *v5 = TrainerInfo_NameNewString(param1->trainerInfo, 111);
         StringTemplate *v6 = StringTemplate_Default(HEAP_ID_111);
 
         StringTemplate_SetString(v6, 0, v5, 0, 1, GAME_LANGUAGE);
