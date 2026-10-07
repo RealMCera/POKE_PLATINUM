@@ -48,7 +48,7 @@
 #include "system_vars.h"
 #include "text.h"
 #include "tv_segment.h"
-#include "unk_02038F8C.h"
+#include "wifi_history_geonet.h"
 #include "network_error.h"
 #include "vars_flags.h"
 

@@ -73,7 +73,7 @@
 #include "trainer_info.h"
 #include "comm_tool.h"
 #include "comm_sync_save.h"
-#include "unk_02038F8C.h"
+#include "wifi_history_geonet.h"
 #include "wifi_friend_registration.h"
 #include "pokemon_info_display.h"
 #include "vars_flags.h"

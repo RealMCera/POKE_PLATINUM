@@ -83,7 +83,7 @@
 #include "battle_recording.h"
 #include "comm_server_client.h"
 #include "comm_tool.h"
-#include "unk_02038F8C.h"
+#include "wifi_history_geonet.h"
 #include "link_battle_comm.h"
 #include "app_graphics.h"
 #include "vram_transfer.h"
