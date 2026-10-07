@@ -24,7 +24,7 @@
 #include "string_gf.h"
 #include "string_template.h"
 #include "text.h"
-#include "unk_02092494.h"
+#include "pokemon_info_display.h"
 #include "contest_util.h"
 
 #include "res/text/bank/pokemon_summary_screen.h"
@@ -1096,29 +1096,29 @@ static void DrawInfoPageWindows(PokemonSummaryScreen *summaryScreen)
 
 static void PrintTrainerMemo(Window *window, Pokemon *mon, BOOL monOTMatches)
 {
-    PokemonInfoDisplayStruct *infoDisplay = sub_02092494(mon, monOTMatches, HEAP_ID_POKEMON_SUMMARY_SCREEN);
+    PokemonInfoDisplayStruct *infoDisplay = PokemonInfoDisplay_New(mon, monOTMatches, HEAP_ID_POKEMON_SUMMARY_SCREEN);
 
-    if (infoDisplay->unk_14.unk_04 != NULL) {
-        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->unk_14.unk_04, 0, (infoDisplay->unk_14.unk_00 - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
+    if (infoDisplay->natureText.text != NULL) {
+        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->natureText.text, 0, (infoDisplay->natureText.line - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
     }
 
-    if (infoDisplay->unk_1C.unk_04 != NULL) {
-        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->unk_1C.unk_04, 0, (infoDisplay->unk_1C.unk_00 - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
+    if (infoDisplay->metInfoText.text != NULL) {
+        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->metInfoText.text, 0, (infoDisplay->metInfoText.line - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
     }
 
-    if (infoDisplay->unk_24.unk_04 != NULL) {
-        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->unk_24.unk_04, 0, (infoDisplay->unk_24.unk_00 - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
+    if (infoDisplay->ivsText.text != NULL) {
+        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->ivsText.text, 0, (infoDisplay->ivsText.line - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
     }
 
-    if (infoDisplay->unk_2C.unk_04 != NULL) {
-        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->unk_2C.unk_04, 0, (infoDisplay->unk_2C.unk_00 - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
+    if (infoDisplay->flavorText.text != NULL) {
+        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->flavorText.text, 0, (infoDisplay->flavorText.line - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
     }
 
-    if (infoDisplay->unk_34.unk_04 != NULL) {
-        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->unk_34.unk_04, 0, (infoDisplay->unk_34.unk_00 - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
+    if (infoDisplay->friendshipText.text != NULL) {
+        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, infoDisplay->friendshipText.text, 0, (infoDisplay->friendshipText.line - 1) * 16, TEXT_SPEED_NO_TRANSFER, SUMMARY_TEXT_BLACK, NULL);
     }
 
-    sub_0209282C(infoDisplay);
+    PokemonInfoDisplay_Free(infoDisplay);
 }
 
 static void DrawMemoPageWindows(PokemonSummaryScreen *summaryScreen)

@@ -306,7 +306,7 @@ pokeplatinum_c = files(
     'applications/pokemon_summary_screen/3d_anim.c',
     'applications/pokemon_summary_screen/subscreen.c',
     'ribbon.c',
-    'unk_02092494.c',
+    'pokemon_info_display.c',
     'contest.c',
     'contest_util.c',
     'contest_comm.c',

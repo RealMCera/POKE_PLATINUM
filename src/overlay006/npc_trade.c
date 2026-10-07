@@ -19,7 +19,7 @@
 #include "string_gf.h"
 #include "trainer_info.h"
 #include "field_system_time.h"
-#include "unk_02092494.h"
+#include "pokemon_info_display.h"
 
 static inline String *NPCTrade_GetOTName(enum HeapID heapID, u32 npcTradeID);
 static String *NPCTrade_GetNickname(enum HeapID heapID, u32 npcTradeID);

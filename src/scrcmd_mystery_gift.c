@@ -35,7 +35,7 @@
 #include "special_met_location.h"
 #include "image_clips.h"
 #include "unk_02054884.h"
-#include "unk_02092494.h"
+#include "pokemon_info_display.h"
 #include "vars_flags.h"
 
 #include "res/text/bank/mystery_gift_deliveryman.h"

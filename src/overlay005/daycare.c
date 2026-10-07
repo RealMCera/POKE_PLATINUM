@@ -31,7 +31,7 @@
 #include "trainer_info.h"
 #include "special_met_location.h"
 #include "field_system_time.h"
-#include "unk_02092494.h"
+#include "pokemon_info_display.h"
 
 #include "res/pokemon/species_egg_moves.h"
 
