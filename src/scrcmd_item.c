@@ -11,7 +11,7 @@
 #include "field_script_context.h"
 #include "inlines.h"
 #include "item.h"
-#include "unk_0205DFC4.h"
+#include "script_helpers.h"
 
 BOOL ScrCmd_AddItem(ScriptContext *ctx)
 {

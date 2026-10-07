@@ -27,7 +27,7 @@
 #include "string_template.h"
 #include "system_vars.h"
 #include "trainer_info.h"
-#include "unk_0205DFC4.h"
+#include "script_helpers.h"
 #include "vars_flags.h"
 
 static String *GetSpeciesNameString(u16 speciesId, enum HeapID heapID);

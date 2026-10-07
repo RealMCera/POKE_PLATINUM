@@ -24,7 +24,7 @@
 #include "tv_segment.h"
 #include "special_met_location.h"
 #include "party_helpers.h"
-#include "unk_0205DFC4.h"
+#include "script_helpers.h"
 
 BOOL ScrCmd_GivePokemon(ScriptContext *ctx)
 {

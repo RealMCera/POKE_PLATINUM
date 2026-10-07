@@ -62,7 +62,7 @@
 #include "image_clips.h"
 #include "tv_broadcast.h"
 #include "party_helpers.h"
-#include "unk_0205DFC4.h"
+#include "script_helpers.h"
 #include "contest_util.h"
 #include "vars_flags.h"
 
