@@ -29,7 +29,7 @@
 #include "touch_pad.h"
 #include "g3_buffer.h"
 #include "wifi_list_util.h"
-#include "unk_02039814.h"
+#include "network_error.h"
 #include "unk_02039A64.h"
 #include "fatal_error_screen.h"
 

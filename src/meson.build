@@ -156,7 +156,7 @@ pokeplatinum_c = files(
     'wifi_list_util.c',
     'wifi_friend_registration.c',
     'network_icon.c',
-    'unk_02039814.c',
+    'network_error.c',
     'wifi_comm_cmd.c',
     'unk_02039A64.c',
     'map_matrix.c',
