@@ -216,7 +216,7 @@
 #include "unk_020985E4.h"
 #include "comm_field_cmd.h"
 #include "frontier_easy_chat.h"
-#include "unk_0209B344.h"
+#include "easy_chat_task.h"
 #include "union_room_spin_trade.h"
 #include "vars_flags.h"
 #include "wifi_list.h"
@@ -3148,7 +3148,7 @@ static BOOL ScrCmd_30E(ScriptContext *ctx)
 {
     u16 *v0 = ScriptContext_GetVarPointer(ctx);
 
-    sub_0209B344(ctx->task, v0);
+    EasyChatTask_Start(ctx->task, v0);
     return TRUE;
 }
 
