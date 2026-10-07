@@ -11,7 +11,7 @@
 
 // Movement-action engine for map objects. See src/map_object_animation.c for details.
 // The gMovementActionFuncs_* tables are the per-step callbacks for each
-// MovementAction and are indexed through gMovementActionFuncs (unk_020EDBAC.c).
+// MovementAction and are indexed through gMovementActionFuncs (movement_action_data.c).
 
 BOOL LocalMapObj_IsAnimationSet(const MapObject *mapObj);
 void LocalMapObj_SetAnimationCode(MapObject *mapObj, enum MovementAction movementAction);

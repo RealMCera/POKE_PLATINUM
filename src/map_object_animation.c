@@ -22,7 +22,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "map_object_movement.h"
-#include "unk_020EDBAC.h"
+#include "movement_action_data.h"
 
 #include "res/sound/pl_sound_data.naix"
 
@@ -33,7 +33,7 @@
 // current step and advances until the action reports that it has ended.
 //
 // The gMovementActionFuncs_* tables are indexed by the action's movement step
-// and are looked up through gMovementActionFuncs in unk_020EDBAC.c. Actions
+// and are looked up through gMovementActionFuncs in movement_action_data.c. Actions
 // that move the object store their per-instance state in the map object's
 // movement-data scratch buffer via MapObject_InitMovementData.
 //

@@ -12,7 +12,22 @@
 #include "map_object_animation.h"
 #include "map_object_movement.h"
 
-static const UnkStruct_020EDF0C Unk_020EDF0C = {
+// Movement-action and movement-type dispatch data.
+//
+// gMovementActionFuncs maps each MOVEMENT_ACTION_* to the per-step callback
+// that implements it. gMovementActionCodes groups the movement actions that
+// have four facing variants (north/south/west/east) so that
+// MovementAction_TurnActionTowardsDir and MovementAction_GetDirFromAction can
+// translate between a direction and the matching action.
+//
+// gMovementTypeCallbacks maps each MOVEMENT_TYPE_* to a MovementTypeCallbacks
+// set. MapObject_LoadMovementCallbacks installs the init/update/free callbacks
+// on the map object, and MapObject_CallMovementLoad invokes the load callback.
+// The static tables below are the individual callback sets; most movement
+// types share the same init/update/free functions and differ only in the
+// direction set they were configured with.
+
+static const MovementTypeCallbacks sMovementTypeCallbacks_None = {
     0x0,
     MapObjectMovement_NoOp1,
     MapObjectMovement_NoOp2,
@@ -20,7 +35,7 @@ static const UnkStruct_020EDF0C Unk_020EDF0C = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDE58 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_Player = {
     0x1,
     MapObjectMovement_NoOp1,
     MapObjectMovement_NoOp2,
@@ -28,7 +43,7 @@ static const UnkStruct_020EDF0C Unk_020EDE58 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE308 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookAround = {
     0x2,
     MapObjectMovement_LookAround_Init,
     MapObjectMovement_LookAround_Update,
@@ -36,7 +51,7 @@ static const UnkStruct_020EDF0C Unk_020EE308 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE2F4 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WanderAround = {
     0x3,
     MapObjectMovement_WanderAround_Init,
     MapObjectMovement_Wander_Update,
@@ -44,7 +59,7 @@ static const UnkStruct_020EDF0C Unk_020EE2F4 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE2E0 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WanderNorthAndSouth = {
     0x3,
     MapObjectMovement_WanderNorthAndSouth_Init,
     MapObjectMovement_Wander_Update,
@@ -52,7 +67,7 @@ static const UnkStruct_020EDF0C Unk_020EE2E0 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDEE4 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WanderWestAndEast = {
     0x3,
     MapObjectMovement_WanderWestAndEast_Init,
     MapObjectMovement_Wander_Update,
@@ -60,7 +75,7 @@ static const UnkStruct_020EDF0C Unk_020EDEE4 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE2B8 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WanderWestAndEastAlt = {
     0x3,
     MapObjectMovement_WanderWestAndEastAlt_Init,
     MapObjectMovement_Wander_Update,
@@ -68,7 +83,7 @@ static const UnkStruct_020EDF0C Unk_020EE2B8 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDE94 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookNorthAndWest = {
     0x3,
     MapObjectMovement_LookNorthAndWest_Init,
     MapObjectMovement_LookAround_Update,
@@ -76,7 +91,7 @@ static const UnkStruct_020EDF0C Unk_020EDE94 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDEBC = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookNorthAndEast = {
     0x3,
     MapObjectMovement_LookNorthAndEast_Init,
     MapObjectMovement_LookAround_Update,
@@ -84,7 +99,7 @@ static const UnkStruct_020EDF0C Unk_020EDEBC = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDED0 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookSouthAndWest = {
     0x3,
     MapObjectMovement_LookSouthAndWest_Init,
     MapObjectMovement_LookAround_Update,
@@ -92,7 +107,7 @@ static const UnkStruct_020EDF0C Unk_020EDED0 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE268 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookSouthAndEast = {
     0x3,
     MapObjectMovement_LookSouthAndEast_Init,
     MapObjectMovement_LookAround_Update,
@@ -100,7 +115,7 @@ static const UnkStruct_020EDF0C Unk_020EE268 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE254 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookNorthSouthAndWest = {
     0x3,
     MapObjectMovement_LookNorthSouthAndWest_Init,
     MapObjectMovement_LookAround_Update,
@@ -108,7 +123,7 @@ static const UnkStruct_020EDF0C Unk_020EE254 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE240 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookNorthSouthAndEast = {
     0x3,
     MapObjectMovement_LookNorthSouthAndEast_Init,
     MapObjectMovement_LookAround_Update,
@@ -116,7 +131,7 @@ static const UnkStruct_020EDF0C Unk_020EE240 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDF70 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookNorthWestAndEast = {
     0x3,
     MapObjectMovement_LookNorthWestAndEast_Init,
     MapObjectMovement_LookAround_Update,
@@ -124,7 +139,7 @@ static const UnkStruct_020EDF0C Unk_020EDF70 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE218 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookSouthWestAndEast = {
     0x3,
     MapObjectMovement_LookSouthWestAndEast_Init,
     MapObjectMovement_LookAround_Update,
@@ -132,7 +147,7 @@ static const UnkStruct_020EDF0C Unk_020EE218 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE204 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookNorthAndSouth = {
     0x3,
     MapObjectMovement_LookNorthAndSouth_Init,
     MapObjectMovement_LookAround_Update,
@@ -140,7 +155,7 @@ static const UnkStruct_020EDF0C Unk_020EE204 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDFC0 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookWestAndEast = {
     0x3,
     MapObjectMovement_LookWestAndEast_Init,
     MapObjectMovement_LookAround_Update,
@@ -148,7 +163,7 @@ static const UnkStruct_020EDF0C Unk_020EDFC0 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDFD4 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookNorth = {
     0x3,
     MapObjectMovement_LookNorth_Init,
     MapObjectMovement_LookDirection_Update,
@@ -156,7 +171,7 @@ static const UnkStruct_020EDF0C Unk_020EDFD4 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE1C8 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookSouth = {
     0x3,
     MapObjectMovement_LookSouth_Init,
     MapObjectMovement_LookDirection_Update,
@@ -164,7 +179,7 @@ static const UnkStruct_020EDF0C Unk_020EE1C8 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE1B4 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookWest = {
     0x3,
     MapObjectMovement_LookWest_Init,
     MapObjectMovement_LookDirection_Update,
@@ -172,7 +187,7 @@ static const UnkStruct_020EDF0C Unk_020EE1B4 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE1A0 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_LookEast = {
     0x3,
     MapObjectMovement_LookEast_Init,
     MapObjectMovement_LookDirection_Update,
@@ -180,7 +195,7 @@ static const UnkStruct_020EDF0C Unk_020EE1A0 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE024 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_RotateCounterclockwise = {
     0x3,
     MapObjectMovement_RotateCounterclockwise_Init,
     MapObjectMovement_Rotate_Update,
@@ -188,7 +203,7 @@ static const UnkStruct_020EDF0C Unk_020EE024 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE178 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_RotateClockwise = {
     0x3,
     MapObjectMovement_RotateClockwise_Init,
     MapObjectMovement_Rotate_Update,
@@ -196,7 +211,7 @@ static const UnkStruct_020EDF0C Unk_020EE178 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE164 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_Spin = {
     0x3,
     MapObjectMovement_Spin_Init,
     MapObjectMovement_Spin_Update,
@@ -204,7 +219,7 @@ static const UnkStruct_020EDF0C Unk_020EE164 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE060 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkBackAndForth = {
     0x3,
     MapObjectMovement_WalkBackAndForth_Init,
     MapObjectMovement_WalkBackAndForth_Update,
@@ -212,7 +227,7 @@ static const UnkStruct_020EDF0C Unk_020EE060 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE074 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkNorthEastWestSouth = {
     0x3,
     MapObjectMovement_WalkNorthEastWestSouth_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -220,7 +235,7 @@ static const UnkStruct_020EDF0C Unk_020EE074 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE128 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkEastWestSouthNorth = {
     0x3,
     MapObjectMovement_WalkEastWestSouthNorth_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -228,7 +243,7 @@ static const UnkStruct_020EDF0C Unk_020EE128 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE114 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkSouthNorthEastWest = {
     0x3,
     MapObjectMovement_WalkSouthNorthEastWest_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -236,7 +251,7 @@ static const UnkStruct_020EDF0C Unk_020EE114 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE0B0 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWestSouthNorthEast = {
     0x3,
     MapObjectMovement_WalkWestSouthNorthEast_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -244,7 +259,7 @@ static const UnkStruct_020EDF0C Unk_020EE0B0 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE0C4 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWestEastSouthNorth = {
     0x3,
     MapObjectMovement_WalkWestEastSouthNorth_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -252,7 +267,7 @@ static const UnkStruct_020EDF0C Unk_020EE0C4 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE0EC = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkNorthWestEastSouth = {
     0x3,
     MapObjectMovement_WalkNorthWestEastSouth_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -260,7 +275,7 @@ static const UnkStruct_020EDF0C Unk_020EE0EC = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE100 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkSouthNorthWestEast = {
     0x3,
     MapObjectMovement_WalkSouthNorthWestEast_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -268,7 +283,7 @@ static const UnkStruct_020EDF0C Unk_020EE100 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE13C = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkEastSouthNorthWest = {
     0x3,
     MapObjectMovement_WalkEastSouthNorthWest_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -276,7 +291,7 @@ static const UnkStruct_020EDF0C Unk_020EE13C = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE150 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWestNorthSouthEast = {
     0x3,
     MapObjectMovement_WalkWestNorthSouthEast_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -284,7 +299,7 @@ static const UnkStruct_020EDF0C Unk_020EE150 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE18C = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkNorthSouthEastWest = {
     0x3,
     MapObjectMovement_WalkNorthSouthEastWest_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -292,7 +307,7 @@ static const UnkStruct_020EDF0C Unk_020EE18C = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE1DC = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkEastWestNorthSouth = {
     0x3,
     MapObjectMovement_WalkEastWestNorthSouth_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -300,7 +315,7 @@ static const UnkStruct_020EDF0C Unk_020EE1DC = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE1F0 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkSouthEastWestNorth = {
     0x3,
     MapObjectMovement_WalkSouthEastWestNorth_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -308,7 +323,7 @@ static const UnkStruct_020EDF0C Unk_020EE1F0 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE22C = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkEastNorthSouthWest = {
     0x3,
     MapObjectMovement_WalkEastNorthSouthWest_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -316,7 +331,7 @@ static const UnkStruct_020EDF0C Unk_020EE22C = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE27C = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkNorthSouthWestEast = {
     0x3,
     MapObjectMovement_WalkNorthSouthWestEast_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -324,7 +339,7 @@ static const UnkStruct_020EDF0C Unk_020EE27C = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE290 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWestEastNorthSouth = {
     0x3,
     MapObjectMovement_WalkWestEastNorthSouth_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -332,7 +347,7 @@ static const UnkStruct_020EDF0C Unk_020EE290 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE2A4 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkSouthWestEastNorth = {
     0x3,
     MapObjectMovement_WalkSouthWestEastNorth_Init,
     MapObjectMovement_WalkPattern_Update,
@@ -340,7 +355,7 @@ static const UnkStruct_020EDF0C Unk_020EE2A4 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE2CC = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkNorthWestSouthEast = {
     0x3,
     MapObjectMovement_WalkNorthWestSouthEast_Init,
     MapObjectMovement_WalkPatternPlayer_Update,
@@ -348,7 +363,7 @@ static const UnkStruct_020EDF0C Unk_020EE2CC = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDFE8 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkSouthEastNorthWest = {
     0x3,
     MapObjectMovement_WalkSouthEastNorthWest_Init,
     MapObjectMovement_WalkPatternPlayer_Update,
@@ -356,7 +371,7 @@ static const UnkStruct_020EDF0C Unk_020EDFE8 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDDCC = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWestSouthEastNorth = {
     0x3,
     MapObjectMovement_WalkWestSouthEastNorth_Init,
     MapObjectMovement_WalkPatternPlayer_Update,
@@ -364,7 +379,7 @@ static const UnkStruct_020EDF0C Unk_020EDDCC = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDDE0 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkEastNorthWestSouth = {
     0x3,
     MapObjectMovement_WalkEastNorthWestSouth_Init,
     MapObjectMovement_WalkPatternPlayer_Update,
@@ -372,7 +387,7 @@ static const UnkStruct_020EDF0C Unk_020EDDE0 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDDF4 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkNorthEastSouthWest = {
     0x3,
     MapObjectMovement_WalkNorthEastSouthWest_Init,
     MapObjectMovement_WalkPatternPlayer_Update,
@@ -380,7 +395,7 @@ static const UnkStruct_020EDF0C Unk_020EDDF4 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDF98 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkSouthWestNorthEast = {
     0x3,
     MapObjectMovement_WalkSouthWestNorthEast_Init,
     MapObjectMovement_WalkPatternPlayer_Update,
@@ -388,7 +403,7 @@ static const UnkStruct_020EDF0C Unk_020EDF98 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDE08 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWestNorthEastSouth = {
     0x3,
     MapObjectMovement_WalkWestNorthEastSouth_Init,
     MapObjectMovement_WalkPatternPlayer_Update,
@@ -396,7 +411,7 @@ static const UnkStruct_020EDF0C Unk_020EDE08 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDE1C = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkEastSouthWestNorth = {
     0x3,
     MapObjectMovement_WalkEastSouthWestNorth_Init,
     MapObjectMovement_WalkPatternPlayer_Update,
@@ -404,7 +419,7 @@ static const UnkStruct_020EDF0C Unk_020EDE1C = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDE30 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_BerrySoil = {
     0x2f,
     BerryPatchGraphics_NewData,
     BerryPatchGraphics_UpdateGrowthStage,
@@ -412,7 +427,7 @@ static const UnkStruct_020EDF0C Unk_020EDE30 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDF48 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_FollowPlayer = {
     0x3,
     MapObjectMovement_FollowPlayer_Init,
     MapObjectMovement_FollowPlayer_Update,
@@ -420,7 +435,7 @@ static const UnkStruct_020EDF0C Unk_020EDF48 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDE44 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_FollowPartnerTrainer = {
     0x3,
     MapObjectMovement_FollowPartnerTrainer_Init,
     MapObjectMovement_FollowPartnerTrainer_Update,
@@ -428,7 +443,7 @@ static const UnkStruct_020EDF0C Unk_020EDE44 = {
     MapObjectMovement_FollowPartnerTrainer_Load
 };
 
-static const UnkStruct_020EDF0C Unk_020EDF20 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_DisguiseSnow = {
     0x33,
     MapObjectMovement_DisguiseSnow_Init,
     MapObjectMovement_Disguise_Update,
@@ -436,7 +451,7 @@ static const UnkStruct_020EDF0C Unk_020EDF20 = {
     MapObjectMovement_Disguise_Load
 };
 
-static const UnkStruct_020EDF0C Unk_020EDE6C = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_DisguiseSand = {
     0x34,
     MapObjectMovement_DisguiseSand_Init,
     MapObjectMovement_Disguise_Update,
@@ -444,7 +459,7 @@ static const UnkStruct_020EDF0C Unk_020EDE6C = {
     MapObjectMovement_Disguise_Load
 };
 
-static const UnkStruct_020EDF0C Unk_020EDEF8 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_DisguiseRock = {
     0x35,
     MapObjectMovement_DisguiseRock_Init,
     MapObjectMovement_Disguise_Update,
@@ -452,7 +467,7 @@ static const UnkStruct_020EDF0C Unk_020EDEF8 = {
     MapObjectMovement_Disguise_Load
 };
 
-static const UnkStruct_020EDF0C Unk_020EDE80 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_DisguiseGrass = {
     0x36,
     MapObjectMovement_DisguiseGrass_Init,
     MapObjectMovement_Disguise_Update,
@@ -460,7 +475,7 @@ static const UnkStruct_020EDF0C Unk_020EDE80 = {
     MapObjectMovement_Disguise_Load
 };
 
-static const UnkStruct_020EDF0C Unk_020EDEA8 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWithPlayer = {
     0x37,
     MapObjectMovement_WalkWithPlayer_Init,
     MapObjectMovement_WalkWithPlayer_Update,
@@ -468,7 +483,7 @@ static const UnkStruct_020EDF0C Unk_020EDEA8 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDF34 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWithPlayer056 = {
     0x38,
     MapObjectMovement_WalkWithPlayer_Init056,
     MapObjectMovement_WalkWithPlayer_Update,
@@ -476,7 +491,7 @@ static const UnkStruct_020EDF0C Unk_020EDF34 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDF5C = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWithPlayer057 = {
     0x39,
     MapObjectMovement_WalkWithPlayer_Init057,
     MapObjectMovement_WalkWithPlayer_Update,
@@ -484,7 +499,7 @@ static const UnkStruct_020EDF0C Unk_020EDF5C = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDF84 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWithPlayer058 = {
     0x3A,
     MapObjectMovement_WalkWithPlayer_Init058,
     MapObjectMovement_WalkWithPlayer_Update,
@@ -492,7 +507,7 @@ static const UnkStruct_020EDF0C Unk_020EDF84 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDFAC = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWithPlayerTallGrass = {
     0x3B,
     MapObjectMovement_WalkWithPlayerTallGrass_Init,
     MapObjectMovement_WalkWithPlayer_Update,
@@ -500,7 +515,7 @@ static const UnkStruct_020EDF0C Unk_020EDFAC = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EDFFC = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWithPlayerTallGrass060 = {
     0x3C,
     MapObjectMovement_WalkWithPlayerTallGrass_Init060,
     MapObjectMovement_WalkWithPlayer_Update,
@@ -508,7 +523,7 @@ static const UnkStruct_020EDF0C Unk_020EDFFC = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE010 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWithPlayerTallGrass061 = {
     0x3D,
     MapObjectMovement_WalkWithPlayerTallGrass_Init061,
     MapObjectMovement_WalkWithPlayer_Update,
@@ -516,7 +531,7 @@ static const UnkStruct_020EDF0C Unk_020EE010 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE038 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WalkWithPlayerTallGrass062 = {
     0x3E,
     MapObjectMovement_WalkWithPlayerTallGrass_Init062,
     MapObjectMovement_WalkWithPlayer_Update,
@@ -524,7 +539,7 @@ static const UnkStruct_020EDF0C Unk_020EE038 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE04C = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WanderAvoidObstacles = {
     0x3f,
     MapObjectMovement_WanderAvoidObstacles_Init,
     MapObjectMovement_WanderAvoidObstacles_Update,
@@ -532,7 +547,7 @@ static const UnkStruct_020EDF0C Unk_020EE04C = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE088 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WanderAvoidObstacles064 = {
     0x40,
     MapObjectMovement_WanderAvoidObstacles_Init064,
     MapObjectMovement_WanderAvoidObstacles_Update,
@@ -540,7 +555,7 @@ static const UnkStruct_020EDF0C Unk_020EE088 = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE09C = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WanderAvoidObstacles065 = {
     0x41,
     MapObjectMovement_WanderAvoidObstacles_Init065,
     MapObjectMovement_WanderAvoidObstacles_Update,
@@ -548,7 +563,7 @@ static const UnkStruct_020EDF0C Unk_020EE09C = {
     MapObjectMovement_NoOp4
 };
 
-static const UnkStruct_020EDF0C Unk_020EE0D8 = {
+static const MovementTypeCallbacks sMovementTypeCallbacks_WanderAvoidObstacles066 = {
     0x42,
     MapObjectMovement_WanderAvoidObstacles_Init066,
     MapObjectMovement_WanderAvoidObstacles_Update,
@@ -556,77 +571,80 @@ static const UnkStruct_020EDF0C Unk_020EE0D8 = {
     MapObjectMovement_NoOp4
 };
 
-const UnkStruct_020EDF0C *const Unk_020EE3A8[] = {
-    &Unk_020EDF0C,
-    &Unk_020EDE58,
-    &Unk_020EE308,
-    &Unk_020EE2F4,
-    &Unk_020EE2E0,
-    &Unk_020EDEE4,
-    &Unk_020EDE94,
-    &Unk_020EDEBC,
-    &Unk_020EDED0,
-    &Unk_020EE268,
-    &Unk_020EE254,
-    &Unk_020EE240,
-    &Unk_020EDF70,
-    &Unk_020EE218,
-    &Unk_020EDFD4,
-    &Unk_020EE1C8,
-    &Unk_020EE1B4,
-    &Unk_020EE1A0,
-    &Unk_020EE024,
-    &Unk_020EE178,
-    &Unk_020EE060,
-    &Unk_020EE074,
-    &Unk_020EE128,
-    &Unk_020EE114,
-    &Unk_020EE0B0,
-    &Unk_020EE0C4,
-    &Unk_020EE0EC,
-    &Unk_020EE100,
-    &Unk_020EE13C,
-    &Unk_020EE150,
-    &Unk_020EE18C,
-    &Unk_020EE1DC,
-    &Unk_020EE1F0,
-    &Unk_020EE22C,
-    &Unk_020EE27C,
-    &Unk_020EE290,
-    &Unk_020EE2A4,
-    &Unk_020EE2CC,
-    &Unk_020EDFE8,
-    &Unk_020EDDCC,
-    &Unk_020EDDE0,
-    &Unk_020EDDF4,
-    &Unk_020EDF98,
-    &Unk_020EDE08,
-    &Unk_020EDE1C,
-    &Unk_020EE204,
-    &Unk_020EDFC0,
-    &Unk_020EDE30,
-    &Unk_020EDF48,
-    &Unk_020EE164,
-    &Unk_020EDE44,
-    &Unk_020EDF20,
-    &Unk_020EDE6C,
-    &Unk_020EDEF8,
-    &Unk_020EDE80,
-    &Unk_020EDEA8,
-    &Unk_020EDF34,
-    &Unk_020EDF5C,
-    &Unk_020EDF84,
-    &Unk_020EDFAC,
-    &Unk_020EDFFC,
-    &Unk_020EE010,
-    &Unk_020EE038,
-    &Unk_020EE04C,
-    &Unk_020EE088,
-    &Unk_020EE09C,
-    &Unk_020EE0D8,
-    &Unk_020EE2B8
+// Movement-type dispatch table, indexed by MOVEMENT_TYPE_*. The order must
+// match generated/movement_types.txt.
+const MovementTypeCallbacks *const gMovementTypeCallbacks[] = {
+    &sMovementTypeCallbacks_None,
+    &sMovementTypeCallbacks_Player,
+    &sMovementTypeCallbacks_LookAround,
+    &sMovementTypeCallbacks_WanderAround,
+    &sMovementTypeCallbacks_WanderNorthAndSouth,
+    &sMovementTypeCallbacks_WanderWestAndEast,
+    &sMovementTypeCallbacks_LookNorthAndWest,
+    &sMovementTypeCallbacks_LookNorthAndEast,
+    &sMovementTypeCallbacks_LookSouthAndWest,
+    &sMovementTypeCallbacks_LookSouthAndEast,
+    &sMovementTypeCallbacks_LookNorthSouthAndWest,
+    &sMovementTypeCallbacks_LookNorthSouthAndEast,
+    &sMovementTypeCallbacks_LookNorthWestAndEast,
+    &sMovementTypeCallbacks_LookSouthWestAndEast,
+    &sMovementTypeCallbacks_LookNorth,
+    &sMovementTypeCallbacks_LookSouth,
+    &sMovementTypeCallbacks_LookWest,
+    &sMovementTypeCallbacks_LookEast,
+    &sMovementTypeCallbacks_RotateCounterclockwise,
+    &sMovementTypeCallbacks_RotateClockwise,
+    &sMovementTypeCallbacks_WalkBackAndForth,
+    &sMovementTypeCallbacks_WalkNorthEastWestSouth,
+    &sMovementTypeCallbacks_WalkEastWestSouthNorth,
+    &sMovementTypeCallbacks_WalkSouthNorthEastWest,
+    &sMovementTypeCallbacks_WalkWestSouthNorthEast,
+    &sMovementTypeCallbacks_WalkWestEastSouthNorth,
+    &sMovementTypeCallbacks_WalkNorthWestEastSouth,
+    &sMovementTypeCallbacks_WalkSouthNorthWestEast,
+    &sMovementTypeCallbacks_WalkEastSouthNorthWest,
+    &sMovementTypeCallbacks_WalkWestNorthSouthEast,
+    &sMovementTypeCallbacks_WalkNorthSouthEastWest,
+    &sMovementTypeCallbacks_WalkEastWestNorthSouth,
+    &sMovementTypeCallbacks_WalkSouthEastWestNorth,
+    &sMovementTypeCallbacks_WalkEastNorthSouthWest,
+    &sMovementTypeCallbacks_WalkNorthSouthWestEast,
+    &sMovementTypeCallbacks_WalkWestEastNorthSouth,
+    &sMovementTypeCallbacks_WalkSouthWestEastNorth,
+    &sMovementTypeCallbacks_WalkNorthWestSouthEast,
+    &sMovementTypeCallbacks_WalkSouthEastNorthWest,
+    &sMovementTypeCallbacks_WalkWestSouthEastNorth,
+    &sMovementTypeCallbacks_WalkEastNorthWestSouth,
+    &sMovementTypeCallbacks_WalkNorthEastSouthWest,
+    &sMovementTypeCallbacks_WalkSouthWestNorthEast,
+    &sMovementTypeCallbacks_WalkWestNorthEastSouth,
+    &sMovementTypeCallbacks_WalkEastSouthWestNorth,
+    &sMovementTypeCallbacks_LookNorthAndSouth,
+    &sMovementTypeCallbacks_LookWestAndEast,
+    &sMovementTypeCallbacks_BerrySoil,
+    &sMovementTypeCallbacks_FollowPlayer,
+    &sMovementTypeCallbacks_Spin,
+    &sMovementTypeCallbacks_FollowPartnerTrainer,
+    &sMovementTypeCallbacks_DisguiseSnow,
+    &sMovementTypeCallbacks_DisguiseSand,
+    &sMovementTypeCallbacks_DisguiseRock,
+    &sMovementTypeCallbacks_DisguiseGrass,
+    &sMovementTypeCallbacks_WalkWithPlayer,
+    &sMovementTypeCallbacks_WalkWithPlayer056,
+    &sMovementTypeCallbacks_WalkWithPlayer057,
+    &sMovementTypeCallbacks_WalkWithPlayer058,
+    &sMovementTypeCallbacks_WalkWithPlayerTallGrass,
+    &sMovementTypeCallbacks_WalkWithPlayerTallGrass060,
+    &sMovementTypeCallbacks_WalkWithPlayerTallGrass061,
+    &sMovementTypeCallbacks_WalkWithPlayerTallGrass062,
+    &sMovementTypeCallbacks_WanderAvoidObstacles,
+    &sMovementTypeCallbacks_WanderAvoidObstacles064,
+    &sMovementTypeCallbacks_WanderAvoidObstacles065,
+    &sMovementTypeCallbacks_WanderAvoidObstacles066,
+    &sMovementTypeCallbacks_WanderWestAndEastAlt
 };
 
+// Movement-action dispatch table, indexed by enum MovementAction.
 BOOL (*const *const gMovementActionFuncs[MAX_MOVEMENT_ACTION])(MapObject *) = {
     [MOVEMENT_ACTION_FACE_NORTH] = gMovementActionFuncs_FaceNorth,
     [MOVEMENT_ACTION_FACE_SOUTH] = gMovementActionFuncs_FaceSouth,
@@ -784,6 +802,8 @@ BOOL (*const *const gMovementActionFuncs[MAX_MOVEMENT_ACTION])(MapObject *) = {
     [MOVEMENT_ACTION_153] = gMovementActionFuncs_153,
 };
 
+// Direction groups for movement actions with four facing variants. Each table
+// is indexed by DIR_* and holds the movement action for that direction.
 static const int sMovementActionCodes_Face[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_FACE_NORTH,
     [DIR_SOUTH] = MOVEMENT_ACTION_FACE_SOUTH,
@@ -945,83 +965,85 @@ static const int sMovementActionCodes_JumpDistortionWorld[] = {
     [DIR_EAST] = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_EAST,
 };
 
-static const int Unk_020EDCCC[] = {
+static const int sMovementActionCodes_105[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_105,
     [DIR_SOUTH] = MOVEMENT_ACTION_106,
     [DIR_WEST] = MOVEMENT_ACTION_107,
     [DIR_EAST] = MOVEMENT_ACTION_108,
 };
 
-static const int Unk_020EDC0C[] = {
+static const int sMovementActionCodes_109[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_109,
     [DIR_SOUTH] = MOVEMENT_ACTION_110,
     [DIR_WEST] = MOVEMENT_ACTION_111,
     [DIR_EAST] = MOVEMENT_ACTION_112,
 };
 
-static const int Unk_020EDCAC[] = {
+static const int sMovementActionCodes_113[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_113,
     [DIR_SOUTH] = MOVEMENT_ACTION_114,
     [DIR_WEST] = MOVEMENT_ACTION_115,
     [DIR_EAST] = MOVEMENT_ACTION_116,
 };
 
-static const int Unk_020EDC1C[] = {
+static const int sMovementActionCodes_145[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_145,
     [DIR_SOUTH] = MOVEMENT_ACTION_146,
     [DIR_WEST] = MOVEMENT_ACTION_147,
     [DIR_EAST] = MOVEMENT_ACTION_148,
 };
 
-static const int Unk_020EDD8C[] = {
+static const int sMovementActionCodes_149[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_149,
     [DIR_SOUTH] = MOVEMENT_ACTION_150,
     [DIR_WEST] = MOVEMENT_ACTION_151,
     [DIR_EAST] = MOVEMENT_ACTION_152,
 };
 
-static const int Unk_020EDD4C[] = {
+static const int sMovementActionCodes_121[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_121,
     [DIR_SOUTH] = MOVEMENT_ACTION_122,
     [DIR_WEST] = MOVEMENT_ACTION_123,
     [DIR_EAST] = MOVEMENT_ACTION_124,
 };
 
-static const int Unk_020EDD1C[] = {
+static const int sMovementActionCodes_125[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_125,
     [DIR_SOUTH] = MOVEMENT_ACTION_126,
     [DIR_WEST] = MOVEMENT_ACTION_127,
     [DIR_EAST] = MOVEMENT_ACTION_128,
 };
 
-static const int Unk_020EDD6C[] = {
+static const int sMovementActionCodes_129[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_129,
     [DIR_SOUTH] = MOVEMENT_ACTION_130,
     [DIR_WEST] = MOVEMENT_ACTION_131,
     [DIR_EAST] = MOVEMENT_ACTION_132,
 };
 
-static const int Unk_020EDBCC[] = {
+static const int sMovementActionCodes_133[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_133,
     [DIR_SOUTH] = MOVEMENT_ACTION_134,
     [DIR_WEST] = MOVEMENT_ACTION_135,
     [DIR_EAST] = MOVEMENT_ACTION_136,
 };
 
-static const int Unk_020EDDAC[] = {
+static const int sMovementActionCodes_137[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_137,
     [DIR_SOUTH] = MOVEMENT_ACTION_138,
     [DIR_WEST] = MOVEMENT_ACTION_139,
     [DIR_EAST] = MOVEMENT_ACTION_140,
 };
 
-static const int Unk_020EDBBC[] = {
+static const int sMovementActionCodes_141[] = {
     [DIR_NORTH] = MOVEMENT_ACTION_141,
     [DIR_SOUTH] = MOVEMENT_ACTION_142,
     [DIR_WEST] = MOVEMENT_ACTION_143,
     [DIR_EAST] = MOVEMENT_ACTION_144,
 };
 
+// Table of direction groups, terminated by NULL. MovementAction_* scan this
+// list to find the group containing a given movement action.
 const int *const gMovementActionCodes[] = {
     sMovementActionCodes_Face,
     sMovementActionCodes_WalkSlower,
@@ -1045,17 +1067,17 @@ const int *const gMovementActionCodes[] = {
     sMovementActionCodes_JumpNearSlow,
     sMovementActionCodes_JumpFarther,
     sMovementActionCodes_WalkEverSoSlightlyFast,
-    Unk_020EDCCC,
-    Unk_020EDC0C,
+    sMovementActionCodes_105,
+    sMovementActionCodes_109,
     sMovementActionCodes_JumpDistortionWorld,
-    Unk_020EDCAC,
-    Unk_020EDD4C,
-    Unk_020EDD1C,
-    Unk_020EDD6C,
-    Unk_020EDBCC,
-    Unk_020EDDAC,
-    Unk_020EDBBC,
-    Unk_020EDC1C,
-    Unk_020EDD8C,
+    sMovementActionCodes_113,
+    sMovementActionCodes_121,
+    sMovementActionCodes_125,
+    sMovementActionCodes_129,
+    sMovementActionCodes_133,
+    sMovementActionCodes_137,
+    sMovementActionCodes_141,
+    sMovementActionCodes_145,
+    sMovementActionCodes_149,
     NULL
 };

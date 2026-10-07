@@ -3,6 +3,7 @@
 
 #include "struct_decls/map_object.h"
 
-typedef void (*UnkFuncPtr_020EDF0C_1)(MapObject *);
+// Advances the state for a map-object movement type by one step.
+typedef void (*MovementTypeUpdateFunc)(MapObject *);
 
 #endif // POKEPLATINUM_FUNCPTR_020EDF0C_1_H

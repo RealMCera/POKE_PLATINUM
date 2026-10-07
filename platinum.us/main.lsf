@@ -250,7 +250,7 @@ Static main
 	Object main.nef.p/src_player_avatar.c.o
 	Object main.nef.p/src_player_move.c.o
 	Object main.nef.p/src_map_object.c.o
-	Object main.nef.p/src_unk_020EDBAC.c.o
+	Object main.nef.p/src_movement_action_data.c.o
 	Object main.nef.p/src_map_object_move.c.o
 	Object main.nef.p/src_map_object_movement_patterns.c.o
 	Object main.nef.p/src_map_object_animation.c.o

@@ -3,6 +3,7 @@
 
 #include "struct_decls/map_object.h"
 
-typedef void (*UnkFuncPtr_020EDF0C_3)(MapObject *);
+// Restores the persisted state for a map-object movement type after a load.
+typedef void (*MovementTypeLoadFunc)(MapObject *);
 
 #endif // POKEPLATINUM_FUNCPTR_020EDF0C_3_H

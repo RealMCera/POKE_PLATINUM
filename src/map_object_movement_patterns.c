@@ -18,7 +18,7 @@
 #include "map_object_animation.h"
 
 // This module implements the "standard" movement-type behaviors selected
-// through the Unk_020EE3A8 table in unk_020EDBAC.c:
+// through the gMovementTypeCallbacks table in movement_action_data.c:
 //   - MOVEMENT_TYPE_LOOK_*: turn to face a random allowed direction every few
 //     seconds, or face a running player who comes near.
 //   - MOVEMENT_TYPE_WANDER_*: take a random step in an allowed direction,

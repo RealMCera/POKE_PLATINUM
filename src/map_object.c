@@ -27,7 +27,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "map_object_animation.h"
-#include "unk_020EDBAC.h"
+#include "movement_action_data.h"
 
 // Map objects are the dynamic entities placed on the overworld: the player,
 // NPCs, and scripted props. Each object owns a SysTask that advances its
@@ -91,9 +91,9 @@ typedef struct MapObject {
     u16 prevTileBehavior;
     SysTask *task;
     const MapObjectManager *mapObjMan;
-    UnkFuncPtr_020EDF0C movementInit; // movement callbacks selected from the
-    UnkFuncPtr_020EDF0C_1 movementUpdate; // movement-type table (Unk_020EE3A8)
-    UnkFuncPtr_020EDF0C_2 movementFree;
+    MovementTypeInitFunc movementInit; // movement callbacks selected from the
+    MovementTypeUpdateFunc movementUpdate; // movement-type table (gMovementTypeCallbacks)
+    MovementTypeFreeFunc movementFree;
     MapObjectRendererInitFunc rendererInit; // renderer callbacks selected from
     MapObjectRendererDrawFunc rendererDraw; // the graphics-ID table
     MapObjectRendererFreeFunc rendererFree;
@@ -152,10 +152,10 @@ static const ObjectEvent *ObjectEvent_FindByLocalID(int param0, int param1, cons
 static int ObjectEvent_HasNoScript(const ObjectEvent *objectEvent);
 static int ObjectEvent_GetHiddenFlagNoScript(const ObjectEvent *objectEvent);
 
-static const UnkStruct_020EDF0C *MovementType_GetCallbackStruct(u32 param0);
-static UnkFuncPtr_020EDF0C MovementType_GetInitCallback(const UnkStruct_020EDF0C *param0);
-static UnkFuncPtr_020EDF0C_1 MovementType_GetUpdateCallback(const UnkStruct_020EDF0C *param0);
-static UnkFuncPtr_020EDF0C_2 MovementType_GetFreeCallback(const UnkStruct_020EDF0C *param0);
+static const MovementTypeCallbacks *MovementType_GetCallbackStruct(u32 param0);
+static MovementTypeInitFunc MovementType_GetInitCallback(const MovementTypeCallbacks *param0);
+static MovementTypeUpdateFunc MovementType_GetUpdateCallback(const MovementTypeCallbacks *param0);
+static MovementTypeFreeFunc MovementType_GetFreeCallback(const MovementTypeCallbacks *param0);
 static MapObjectRendererUnloadFunc Renderer_GetUnloadCallback(const MapObjectRendererCallbacks *param0);
 static MapObjectRendererLoadFunc Renderer_GetLoadCallback(const MapObjectRendererCallbacks *param0);
 
@@ -758,7 +758,7 @@ static void MapObject_InitStatusAndManager(MapObject *mapObj, const MapObjectMan
 
 static void MapObject_LoadMovementCallbacks(MapObject *mapObj)
 {
-    const UnkStruct_020EDF0C *v0 = MovementType_GetCallbackStruct(MapObject_GetMovementType(mapObj));
+    const MovementTypeCallbacks *v0 = MovementType_GetCallbackStruct(MapObject_GetMovementType(mapObj));
 
     MapObject_SetMovementInitCallback(mapObj, MovementType_GetInitCallback(v0));
     MapObject_SetMovementUpdateCallback(mapObj, MovementType_GetUpdateCallback(v0));
@@ -1511,7 +1511,7 @@ void *MapObject_GetUnk108(MapObject *mapObj)
     return mapObj->unk_108;
 }
 
-void MapObject_SetMovementInitCallback(MapObject *mapObj, UnkFuncPtr_020EDF0C param1)
+void MapObject_SetMovementInitCallback(MapObject *mapObj, MovementTypeInitFunc param1)
 {
     mapObj->movementInit = param1;
 }
@@ -1521,7 +1521,7 @@ void MapObject_CallMovementInit(MapObject *mapObj)
     mapObj->movementInit(mapObj);
 }
 
-void MapObject_SetMovementUpdateCallback(MapObject *mapObj, UnkFuncPtr_020EDF0C_1 param1)
+void MapObject_SetMovementUpdateCallback(MapObject *mapObj, MovementTypeUpdateFunc param1)
 {
     mapObj->movementUpdate = param1;
 }
@@ -1531,7 +1531,7 @@ void MapObject_CallMovementUpdate(MapObject *mapObj)
     mapObj->movementUpdate(mapObj);
 }
 
-void MapObject_SetMovementFreeCallback(MapObject *mapObj, UnkFuncPtr_020EDF0C_2 param1)
+void MapObject_SetMovementFreeCallback(MapObject *mapObj, MovementTypeFreeFunc param1)
 {
     mapObj->movementFree = param1;
 }
@@ -1543,8 +1543,8 @@ void MapObject_CallMovementFree(MapObject *mapObj)
 
 void MapObject_CallMovementLoad(MapObject *mapObj)
 {
-    const UnkStruct_020EDF0C *v0 = MovementType_GetCallbackStruct(MapObject_GetMovementType(mapObj));
-    v0->unk_10(mapObj);
+    const MovementTypeCallbacks *v0 = MovementType_GetCallbackStruct(MapObject_GetMovementType(mapObj));
+    v0->load(mapObj);
 }
 
 void MapObject_SetRendererInitCallback(MapObject *mapObj, MapObjectRendererInitFunc param1)
@@ -2366,25 +2366,25 @@ static int ObjectEvent_GetHiddenFlagNoScript(const ObjectEvent *objectEvent)
     return ObjectEvent_GetHiddenFlag(objectEvent);
 }
 
-static const UnkStruct_020EDF0C *MovementType_GetCallbackStruct(u32 param0)
+static const MovementTypeCallbacks *MovementType_GetCallbackStruct(u32 param0)
 {
     GF_ASSERT(param0 < 0x44);
-    return Unk_020EE3A8[param0];
+    return gMovementTypeCallbacks[param0];
 }
 
-static UnkFuncPtr_020EDF0C MovementType_GetInitCallback(const UnkStruct_020EDF0C *param0)
+static MovementTypeInitFunc MovementType_GetInitCallback(const MovementTypeCallbacks *param0)
 {
-    return param0->unk_04;
+    return param0->init;
 }
 
-static UnkFuncPtr_020EDF0C_1 MovementType_GetUpdateCallback(const UnkStruct_020EDF0C *param0)
+static MovementTypeUpdateFunc MovementType_GetUpdateCallback(const MovementTypeCallbacks *param0)
 {
-    return param0->unk_08;
+    return param0->update;
 }
 
-static UnkFuncPtr_020EDF0C_2 MovementType_GetFreeCallback(const UnkStruct_020EDF0C *param0)
+static MovementTypeFreeFunc MovementType_GetFreeCallback(const MovementTypeCallbacks *param0)
 {
-    return param0->unk_0C;
+    return param0->free;
 }
 
 static MapObjectRendererInitFunc Renderer_GetInitCallback(const MapObjectRendererCallbacks *param0)
