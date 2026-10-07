@@ -30,7 +30,7 @@
 #include "battle_tower.h"
 #include "battle_tower_partner.h"
 #include "battle_salon.h"
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 #include "wifi_battle_tower_save.h"
 
 // Battle Tower script commands. These ScrCmd_* handlers are the scripting front
@@ -291,7 +291,7 @@ BOOL ScrCmd_1E1(ScriptContext *ctx)
             return TRUE;
         }
     } else {
-        sub_0209BA80(battleTower);
+        FrontierCommCmd_Init(battleTower);
 
         packetSize = 70;
 

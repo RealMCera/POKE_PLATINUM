@@ -361,7 +361,7 @@ Static main
 	Object main.nef.p/src_unk_0209B344.c.o
 	Object main.nef.p/src_error_message_reset.c.o
 	Object main.nef.p/src_battle_frontier.c.o
-	Object main.nef.p/src_unk_0209BA80.c.o
+	Object main.nef.p/src_frontier_comm_cmd.c.o
 	Object main.nef.p/src_union_room_comm.c.o
 	Object main.nef.p/src_union_room_spin_trade.c.o
 	Object main.nef.p/src_unk_0209C370.c.o

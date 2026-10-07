@@ -20,7 +20,7 @@
 #include "ribbon_save_data.h"
 #include "save_player.h"
 #include "savedata.h"
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 
 #include "constdata/const_020F410C.h"
 

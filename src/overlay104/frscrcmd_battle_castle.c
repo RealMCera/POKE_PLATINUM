@@ -27,7 +27,7 @@
 #include "heap.h"
 #include "party.h"
 #include "pokemon.h"
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 
 #include "constdata/const_020EA358.h"
 
@@ -307,7 +307,7 @@ BOOL FrontierScrCmd_CallBattleCastleFunction(FrontierScriptContext *ctx)
         BattleCastle_PrepForNextBattle(battleCastle);
         break;
     case BC_FUNC_INIT_COMM_MANAGER:
-        sub_0209BA80(battleCastle);
+        FrontierCommCmd_Init(battleCastle);
         break;
     case BC_FUNC_UNK_30:
         if (battleCastle->unk_A1B >= 6) {

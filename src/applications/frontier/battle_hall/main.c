@@ -45,7 +45,7 @@
 #include "text.h"
 #include "trainer_info.h"
 #include "unk_020363E8.h"
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 #include "vram_transfer.h"
 
 #include "constdata/const_020F410C.h"
@@ -265,7 +265,7 @@ BOOL BattleHallApp_Init(ApplicationManager *appMan, int *state)
     LoadAssets(app);
 
     if (BattleHall_IsMultiPlayerChallenge(app->challengeType) == TRUE) {
-        sub_0209BA80(app);
+        FrontierCommCmd_Init(app);
     }
 
     *state = 0;

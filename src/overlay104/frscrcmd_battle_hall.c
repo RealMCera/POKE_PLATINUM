@@ -28,7 +28,7 @@
 #include "pokemon.h"
 #include "sound.h"
 #include "tv_segment.h"
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 
 #include "constdata/const_020EA358.h"
 
@@ -226,7 +226,7 @@ BOOL FrontierScrCmd_CallBattleHallFunction(FrontierScriptContext *ctx)
         }
         break;
     case BH_FUNC_UNK_29:
-        sub_0209BA80(battleHall);
+        FrontierCommCmd_Init(battleHall);
         break;
     case BH_FUNC_IS_MULTIPLAYER_CHALLENGE:
         *returnVar = BattleHall_IsMultiPlayerChallenge(battleHall->challengeType);

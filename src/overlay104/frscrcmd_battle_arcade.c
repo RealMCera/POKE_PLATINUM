@@ -36,7 +36,7 @@
 #include "sprite.h"
 #include "string_template.h"
 #include "trainer_info.h"
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 
 #include "constdata/const_020EA358.h"
 
@@ -355,7 +355,7 @@ BOOL FrontierScrCmd_CallBattleArcadeFunction(FrontierScriptContext *ctx)
         }
         break;
     case BA_FUNC_INIT_COMM_MANAGER:
-        sub_0209BA80(battleArcade);
+        FrontierCommCmd_Init(battleArcade);
         break;
     case BA_FUNC_IS_MULTIPLAYER_CHALLENGE:
         *destVar = BattleArcade_IsMultiPlayerChallenge(battleArcade->challengeType);

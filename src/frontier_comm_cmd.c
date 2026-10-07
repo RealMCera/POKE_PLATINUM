@@ -1,4 +1,4 @@
-#include "unk_0209BA80.h"
+#include "frontier_comm_cmd.h"
 
 #include <nitro.h>
 
@@ -21,16 +21,23 @@
 #include "pokemon.h"
 #include "comm_cmd.h"
 
-static void sub_0209BA94(int param0, int param1, void *param2, void *param3);
+static void BattleTower_HandlePartnerDataCmd(int netId, int unused, void *data, void *context);
 static void BattleTower_HandleTrainerIDListCmd(int netID, int unused, void *data, void *context);
-static void sub_0209BB68(int param0, int param1, void *param2, void *param3);
+static void BattleTower_HandlePartnerReadyCmd(int netId, int unused, void *data, void *context);
 static void WFCFacilitySelector_HandleFacilityAndStreakCmd(int netID, int unused, void *data, void *context);
 static void WFCFacilitySelector_HandleDidDropOutCmd(int netID, int unused, void *data, void *context);
 static void WFCFacilitySelector_HandleSelectedMonsCmd(int netID, int unused, void *data, void *context);
 static void WFCFacilitySelector_HandleStreakDeletionChoiceCmd(int netID, int unused, void *data, void *context);
 static void WFCFacilitySelector_HandlePlayAgainCmd(int netID, int unused, void *data, void *context);
 
-static const CommCmdTable Unk_020F8BF0[] = {
+// Application-specific comm command table registered through CommCmd_Init. The
+// dispatcher offsets into this table by COMM_CMD_BUILTIN_COUNT (22), so entry
+// [0] handles command 22 and entry [40] handles command 62. The Battle Tower
+// entries at indices 40..42 (commands 62..64) and the WFC facility selector
+// entries at indices 35..39 (commands 57..61) are implemented in this file; the
+// remaining entries are provided by the individual Battle Frontier
+// applications.
+static const CommCmdTable sFrontierCommCmdTable[] = {
     { ov104_0222EF30, CommPacketSizeOf_Variable, NULL },
     { FactoryCommunication_ReceiveTrainers, CommPacketSizeOf_Variable, NULL },
     { ov104_0222F03C, CommPacketSizeOf_Variable, NULL },
@@ -71,9 +78,9 @@ static const CommCmdTable Unk_020F8BF0[] = {
     { WFCFacilitySelector_HandleSelectedMonsCmd, CommPacketSizeOf_Variable, NULL },
     { WFCFacilitySelector_HandleStreakDeletionChoiceCmd, CommPacketSizeOf_Variable, NULL },
     { WFCFacilitySelector_HandlePlayAgainCmd, CommPacketSizeOf_Variable, NULL },
-    { sub_0209BA94, CommPacketSizeOf_Variable, NULL },
+    { BattleTower_HandlePartnerDataCmd, CommPacketSizeOf_Variable, NULL },
     { BattleTower_HandleTrainerIDListCmd, CommPacketSizeOf_Variable, NULL },
-    { sub_0209BB68, CommPacketSizeOf_Variable, NULL },
+    { BattleTower_HandlePartnerReadyCmd, CommPacketSizeOf_Variable, NULL },
     { ov104_0222F8A0, CommPacketSizeOf_Variable, NULL },
     { ArcadeCommunication_ReceiveTrainers, CommPacketSizeOf_Variable, NULL },
     { ov104_0222F9C0, CommPacketSizeOf_Variable, NULL },
@@ -85,45 +92,50 @@ static const CommCmdTable Unk_020F8BF0[] = {
     { BattleArcadeApp_HandleUnusedCmd, CommPacketSizeOf_Variable, NULL }
 };
 
-void sub_0209BA80(void *param0)
+// Registers the Battle Frontier comm command table. Each facility application
+// (and the WFC facility selector) calls this once its comm manager is ready;
+// `context` is the facility state forwarded to every command handler.
+void FrontierCommCmd_Init(void *context)
 {
-    int v0 = sizeof(Unk_020F8BF0) / sizeof(CommCmdTable);
-    CommCmd_Init(Unk_020F8BF0, v0, param0);
+    int cmdCount = sizeof(sFrontierCommCmdTable) / sizeof(CommCmdTable);
+    CommCmd_Init(sFrontierCommCmdTable, cmdCount, context);
 }
 
-static void sub_0209BA94(int param0, int param1, void *param2, void *param3)
+// Command 62: receives the link partner's Battle Salon packet, laid out as
+// [gender, species0, species1, roomNum]. Stores the partner's identity and
+// computes a bitmask of species shared with the player's own party (bit 0 for
+// party slot 0, bit 1 for party slot 1) into the command result.
+static void BattleTower_HandlePartnerDataCmd(int netId, int unused, void *data, void *context)
 {
-    u16 v0;
-    int v1;
-    BattleTower *battleTower = param3;
-    const u16 *v3 = param2;
+    u16 speciesOverlap;
+    BattleTower *battleTower = context;
+    const u16 *partnerData = data;
 
-    v0 = 0;
-    v1 = 0;
+    speciesOverlap = 0;
     battleTower->msgsReceived++;
 
-    if (CommSys_CurNetId() == param0) {
+    if (CommSys_CurNetId() == netId) {
         return;
     }
 
-    battleTower->partnerGender = (u8)v3[0];
-    battleTower->unk_16[0] = v3[1];
-    battleTower->unk_16[1] = v3[2];
-    battleTower->unk_14 = v3[3];
+    battleTower->partnerGender = (u8)partnerData[0];
+    battleTower->unk_16[0] = partnerData[1];
+    battleTower->unk_16[1] = partnerData[2];
+    battleTower->unk_14 = partnerData[3];
     battleTower->partnerID = BT_PARTNERS_COUNT + battleTower->partnerGender;
 
     if ((battleTower->unk_2E[0] == battleTower->unk_16[0]) || (battleTower->unk_2E[0] == battleTower->unk_16[1])) {
-        v0 += 1;
+        speciesOverlap += 1;
     }
 
     if ((battleTower->unk_2E[1] == battleTower->unk_16[0]) || (battleTower->unk_2E[1] == battleTower->unk_16[1])) {
-        v0 += 2;
+        speciesOverlap += 2;
     }
 
-    battleTower->unk_8D8 = v0;
-    return;
+    battleTower->unk_8D8 = speciesOverlap;
 }
 
+// Command 63: sends the generated opponent trainer IDs to the link partner.
 BOOL BattleTower_SendTrainerIDListCmd(BattleTower *battleTower)
 {
     int dataSize = BT_OPPONENTS_COUNT * 2 * sizeof(u16);
@@ -132,6 +144,9 @@ BOOL BattleTower_SendTrainerIDListCmd(BattleTower *battleTower)
     return CommSys_SendData(63, battleTower->unk_83E, dataSize) == TRUE;
 }
 
+// Command 63: receives the link partner's opponent trainer IDs. The host (net
+// ID 0) does not accept them, so only the guest copies the packet into its
+// BattleTower state.
 static void BattleTower_HandleTrainerIDListCmd(int netID, int unused, void *data, void *context)
 {
     BattleTower *battleTower = context;
@@ -150,28 +165,27 @@ static void BattleTower_HandleTrainerIDListCmd(int netID, int unused, void *data
     MI_CpuCopy8(trainerIDs, battleTower->trainerIDs, BT_OPPONENTS_COUNT * 2 * sizeof(u16));
 }
 
-static void sub_0209BB68(int param0, int param1, void *param2, void *param3)
+// Command 64: receives the link partner's ready flag. The result is 1 when
+// either the local partner data was marked ready or the received packet's first
+// word is non-zero.
+static void BattleTower_HandlePartnerReadyCmd(int netId, int unused, void *data, void *context)
 {
-    int v0;
-    BattleTower *battleTower = param3;
-    const u16 *v2 = param2;
-
-    v0 = 0;
+    BattleTower *battleTower = context;
+    const u16 *partnerData = data;
 
     battleTower->unk_8D8 = 0;
     battleTower->msgsReceived++;
 
-    if (CommSys_CurNetId() == param0) {
+    if (CommSys_CurNetId() == netId) {
         return;
     }
 
-    if (battleTower->unk_10_3 || v2[0]) {
+    if (battleTower->unk_10_3 || partnerData[0]) {
         battleTower->unk_8D8 = 1;
     }
-
-    return;
 }
 
+// Command 57: sends the selected facility and the host's latest streak index.
 BOOL WFCFacilitySelector_SendFacilityAndLatestStreak(WFCFacilitySelector *selector)
 {
     selector->commBuffer[0] = selector->selectedFacility;
@@ -182,6 +196,7 @@ BOOL WFCFacilitySelector_SendFacilityAndLatestStreak(WFCFacilitySelector *select
     return CommSys_SendData(57, selector->commBuffer, 40) == TRUE;
 }
 
+// Command 57: receives the partner's selected facility and latest streak index.
 static void WFCFacilitySelector_HandleFacilityAndStreakCmd(int netID, int unused, void *data, void *context)
 {
     WFCFacilitySelector *selector = context;
@@ -197,12 +212,14 @@ static void WFCFacilitySelector_HandleFacilityAndStreakCmd(int netID, int unused
     selector->partnersLatestStreak = payload[1];
 }
 
+// Command 58: sends whether the player dropped out of the current run.
 BOOL WFCFacilitySelector_SendDidDropOutCmd(WFCFacilitySelector *selector, u16 didDropOut)
 {
     selector->commBuffer[0] = didDropOut;
     return CommSys_SendData(58, selector->commBuffer, 40) == TRUE;
 }
 
+// Command 58: receives whether the partner dropped out of the current run.
 static void WFCFacilitySelector_HandleDidDropOutCmd(int netID, int unused, void *data, void *context)
 {
     WFCFacilitySelector *selector = context;
@@ -217,6 +234,8 @@ static void WFCFacilitySelector_HandleDidDropOutCmd(int netID, int unused, void 
     selector->partnerDroppedOut = payload[0];
 }
 
+// Command 59: sends the species and held items of the two selected party
+// members. A slot of 0xff means no selection, which is sent as zeroes.
 BOOL WFCFacilitySelector_SendSelectedMons(WFCFacilitySelector *selector, u16 selectedSlot1, u16 selectedSlot2)
 {
     Party *party = SaveData_GetParty(selector->saveData);
@@ -249,6 +268,7 @@ BOOL WFCFacilitySelector_SendSelectedMons(WFCFacilitySelector *selector, u16 sel
     return CommSys_SendData(59, selector->commBuffer, 40) == TRUE;
 }
 
+// Command 59: receives the partner's selected species and held items.
 static void WFCFacilitySelector_HandleSelectedMonsCmd(int netID, int unused, void *data, void *context)
 {
     WFCFacilitySelector *selector = context;
@@ -266,12 +286,14 @@ static void WFCFacilitySelector_HandleSelectedMonsCmd(int netID, int unused, voi
     selector->partnersSelectedItems[1] = payload[3];
 }
 
+// Command 60: sends the player's choice about deleting the current streak.
 BOOL WFCFacilitySelector_SendStreakDeletionChoice(WFCFacilitySelector *selector, u16 streakDeletionChoice)
 {
     selector->commBuffer[0] = streakDeletionChoice;
     return CommSys_SendData(60, selector->commBuffer, 40) == TRUE;
 }
 
+// Command 60: receives the partner's streak deletion choice.
 static void WFCFacilitySelector_HandleStreakDeletionChoiceCmd(int netID, int unused, void *data, void *context)
 {
     WFCFacilitySelector *selector = context;
@@ -286,12 +308,14 @@ static void WFCFacilitySelector_HandleStreakDeletionChoiceCmd(int netID, int unu
     selector->partnersStreakDeletionChoice = payload[0];
 }
 
+// Command 61: sends whether the player declined to play again.
 BOOL WFCFacilitySelector_SendPlayAgainChoice(WFCFacilitySelector *selector, u16 notPlayingAgain)
 {
     selector->commBuffer[0] = notPlayingAgain;
     return CommSys_SendData(61, selector->commBuffer, 40) == TRUE;
 }
 
+// Command 61: receives whether the partner declined to play again.
 static void WFCFacilitySelector_HandlePlayAgainCmd(int netID, int unused, void *data, void *context)
 {
     WFCFacilitySelector *selector = context;
