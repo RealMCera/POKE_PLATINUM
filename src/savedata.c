@@ -12,7 +12,7 @@
 #include "math_util.h"
 #include "savedata_misc.h"
 #include "system.h"
-#include "unk_0209A74C.h"
+#include "fatal_error_screen.h"
 #include "unk_0209AA74.h"
 
 static void SaveTable_Clear(SaveDataBody *body, const SavePageInfo *pageInfo);
@@ -1254,7 +1254,7 @@ BOOL SaveData_CardLoad(u32 address, void *data, u32 size)
 
     if (!result) {
         Heap_Free(sSaveDataPtr);
-        sub_0209A74C(HEAP_ID_SAVE);
+        FatalErrorScreen_ShowSaveDataError(HEAP_ID_SAVE);
     }
 
     return result;

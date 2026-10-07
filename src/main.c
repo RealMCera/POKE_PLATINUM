@@ -31,7 +31,7 @@
 #include "unk_02038FFC.h"
 #include "unk_02039814.h"
 #include "unk_02039A64.h"
-#include "unk_0209A74C.h"
+#include "fatal_error_screen.h"
 
 #define RESET_COMBO (PAD_BUTTON_START | PAD_BUTTON_SELECT | PAD_BUTTON_L | PAD_BUTTON_R)
 
@@ -89,7 +89,7 @@ void NitroMain(void)
     }
 
     if (SaveData_BackupExists(sApplication.args.saveData) == FALSE) {
-        sub_0209A74C(HEAP_ID_SYSTEM);
+        FatalErrorScreen_ShowSaveDataError(HEAP_ID_SYSTEM);
     } else {
         switch (OS_GetResetParameter()) {
         case RESET_CLEAN:

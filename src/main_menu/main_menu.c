@@ -46,7 +46,7 @@
 #include "system_data.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_0209A74C.h"
+#include "fatal_error_screen.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/main_menu/main_menu_graphics.naix"
@@ -1212,7 +1212,7 @@ static BOOL MainMenu_Main(ApplicationManager *appMan, int *state)
                             CommManager_EndSearchParty();
                         }
 
-                        sub_0209A8E0(HEAP_ID_MAIN_MENU);
+                        FatalErrorScreen_ShowGbaPakError(HEAP_ID_MAIN_MENU);
                     }
                 }
             } else {
