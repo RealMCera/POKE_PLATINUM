@@ -74,7 +74,7 @@
 #include "image_clips.h"
 #include "unk_020363E8.h"
 #include "contest_util.h"
-#include "unk_02095AF0.h"
+#include "contest_comm.h"
 #include "yes_no_touch_menu.h"
 
 typedef struct {
@@ -558,7 +558,7 @@ int VisualCompetition_Main(ApplicationManager *appMan, int *param1)
         break;
     case 13:
         if (v0->unk_70C == 3) {
-            sub_02095CA8(v0->unk_734, 1);
+            ContestComm_SendFinished(v0->unk_734, 1);
 
             if (v0->unk_734->isLinkContest) {
                 ov22_0225A628(&v0->unk_5C4, 26, 385, 46);

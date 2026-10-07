@@ -29,7 +29,7 @@
 #include "string_gf.h"
 #include "sys_task.h"
 #include "text.h"
-#include "unk_02095AF0.h"
+#include "contest_comm.h"
 
 static void ov22_0225A6E0(UnkStruct_ov22_022597BC *param0, BgConfig *param1);
 static void ov22_0225A718(BgConfig *param0, const Options *options);
@@ -432,7 +432,7 @@ static void ov22_0225AC8C(UnkStruct_ov22_0225AB54 *param0)
 
     ov22_0225AD5C(param0);
     v0 = param0->unk_20 / 30;
-    sub_02095C60(param0->unk_2C, v0);
+    ContestComm_SendScore(param0->unk_2C, v0);
 
     ov22_0225ACBC(param0);
     ov22_0225ACE4(param0);

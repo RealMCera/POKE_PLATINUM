@@ -58,7 +58,7 @@
 #include "image_clips.h"
 #include "unk_020363E8.h"
 #include "contest_util.h"
-#include "unk_02095AF0.h"
+#include "contest_comm.h"
 #include "vars_flags.h"
 
 FS_EXTERN_OVERLAY(overlay17);
@@ -1060,7 +1060,7 @@ BOOL Contest_SetUpLinkContest(Contest *contest)
     contest->data.leaderElectionValue = 110;
     contest->data.npcPhotoPreset = Contest_GetRandomNPCPhotoPreset(contest->data.contestRank, TRUE);
 
-    sub_02095AF0(contest);
+    ContestComm_Init(contest);
 
     contest->commTask = SysTask_Start(Contest_LinkContestCommTask, contest, 10);
 
@@ -1107,7 +1107,7 @@ static void Contest_PhotoCommTask(SysTask *sysTask, void *param1)
         }
         break;
     case 2:
-        if (sub_02095B5C(contest, contest->data.playerContestantID, contest->data.photos[contest->data.playerContestantID]) == 1) {
+        if (ContestComm_SendPhoto(contest, contest->data.playerContestantID, contest->data.photos[contest->data.playerContestantID]) == 1) {
             contest->linkState++;
         }
         break;
@@ -1129,7 +1129,7 @@ static void Contest_PhotoCommTask(SysTask *sysTask, void *param1)
         break;
     case 6:
         if (contest->data.playerContestantID == contest->data.leaderContestantID) {
-            if (sub_02095BEC(contest, contest->data.photos) == 1) {
+            if (ContestComm_SendPhotoSet(contest, contest->data.photos) == 1) {
                 contest->linkState++;
             }
         } else {

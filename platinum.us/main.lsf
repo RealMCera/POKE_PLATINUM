@@ -194,7 +194,7 @@ Static main
 	Object main.nef.p/src_scrcmd_tv_broadcast.c.o
 	Object main.nef.p/src_scrcmd_battle_tower.c.o
 	Object main.nef.p/src_battle_tower.c.o
-	Object main.nef.p/src_unk_0204AEE8.c.o
+	Object main.nef.p/src_battle_tower_partner.c.o
 	Object main.nef.p/src_scrcmd_berry.c.o
 	Object main.nef.p/src_scrcmd_mystery_gift.c.o
 	Object main.nef.p/src_scrcmd_catching_show.c.o
@@ -300,7 +300,7 @@ Static main
 	Object main.nef.p/src_bag_context.c.o
 	Object main.nef.p/src_item.c.o
 	Object main.nef.p/src_bag.c.o
-	Object main.nef.p/src_unk_0207DA28.c.o
+	Object main.nef.p/src_wifi_menu.c.o
 	Object main.nef.p/src_unk_0207DFAC.c.o
 	Object main.nef.p/src_unk_0207E060.c.o
 	Object main.nef.p/src_applications_party_menu_main.c.o
@@ -326,7 +326,7 @@ Static main
 	Object main.nef.p/src_unk_02092494.c.o
 	Object main.nef.p/src_contest.c.o
 	Object main.nef.p/src_contest_util.c.o
-	Object main.nef.p/src_unk_02095AF0.c.o
+	Object main.nef.p/src_contest_comm.c.o
 	Object main.nef.p/src_applications_trade_room_comm.c.o
 	Object main.nef.p/src_union_room_drawing_comm.c.o
 	Object main.nef.p/src_mix_records_comm.c.o
@@ -357,7 +357,7 @@ Static main
 	Object main.nef.p/src_unk_0209AA74.c.o
 	Object main.nef.p/src_shop_misc.c.o
 	Object main.nef.p/src_pokedex_memory.c.o
-	Object main.nef.p/src_unk_0209ACF4.c.o
+	Object main.nef.p/src_frontier_easy_chat.c.o
 	Object main.nef.p/src_unk_0209B344.c.o
 	Object main.nef.p/src_error_message_reset.c.o
 	Object main.nef.p/src_battle_frontier.c.o

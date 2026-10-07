@@ -129,35 +129,35 @@ typedef struct UnkStruct_ov65_02236744_t {
 
 static void ov65_02236780(void *param0);
 static BOOL ov65_02236794(const UnkStruct_ov65_02236794 *param0);
-static void ov65_022367A8(UnkStruct_ov65_022367A8 *param0, const UnkStruct_0207DE04 *param1, u32 heapID);
+static void ov65_022367A8(UnkStruct_ov65_022367A8 *param0, const WiFiCommAppArgs *param1, u32 heapID);
 static void ov65_022367F8(UnkStruct_ov65_022367A8 *param0, u32 heapID);
 static void ov65_02236820(void);
 static void ov65_02236840(UnkStruct_ov65_02236840 *param0, u32 heapID);
 static void ov65_022369F0(UnkStruct_ov65_02236840 *param0);
-static void ov65_02236A28(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, u32 heapID);
+static void ov65_02236A28(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, u32 heapID);
 static void ov65_02236B90(UnkStruct_ov65_02236840 *param0, u32 heapID);
-static void ov65_02236C10(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, u32 heapID);
+static void ov65_02236C10(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, u32 heapID);
 static void ov65_02236C5C(UnkStruct_ov65_02236840 *param0);
-static void ov65_02236C7C(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, u32 heapID);
+static void ov65_02236C7C(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, u32 heapID);
 static void ov65_02236D50(UnkStruct_ov65_02236840 *param0, u32 heapID);
 static void ov65_02236E04(UnkStruct_ov65_02236840 *param0);
-static void ov65_02236E50(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, u32 param2, u8 param3, u32 heapID);
+static void ov65_02236E50(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, u32 param2, u8 param3, u32 heapID);
 static BOOL ov65_02236EF8(UnkStruct_ov65_02236840 *param0);
 static void ov65_02236F38(UnkStruct_ov65_02236840 *param0);
-static void ov65_02236F70(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, int param2, u32 heapID);
+static void ov65_02236F70(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, int param2, u32 heapID);
 static void ov65_02237018(UnkStruct_ov65_02236840 *param0);
-static void ov65_02237034(UnkStruct_ov65_022367A8 *param0, const UnkStruct_0207DE04 *param1, u32 heapID);
-static void ov65_0223709C(UnkStruct_ov65_022367A8 *param0, UnkStruct_ov65_02236840 *param1, const UnkStruct_0207DE04 *param2, int param3, u32 heapID);
-static void ov65_022371FC(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, int param2, u32 heapID);
-static void ov65_0223726C(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, int param2, int param3, u32 heapID);
-static void ov65_02237284(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, int param2, int param3, u32 heapID);
+static void ov65_02237034(UnkStruct_ov65_022367A8 *param0, const WiFiCommAppArgs *param1, u32 heapID);
+static void ov65_0223709C(UnkStruct_ov65_022367A8 *param0, UnkStruct_ov65_02236840 *param1, const WiFiCommAppArgs *param2, int param3, u32 heapID);
+static void ov65_022371FC(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, int param2, u32 heapID);
+static void ov65_0223726C(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, int param2, int param3, u32 heapID);
+static void ov65_02237284(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, int param2, int param3, u32 heapID);
 static void ov65_022372B0(UnkStruct_ov65_02236840 *param0);
 static void ov65_022372EC(UnkStruct_ov65_02236840 *param0, u32 param1);
-static void ov65_02237370(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 param2);
+static void ov65_02237370(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 param2);
 static void ov65_0223742C(UnkStruct_ov65_022367A8 *param0);
 static BOOL ov65_02237450(const UnkStruct_ov65_022367A8 *param0);
 static BOOL ov65_02237464(u32 param0, u32 param1);
-static void ov65_02237498(UnkStruct_ov65_022367A8 *param0, const UnkStruct_0207DE04 *param1);
+static void ov65_02237498(UnkStruct_ov65_022367A8 *param0, const WiFiCommAppArgs *param1);
 static BOOL ov65_022374DC(UnkStruct_ov65_022367A8 *param0);
 static BOOL ov65_02237504(UnkStruct_ov65_022367A8 *param0);
 static void ov65_02237520(UnkStruct_ov65_022367A8 *param0);
@@ -185,72 +185,72 @@ static void ov65_02237940(UnkStruct_ov65_022367A8 *param0, UnkStruct_ov65_022379
 static void ov65_0223796C(UnkStruct_ov65_022367A8 *param0, UnkStruct_ov65_02237908 *param1);
 static void ov65_02237970(UnkStruct_ov65_022367A8 *param0);
 static BOOL ov65_02237A10(UnkStruct_ov65_022367A8 *param0);
-static void ov65_02237A24(UnkStruct_0207DE04 *param0, u32 heapID);
+static void ov65_02237A24(WiFiCommAppArgs *param0, u32 heapID);
 static void ov65_02237A44(UnkStruct_ov65_022367A8 *param0);
 static BOOL ov65_02237A54(UnkStruct_ov65_022367A8 *param0);
-static BOOL ov65_02237A70(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237AA8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237AC0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237B9C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237BC4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237BF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237C98(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237CB0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237CCC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237CE4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237D18(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237D60(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237D98(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237DD0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237DF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237E24(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237E54(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237EA4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237EC0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237EF0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237F08(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237F48(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237FA0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237FB8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02237FF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238050(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_0223806C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022380AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022380E8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238104(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238134(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_0223815C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238190(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022381CC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022381E4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238210(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238250(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022382B0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022382F0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238314(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238350(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238370(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022383AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022383D0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_0223846C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022384BC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_0223850C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238528(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238558(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238594(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022385AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022385D4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238608(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238660(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022386D0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238728(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_0223875C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_0223878C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022387AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022387E8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238838(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_022388FC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
-static BOOL ov65_02238910(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID);
+static BOOL ov65_02237A70(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237AA8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237AC0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237B9C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237BC4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237BF8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237C98(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237CB0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237CCC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237CE4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237D18(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237D60(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237D98(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237DD0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237DF8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237E24(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237E54(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237EA4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237EC0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237EF0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237F08(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237F48(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237FA0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237FB8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02237FF8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238050(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_0223806C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022380AC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022380E8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238104(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238134(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_0223815C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238190(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022381CC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022381E4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238210(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238250(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022382B0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022382F0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238314(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238350(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238370(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022383AC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022383D0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_0223846C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022384BC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_0223850C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238528(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238558(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238594(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022385AC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022385D4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238608(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238660(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022386D0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238728(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_0223875C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_0223878C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022387AC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022387E8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238838(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_022388FC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
+static BOOL ov65_02238910(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID);
 
 static const u8 Unk_ov65_02239A20[4] = {
     0x8,
@@ -304,7 +304,7 @@ static const UnkStruct_ov65_022376D0 Unk_ov65_02239AD8[4] = {
     { 0xB8, 0x48, 0x3, 0x0, 0x3, 0x0 }
 };
 
-static BOOL (*const Unk_ov65_02239B80[33])(UnkStruct_ov65_022367A8 *, UnkStruct_0207DE04 *, u32) = {
+static BOOL (*const Unk_ov65_02239B80[33])(UnkStruct_ov65_022367A8 *, WiFiCommAppArgs *, u32) = {
     ov65_02237A70,
     ov65_02237AA8,
     ov65_02237AC0,
@@ -340,7 +340,7 @@ static BOOL (*const Unk_ov65_02239B80[33])(UnkStruct_ov65_022367A8 *, UnkStruct_
     ov65_02238190
 };
 
-static BOOL (*const Unk_ov65_02239B08[30])(UnkStruct_ov65_022367A8 *, UnkStruct_0207DE04 *, u32) = {
+static BOOL (*const Unk_ov65_02239B08[30])(UnkStruct_ov65_022367A8 *, WiFiCommAppArgs *, u32) = {
     ov65_022381CC,
     ov65_022381E4,
     ov65_02238210,
@@ -383,7 +383,7 @@ static void (*const Unk_ov65_02239A2C[4])(UnkStruct_ov65_022367A8 *, UnkStruct_o
 int ov65_0223648C(ApplicationManager *appMan, int *param1)
 {
     UnkStruct_ov65_022367A8 *v0;
-    UnkStruct_0207DE04 *v1 = ApplicationManager_Args(appMan);
+    WiFiCommAppArgs *v1 = ApplicationManager_Args(appMan);
     BOOL v2;
 
     Overlay_LoadByID(FS_OVERLAY_ID(overlay63), 2);
@@ -423,7 +423,7 @@ int ov65_0223648C(ApplicationManager *appMan, int *param1)
 int ov65_02236548(ApplicationManager *appMan, int *param1)
 {
     UnkStruct_ov65_022367A8 *v0 = ApplicationManager_Data(appMan);
-    UnkStruct_0207DE04 *v1 = ApplicationManager_Args(appMan);
+    WiFiCommAppArgs *v1 = ApplicationManager_Args(appMan);
     BOOL v2;
 
     switch (*param1) {
@@ -464,8 +464,8 @@ int ov65_02236548(ApplicationManager *appMan, int *param1)
         ov65_022377A4(v0);
 
         if (v2 == 1) {
-            v1->unk_03 = v0->unk_00.unk_07;
-            v1->unk_04 = v0->unk_00.unk_11;
+            v1->success = v0->unk_00.unk_07;
+            v1->result = v0->unk_00.unk_11;
             (*param1)++;
         }
         break;
@@ -490,7 +490,7 @@ int ov65_02236548(ApplicationManager *appMan, int *param1)
 int ov65_0223668C(ApplicationManager *appMan, int *param1)
 {
     UnkStruct_ov65_022367A8 *v0 = ApplicationManager_Data(appMan);
-    UnkStruct_0207DE04 *v1 = ApplicationManager_Args(appMan);
+    WiFiCommAppArgs *v1 = ApplicationManager_Args(appMan);
 
     SetVBlankCallback(NULL, NULL);
 
@@ -574,7 +574,7 @@ static BOOL ov65_02236794(const UnkStruct_ov65_02236794 *param0)
     return 0;
 }
 
-static void ov65_022367A8(UnkStruct_ov65_022367A8 *param0, const UnkStruct_0207DE04 *param1, u32 heapID)
+static void ov65_022367A8(UnkStruct_ov65_022367A8 *param0, const WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236820();
     ov65_02236840(&param0->unk_30, heapID);
@@ -730,7 +730,7 @@ static void ov65_022369F0(UnkStruct_ov65_02236840 *param0)
     Heap_Free(param0->unk_00);
 }
 
-static void ov65_02236A28(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, u32 heapID)
+static void ov65_02236A28(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0;
 
@@ -775,7 +775,7 @@ static void ov65_02236B90(UnkStruct_ov65_02236840 *param0, u32 heapID)
     }
 }
 
-static void ov65_02236C10(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, u32 heapID)
+static void ov65_02236C10(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, u32 heapID)
 {
     param0->unk_04 = StringTemplate_Default(heapID);
     param0->unk_08 = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_UNK_0674, heapID);
@@ -793,9 +793,9 @@ static void ov65_02236C5C(UnkStruct_ov65_02236840 *param0)
     StringTemplate_Free(param0->unk_04);
 }
 
-static void ov65_02236C7C(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, u32 heapID)
+static void ov65_02236C7C(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, u32 heapID)
 {
-    switch (param1->unk_00) {
+    switch (param1->appType) {
     case 0:
         break;
     case 1:
@@ -809,7 +809,7 @@ static void ov65_02236C7C(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207D
         break;
     }
 
-    MessageLoader_GetString(param0->unk_08, Unk_ov65_02239E5C[param1->unk_00], param0->unk_10);
+    MessageLoader_GetString(param0->unk_08, Unk_ov65_02239E5C[param1->appType], param0->unk_10);
     StringTemplate_Format(param0->unk_04, param0->unk_0C, param0->unk_10);
     Text_AddPrinterWithParamsAndColor(&param0->unk_200, FONT_SYSTEM, param0->unk_0C, 0, 0, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 15), NULL);
     Window_ScheduleCopyToVRAM(&param0->unk_200);
@@ -870,12 +870,12 @@ static void ov65_02236E04(UnkStruct_ov65_02236840 *param0)
     RenderOam_Free();
 }
 
-static void ov65_02236E44(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, u32 param2, u32 heapID)
+static void ov65_02236E44(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, u32 param2, u32 heapID)
 {
     ov65_02236E50(param0, param1, param2, 0, heapID);
 }
 
-static void ov65_02236E50(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, u32 param2, u8 param3, u32 heapID)
+static void ov65_02236E50(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, u32 param2, u8 param3, u32 heapID)
 {
     String *v0;
     int v1;
@@ -943,7 +943,7 @@ static void ov65_02236F38(UnkStruct_ov65_02236840 *param0)
     param0->unk_15 = 0;
 }
 
-static void ov65_02236F70(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, int param2, u32 heapID)
+static void ov65_02236F70(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, int param2, u32 heapID)
 {
     String *v0 = String_Init(256, heapID);
     String *v1 = String_Init(256, heapID);
@@ -969,7 +969,7 @@ static void ov65_02237018(UnkStruct_ov65_02236840 *param0)
     Window_ClearAndScheduleCopyToVRAM(&param0->unk_230);
 }
 
-static void ov65_02237034(UnkStruct_ov65_022367A8 *param0, const UnkStruct_0207DE04 *param1, u32 heapID)
+static void ov65_02237034(UnkStruct_ov65_022367A8 *param0, const WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0;
     int v1 = 4;
@@ -991,7 +991,7 @@ static void ov65_02237034(UnkStruct_ov65_022367A8 *param0, const UnkStruct_0207D
     }
 }
 
-static void ov65_0223709C(UnkStruct_ov65_022367A8 *param0, UnkStruct_ov65_02236840 *param1, const UnkStruct_0207DE04 *param2, int param3, u32 heapID)
+static void ov65_0223709C(UnkStruct_ov65_022367A8 *param0, UnkStruct_ov65_02236840 *param1, const WiFiCommAppArgs *param2, int param3, u32 heapID)
 {
     String *v0;
     String *v1;
@@ -1038,7 +1038,7 @@ static void ov65_0223709C(UnkStruct_ov65_022367A8 *param0, UnkStruct_ov65_022368
     String_Free(v1);
 }
 
-static void ov65_022371FC(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, int param2, u32 heapID)
+static void ov65_022371FC(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, int param2, u32 heapID)
 {
     Window_FillRectWithColor(&param0->unk_220, 15, 0, param2 * (2 * 8), 20 * 8, 2 * 8);
     Bg_CopyToTilemapRect(param0->unk_00, 2, 18, 5 + param2 * 2, 2, 2, param0->unk_248->rawData, 0 * 2, 0, param0->unk_248->screenWidth / 8, param0->unk_248->screenHeight / 8);
@@ -1046,13 +1046,13 @@ static void ov65_022371FC(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207D
     Window_ScheduleCopyToVRAM(&param0->unk_220);
 }
 
-static void ov65_0223726C(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, int param2, int param3, u32 heapID)
+static void ov65_0223726C(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, int param2, int param3, u32 heapID)
 {
     TrainerInfo *v0 = CommInfo_TrainerInfo(param2);
     StringTemplate_SetPlayerName(param0->unk_04, param3, v0);
 }
 
-static void ov65_02237284(UnkStruct_ov65_02236840 *param0, const UnkStruct_0207DE04 *param1, int param2, int param3, u32 heapID)
+static void ov65_02237284(UnkStruct_ov65_02236840 *param0, const WiFiCommAppArgs *param1, int param2, int param3, u32 heapID)
 {
     TrainerInfo *v0;
     u16 v1;
@@ -1102,7 +1102,7 @@ static BOOL ov65_0223731C(UnkStruct_ov65_022367A8 *param0, u32 heapID)
     return param0->unk_00.unk_00->unk_00.unk_22;
 }
 
-static void ov65_02237370(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 param2)
+static void ov65_02237370(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 param2)
 {
     BOOL v0;
     BOOL v1;
@@ -1178,9 +1178,9 @@ static BOOL ov65_02237464(u32 param0, u32 param1)
     return v0;
 }
 
-static void ov65_02237498(UnkStruct_ov65_022367A8 *param0, const UnkStruct_0207DE04 *param1)
+static void ov65_02237498(UnkStruct_ov65_022367A8 *param0, const WiFiCommAppArgs *param1)
 {
-    switch (param1->unk_00) {
+    switch (param1->appType) {
     case 0:
         param0->unk_00.unk_00->unk_00.unk_1B = 18;
         break;
@@ -1478,7 +1478,7 @@ static void ov65_0223789C(UnkStruct_ov65_022367A8 *param0)
     param0->unk_30.unk_24C = Window_AddWaitDial(&param0->unk_30.unk_1F0, 1);
 }
 
-static void ov65_022378C4(UnkStruct_ov65_022367A8 *param0, const UnkStruct_0207DE04 *param1, u32 heapID)
+static void ov65_022378C4(UnkStruct_ov65_022367A8 *param0, const WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0;
 
@@ -1584,7 +1584,7 @@ static BOOL ov65_02237A10(UnkStruct_ov65_022367A8 *param0)
     return 0;
 }
 
-static void ov65_02237A24(UnkStruct_0207DE04 *param0, u32 heapID)
+static void ov65_02237A24(WiFiCommAppArgs *param0, u32 heapID)
 {
     void *journalEntryOnlineEvent;
     JournalEntry *journalEntry;
@@ -1616,7 +1616,7 @@ static BOOL ov65_02237A54(UnkStruct_ov65_022367A8 *param0)
     return 1;
 }
 
-static BOOL ov65_02237A70(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237A70(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (param0->unk_00.unk_00->unk_00.unk_21 == 1) {
         ov65_02237520(param0);
@@ -1631,7 +1631,7 @@ static BOOL ov65_02237A70(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237AA8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237AA8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236E44(&param0->unk_30, param1, 107, heapID);
 
@@ -1639,7 +1639,7 @@ static BOOL ov65_02237AA8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237AC0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237AC0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -1679,7 +1679,7 @@ static BOOL ov65_02237AC0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
                 param0->unk_00.unk_05 = 6;
                 break;
             } else {
-                if (param1->unk_01 <= ov65_02237548(param0)) {
+                if (param1->minPlayers <= ov65_02237548(param0)) {
                     param0->unk_00.unk_05 = 8;
                     break;
                 } else {
@@ -1711,7 +1711,7 @@ static BOOL ov65_02237AC0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237B9C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237B9C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236F70(&param0->unk_30, param1, param0->unk_00.unk_06, heapID);
     ov65_02236E44(&param0->unk_30, param1, 108, heapID);
@@ -1721,7 +1721,7 @@ static BOOL ov65_02237B9C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237BC4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237BC4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -1735,7 +1735,7 @@ static BOOL ov65_02237BC4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237BF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237BF8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0;
     UnkStruct_ov65_022366E4 v1;
@@ -1756,7 +1756,7 @@ static BOOL ov65_02237BF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
                 ov65_02237520(param0);
             }
 
-            if (param1->unk_02 <= ov65_02237548(param0)) {
+            if (param1->requiredPlayers <= ov65_02237548(param0)) {
                 param0->unk_00.unk_05 = 8;
             } else {
                 param0->unk_00.unk_05 = 1;
@@ -1780,7 +1780,7 @@ static BOOL ov65_02237BF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237C98(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237C98(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236E44(&param0->unk_30, param1, 119, heapID);
 
@@ -1788,7 +1788,7 @@ static BOOL ov65_02237C98(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237CB0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237CB0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -1800,7 +1800,7 @@ static BOOL ov65_02237CB0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237CCC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237CCC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236E44(&param0->unk_30, param1, 111, heapID);
 
@@ -1808,7 +1808,7 @@ static BOOL ov65_02237CCC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237CE4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237CE4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -1822,7 +1822,7 @@ static BOOL ov65_02237CE4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237D18(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237D18(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0 = Menu_ProcessInputAndHandleExit(param0->unk_30.unk_240, heapID);
 
@@ -1830,7 +1830,7 @@ static BOOL ov65_02237D18(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
         if (v0 == 0) {
             param0->unk_00.unk_05 = 11;
         } else {
-            if (param1->unk_02 <= ov65_02237548(param0)) {
+            if (param1->requiredPlayers <= ov65_02237548(param0)) {
                 param0->unk_00.unk_05 = 19;
             } else {
                 param0->unk_00.unk_05 = 1;
@@ -1843,7 +1843,7 @@ static BOOL ov65_02237D18(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237D60(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237D60(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     param0->unk_00.unk_08 = 30;
 
@@ -1858,7 +1858,7 @@ static BOOL ov65_02237D60(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237D98(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237D98(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0;
 
@@ -1879,7 +1879,7 @@ static BOOL ov65_02237D98(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237DD0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237DD0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0;
 
@@ -1896,7 +1896,7 @@ static BOOL ov65_02237DD0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237DF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237DF8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (CommTiming_IsSyncState(13)) {
         ov65_02237498(param0, param1);
@@ -1909,7 +1909,7 @@ static BOOL ov65_02237DF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237E24(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237E24(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (CommTiming_IsSyncState(14)) {
         u16 v0 = param0->unk_00.unk_00->unk_00.unk_1B;
@@ -1925,7 +1925,7 @@ static BOOL ov65_02237E24(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237E54(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237E54(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0;
     int v1;
@@ -1960,7 +1960,7 @@ static BOOL ov65_02237E54(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237EA4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237EA4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     CommManager_SetErrorHandling(1, 1);
     CommTiming_StartSync(18);
@@ -1970,7 +1970,7 @@ static BOOL ov65_02237EA4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237EC0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237EC0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (CommTiming_IsSyncState(18)) {
         param0->unk_00.unk_07 = 1;
@@ -1984,7 +1984,7 @@ static BOOL ov65_02237EC0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237EF0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237EF0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236E44(&param0->unk_30, param1, 120, heapID);
     param0->unk_00.unk_05 = 20;
@@ -1992,7 +1992,7 @@ static BOOL ov65_02237EF0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237F08(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237F08(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -2006,7 +2006,7 @@ static BOOL ov65_02237F08(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237F48(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237F48(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0 = Menu_ProcessInputAndHandleExit(param0->unk_30.unk_240, heapID);
 
@@ -2015,7 +2015,7 @@ static BOOL ov65_02237F48(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
             param0->unk_00.unk_05 = 22;
         } else {
             if (ov65_02237450(param0)) {
-                if (param1->unk_02 <= ov65_02237548(param0)) {
+                if (param1->requiredPlayers <= ov65_02237548(param0)) {
                     param0->unk_00.unk_05 = 8;
                 } else {
                     param0->unk_00.unk_05 = 1;
@@ -2031,7 +2031,7 @@ static BOOL ov65_02237F48(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237FA0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237FA0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236E44(&param0->unk_30, param1, 121, heapID);
 
@@ -2039,7 +2039,7 @@ static BOOL ov65_02237FA0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237FB8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237FB8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -2053,7 +2053,7 @@ static BOOL ov65_02237FB8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02237FF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02237FF8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0 = Menu_ProcessInputAndHandleExit(param0->unk_30.unk_240, heapID);
 
@@ -2062,7 +2062,7 @@ static BOOL ov65_02237FF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
             param0->unk_00.unk_05 = 25;
         } else {
             if (ov65_02237450(param0)) {
-                if (param1->unk_02 <= ov65_02237548(param0)) {
+                if (param1->requiredPlayers <= ov65_02237548(param0)) {
                     param0->unk_00.unk_05 = 8;
                 } else {
                     param0->unk_00.unk_05 = 1;
@@ -2078,7 +2078,7 @@ static BOOL ov65_02237FF8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238050(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238050(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236E44(&param0->unk_30, param1, 122, heapID);
 
@@ -2088,7 +2088,7 @@ static BOOL ov65_02238050(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_0223806C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_0223806C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -2112,7 +2112,7 @@ static BOOL ov65_0223806C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 1;
 }
 
-static BOOL ov65_022380AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022380AC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (param0->unk_30.unk_240 != NULL) {
         Menu_DestroyForExit(param0->unk_30.unk_240, heapID);
@@ -2126,7 +2126,7 @@ static BOOL ov65_022380AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022380E8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022380E8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236E44(&param0->unk_30, param1, 118, heapID);
     param0->unk_00.unk_05 = 29;
@@ -2135,7 +2135,7 @@ static BOOL ov65_022380E8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238104(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238104(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -2152,7 +2152,7 @@ static BOOL ov65_02238104(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 1;
 }
 
-static BOOL ov65_02238134(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238134(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     u32 v0;
 
@@ -2168,7 +2168,7 @@ static BOOL ov65_02238134(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_0223815C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_0223815C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -2182,7 +2182,7 @@ static BOOL ov65_0223815C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238190(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238190(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0 = Menu_ProcessInputAndHandleExit(param0->unk_30.unk_240, heapID);
 
@@ -2200,7 +2200,7 @@ static BOOL ov65_02238190(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022381CC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022381CC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     CommInfo_SendPlayerInfo();
     CommManager_SetErrorHandling(0, 1);
@@ -2208,7 +2208,7 @@ static BOOL ov65_022381CC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022381E4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022381E4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02237550(param0, heapID);
 
@@ -2223,7 +2223,7 @@ static BOOL ov65_022381E4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238210(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238210(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02237550(param0, heapID);
     ov65_0223726C(&param0->unk_30, param1, 0, 0, heapID);
@@ -2235,7 +2235,7 @@ static BOOL ov65_02238210(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238250(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238250(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0;
 
@@ -2269,7 +2269,7 @@ static BOOL ov65_02238250(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022382B0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022382B0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_0223726C(&param0->unk_30, param1, 0, 0, heapID);
     ov65_02236E50(&param0->unk_30, param1, 115, 30, heapID);
@@ -2279,7 +2279,7 @@ static BOOL ov65_022382B0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022382F0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022382F0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0;
 
@@ -2296,7 +2296,7 @@ static BOOL ov65_022382F0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238314(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238314(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_0223726C(&param0->unk_30, param1, 0, 0, heapID);
     ov65_02236E44(&param0->unk_30, param1, param0->unk_00.unk_2D, heapID);
@@ -2309,7 +2309,7 @@ static BOOL ov65_02238314(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238350(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238350(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -2323,7 +2323,7 @@ static BOOL ov65_02238350(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 1;
 }
 
-static BOOL ov65_02238370(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238370(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02237550(param0, heapID);
     ov65_02236E44(&param0->unk_30, param1, 123, heapID);
@@ -2338,7 +2338,7 @@ static BOOL ov65_02238370(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022383AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022383AC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0;
 
@@ -2354,7 +2354,7 @@ static BOOL ov65_022383AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022383D0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022383D0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02237550(param0, heapID);
 
@@ -2390,7 +2390,7 @@ static BOOL ov65_022383D0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_0223846C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_0223846C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0;
 
@@ -2420,7 +2420,7 @@ static BOOL ov65_0223846C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022384BC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022384BC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0;
     int v1;
@@ -2455,7 +2455,7 @@ static BOOL ov65_022384BC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_0223850C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_0223850C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     CommManager_SetErrorHandling(1, 1);
     CommTiming_StartSync(18);
@@ -2465,7 +2465,7 @@ static BOOL ov65_0223850C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238528(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238528(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (CommTiming_IsSyncState(18)) {
         ov65_022378C4(param0, param1, heapID);
@@ -2478,7 +2478,7 @@ static BOOL ov65_02238528(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238558(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238558(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (param0->unk_30.unk_240 != NULL) {
         Menu_DestroyForExit(param0->unk_30.unk_240, heapID);
@@ -2493,7 +2493,7 @@ static BOOL ov65_02238558(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238594(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238594(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236E44(&param0->unk_30, param1, 118, heapID);
 
@@ -2502,7 +2502,7 @@ static BOOL ov65_02238594(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022385AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022385AC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -2520,7 +2520,7 @@ static BOOL ov65_022385AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 1;
 }
 
-static BOOL ov65_022385D4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022385D4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     u32 v0;
 
@@ -2538,7 +2538,7 @@ static BOOL ov65_022385D4(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238608(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238608(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0;
 
@@ -2562,7 +2562,7 @@ static BOOL ov65_02238608(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238660(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238660(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0;
 
@@ -2592,7 +2592,7 @@ static BOOL ov65_02238660(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022386D0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022386D0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     param0->unk_00.unk_26 = sub_02032F40(0);
 
@@ -2608,7 +2608,7 @@ static BOOL ov65_022386D0(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238728(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238728(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0 = ov65_02236EF8(&param0->unk_30);
 
@@ -2622,7 +2622,7 @@ static BOOL ov65_02238728(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_0223875C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_0223875C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     int v0 = Menu_ProcessInputAndHandleExit(param0->unk_30.unk_240, heapID);
 
@@ -2639,7 +2639,7 @@ static BOOL ov65_0223875C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_0223878C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_0223878C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_02236E44(&param0->unk_30, param1, 17, heapID);
     ov65_0223789C(param0);
@@ -2650,7 +2650,7 @@ static BOOL ov65_0223878C(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022387AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022387AC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     BOOL v0;
 
@@ -2665,14 +2665,14 @@ static BOOL ov65_022387AC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
         return 0;
     }
 
-    if (ov65_02237464(param0->unk_00.unk_26, param1->unk_00)) {
+    if (ov65_02237464(param0->unk_00.unk_26, param1->appType)) {
         param0->unk_00.unk_05 = 26;
     }
 
     return 0;
 }
 
-static BOOL ov65_022387E8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022387E8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     ov65_0223742C(param0);
 
@@ -2686,7 +2686,7 @@ static BOOL ov65_022387E8(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238838(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238838(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (IsScreenFadeDone()) {
         CommInfo_Init(param1->saveData, NULL);
@@ -2728,7 +2728,7 @@ static BOOL ov65_02238838(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_022388FC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_022388FC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (IsScreenFadeDone()) {
         param0->unk_00.unk_05 = 0;
@@ -2737,7 +2737,7 @@ static BOOL ov65_022388FC(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *p
     return 0;
 }
 
-static BOOL ov65_02238910(UnkStruct_ov65_022367A8 *param0, UnkStruct_0207DE04 *param1, u32 heapID)
+static BOOL ov65_02238910(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     CommManager_EndWifiMatch();
     CommManager_SetState_LoginWifi();

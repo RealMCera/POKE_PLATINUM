@@ -38,7 +38,7 @@
 #include "trainer_info.h"
 #include "tv_segment.h"
 #include "underground.h"
-#include "unk_0204AEE8.h"
+#include "battle_tower_partner.h"
 #include "battle_salon.h"
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"
@@ -392,7 +392,7 @@ BattleTower *BattleTower_Init(SaveData *saveData, u16 isResume, u16 challengeMod
             battleTower->partnerID = (u8)WifiBattleTowerSave_GetField(battleTower->wifiBattleTowerSave, 9, NULL);
 
             WifiBattleTowerSave_GetField(battleTower->wifiBattleTowerSave, 6, &(battleTower->unk_7E8[battleTower->partnerID]));
-            sub_0204B404(battleTower, &battleTower->partnersDataDTO[battleTower->partnerID], FRONTIER_TRAINER_TRAINER_CHERYL_CHERYL + battleTower->partnerID, WifiBattleTowerSave_GetField(battleTower->wifiBattleTowerSave, 7, NULL), &(battleTower->unk_7E8[battleTower->partnerID]), battleTower->heapID);
+            BattleTower_LoadPartnerOpponent(battleTower, &battleTower->partnersDataDTO[battleTower->partnerID], FRONTIER_TRAINER_TRAINER_CHERYL_CHERYL + battleTower->partnerID, WifiBattleTowerSave_GetField(battleTower->wifiBattleTowerSave, 7, NULL), &(battleTower->unk_7E8[battleTower->partnerID]), battleTower->heapID);
         }
     }
 
@@ -777,7 +777,7 @@ void BattleTower_SaveWifiState(BattleTower *battleTower)
 void BattleTower_BuildPartnerData(BattleTower *battleTower)
 {
     for (int partnerID = 0; partnerID < BT_PARTNERS_COUNT; partnerID++) {
-        battleTower->unk_838[partnerID] = (u8)sub_0204B3B8(battleTower, &(battleTower->partnersDataDTO[partnerID]), FRONTIER_TRAINER_TRAINER_CHERYL_CHERYL + partnerID, battleTower->partySize, battleTower->unk_2E, battleTower->unk_36, &(battleTower->unk_7E8[partnerID]), battleTower->heapID);
+        battleTower->unk_838[partnerID] = (u8)BattleTower_BuildPartnerOpponent(battleTower, &(battleTower->partnersDataDTO[partnerID]), FRONTIER_TRAINER_TRAINER_CHERYL_CHERYL + partnerID, battleTower->partySize, battleTower->unk_2E, battleTower->unk_36, &(battleTower->unk_7E8[partnerID]), battleTower->heapID);
     }
 }
 

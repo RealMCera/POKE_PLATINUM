@@ -202,7 +202,7 @@
 #include "unk_02038FFC.h"
 #include "field_system_apps.h"
 #include "scrcmd_battle_tower.h"
-#include "unk_0204AEE8.h"
+#include "battle_tower_partner.h"
 #include "unk_020528D0.h"
 #include "unk_020559DC.h"
 #include "unk_0205749C.h"
@@ -212,10 +212,10 @@
 #include "map_object_animation.h"
 #include "map_object_movement.h"
 #include "mailbox.h"
-#include "unk_0207DA28.h"
+#include "wifi_menu.h"
 #include "unk_020985E4.h"
 #include "unk_02099500.h"
-#include "unk_0209ACF4.h"
+#include "frontier_easy_chat.h"
 #include "unk_0209B344.h"
 #include "unk_0209C194.h"
 #include "vars_flags.h"
@@ -224,12 +224,28 @@
 #include "res/text/bank/mystery_gift_phrase.h"
 #include "res/text/bank/tough_words.h"
 
-typedef struct {
-    SysTask *unk_00;
-    SysTask *unk_04;
-    MapObjectAnimCmd *unk_08;
+// The field script interpreter's command handlers. Each handler is dispatched
+// through gFieldScriptCommands (built from data/scripts/scrcmd.h) for one
+// SCRCMD_* opcode. A handler reads its operands from the script with
+// ScriptContext_Read*/GetVar, may start an application or an animation, and
+// returns TRUE if the script should stop executing this tick (usually because
+// it registered a pause callback via ScriptContext_Pause). The many
+// ScrCmd_Unused_* and ScrCmd_<hex> handlers are named after their opcodes and
+// are either no-ops or still not understood.
+//
+// Nearly all state the handlers touch hangs off ScriptContext (its fieldSystem,
+// the script variables, or the SCRIPT_MANAGER_* members), so the handlers
+// themselves are mostly thin wrappers around the subsystem APIs.
+
+// State for a task that waits for a map object's movement animation to finish.
+// One is allocated per ScrCmd_ApplyMovement / ScrCmd_Unused_2A1 invocation so
+// the script can continue while the object is still moving.
+typedef struct MapObjectAnimationWait {
+    SysTask *task; // The watcher task itself, so it can delete itself when done.
+    SysTask *animationTask; // The animation task returned by MapObject_StartAnimation.
+    MapObjectAnimCmd *animCmd; // Heap buffer to free once the animation ends; NULL if the caller owns it.
     FieldSystem *fieldSystem;
-} UnkStruct_02040F28;
+} MapObjectAnimationWait;
 
 static BOOL ScrCmd_Noop(ScriptContext *ctx);
 static BOOL ScrCmd_Dummy(ScriptContext *ctx);
@@ -331,7 +347,7 @@ static BOOL ScrCmd_ShowMenuMultiColumn(ScriptContext *ctx);
 static BOOL ScrCmd_ApplyMovement(ScriptContext *ctx);
 static BOOL ScrCmd_WaitMovement(ScriptContext *ctx);
 static BOOL ScrCmd_LockAll(ScriptContext *ctx);
-static BOOL sub_020410CC(ScriptContext *ctx);
+static BOOL ScriptContext_WaitForFollowerToStopMoving(ScriptContext *ctx);
 static BOOL ScrCmd_ReleaseAll(ScriptContext *ctx);
 static BOOL ScrCmd_LockObject(ScriptContext *ctx);
 static BOOL ScrCmd_ReleaseObject(ScriptContext *ctx);
@@ -421,9 +437,9 @@ static BOOL ScrCmd_GetPlayerStarterSpecies(ScriptContext *ctx);
 static BOOL ScrCmd_GetSwarmMapAndSpecies(ScriptContext *ctx);
 static BOOL ScrCmd_PrintTrainerDialogue(ScriptContext *ctx);
 static BOOL ScrCmd_StartBattleClient(ScriptContext *ctx);
-static BOOL sub_02042F74(ScriptContext *ctx);
+static BOOL ScriptContext_WaitForCommClubClient(ScriptContext *ctx);
 static BOOL ScrCmd_StartBattleServer(ScriptContext *ctx);
-static BOOL sub_0204300C(ScriptContext *ctx);
+static BOOL ScriptContext_WaitForCommClubServer(ScriptContext *ctx);
 static BOOL ScrCmd_Unused_0F4(ScriptContext *ctx);
 static BOOL ScrCmd_Unused_0F5(ScriptContext *ctx);
 static BOOL ScrCmd_StartLinkBattle(ScriptContext *ctx);
@@ -454,7 +470,7 @@ static BOOL ScrCmd_CheckPoketchEnabled(ScriptContext *ctx);
 static BOOL ScrCmd_RegisterPoketchApp(ScriptContext *ctx);
 static BOOL ScrCmd_CheckPoketchAppRegistered(ScriptContext *ctx);
 static BOOL ScrCmd_135(ScriptContext *ctx);
-static BOOL sub_02043678(ScriptContext *ctx);
+static BOOL ScriptContext_WaitForCommTimingSync(ScriptContext *ctx);
 static BOOL ScrCmd_ClearReceivedTempDataAllPlayers(ScriptContext *ctx);
 static BOOL ScrCmd_Unused_137(ScriptContext *ctx);
 static BOOL ScrCmd_GetUnionRoomTealaMessage(ScriptContext *ctx);
@@ -464,18 +480,18 @@ static BOOL ScrCmd_13A(ScriptContext *ctx);
 static BOOL ScrCmd_DoUnionRoomGreeting(ScriptContext *ctx);
 static BOOL ScrCmd_InitCommFieldCmd(ScriptContext *ctx);
 static BOOL ScrCmd_13E(ScriptContext *ctx);
-static BOOL sub_020437E8(ScriptContext *ctx);
+static BOOL ScriptContext_WaitForUnionRoomAllLeave(ScriptContext *ctx);
 static BOOL ScrCmd_GetUnionRoomMessage(ScriptContext *ctx);
 static BOOL ScrCmd_140(ScriptContext *ctx);
 static BOOL ScrCmd_146(ScriptContext *ctx);
 static BOOL ScrCmd_141(ScriptContext *ctx);
-static BOOL sub_02043938(ScriptContext *ctx);
+static BOOL ScriptContext_WaitForUnionRoomConnectState(ScriptContext *ctx);
 static BOOL ScrCmd_142(ScriptContext *ctx);
 static BOOL ScrCmd_143(ScriptContext *ctx);
 static BOOL ScrCmd_144(ScriptContext *ctx);
-static BOOL sub_020439F4(ScriptContext *ctx);
+static BOOL ScriptContext_WaitForUnionRoomPeerActivity(ScriptContext *ctx);
 static BOOL ScrCmd_145(ScriptContext *ctx);
-static BOOL sub_02043A4C(ScriptContext *ctx);
+static BOOL ScriptContext_WaitForUnionRoomActivity(ScriptContext *ctx);
 static BOOL ScrCmd_153(ScriptContext *ctx);
 static BOOL ScrCmd_LoadTrainerAppearances(ScriptContext *ctx);
 static BOOL ScrCmd_GetTrainerInfoTrainerClass(ScriptContext *ctx);
@@ -737,8 +753,8 @@ static BOOL ScrCmd_CheckNoWiFiPlazaCooldown(ScriptContext *ctx);
 static BOOL ScrCmd_SetPartyGiratinaForm(ScriptContext *ctx);
 static BOOL ScrCmd_CheckPartyHasFatefulEncounterRegigigas(ScriptContext *ctx);
 static BOOL ScriptContext_WaitForMovement(ScriptContext *ctx);
-static void sub_02040F28(FieldSystem *fieldSystem, SysTask *param1, MapObjectAnimCmd *param2);
-static void sub_02040F5C(SysTask *param0, void *param1);
+static void StartWaitForMapObjectAnimation(FieldSystem *fieldSystem, SysTask *param1, MapObjectAnimCmd *param2);
+static void MapObjectAnimationWaitTask(SysTask *param0, void *param1);
 static u32 SaveData_GetRotomFormsInSave(SaveData *saveData);
 
 static const u8 sConditionTable[6][3] = {
@@ -2026,6 +2042,9 @@ static BOOL ScrCmd_SetMenuYOriginSide(ScriptContext *ctx)
     return TRUE;
 }
 
+// Starts a movement animation for the given object. The animation commands live
+// in the script itself, so nothing is freed when it ends; ScrCmd_WaitMovement
+// later blocks until SCRIPT_MANAGER_MOVEMENT_COUNT reaches zero.
 static BOOL ScrCmd_ApplyMovement(ScriptContext *ctx)
 {
     u16 localID = ScriptContext_GetVar(ctx);
@@ -2039,10 +2058,13 @@ static BOOL ScrCmd_ApplyMovement(ScriptContext *ctx)
     SysTask *task = MapObject_StartAnimation(object, (MapObjectAnimCmd *)(ctx->scriptPtr + movementOffset));
     u8 *movementCount = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_MOVEMENT_COUNT);
     (*movementCount)++;
-    sub_02040F28(ctx->fieldSystem, task, NULL);
+    StartWaitForMapObjectAnimation(ctx->fieldSystem, task, NULL);
     return FALSE;
 }
 
+// Walks the object to (x, y) by building a heap-allocated movement command
+// list: one horizontal run, one vertical run, then END. The wait helper frees
+// that buffer once the animation finishes.
 static BOOL ScrCmd_Unused_2A1(ScriptContext *ctx)
 {
     u16 v5 = ScriptContext_GetVar(ctx);
@@ -2087,7 +2109,7 @@ static BOOL ScrCmd_Unused_2A1(ScriptContext *ctx)
     u8 *v2 = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_MOVEMENT_COUNT);
     (*v2)++;
 
-    sub_02040F28(ctx->fieldSystem, v1, v10);
+    StartWaitForMapObjectAnimation(ctx->fieldSystem, v1, v10);
 
     return FALSE;
 }
@@ -2126,51 +2148,52 @@ static BOOL ScriptContext_WaitForMovement(ScriptContext *ctx)
     return FALSE;
 }
 
-static void sub_02040F28(FieldSystem *fieldSystem, SysTask *param1, MapObjectAnimCmd *param2)
+// Starts a task that waits for the given movement animation to finish, then
+// frees it and decrements the script's pending-movement counter. animCmd, when
+// non-NULL, is a heap-allocated command buffer that the task owns and frees.
+static void StartWaitForMapObjectAnimation(FieldSystem *fieldSystem, SysTask *animationTask, MapObjectAnimCmd *animCmd)
 {
-    UnkStruct_02040F28 *v0 = NULL;
+    MapObjectAnimationWait *wait = Heap_Alloc(HEAP_ID_FIELD1, sizeof(MapObjectAnimationWait));
 
-    v0 = Heap_Alloc(HEAP_ID_FIELD1, sizeof(UnkStruct_02040F28));
-
-    if (v0 == NULL) {
+    if (wait == NULL) {
         GF_ASSERT(FALSE);
         return;
     }
 
-    v0->fieldSystem = fieldSystem;
-    v0->unk_04 = param1;
-    v0->unk_08 = param2;
-    v0->unk_00 = SysTask_Start(sub_02040F5C, v0, 0);
-
-    return;
+    wait->fieldSystem = fieldSystem;
+    wait->animationTask = animationTask;
+    wait->animCmd = animCmd;
+    wait->task = SysTask_Start(MapObjectAnimationWaitTask, wait, 0);
 }
 
-static void sub_02040F5C(SysTask *task, void *param1)
+static void MapObjectAnimationWaitTask(SysTask *task, void *param1)
 {
-    UnkStruct_02040F28 *v0 = (UnkStruct_02040F28 *)param1;
-    u8 *v1 = FieldSystem_GetScriptMemberPtr(v0->fieldSystem, SCRIPT_MANAGER_MOVEMENT_COUNT);
+    MapObjectAnimationWait *wait = (MapObjectAnimationWait *)param1;
+    u8 *movementCount = FieldSystem_GetScriptMemberPtr(wait->fieldSystem, SCRIPT_MANAGER_MOVEMENT_COUNT);
 
-    if (MapObject_HasAnimationEnded(v0->unk_04) == 1) {
-        MapObject_FinishAnimation(v0->unk_04);
-        SysTask_Done(v0->unk_00);
+    if (MapObject_HasAnimationEnded(wait->animationTask) == 1) {
+        MapObject_FinishAnimation(wait->animationTask);
+        SysTask_Done(wait->task);
 
-        if (v0->unk_08) {
-            Heap_Free(v0->unk_08);
+        if (wait->animCmd) {
+            Heap_Free(wait->animCmd);
         }
 
         Heap_Free(param1);
 
-        if (*v1 == 0) {
+        // The caller incremented the counter when it started the animation.
+        if (*movementCount == 0) {
             GF_ASSERT(FALSE);
             return;
         }
 
-        (*v1)--;
+        (*movementCount)--;
     }
-
-    return;
 }
 
+// Pauses all map object movement. If the script has no target object, only the
+// following Pokemon may still need to walk to the player; otherwise the
+// last-talked-to object and its companions are handled by ScrCmd_LockLastTalked.
 static BOOL ScrCmd_LockAll(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
@@ -2187,7 +2210,7 @@ static BOOL ScrCmd_LockAll(ScriptContext *ctx)
             && MapObject_IsMoving(object) != FALSE) {
 
             MapObject_SetPauseMovementOff(object);
-            ScriptContext_Pause(ctx, sub_020410CC);
+            ScriptContext_Pause(ctx, ScriptContext_WaitForFollowerToStopMoving);
             return TRUE;
         }
     } else {
@@ -2197,119 +2220,134 @@ static BOOL ScrCmd_LockAll(ScriptContext *ctx)
     return TRUE;
 }
 
-static u8 Unk_021C07E0;
+// Bits identifying which map objects were temporarily unpaused so that an
+// in-progress movement animation could finish, and therefore still need to be
+// paused again once they come to rest.
+enum PendingPauseMovement {
+    PENDING_PAUSE_PLAYER = 1 << 0,
+    PENDING_PAUSE_FOLLOWER = 1 << 1,
+    PENDING_PAUSE_TARGET = 1 << 2,
+    PENDING_PAUSE_PARTNER_TRAINER = 1 << 3,
+};
 
-static inline void inline_020410F4(void)
+static u8 sPendingPauseMovement;
+
+static inline void ResetPendingPauseMovement(void)
 {
-    Unk_021C07E0 = 0;
+    sPendingPauseMovement = 0;
 }
 
-static inline BOOL inline_020410F4_1(int mask)
+static inline BOOL CheckPendingPauseMovement(int mask)
 {
-    return (Unk_021C07E0 & mask) != 0;
+    return (sPendingPauseMovement & mask) != 0;
 }
 
-static inline void inline_020410F4_2(int mask)
+static inline void SetPendingPauseMovement(int mask)
 {
-    Unk_021C07E0 |= mask;
+    sPendingPauseMovement |= mask;
 }
 
-static inline void inline_020410F4_3(int mask)
+static inline void ClearPendingPauseMovement(int mask)
 {
-    Unk_021C07E0 &= (0xff ^ mask);
+    sPendingPauseMovement &= (0xff ^ mask);
 }
 
-static BOOL sub_02041004(ScriptContext *ctx)
+// Pause callback used by ScrCmd_LockLastTalked. Re-pauses each object that was
+// left moving, once its animation has finished, and returns TRUE when none are
+// still pending.
+static BOOL ScriptContext_WaitForObjectsToFinishMoving(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
-    MapObject **v1 = FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_MANAGER_TARGET_OBJECT);
-    MapObject *v2 = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
+    MapObject **targetObject = FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_MANAGER_TARGET_OBJECT);
+    MapObject *player = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
 
-    if (inline_020410F4_1(1 << 0) && (LocalMapObj_CheckAnimationFinished(v2) == 1)) {
-        MapObject_SetPauseMovementOn(v2);
-        inline_020410F4_3(1 << 0);
+    if (CheckPendingPauseMovement(PENDING_PAUSE_PLAYER) && (LocalMapObj_CheckAnimationFinished(player) == 1)) {
+        MapObject_SetPauseMovementOn(player);
+        ClearPendingPauseMovement(PENDING_PAUSE_PLAYER);
     }
 
-    if (inline_020410F4_1(1 << 2) && (!MapObject_IsMoving(*v1))) {
-        MapObject_SetPauseMovementOn(*v1);
-        inline_020410F4_3(1 << 2);
+    if (CheckPendingPauseMovement(PENDING_PAUSE_TARGET) && (!MapObject_IsMoving(*targetObject))) {
+        MapObject_SetPauseMovementOn(*targetObject);
+        ClearPendingPauseMovement(PENDING_PAUSE_TARGET);
     }
 
-    if (inline_020410F4_1(1 << 1)) {
-        MapObject *v3 = MapObjMan_GetLocalMapObjByMovementType(fieldSystem->mapObjMan, MOVEMENT_TYPE_FOLLOW_PLAYER);
+    if (CheckPendingPauseMovement(PENDING_PAUSE_FOLLOWER)) {
+        MapObject *follower = MapObjMan_GetLocalMapObjByMovementType(fieldSystem->mapObjMan, MOVEMENT_TYPE_FOLLOW_PLAYER);
 
-        if (!MapObject_IsMoving(v3)) {
-            MapObject_SetPauseMovementOn(v3);
-            inline_020410F4_3(1 << 1);
+        if (!MapObject_IsMoving(follower)) {
+            MapObject_SetPauseMovementOn(follower);
+            ClearPendingPauseMovement(PENDING_PAUSE_FOLLOWER);
         }
     }
 
-    if (inline_020410F4_1(1 << 3)) {
-        MapObject *v4 = MapObjectMovement_FindPartnerTrainer(*v1);
+    if (CheckPendingPauseMovement(PENDING_PAUSE_PARTNER_TRAINER)) {
+        MapObject *partnerTrainer = MapObjectMovement_FindPartnerTrainer(*targetObject);
 
-        if (!MapObject_IsMoving(v4)) {
-            MapObject_SetPauseMovementOn(v4);
-            inline_020410F4_3(1 << 3);
+        if (!MapObject_IsMoving(partnerTrainer)) {
+            MapObject_SetPauseMovementOn(partnerTrainer);
+            ClearPendingPauseMovement(PENDING_PAUSE_PARTNER_TRAINER);
         }
     }
 
-    if (Unk_021C07E0 == 0) {
+    return sPendingPauseMovement == 0;
+}
+
+// Pause callback used by ScrCmd_LockAll: waits for the following Pokemon to
+// stop, then pauses it.
+static BOOL ScriptContext_WaitForFollowerToStopMoving(ScriptContext *ctx)
+{
+    FieldSystem *fieldSystem = ctx->fieldSystem;
+    MapObject *follower = MapObjMan_GetLocalMapObjByMovementType(fieldSystem->mapObjMan, MOVEMENT_TYPE_FOLLOW_PLAYER);
+
+    if (!MapObject_IsMoving(follower)) {
+        MapObject_SetPauseMovementOn(follower);
         return TRUE;
     }
 
     return FALSE;
 }
 
-static BOOL sub_020410CC(ScriptContext *ctx)
-{
-    FieldSystem *fieldSystem = ctx->fieldSystem;
-    MapObject *v1 = MapObjMan_GetLocalMapObjByMovementType(fieldSystem->mapObjMan, MOVEMENT_TYPE_FOLLOW_PLAYER);
-
-    if (!MapObject_IsMoving(v1)) {
-        MapObject_SetPauseMovementOn(v1);
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
+// Locks every map object the player is interacting with. Objects already in
+// motion are unpaused so they can finish their step, then ScrCmd_LockLastTalked
+// records them in sPendingPauseMovement so ScriptContext_WaitForObjectsToFinishMoving
+// pauses them again once they stop.
 static BOOL ScrCmd_LockLastTalked(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
-    MapObject **v1 = FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_MANAGER_TARGET_OBJECT);
+    MapObject **targetObject = FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_MANAGER_TARGET_OBJECT);
     MapObject *player = PlayerAvatar_GetMapObject(fieldSystem->playerAvatar);
-    MapObject *v3 = MapObjMan_GetLocalMapObjByMovementType(fieldSystem->mapObjMan, MOVEMENT_TYPE_FOLLOW_PLAYER);
-    MapObject *v4 = MapObjectMovement_FindPartnerTrainer(*v1);
+    MapObject *follower = MapObjMan_GetLocalMapObjByMovementType(fieldSystem->mapObjMan, MOVEMENT_TYPE_FOLLOW_PLAYER);
+    MapObject *partnerTrainer = MapObjectMovement_FindPartnerTrainer(*targetObject);
     MapObjectManager *mapObjMan = fieldSystem->mapObjMan;
 
-    inline_020410F4();
+    ResetPendingPauseMovement();
     MapObjectMan_PauseAllMovement(mapObjMan);
 
     if (LocalMapObj_CheckAnimationFinished(player) == FALSE) {
-        inline_020410F4_2(1 << 0);
+        SetPendingPauseMovement(PENDING_PAUSE_PLAYER);
         MapObject_SetPauseMovementOff(player);
     }
 
-    if (MapObject_IsMoving(*v1) != FALSE) {
-        inline_020410F4_2(1 << 2);
-        MapObject_SetPauseMovementOff(*v1);
+    if (MapObject_IsMoving(*targetObject) != FALSE) {
+        SetPendingPauseMovement(PENDING_PAUSE_TARGET);
+        MapObject_SetPauseMovementOff(*targetObject);
     }
 
-    if (v3) {
-        if (SystemFlag_CheckHasPartner(SaveData_GetVarsFlags(fieldSystem->saveData)) == TRUE && MapObject_IsMoving(v3) != FALSE) {
-            inline_020410F4_2(1 << 1);
-            MapObject_SetPauseMovementOff(v3);
+    if (follower) {
+        if (SystemFlag_CheckHasPartner(SaveData_GetVarsFlags(fieldSystem->saveData)) == TRUE && MapObject_IsMoving(follower) != FALSE) {
+            SetPendingPauseMovement(PENDING_PAUSE_FOLLOWER);
+            MapObject_SetPauseMovementOff(follower);
         }
     }
 
-    if (v4) {
-        if (MapObject_IsMoving(v4) != FALSE) {
-            inline_020410F4_2(1 << 3);
-            MapObject_SetPauseMovementOff(v4);
+    if (partnerTrainer) {
+        if (MapObject_IsMoving(partnerTrainer) != FALSE) {
+            SetPendingPauseMovement(PENDING_PAUSE_PARTNER_TRAINER);
+            MapObject_SetPauseMovementOff(partnerTrainer);
         }
     }
 
-    ScriptContext_Pause(ctx, sub_02041004);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForObjectsToFinishMoving);
     return TRUE;
 }
 
@@ -2856,18 +2894,21 @@ static BOOL ScrCmd_Unused_09F(ScriptContext *ctx)
     return FALSE;
 }
 
-BOOL sub_02041CC8(ScriptContext *ctx)
+// Pause callback that waits for the currently running field application to
+// close, then frees the party management data the command handler allocated.
+// Used by the many commands that open an app (photo viewer, storage, etc.).
+BOOL ScriptContext_WaitForApplicationExitAndFreePartyData(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
 
-    void **v0 = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
+    void **partyManagementData = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
     if (FieldSystem_IsRunningApplication(fieldSystem)) {
         return FALSE;
     }
 
-    Heap_Free(*v0);
-    *v0 = NULL;
+    Heap_Free(*partyManagementData);
+    *partyManagementData = NULL;
 
     return TRUE;
 }
@@ -2898,17 +2939,20 @@ static BOOL ScriptContext_WaitForPokemonStorageClose(ScriptContext *ctx)
     return TRUE;
 }
 
-static BOOL sub_02041D3C(ScriptContext *ctx)
+// Pause callback that drives the union room communication session created by
+// ScrCmd_2C6 (sub_0209C1EC) until it has finished. The session frees itself,
+// so only the script member pointer is cleared here.
+static BOOL ScriptContext_WaitForCommAppToFinish(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
 
-    void **v0 = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
+    void **partyManagementData = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
-    if (sub_0209C238(*v0) == 0) {
+    if (sub_0209C238(*partyManagementData) == 0) {
         return FALSE;
     }
 
-    *v0 = NULL;
+    *partyManagementData = NULL;
 
     return TRUE;
 }
@@ -2947,22 +2991,25 @@ static BOOL ImageClipsSlotHasData(FieldSystem *fieldSystem, int param1, int slot
     return TRUE;
 }
 
-static UnkStruct_02041DC8 *sub_02041DC8(enum HeapID heapID, FieldSystem *fieldSystem, int param2, int slot)
+// Allocates the argument block for the dress-up/contest photo viewer, unless
+// the requested slot has no photo saved. photoType is 0 for a dress-up photo
+// and 1 for a contest photo (see ImageClipsSlotHasData).
+static UnkStruct_02041DC8 *PhotoViewerArgs_New(enum HeapID heapID, FieldSystem *fieldSystem, int photoType, int slot)
 {
     ImageClips *imageClips = SaveData_GetImageClips(fieldSystem->saveData);
 
-    if (!ImageClipsSlotHasData(fieldSystem, param2, slot)) {
+    if (!ImageClipsSlotHasData(fieldSystem, photoType, slot)) {
         return NULL;
     }
 
-    UnkStruct_02041DC8 *v0 = Heap_Alloc(heapID, sizeof(UnkStruct_02041DC8));
-    memset(v0, 0, sizeof(UnkStruct_02041DC8));
+    UnkStruct_02041DC8 *args = Heap_Alloc(heapID, sizeof(UnkStruct_02041DC8));
+    memset(args, 0, sizeof(UnkStruct_02041DC8));
 
-    v0->imageClips = imageClips;
-    v0->unk_08 = param2;
-    v0->unk_04 = slot;
+    args->imageClips = imageClips;
+    args->unk_08 = photoType;
+    args->unk_04 = slot;
 
-    return v0;
+    return args;
 }
 
 static BOOL ScrCmd_0A2(ScriptContext *ctx)
@@ -2973,7 +3020,7 @@ static BOOL ScrCmd_0A2(ScriptContext *ctx)
 
 static BOOL ScrCmd_0A3(ScriptContext *ctx)
 {
-    sub_0207DDC0(ctx->task);
+    WiFiMenu_Start(ctx->task);
     return TRUE;
 }
 
@@ -3093,7 +3140,7 @@ static BOOL ScrCmd_SetMoveCodeForFacingDirection(ScriptContext *ctx)
 
 static BOOL ScrCmd_0A5(ScriptContext *ctx)
 {
-    sub_0209ACF4(ctx->task);
+    FrontierEasyChat_Start(ctx->task);
     return TRUE;
 }
 
@@ -3121,7 +3168,7 @@ static BOOL ScrCmd_ShowDressUpPhoto(ScriptContext *ctx)
     int slot = ScriptContext_ReadHalfWord(ctx);
     u16 *destVar = ScriptContext_GetVarPointer(ctx);
 
-    *v0 = sub_02041DC8(HEAP_ID_FIELD2, ctx->fieldSystem, 0, slot);
+    *v0 = PhotoViewerArgs_New(HEAP_ID_FIELD2, ctx->fieldSystem, 0, slot);
 
     if (*v0 == NULL) {
         *destVar = 1;
@@ -3132,7 +3179,7 @@ static BOOL ScrCmd_ShowDressUpPhoto(ScriptContext *ctx)
     *destVar = 0;
 
     FieldSystem_OpenDressUpPhotoViewer(ctx->fieldSystem, *v0);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }
@@ -3143,7 +3190,7 @@ static BOOL ScrCmd_0A8(ScriptContext *ctx)
     int v1 = ScriptContext_ReadHalfWord(ctx);
     u16 *v2 = ScriptContext_GetVarPointer(ctx);
 
-    *v0 = sub_02041DC8(HEAP_ID_FIELD2, ctx->fieldSystem, 1, v1);
+    *v0 = PhotoViewerArgs_New(HEAP_ID_FIELD2, ctx->fieldSystem, 1, v1);
 
     if (*v0 == NULL) {
         *v2 = 1;
@@ -3154,7 +3201,7 @@ static BOOL ScrCmd_0A8(ScriptContext *ctx)
     *v2 = 0;
 
     FieldSystem_OpenDressUpPhotoViewer(ctx->fieldSystem, *v0);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }
@@ -3232,7 +3279,7 @@ static BOOL ScrCmd_OpenRegionMap(ScriptContext *ctx)
 
     TownMapContext_Init(ctx->fieldSystem, *townMapCtx, TOWN_MAP_MODE_WALL_MAP);
     FieldSystem_OpenTownMap(ctx->fieldSystem, *townMapCtx);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }
@@ -3244,7 +3291,7 @@ static BOOL ScrCmd_OpenPoffinCooking(ScriptContext *ctx)
     u8 isInGroup = ScriptContext_ReadHalfWord(ctx);
     *poffinBerrySelectionCtx = PoffinBerrySelectionContext_Create(ctx->fieldSystem, isInGroup, HEAP_ID_FIELD2);
 
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
     return TRUE;
 }
 
@@ -3282,7 +3329,7 @@ static BOOL ScrCmd_OpenBattleTowerRecordsApp(ScriptContext *ctx)
     args->saveData = ctx->fieldSystem->saveData;
 
     FieldSystem_OpenBattleTowerRecordsApp(ctx->fieldSystem, *data);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }
@@ -3329,7 +3376,7 @@ static BOOL ScrCmd_0AF(ScriptContext *ctx)
     void **v0 = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
     *v0 = FieldSystem_OpenMixRecordsApp(ctx->fieldSystem);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }
@@ -3345,7 +3392,7 @@ static BOOL ScrCmd_OpenPCHallOfFameScreen(ScriptContext *ctx)
     void **data = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
     *data = FieldTask_OpenPCHallOfFameScreen(ctx->fieldSystem);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }
@@ -3383,7 +3430,7 @@ static BOOL ScrCmd_TryStartGTSApp(ScriptContext *ctx)
 
 static BOOL ScrCmd_0B3(ScriptContext *ctx)
 {
-    sub_0207DDE0(ctx->task, ScriptContext_GetVarPointer(ctx));
+    WiFiMenu_StartWithResult(ctx->task, ScriptContext_GetVarPointer(ctx));
     return TRUE;
 }
 
@@ -3482,7 +3529,7 @@ static BOOL ScrCmd_2C6(ScriptContext *ctx)
     void **v0 = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
     *v0 = sub_0209C1EC(ctx->fieldSystem);
-    ScriptContext_Pause(ctx, sub_02041D3C);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForCommAppToFinish);
 
     return TRUE;
 }
@@ -3811,12 +3858,15 @@ static BOOL ScrCmd_StartBattleClient(ScriptContext *ctx)
 
     CommClub_StartBattleClient(fieldSystem, commType, v2, v3);
     ctx->data[0] = destVarID;
-    ScriptContext_Pause(ctx, sub_02042F74);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForCommClubClient);
 
     return TRUE;
 }
 
-static BOOL sub_02042F74(ScriptContext *ctx)
+// Pause callback for ScrCmd_StartBattleClient: waits for the client side of the
+// communication club to open a window, then stores the result code in the
+// script variable. COMM_CLUB_RET_0 means the connection is not ready yet.
+static BOOL ScriptContext_WaitForCommClubClient(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
     u16 *destVar = FieldSystem_GetVarPointer(fieldSystem, ctx->data[0]);
@@ -3841,12 +3891,14 @@ static BOOL ScrCmd_StartBattleServer(ScriptContext *ctx)
 
     CommClub_StartBattleServer(fieldSystem, commType, v2, v3);
     ctx->data[0] = destVarID;
-    ScriptContext_Pause(ctx, sub_0204300C);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForCommClubServer);
 
     return TRUE;
 }
 
-static BOOL sub_0204300C(ScriptContext *ctx)
+// Pause callback for ScrCmd_StartBattleServer: server-side counterpart of
+// ScriptContext_WaitForCommClubClient.
+static BOOL ScriptContext_WaitForCommClubServer(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
     u16 *destVar = FieldSystem_GetVarPointer(fieldSystem, ctx->data[0]);
@@ -4173,22 +4225,25 @@ static BOOL ScrCmd_135(ScriptContext *ctx)
     ctx->data[0] = syncNo;
 
     CommTiming_StartSync(syncNo);
-    ScriptContext_Pause(ctx, sub_02043678);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForCommTimingSync);
 
     return TRUE;
 }
 
-static BOOL sub_02043678(ScriptContext *ctx)
+// Pause callback for ScrCmd_135: returns TRUE once the sync started by
+// CommTiming_StartSync has completed, or immediately if there are fewer than
+// two players connected (nothing to sync with).
+static BOOL ScriptContext_WaitForCommTimingSync(ScriptContext *ctx)
 {
-    int v0;
+    BOOL done;
 
     if (CommSys_ConnectedCount() < 2) {
-        v0 = TRUE;
+        done = TRUE;
     } else {
-        v0 = CommTiming_IsSyncState(ctx->data[0]);
+        done = CommTiming_IsSyncState(ctx->data[0]);
     }
 
-    return v0;
+    return done;
 }
 
 static BOOL ScrCmd_ClearReceivedTempDataAllPlayers(ScriptContext *ctx)
@@ -4265,12 +4320,14 @@ static BOOL ScrCmd_13E(ScriptContext *ctx)
 
     UnionRoomTrainers_RequestAllLeave(fieldSystem->unk_80);
     CommManager_UnionRestartSearch();
-    ScriptContext_Pause(ctx, sub_020437E8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForUnionRoomAllLeave);
 
     return TRUE;
 }
 
-static BOOL sub_020437E8(ScriptContext *ctx)
+// Pause callback for ScrCmd_13E: completes once every other player has left
+// the union room, leaving only the player connected.
+static BOOL ScriptContext_WaitForUnionRoomAllLeave(ScriptContext *ctx)
 {
     return CommSys_ConnectedCount() < 2;
 }
@@ -4327,22 +4384,24 @@ static BOOL ScrCmd_141(ScriptContext *ctx)
     u16 v0 = ScriptContext_ReadHalfWord(ctx);
 
     ctx->data[0] = v0;
-    ScriptContext_Pause(ctx, sub_02043938);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForUnionRoomConnectState);
 
     return TRUE;
 }
 
-static BOOL sub_02043938(ScriptContext *ctx)
+// Pause callback for ScrCmd_141: waits for the union room connection state to
+// become non-zero, then writes it to the script variable.
+static BOOL ScriptContext_WaitForUnionRoomConnectState(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
-    u32 v1 = UnionRoom_GetConnectState(fieldSystem->unk_7C);
-    u16 *v2 = FieldSystem_GetVarPointer(fieldSystem, ctx->data[0]);
+    u32 connectState = UnionRoom_GetConnectState(fieldSystem->unk_7C);
+    u16 *destVar = FieldSystem_GetVarPointer(fieldSystem, ctx->data[0]);
 
-    if (v1 == 0) {
+    if (connectState == 0) {
         return FALSE;
     }
 
-    *v2 = v1;
+    *destVar = connectState;
     return TRUE;
 }
 
@@ -4385,24 +4444,26 @@ static BOOL ScrCmd_144(ScriptContext *ctx)
     u16 v0 = ScriptContext_ReadHalfWord(ctx);
 
     ctx->data[0] = v0;
-    ScriptContext_Pause(ctx, sub_020439F4);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForUnionRoomPeerActivity);
 
     return TRUE;
 }
 
-static BOOL sub_020439F4(ScriptContext *ctx)
+// Pause callback for ScrCmd_144: waits until a peer broadcasts an activity,
+// stores it, then clears the peer activity so it is only seen once.
+static BOOL ScriptContext_WaitForUnionRoomPeerActivity(ScriptContext *ctx)
 {
-    u16 *v0 = FieldSystem_GetVarPointer(ctx->fieldSystem, ctx->data[0]);
-    u32 v1 = UnionRoom_GetPeerActivity(ctx->fieldSystem->unk_7C);
+    u16 *destVar = FieldSystem_GetVarPointer(ctx->fieldSystem, ctx->data[0]);
+    u32 activity = UnionRoom_GetPeerActivity(ctx->fieldSystem->unk_7C);
 
-    if (v1 >= 1) {
-        *v0 = v1;
+    if (activity >= 1) {
+        *destVar = activity;
 
         UnionRoom_ResetActivity(ctx->fieldSystem->unk_7C);
         return TRUE;
     }
 
-    *v0 = 0;
+    *destVar = 0;
     return FALSE;
 }
 
@@ -4411,22 +4472,25 @@ static BOOL ScrCmd_145(ScriptContext *ctx)
     u16 v0 = ScriptContext_ReadHalfWord(ctx);
 
     ctx->data[0] = v0;
-    ScriptContext_Pause(ctx, sub_02043A4C);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForUnionRoomActivity);
 
     return TRUE;
 }
 
-static BOOL sub_02043A4C(ScriptContext *ctx)
+// Pause callback for ScrCmd_145: waits for this player's selected union room
+// activity to complete. Pressing B cancels it (cancel code 8), which still
+// counts as a completed activity so the script can resume.
+static BOOL ScriptContext_WaitForUnionRoomActivity(ScriptContext *ctx)
 {
-    u16 *v0 = FieldSystem_GetVarPointer(ctx->fieldSystem, ctx->data[0]);
-    u32 v1 = UnionRoom_GetActivity(ctx->fieldSystem->unk_7C);
+    u16 *destVar = FieldSystem_GetVarPointer(ctx->fieldSystem, ctx->data[0]);
+    u32 activity = UnionRoom_GetActivity(ctx->fieldSystem->unk_7C);
 
     if (gSystem.pressedKeys & PAD_BUTTON_B) {
-        v1 = UnionRoom_CancelActivity(ctx->fieldSystem->unk_7C, 8);
+        activity = UnionRoom_CancelActivity(ctx->fieldSystem->unk_7C, 8);
     }
 
-    if (v1 != 0) {
-        *v0 = v1;
+    if (activity != 0) {
+        *destVar = activity;
         return TRUE;
     }
 
@@ -5173,7 +5237,7 @@ static BOOL ScrCmd_ShowDiplomaSinnoh(ScriptContext *ctx)
     void **data = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
     *data = FieldSystem_ShowDiploma(ctx->fieldSystem, HEAP_ID_FIELD3, FALSE);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }
@@ -5183,7 +5247,7 @@ static BOOL ScrCmd_ShowDiplomaNationalDex(ScriptContext *ctx)
     void **data = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_PARTY_MANAGEMENT_DATA);
 
     *data = FieldSystem_ShowDiploma(ctx->fieldSystem, HEAP_ID_FIELD3, TRUE);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }
@@ -6589,7 +6653,7 @@ static BOOL ScrCmd_LaunchBattleFrontierScene(ScriptContext *ctx)
     fieldData->subscreenCursorOn = ctx->fieldSystem->battleSubscreenCursorOn;
 
     FieldTask_RunApplication(ctx->task, &gBattleFrontierAppTemplate, fieldData);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }
@@ -6604,21 +6668,25 @@ static BOOL ScrCmd_AdvanceEternaGymClock(ScriptContext *ctx)
     return TRUE;
 }
 
-static void sub_020462C0(SysTask *ctx, void *param1)
+// SysTask started by ScrCmd_2CD. Waits for the map's weather system to be
+// created (fieldSystem->unk_04->unk_0C becomes non-NULL) before forcing the
+// weather to OVERWORLD_WEATHER_26, then removes itself.
+static void Task_SetDeferredWeather(SysTask *task, void *param1)
 {
     FieldSystem *fieldSystem = param1;
 
     if (fieldSystem->unk_04->unk_0C) {
-        ov5_021D5F24(fieldSystem->unk_04->unk_0C, 26);
-        SysTask_Done(ctx);
+        ov5_021D5F24(fieldSystem->unk_04->unk_0C, OVERWORLD_WEATHER_26);
+        SysTask_Done(task);
     }
 }
 
+// Starts a task that applies a fixed weather once the weather system exists.
 static BOOL ScrCmd_2CD(ScriptContext *ctx)
 {
     FieldSystem *fieldSystem = ctx->fieldSystem;
 
-    SysTask_Start(sub_020462C0, fieldSystem, 128);
+    SysTask_Start(Task_SetDeferredWeather, fieldSystem, 128);
     return TRUE;
 }
 
@@ -6698,7 +6766,7 @@ static BOOL ScrCmd_OpenFrontierRecordsApp(ScriptContext *ctx)
     u16 species = ScriptContext_GetVar(ctx);
 
     *partyData = FieldSystem_OpenBattleFrontierRecord(ctx->fieldSystem, challengeType, facility, species, HEAP_ID_FIELD3);
-    ScriptContext_Pause(ctx, sub_02041CC8);
+    ScriptContext_Pause(ctx, ScriptContext_WaitForApplicationExitAndFreePartyData);
 
     return TRUE;
 }

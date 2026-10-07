@@ -28,7 +28,7 @@
 #include "trainer_info.h"
 #include "unk_020363E8.h"
 #include "battle_tower.h"
-#include "unk_0204AEE8.h"
+#include "battle_tower_partner.h"
 #include "battle_salon.h"
 #include "unk_0209BA80.h"
 #include "wifi_battle_tower_save.h"
@@ -271,15 +271,15 @@ BOOL ScrCmd_1E1(ScriptContext *ctx)
     switch (commandType) {
     case 0:
         cmd = 62;
-        sub_0204B060(ctx->fieldSystem->battleTower, ctx->fieldSystem->saveData);
+        BattleTower_BuildPartnerDataPacket(ctx->fieldSystem->battleTower, ctx->fieldSystem->saveData);
         break;
     case 1:
         cmd = 63;
-        sub_0204B0BC(ctx->fieldSystem->battleTower);
+        BattleTower_BuildTrainerIDPacket(ctx->fieldSystem->battleTower);
         break;
     case 2:
         cmd = 64;
-        sub_0204B0D4(ctx->fieldSystem->battleTower, argument);
+        BattleTower_SetPartnerReady(ctx->fieldSystem->battleTower, argument);
         break;
     }
 

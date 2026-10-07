@@ -31,7 +31,7 @@
 #include "unk_020363E8.h"
 #include "unk_02038FFC.h"
 #include "field_system_apps.h"
-#include "unk_0204AEE8.h"
+#include "battle_tower_partner.h"
 #include "wifi_battle_tower_save.h"
 
 #include "constdata/const_020F410C.h"
@@ -309,13 +309,13 @@ static BOOL BattleSalon_CommTask(FieldTask *param0)
 
     switch (v3->commandType) {
     case 0:
-        *v0 = sub_0204AFC4(fieldSystem, v1);
+        *v0 = BattleTower_ReceivePartnerData(fieldSystem, v1);
         break;
     case 1:
-        *v0 = sub_0204B020(fieldSystem, v1);
+        *v0 = BattleTower_ReceivePartnerTrainerIDs(fieldSystem, v1);
         break;
     case 2:
-        *v0 = sub_0204B044(fieldSystem, v1);
+        *v0 = BattleTower_IsPartnerDataReady(fieldSystem, v1);
     }
 
     Heap_Free(v3);
