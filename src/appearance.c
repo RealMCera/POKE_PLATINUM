@@ -9,12 +9,18 @@
 #include "heap.h"
 #include "string_template.h"
 
+// Associates a trainer appearance value with the trainer classes that are
+// shown for it. The appearance value is what TrainerInfo stores; the enum
+// TrainerAppearance is the row of the appearance sprite sheet it maps to.
 typedef struct Appearance {
-    int index;
-    int class1;
-    int class2;
+    int index; // Appearance value stored in TrainerInfo.
+    int class1; // Trainer class used when the appearance is shown as text.
+    int class2; // Trainer class used for battle and sprite graphics.
 } Appearance;
 
+// Appearance data for every trainer appearance, split into a male block
+// (indices 0..APPEARANCES_COUNT-1) and a female block
+// (indices APPEARANCES_COUNT..2*APPEARANCES_COUNT-1).
 static const Appearance sTrainerAppearances[APPEARANCES_COUNT * 2] = {
     // male appearances
     [TRAINER_APPEARANCE_SCHOOL_KID_M] = { 3, TRAINER_CLASS_SCHOOL_KID_MALE, TRAINER_CLASS_SCHOOL_KID_MALE },
@@ -37,6 +43,8 @@ static const Appearance sTrainerAppearances[APPEARANCES_COUNT * 2] = {
     [TRAINER_APPEARANCE_LADY] = { 63, TRAINER_CLASS_LADY, TRAINER_CLASS_LADY }
 };
 
+// For each trainer-ID bucket, the order in which the APPEARANCES_COUNT
+// appearances are assigned to the VARIANTS_COUNT variants.
 static const int sAppearanceShuffleTable[APPEARANCES_COUNT][VARIANTS_COUNT] = {
     { 0, 1, 2, 3 },
     { 1, 6, 7, 0 },
@@ -48,6 +56,8 @@ static const int sAppearanceShuffleTable[APPEARANCES_COUNT][VARIANTS_COUNT] = {
     { 7, 4, 5, 6 }
 };
 
+// Fills the string template's VARIANTS_COUNT trainer-class slots with the
+// classes of the appearances assigned to trainerId.
 void Appearance_LoadVariants(u32 trainerId, int trainerGender, StringTemplate *stringTemplate)
 {
     int rnd = trainerId % APPEARANCES_COUNT;
@@ -59,6 +69,8 @@ void Appearance_LoadVariants(u32 trainerId, int trainerGender, StringTemplate *s
     }
 }
 
+// Returns the appearance value assigned to the given variant of the trainer
+// identified by trainerId.
 int Appearance_CalculateFromTrainerInfo(u32 trainerId, int trainerGender, u32 variant)
 {
     int rnd = trainerId % APPEARANCES_COUNT;
@@ -67,6 +79,8 @@ int Appearance_CalculateFromTrainerInfo(u32 trainerId, int trainerGender, u32 va
     return sTrainerAppearances[appearanceIndex].index;
 }
 
+// Finds the appearance whose stored value matches appearance, searching the
+// block for the given gender. Returns 0 if no match is found.
 static enum TrainerAppearance GetAppearanceIndex(int gender, int appearance)
 {
     for (int i = 0; i < APPEARANCES_COUNT; i++) {
@@ -78,11 +92,14 @@ static enum TrainerAppearance GetAppearanceIndex(int gender, int appearance)
     return 0;
 }
 
+// Public wrapper around GetAppearanceIndex.
 enum TrainerAppearance Appearance_GetIndex(int gender, int appearance)
 {
     return GetAppearanceIndex(gender, appearance);
 }
 
+// Returns the requested datum (sprite row or trainer class) for the appearance
+// whose stored value matches appearance.
 int Appearance_GetData(int gender, int appearance, enum AppearanceDataParam param)
 {
     enum TrainerAppearance appearanceIndex = GetAppearanceIndex(gender, appearance);
@@ -100,22 +117,26 @@ int Appearance_GetData(int gender, int appearance, enum AppearanceDataParam para
     }
 }
 
-u16 *sub_0205CA4C(enum HeapID heapID)
+// Loads the trainer appearance palette (record.narc member 7) and copies its
+// 16x16 colors into a freshly allocated 16x18 palette buffer. The last two
+// rows of the buffer are left uninitialized.
+u16 *Appearance_LoadTrainerPalette(enum HeapID heapID)
 {
-    u8 *v0, *v1;
-    NNSG2dPaletteData *v2, *v3;
-    u16 *v4, *v5;
-    int v6;
+    void *plttHeapData;
+    NNSG2dPaletteData *plttData;
+    u16 *palette;
+    u16 *rawData;
+    int i;
 
-    v0 = Graphics_GetPlttData(NARC_INDEX_GRAPHIC__RECORD, 7, &v2, heapID);
-    v4 = Heap_Alloc(heapID, 16 * 18 * 2);
-    v5 = (u16 *)v2->pRawData;
+    plttHeapData = Graphics_GetPlttData(NARC_INDEX_GRAPHIC__RECORD, 7, &plttData, heapID);
+    palette = Heap_Alloc(heapID, 16 * 18 * 2);
+    rawData = (u16 *)plttData->pRawData;
 
-    for (v6 = 0; v6 < 16 * 16; v6++) {
-        v4[v6] = v5[v6];
+    for (i = 0; i < 16 * 16; i++) {
+        palette[i] = rawData[i];
     }
 
-    Heap_Free(v0);
+    Heap_Free(plttHeapData);
 
-    return v4;
+    return palette;
 }

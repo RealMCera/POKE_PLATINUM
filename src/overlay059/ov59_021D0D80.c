@@ -506,7 +506,7 @@ static void ov59_021D1250(MixRecordsComm *param0, NARC *param1)
     MessageLoader_GetString(param0->msgLoader, 17, param0->headerString);
     ov59_021D27FC(param0, param1);
 
-    param0->paletteBuffer = sub_0205CA4C(HEAP_ID_51);
+    param0->paletteBuffer = Appearance_LoadTrainerPalette(HEAP_ID_51);
     param0->animation.unk_00 = 0;
     param0->animation.unk_08 = 0;
     param0->animation.unk_04 = 0;
