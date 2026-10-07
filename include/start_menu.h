@@ -13,6 +13,11 @@
 
 #define MAX_START_MENU_OPTIONS 7
 
+// State for the field start menu. `options` holds the currently visible option
+// IDs (in display order) and `hideOptionFlags` is the bitmask of HIDE_OPTION_*
+// flags that removed the others. `callback`/`taskData`/`additionalTaskContext`
+// carry the active application's task function and its context across the
+// menu's state transitions.
 typedef struct StartMenu {
     Window primaryWindow;
     Window secondaryWindow;
