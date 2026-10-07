@@ -27,7 +27,7 @@
 #include "string_template.h"
 #include "system.h"
 #include "trainer_info.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 static void JournalController_MainCallback(void *data);
 static void JournalController_SetVRAMBanks(void);

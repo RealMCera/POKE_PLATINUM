@@ -54,7 +54,7 @@
 #include "unk_0202419C.h"
 #include "battle_recording.h"
 #include "comm_tool.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "vram_transfer.h"
 
 typedef struct UnkStruct_ov10_0221FB28_t UnkStruct_ov10_0221FB28;

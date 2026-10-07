@@ -31,7 +31,7 @@
 #include "string_template.h"
 #include "trainer_info.h"
 #include "unk_02038F8C.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "unk_02092494.h"
 #include "wifi_history_save_data.h"
 

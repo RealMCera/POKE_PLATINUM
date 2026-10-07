@@ -26,7 +26,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "unk_0202419C.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 #include "res/graphics/berry_tag/berry_tag.naix"
 #include "res/text/bank/berry_tags.h"

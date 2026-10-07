@@ -22,7 +22,7 @@
 #include "sprite.h"
 #include "sprite_system.h"
 #include "sprite_util.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/sprite_templates/party_menu.h"

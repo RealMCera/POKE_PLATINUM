@@ -35,7 +35,7 @@
 #include "system.h"
 #include "text.h"
 #include "type_icon.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "contest_util.h"
 #include "vram_transfer.h"
 

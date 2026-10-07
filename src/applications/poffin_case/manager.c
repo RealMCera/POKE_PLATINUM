@@ -29,7 +29,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "touch_screen.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/poffin_case/poru_gra.naix"

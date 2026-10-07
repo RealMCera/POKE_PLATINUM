@@ -85,7 +85,7 @@
 #include "comm_tool.h"
 #include "unk_02038F8C.h"
 #include "link_battle_comm.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "vram_transfer.h"
 
 #include "res/text/bank/battle_strings.h"

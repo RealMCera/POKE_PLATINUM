@@ -51,7 +51,7 @@
 #include "system_flags.h"
 #include "touch_pad.h"
 #include "trainer_info.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "contest_util.h"
 #include "vars_flags.h"
 #include "vram_transfer.h"

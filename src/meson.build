@@ -299,7 +299,7 @@ pokeplatinum_c = files(
     'vs_recorder.c',
     'vs_recorder_app.c',
     'unk_0208C010.c',
-    'unk_0208C098.c',
+    'app_graphics.c',
     'applications/pokemon_summary_screen/main.c',
     'applications/pokemon_summary_screen/sprites.c',
     'applications/pokemon_summary_screen/window.c',

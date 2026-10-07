@@ -53,7 +53,7 @@
 #include "text.h"
 #include "trainer_info.h"
 #include "comm_tool.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "frontier_comm_cmd.h"
 #include "vram_transfer.h"
 

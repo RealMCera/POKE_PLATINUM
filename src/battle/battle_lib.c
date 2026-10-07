@@ -42,7 +42,7 @@
 #include "string_gf.h"
 #include "trainer_data.h"
 #include "trainer_info.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 #include "res/battle/scripts/sub_seq.naix"
 #include "res/text/bank/battle_strings.h"

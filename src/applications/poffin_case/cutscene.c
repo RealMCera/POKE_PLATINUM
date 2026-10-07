@@ -30,7 +30,7 @@
 #include "sys_task_manager.h"
 #include "system.h"
 #include "text.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/poffin_case/feeding_cutscene/cutscene.naix"

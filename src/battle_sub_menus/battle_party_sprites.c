@@ -21,7 +21,7 @@
 #include "pokemon_icon.h"
 #include "sprite_system.h"
 #include "type_icon.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 #define SPRITE_MANAGER_CHAR_RESOURCE_CAPACITY       18
 #define SPRITE_MANAGER_PLTT_RESOURCE_CAPACITY       6

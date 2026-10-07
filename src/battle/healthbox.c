@@ -28,7 +28,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "text.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 #include "res/graphics/battle/sprites.naix"
 #include "res/text/bank/battle_strings.h"
