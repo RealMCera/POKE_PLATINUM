@@ -13,7 +13,7 @@
 #include "savedata_misc.h"
 #include "system.h"
 #include "fatal_error_screen.h"
-#include "unk_0209AA74.h"
+#include "card_save_error_screen.h"
 
 static void SaveTable_Clear(SaveDataBody *body, const SavePageInfo *pageInfo);
 static void SavePageInfo_Init(SavePageInfo *pageInfo);
@@ -1322,7 +1322,7 @@ static void SaveData_CardSave_Error(s32 lockID, int errorID)
     OS_ReleaseLockID(lockID);
 
     Heap_Free(sSaveDataPtr);
-    sub_0209AA74(HEAP_ID_SAVE, errorID);
+    CardSaveErrorScreen_Show(HEAP_ID_SAVE, errorID);
 }
 
 BOOL SaveData_Checksum(int saveTableID)
