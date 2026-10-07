@@ -519,7 +519,7 @@ static void ov109_021D41F8(UnkStruct_ov109_021D5140 *param0, NARC *param1)
     MessageLoader_GetString(param0->unk_38, 17, param0->unk_58);
     ov109_021D577C(param0, param1);
 
-    param0->unk_41C = sub_0205CA4C(HEAP_ID_95);
+    param0->unk_41C = Appearance_LoadTrainerPalette(HEAP_ID_95);
     param0->unk_1C.unk_00 = 0;
     param0->unk_1C.unk_08 = 0;
     param0->unk_1C.unk_04 = 0;
