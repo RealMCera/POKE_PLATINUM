@@ -62,7 +62,7 @@
 #include "string_gf.h"
 #include "system_data.h"
 #include "trainer_info.h"
-#include "unk_0207E060.h"
+#include "wfc_trainer_info.h"
 #include "wifi_history_save_data.h"
 #include "wifi_plaza_question_data.h"
 
@@ -218,7 +218,7 @@ typedef struct UnkStruct_ov66_0222DFF8_t {
     UnkStruct_ov66_0222E294 unk_3DF;
     UnkStruct_ov66_022308A0 unk_3E4;
     UnkStruct_ov66_022309A4 unk_49C;
-    UnkStruct_0207E060 *unk_4B8;
+    WFCTrainerInfo *unk_4B8;
     UnkStruct_ov66_02230A6C unk_4BC;
     UnkStruct_ov66_0222FBF0 unk_508;
     UnkStruct_ov66_0222DFF8_sub3 unk_510;
@@ -1858,13 +1858,13 @@ void ov66_0222F16C(UnkStruct_ov66_0222DFF8 *param0)
     GF_ASSERT(param0->unk_4B8 == NULL);
 
     info = SaveData_GetTrainerInfo(param0->saveData);
-    param0->unk_4B8 = sub_0207E060(info, param0->heapID);
+    param0->unk_4B8 = WFCTrainerInfo_New(info, param0->heapID);
 }
 
 void ov66_0222F198(UnkStruct_ov66_0222DFF8 *param0)
 {
     if (param0->unk_4B8 != NULL) {
-        sub_0207E0B0(param0->unk_4B8);
+        WFCTrainerInfo_Free(param0->unk_4B8);
         param0->unk_4B8 = NULL;
     }
 }

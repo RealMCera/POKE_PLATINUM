@@ -97,7 +97,7 @@ typedef struct {
     u32 unk_04;
 } UnkStruct_ov65_02239CDC;
 
-static UnkStruct_0207E060 *ov65_02234FA8(UnkStruct_ov65_0222EBE0 *param0, u32 param1);
+static WFCTrainerInfo *ov65_02234FA8(UnkStruct_ov65_0222EBE0 *param0, u32 param1);
 static u8 ov65_02234FC4(int param0);
 static BOOL ov65_02234FCC(UnkStruct_ov65_0222EBE0 *param0, int param1, int param2);
 static void ov65_0222E5E0(void *param0);
@@ -400,9 +400,9 @@ static BOOL ov65_0222DD1C(UnkStruct_ov65_0222EBE0 *param0)
     return 1;
 }
 
-static u32 ov65_0222DD20(UnkStruct_ov65_0222EBE0 *param0, UnkStruct_0207E060 *param1)
+static u32 ov65_0222DD20(UnkStruct_ov65_0222EBE0 *param0, WFCTrainerInfo *param1)
 {
-    u32 v0 = param1->unk_1B;
+    u32 v0 = param1->commState;
 
     if ((v0 == 20) || (v0 == 21)) {
         if (ov65_0222DCE0(param0) == 0) {
@@ -1586,7 +1586,7 @@ static int ov65_0222F010(UnkStruct_ov65_0222EBE0 *param0, int param1)
     if (CommManager_IsConnectedToWifi()) {
         ov65_02232DC0(param0, NintendoWFC_GetHostFriendIdx());
         param0->unk_04 = CommManager_GetUnk00();
-        param0->unk_04->unk_00.unk_21 = param0->unk_04->unk_00.unk_22;
+        param0->unk_04->unk_00.voiceChatEnabled = param0->unk_04->unk_00.voiceChatEnabledBackup;
 
         v0 = ov65_0222DD20(param0, &param0->unk_04->unk_00);
 
@@ -1596,7 +1596,7 @@ static int ov65_0222F010(UnkStruct_ov65_0222EBE0 *param0, int param1)
             CommManager_EndTradeWifiMatch();
 
             param0->unk_04 = CommManager_GetUnk00();
-            param0->unk_04->unk_00.unk_21 = param0->unk_04->unk_00.unk_22;
+            param0->unk_04->unk_00.voiceChatEnabled = param0->unk_04->unk_00.voiceChatEnabledBackup;
             param0->unk_3BC = 20;
             param0->unk_3A8 = 65;
         } else {
@@ -1783,40 +1783,40 @@ static void ov65_0222F4C4(UnkStruct_ov65_0222EBE0 *param0, int param1)
     WiFiHistory *wiFiHistory = SaveData_WiFiHistory(param0->saveData);
     int v4, v5;
 
-    GF_ASSERT((sizeof(UnkStruct_0207E060)) == sizeof(UnkStruct_0207E060));
+    GF_ASSERT((sizeof(WFCTrainerInfo)) == sizeof(WFCTrainerInfo));
 
     v4 = Party_GetCurrentCount(v2);
 
     for (v5 = 0; v5 < v4; v5++) {
         Pokemon *v6 = Party_GetPokemonBySlotIndex(v2, v5);
 
-        param0->unk_04->unk_00.unk_00[v5] = Pokemon_GetValue(v6, MON_DATA_SPECIES, NULL);
-        param0->unk_04->unk_00.unk_0C[v5] = Pokemon_GetValue(v6, MON_DATA_HELD_ITEM, NULL);
+        param0->unk_04->unk_00.partySpecies[v5] = Pokemon_GetValue(v6, MON_DATA_SPECIES, NULL);
+        param0->unk_04->unk_00.partyHeldItems[v5] = Pokemon_GetValue(v6, MON_DATA_HELD_ITEM, NULL);
     }
 
-    param0->unk_04->unk_00.unk_18 = TrainerInfo_GameCode(v0);
+    param0->unk_04->unk_00.gameCode = TrainerInfo_GameCode(v0);
     param0->unk_04->unk_00.language = TrainerInfo_Language(v0);
-    param0->unk_04->unk_00.unk_1A = Pokedex_IsNationalDexObtained(v1);
-    param0->unk_04->unk_00.unk_1B = 29;
+    param0->unk_04->unk_00.isNationalDexObtained = Pokedex_IsNationalDexObtained(v1);
+    param0->unk_04->unk_00.commState = 29;
 
     ov65_02232E70(param0, param1);
 
     param0->unk_04->unk_00.unk_1C = 0;
-    param0->unk_04->unk_00.unk_1D = TrainerInfo_Appearance(v0);
-    param0->unk_04->unk_00.unk_1E = TrainerInfo_Gender(v0);
-    param0->unk_04->unk_00.unk_1F = WiFiHistory_GetCountry(wiFiHistory);
-    param0->unk_04->unk_00.unk_20 = WiFiHistory_GetRegion(wiFiHistory);
-    param0->unk_04->unk_00.unk_21 = 1;
-    param0->unk_04->unk_00.unk_22 = 1;
+    param0->unk_04->unk_00.appearance = TrainerInfo_Appearance(v0);
+    param0->unk_04->unk_00.gender = TrainerInfo_Gender(v0);
+    param0->unk_04->unk_00.country = WiFiHistory_GetCountry(wiFiHistory);
+    param0->unk_04->unk_00.region = WiFiHistory_GetRegion(wiFiHistory);
+    param0->unk_04->unk_00.voiceChatEnabled = 1;
+    param0->unk_04->unk_00.voiceChatEnabledBackup = 1;
 
-    NintendoWFC_SetStatusData((const char *)&param0->unk_04->unk_00, sizeof(UnkStruct_0207E060));
-    NintendoWFC_SetFriendStatusesBuffer(&param0->unk_04->unk_24[0], sizeof(UnkStruct_0207E060));
+    NintendoWFC_SetStatusData((const char *)&param0->unk_04->unk_00, sizeof(WFCTrainerInfo));
+    NintendoWFC_SetFriendStatusesBuffer(&param0->unk_04->unk_24[0], sizeof(WFCTrainerInfo));
 }
 
 static int ov65_0222F5BC(UnkStruct_ov65_0222EBE0 *param0)
 {
     int v0, v1 = 0;
-    UnkStruct_0207E060 *v2;
+    WFCTrainerInfo *v2;
     u32 v3;
 
     for (v0 = 0; v0 < 32; v0++) {
@@ -1827,7 +1827,7 @@ static int ov65_0222F5BC(UnkStruct_ov65_0222EBE0 *param0)
                 v2 = ov65_02234FA8(param0, v0);
                 v3 = ov65_0222DD20(param0, v2);
 
-                if ((v3 != 0) && (v3 != 28) && (v2->unk_1D != 0x0)) {
+                if ((v3 != 0) && (v3 != 28) && (v2->appearance != 0x0)) {
                     param0->unk_0C[v1] = v0 + 1;
                     v1++;
                 } else {
@@ -1850,14 +1850,14 @@ static int ov65_0222F62C(UnkStruct_ov65_0222EBE0 *param0)
     BOOL v2;
     BOOL v3;
     UnkStruct_ov65_022354D8 *v4;
-    UnkStruct_0207E060 *v5;
+    WFCTrainerInfo *v5;
     u32 v6;
 
     for (v0 = 0; v0 < 32; v0++) {
         v5 = ov65_02234FA8(param0, v0);
         v6 = ov65_0222DD20(param0, v5);
 
-        if ((param0->unk_4C[v0] != v6) || (param0->unk_CC[v0] != v5->unk_21)) {
+        if ((param0->unk_4C[v0] != v6) || (param0->unk_CC[v0] != v5->voiceChatEnabled)) {
             v4 = ov65_0222E8D4(param0, v0 + 1);
 
             if (v4) {
@@ -1871,10 +1871,10 @@ static int ov65_0222F62C(UnkStruct_ov65_0222EBE0 *param0)
                 }
 
                 param0->unk_4C[v0] = v6;
-                param0->unk_CC[v0] = v5->unk_21;
+                param0->unk_CC[v0] = v5->voiceChatEnabled;
 
-                WiFiList_SetFriendField(param0->unk_00, v0, 7, v5->unk_1D);
-                WiFiList_SetFriendField(param0->unk_00, v0, 8, v5->unk_1E);
+                WiFiList_SetFriendField(param0->unk_00, v0, 7, v5->appearance);
+                WiFiList_SetFriendField(param0->unk_00, v0, 8, v5->gender);
                 v1++;
             }
         }
@@ -2271,7 +2271,7 @@ static void ov65_0222FD70(UnkStruct_ov65_0222EBE0 *param0)
     Text_AddPrinterWithParamsAndColor(&param0->unk_340, FONT_SYSTEM, param0->unk_170, 102, 0, TEXT_SPEED_NO_TRANSFER, v0, NULL);
     ov65_0222EA38(param0->unk_15C, &param0->unk_BD0, 1, 2, 1, v6);
 
-    if (param0->unk_04->unk_00.unk_21) {
+    if (param0->unk_04->unk_00.voiceChatEnabled) {
         v2 = 8;
     } else {
         v2 = 1;
@@ -2345,7 +2345,7 @@ static int ov65_0222FFAC(UnkStruct_ov65_0222EBE0 *param0, int param1)
     }
 
     if (ov65_02235194(&param0->unk_3EC) == 0) {
-        if (param0->unk_04->unk_00.unk_1E == 0) {
+        if (param0->unk_04->unk_00.gender == 0) {
             v5 = 0x0;
         } else {
             v5 = 0x61;
@@ -2391,7 +2391,7 @@ static int ov65_0223012C(UnkStruct_ov65_0222EBE0 *param0)
 static BOOL ov65_02230140(UnkStruct_ov65_0222EBE0 *param0)
 {
     if (NintendoWFC_GetLatestNewClientFriendIdx() != WFC_NOT_A_FRIEND) {
-        NintendoWFC_SetVoiceChatEnabled(param0->unk_04->unk_00.unk_21);
+        NintendoWFC_SetVoiceChatEnabled(param0->unk_04->unk_00.voiceChatEnabled);
         return 1;
     }
 
@@ -2404,7 +2404,7 @@ static int ov65_02230164(UnkStruct_ov65_0222EBE0 *param0)
     int v1, v2;
     UnkStruct_ov65_022354D8 *v3;
     BOOL v4;
-    UnkStruct_0207E060 *v5;
+    WFCTrainerInfo *v5;
     BOOL v6;
     BOOL v7;
 
@@ -2446,7 +2446,7 @@ static int ov65_02230164(UnkStruct_ov65_0222EBE0 *param0)
 
             if ((v4 == 0) && (param0->unk_0C[v1] != 0)) {
                 v5 = ov65_02234FA8(param0, param0->unk_0C[v1] - 1);
-                v3 = ov65_022353EC(&param0->unk_3EC, v5->unk_1D, param0->unk_0C[v1]);
+                v3 = ov65_022353EC(&param0->unk_3EC, v5->appearance, param0->unk_0C[v1]);
 
                 if (v3) {
                     ov65_02233638(param0, param0->unk_0C[v1], 2);
@@ -2564,7 +2564,7 @@ static int ov65_022302C4(UnkStruct_ov65_0222EBE0 *param0, int param1)
         param0->unk_3D0 = NintendoWFC_GetLatestNewClientFriendIdx();
         ov65_02232DC0(param0, param0->unk_3D0);
         ov65_02232B58(param0, 76, 0);
-        NintendoWFC_SetVoiceChatEnabled(param0->unk_04->unk_00.unk_21);
+        NintendoWFC_SetVoiceChatEnabled(param0->unk_04->unk_00.voiceChatEnabled);
         param0->unk_3A4 = 0;
     } else if ((param0->unk_3D0 != -1) && (NintendoWFC_GetLatestNewClientFriendIdx() == WFC_NOT_A_FRIEND)) {
         NintendoWFC_SetVoiceChatEnabled(0);
@@ -2668,12 +2668,12 @@ static int ov65_022305EC(UnkStruct_ov65_0222EBE0 *param0, int param1)
 
 static int ov65_02230634(UnkStruct_ov65_0222EBE0 *param0, int param1)
 {
-    UnkStruct_0207E060 *v0;
+    WFCTrainerInfo *v0;
     int v1;
     int v2;
 
     v0 = ov65_02234FA8(param0, param0->unk_3E2 - 1);
-    v1 = v0->unk_21;
+    v1 = v0->voiceChatEnabled;
     v2 = ov65_0222DD20(param0, v0);
 
     param0->unk_3A0--;
@@ -2727,7 +2727,7 @@ static int ov65_02230774(UnkStruct_ov65_0222EBE0 *param0, int param1)
 
 static int ov65_022307B0(UnkStruct_ov65_0222EBE0 *param0, int param1)
 {
-    UnkStruct_0207E060 *v0;
+    WFCTrainerInfo *v0;
     int v1;
     int v2;
 
@@ -2766,7 +2766,7 @@ static int ov65_022307B0(UnkStruct_ov65_0222EBE0 *param0, int param1)
 
 static int ov65_02230860(UnkStruct_ov65_0222EBE0 *param0, int param1)
 {
-    UnkStruct_0207E060 *v0;
+    WFCTrainerInfo *v0;
     int v1;
 
     if (NintendoWFC_GetHostFriendIdx() < 0) {
@@ -3025,7 +3025,7 @@ static int ov65_02230D6C(UnkStruct_ov65_0222EBE0 *param0, int param1)
     ov65_022355FC(&param0->unk_3EC);
 
     if ((param0->unk_3D0 == -1) && (NintendoWFC_GetLatestNewClientFriendIdx() != WFC_NOT_A_FRIEND)) {
-        NintendoWFC_SetVoiceChatEnabled(param0->unk_04->unk_00.unk_21);
+        NintendoWFC_SetVoiceChatEnabled(param0->unk_04->unk_00.voiceChatEnabled);
 
         if (v1 == 0xffffffff) {
             Menu_DestroyForExit(param0->unk_184, 54);
@@ -3516,7 +3516,7 @@ static int ov65_022315A4(UnkStruct_ov65_0222EBE0 *param0, int param1)
 {
     int v0;
     u16 v1, v2;
-    UnkStruct_0207E060 *v3;
+    WFCTrainerInfo *v3;
     UnkStruct_ov65_022354D8 *v4;
     UnkStruct_ov65_022354D8 *v5;
     u32 v6;
@@ -3594,7 +3594,7 @@ static int ov65_022316F0(UnkStruct_ov65_0222EBE0 *param0, int param1)
     UnkStruct_ov65_022354D8 *v0;
     u32 v1;
     int v2, v3;
-    UnkStruct_0207E060 *v4;
+    WFCTrainerInfo *v4;
 
     if (CommManager_CheckWifiError()) {
         ov65_0222F6EC(param0);
@@ -3640,18 +3640,18 @@ static int ov65_022316F0(UnkStruct_ov65_0222EBE0 *param0, int param1)
         int v5, v6;
         ListMenuTemplate v7;
         u16 v8, v9, v10;
-        UnkStruct_0207E060 *v11;
+        WFCTrainerInfo *v11;
 
         v6 = NELEMS(Unk_ov65_02238968);
         v7 = Unk_ov65_02238A90;
         v8 = ov65_02235254(&param0->unk_3EC);
         v11 = ov65_02234FA8(param0, v8 - 1);
         v9 = ov65_0222DD20(param0, v11);
-        v10 = v11->unk_21;
+        v10 = v11->voiceChatEnabled;
 
         param0->unk_3E0 = v10;
 
-        v10 += param0->unk_04->unk_00.unk_21;
+        v10 += param0->unk_04->unk_00.voiceChatEnabled;
         param0->unk_154 = StringList_New(v6, HEAP_ID_54);
         v5 = 0;
 
@@ -3692,20 +3692,20 @@ static int ov65_022316F0(UnkStruct_ov65_0222EBE0 *param0, int param1)
     return param1;
 }
 
-static BOOL ov65_02231978(UnkStruct_0207E060 *param0)
+static BOOL ov65_02231978(WFCTrainerInfo *param0)
 {
     int v0;
 
     for (v0 = 0; v0 < 6; v0++) {
-        if (495 == param0->unk_00[v0]) {
+        if (495 == param0->partySpecies[v0]) {
             return 0;
         }
 
-        if (495 < param0->unk_00[v0]) {
+        if (495 < param0->partySpecies[v0]) {
             return 0;
         }
 
-        if (467 < param0->unk_0C[v0]) {
+        if (467 < param0->partyHeldItems[v0]) {
             return 0;
         }
     }
@@ -3776,7 +3776,7 @@ static int ov65_02231A98(UnkStruct_ov65_0222EBE0 *param0, int param1)
     u16 v5;
     int v6;
     UnkStruct_ov65_022354D8 *v7;
-    UnkStruct_0207E060 *v8;
+    WFCTrainerInfo *v8;
 
     v0 = ListMenu_ProcessInput(param0->unk_158);
     v6 = ov65_02230140(param0);
@@ -3814,7 +3814,7 @@ static int ov65_02231A98(UnkStruct_ov65_0222EBE0 *param0, int param1)
         } else {
             v8 = ov65_02234FA8(param0, v2 - 1);
             v1 = ov65_0222DD20(param0, v8);
-            v4 = v8->unk_21;
+            v4 = v8->voiceChatEnabled;
 
             if ((param0->unk_3DE != v1) || ((ov65_0222DD64(v1) == 0) && (param0->unk_3E0 != v4))) {
                 ov65_02232DC0(param0, v2 - 1);
@@ -3844,7 +3844,7 @@ static int ov65_02231A98(UnkStruct_ov65_0222EBE0 *param0, int param1)
 
                 v8 = ov65_02234FA8(param0, v2 - 1);
                 v1 = ov65_0222DD20(param0, v8);
-                v4 = v8->unk_21;
+                v4 = v8->voiceChatEnabled;
 
                 if ((param0->unk_3DE != v1) || ((ov65_0222DD64(v1) == 0) && (param0->unk_3E0 != v4))) {
                     ov65_02232DC0(param0, v2 - 1);
@@ -3889,7 +3889,7 @@ static int ov65_02231A98(UnkStruct_ov65_0222EBE0 *param0, int param1)
                 }
 
                 if (ov65_0222DD64(v1) == 0) {
-                    if (v4 != param0->unk_04->unk_00.unk_21) {
+                    if (v4 != param0->unk_04->unk_00.voiceChatEnabled) {
                         if (v4) {
                             ov65_02232B58(param0, 134, 0);
                         } else {
@@ -4066,13 +4066,13 @@ static int ov65_02232028(UnkStruct_ov65_0222EBE0 *param0, int param1)
 {
     int v0;
     int v1;
-    UnkStruct_0207E060 *v2;
+    WFCTrainerInfo *v2;
     int v3;
 
     v2 = ov65_02234FA8(param0, NintendoWFC_GetHostFriendIdx());
     v0 = ov65_0222DD20(param0, &param0->unk_04->unk_00);
     v1 = ov65_0222DD20(param0, v2);
-    v3 = param0->unk_04->unk_00.unk_21;
+    v3 = param0->unk_04->unk_00.voiceChatEnabled;
 
     if ((v0 == 12) && (v1 == 5)) {
         param0->unk_3A8 = 49;
@@ -4256,7 +4256,7 @@ static int ov65_022323C0(UnkStruct_ov65_0222EBE0 *param0, int param1)
 {
     int v0;
     int v1[8];
-    UnkStruct_0207E060 *v2;
+    WFCTrainerInfo *v2;
 
     if (ov65_022321A8(param0)) {
         (void)0;
@@ -4498,7 +4498,7 @@ static int ov65_0223278C(UnkStruct_ov65_0222EBE0 *param0, int param1)
         }
 
         param0->unk_04 = CommManager_GetUnk00();
-        param0->unk_04->unk_00.unk_21 = param0->unk_04->unk_00.unk_22;
+        param0->unk_04->unk_00.voiceChatEnabled = param0->unk_04->unk_00.voiceChatEnabledBackup;
     }
 
     return param1;
@@ -4509,7 +4509,7 @@ static int ov65_0223288C(UnkStruct_ov65_0222EBE0 *param0, int param1)
     {
         int v0, v1, v2;
         UnkStruct_ov65_022354D8 *v3;
-        UnkStruct_0207E060 *v4;
+        WFCTrainerInfo *v4;
 
         v1 = ov65_02235254(&param0->unk_3EC);
         v3 = ov65_0222E8D4(param0, v1);
@@ -4522,7 +4522,7 @@ static int ov65_0223288C(UnkStruct_ov65_0222EBE0 *param0, int param1)
         } else {
             v4 = ov65_02234FA8(param0, v1 - 1);
             v0 = ov65_0222DD20(param0, v4);
-            v2 = v4->unk_21;
+            v2 = v4->voiceChatEnabled;
 
             if ((param0->unk_3DE != v0) || (param0->unk_3E0 != v2)) {
                 ov65_02232DC0(param0, v1 - 1);
@@ -4549,7 +4549,7 @@ static int ov65_0223294C(UnkStruct_ov65_0222EBE0 *param0, int param1)
     {
         int v3, v4;
         UnkStruct_ov65_022354D8 *v5;
-        UnkStruct_0207E060 *v6;
+        WFCTrainerInfo *v6;
 
         v3 = ov65_02235254(&param0->unk_3EC);
         v5 = ov65_0222E8D4(param0, v3);
@@ -4563,7 +4563,7 @@ static int ov65_0223294C(UnkStruct_ov65_0222EBE0 *param0, int param1)
         } else {
             v6 = ov65_02234FA8(param0, v3 - 1);
             v2 = ov65_0222DD20(param0, v6);
-            v4 = v6->unk_21;
+            v4 = v6->voiceChatEnabled;
 
             if ((param0->unk_3DE != v2) || (param0->unk_3E0 != v4)) {
                 Menu_DestroyForExit(param0->unk_184, 54);
@@ -4755,7 +4755,7 @@ static void ov65_02232E58(UnkStruct_ov65_0222EBE0 *param0, int param1)
     }
 
     ov65_02232E70(param0, param1);
-    NintendoWFC_SetStatusData(&(param0->unk_04->unk_00), sizeof(UnkStruct_0207E060));
+    NintendoWFC_SetStatusData(&(param0->unk_04->unk_00), sizeof(WFCTrainerInfo));
 }
 
 static void ov65_02232E70(UnkStruct_ov65_0222EBE0 *param0, int param1)
@@ -4769,7 +4769,7 @@ static void ov65_02232E70(UnkStruct_ov65_0222EBE0 *param0, int param1)
     v0 = ov65_0222DD20(param0, &param0->unk_04->unk_00);
 
     if (v0 != param1) {
-        param0->unk_04->unk_00.unk_1B = param1;
+        param0->unk_04->unk_00.commState = param1;
 
         if (ov65_0222DE40(param1) || (param1 == 8) || (param1 == 20) || (param1 == 22) || (param1 == 24) || (param1 == 26) || (param1 == 18)) {
             (void)0;
@@ -4789,27 +4789,27 @@ static void ov65_02232E70(UnkStruct_ov65_0222EBE0 *param0, int param1)
 
 static BOOL ov65_02232EDC(UnkStruct_ov65_0222EBE0 *param0)
 {
-    param0->unk_04->unk_00.unk_21 = 1 - param0->unk_04->unk_00.unk_21;
+    param0->unk_04->unk_00.voiceChatEnabled = 1 - param0->unk_04->unk_00.voiceChatEnabled;
 
-    NintendoWFC_SetStatusData(&(param0->unk_04->unk_00), sizeof(UnkStruct_0207E060));
-    return param0->unk_04->unk_00.unk_21;
+    NintendoWFC_SetStatusData(&(param0->unk_04->unk_00), sizeof(WFCTrainerInfo));
+    return param0->unk_04->unk_00.voiceChatEnabled;
 }
 
 static BOOL ov65_02232F00(UnkStruct_ov65_0222EBE0 *param0)
 {
-    param0->unk_04->unk_00.unk_22 = 1 - param0->unk_04->unk_00.unk_22;
-    param0->unk_04->unk_00.unk_21 = param0->unk_04->unk_00.unk_22;
+    param0->unk_04->unk_00.voiceChatEnabledBackup = 1 - param0->unk_04->unk_00.voiceChatEnabledBackup;
+    param0->unk_04->unk_00.voiceChatEnabled = param0->unk_04->unk_00.voiceChatEnabledBackup;
 
-    NintendoWFC_SetStatusData(&(param0->unk_04->unk_00), sizeof(UnkStruct_0207E060));
-    return param0->unk_04->unk_00.unk_22;
+    NintendoWFC_SetStatusData(&(param0->unk_04->unk_00), sizeof(WFCTrainerInfo));
+    return param0->unk_04->unk_00.voiceChatEnabledBackup;
 }
 
 static BOOL ov65_02232F30(UnkStruct_ov65_0222EBE0 *param0)
 {
-    param0->unk_04->unk_00.unk_21 = param0->unk_04->unk_00.unk_22;
+    param0->unk_04->unk_00.voiceChatEnabled = param0->unk_04->unk_00.voiceChatEnabledBackup;
 
-    NintendoWFC_SetStatusData(&(param0->unk_04->unk_00), sizeof(UnkStruct_0207E060));
-    return param0->unk_04->unk_00.unk_22;
+    NintendoWFC_SetStatusData(&(param0->unk_04->unk_00), sizeof(WFCTrainerInfo));
+    return param0->unk_04->unk_00.voiceChatEnabledBackup;
 }
 
 static void ov65_02232F50(UnkStruct_ov65_0222EBE0 *param0)
@@ -5320,7 +5320,7 @@ static void ov65_02233940(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
     StringTemplate_Format(param0->unk_BE0.unk_00, param0->unk_178, param0->unk_170);
     Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_MESSAGE, param0->unk_178, 32, 8, TEXT_SPEED_NO_TRANSFER, color, NULL);
 
-    UnkStruct_0207E060 *v2 = ov65_02234FA8(param0, v0);
+    WFCTrainerInfo *v2 = ov65_02234FA8(param0, v0);
     u32 v3 = ov65_0222DD20(param0, v2);
     MessageLoader_GetString(param0->unk_168, ov65_0223484C(v3, &color), param0->unk_170);
     Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_170, 104, 8, TEXT_SPEED_NO_TRANSFER, color, NULL);
@@ -5389,7 +5389,7 @@ static void ov65_02233940(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
 
     int v5;
 
-    if (v2->unk_21) {
+    if (v2->voiceChatEnabled) {
         v5 = 8;
     } else {
         v5 = 1;
@@ -5793,7 +5793,7 @@ static void ov65_0223498C(UnkStruct_ov65_0222EBE0 *param0, Window *param1, u32 p
     int v0;
     int v1;
     int v2;
-    UnkStruct_0207E060 *v3;
+    WFCTrainerInfo *v3;
     u32 v4;
 
     v3 = ov65_02234FA8(param0, param2 - 1);
@@ -5806,7 +5806,7 @@ static void ov65_0223498C(UnkStruct_ov65_0222EBE0 *param0, Window *param1, u32 p
         if (v1 == 0) {
             ov65_0222EB1C(&param1[v1], &param0->unk_BD0, 0, v0, v4);
         } else {
-            if (v3->unk_21) {
+            if (v3->voiceChatEnabled) {
                 v2 = 8;
             } else {
                 v2 = 1;
@@ -6101,7 +6101,7 @@ static void ov65_02234F68(UnkStruct_ov65_0222EBE0 *param0, int param1)
     }
 }
 
-static UnkStruct_0207E060 *ov65_02234FA8(UnkStruct_ov65_0222EBE0 *param0, u32 param1)
+static WFCTrainerInfo *ov65_02234FA8(UnkStruct_ov65_0222EBE0 *param0, u32 param1)
 {
     GF_ASSERT(param1 < 32);
 
@@ -6116,7 +6116,7 @@ static u8 ov65_02234FC4(int param0)
 static BOOL ov65_02234FCC(UnkStruct_ov65_0222EBE0 *param0, int param1, int param2)
 {
     CommTool_Init(HEAP_ID_COMMUNICATION);
-    NintendoWFC_SetVoiceChatEnabled(param0->unk_04->unk_00.unk_21);
+    NintendoWFC_SetVoiceChatEnabled(param0->unk_04->unk_00.voiceChatEnabled);
 
     if (ov65_0222DD64(param2) == 1) {
         NintendoWFC_ManageSecondaryHeap(1, HEAP_ID_PARTY_MENU1);

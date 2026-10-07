@@ -285,7 +285,7 @@ pokeplatinum_c = files(
     'bag.c',
     'wifi_menu.c',
     'unk_0207DFAC.c',
-    'unk_0207E060.c',
+    'wfc_trainer_info.c',
     'applications/party_menu/main.c',
     'applications/party_menu/windows.c',
     'applications/party_menu/sprites.c',
