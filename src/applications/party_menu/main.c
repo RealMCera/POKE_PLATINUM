@@ -62,7 +62,7 @@
 #include "touch_screen.h"
 #include "tv_segment.h"
 #include "battle_salon.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/party_menu/party_menu_graphics.naix"

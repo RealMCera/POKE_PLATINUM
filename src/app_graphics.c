@@ -1,4 +1,4 @@
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -9,7 +9,10 @@
 #include "screen_fade.h"
 #include "system.h"
 
-__attribute__((aligned(4))) static const u16 Unk_020F4030[] = {
+// Sizes, in bytes, of various uncompressed graphic resources, indexed by an
+// identifier chosen by the caller. Index 6 (0x100 bytes) is the size of a
+// type-icon's character data, as used by the battle subscreen.
+__attribute__((aligned(4))) static const u16 sGraphicSizes[] = {
     0x20,
     0x80,
     0x200,
@@ -24,22 +27,27 @@ __attribute__((aligned(4))) static const u16 Unk_020F4030[] = {
     0x400
 };
 
-int sub_0208C098(int param0)
+int App_GetGraphicSize(int graphicIndex)
 {
-    param0 -= 0;
-    return Unk_020F4030[param0];
+    graphicIndex -= 0;
+    return sGraphicSizes[graphicIndex];
 }
 
-u32 sub_0208C0A4(u32 param0, u32 param1)
+// Computes the integer Euclidean distance sqrt(dx^2 + dy^2). The sum of squares
+// is shifted left by 4 before the fixed-point square root and the result is
+// shifted right by 2, which cancels out to an integer square root.
+u32 App_Distance(u32 dx, u32 dy)
 {
-    u32 v0 = (param0 * param0) + (param1 * param1);
-    v0 = SVC_Sqrt(v0 << 4);
+    u32 sumSquares = (dx * dx) + (dy * dy);
+    sumSquares = SVC_Sqrt(sumSquares << 4);
 
-    return v0 >> 2;
+    return sumSquares >> 2;
 }
 
 u8 App_PixelCount(u32 cur, u32 max, u8 maxPixels)
 {
+    // Scale cur / max to the bar's pixel width, rounding down. A non-zero value
+    // always shows at least one pixel so that a partially-filled bar is visible.
     u8 pixels = cur * maxPixels / max;
     if (pixels == 0 && cur > 0) {
         pixels = 1;
@@ -50,9 +58,13 @@ u8 App_PixelCount(u32 cur, u32 max, u8 maxPixels)
 
 u8 App_BarColor(u32 cur, u32 max)
 {
+    // Both values are scaled by 256; the comparisons below are equivalent to
+    // comparing the unscaled ratios.
     cur <<= 8;
     max <<= 8;
 
+    // More than half full: green. More than one fifth full: yellow. Any other
+    // non-zero value: red. The bar is empty only when cur is zero.
     if (cur > max / 2) {
         return BARCOLOR_GREEN;
     }
@@ -70,6 +82,7 @@ u8 App_BarColor(u32 cur, u32 max)
 
 u8 HealthBar_Color(u16 curHP, u16 maxHP, u32 barSize)
 {
+    // A full health bar uses its own color rather than the ratio-based colors.
     if (curHP == maxHP) {
         return BARCOLOR_MAX;
     }
@@ -86,18 +99,29 @@ void App_StartScreenFade(u8 fadeOut, enum HeapID heapID)
     }
 }
 
-u8 sub_0208C15C(s16 *param0, u16 param1)
+/**
+ * @brief Adjust a value with the D-pad, wrapping around at the bounds.
+ *
+ * Up and Right increase the value, Down and Left decrease it; Left and Right
+ * step by 10 while Up and Down step by 1. The value wraps to the opposite bound
+ * when it would leave the range [1, max].
+ *
+ * @param value Pointer to the value to adjust in place.
+ * @param max   The maximum value; the minimum is 1.
+ * @return 0 if the value did not change, 1 if it increased, 2 if it decreased.
+ */
+u8 App_AdjustValueWithDPad(s16 *value, u16 max)
 {
-    s16 v0 = *param0;
+    s16 previous = *value;
 
     if (gSystem.pressedKeysRepeatable & PAD_KEY_UP) {
-        *param0 += 1;
+        *value += 1;
 
-        if (*param0 > param1) {
-            *param0 = 1;
+        if (*value > max) {
+            *value = 1;
         }
 
-        if (*param0 == v0) {
+        if (*value == previous) {
             return 0;
         }
 
@@ -105,13 +129,13 @@ u8 sub_0208C15C(s16 *param0, u16 param1)
     }
 
     if (gSystem.pressedKeysRepeatable & PAD_KEY_DOWN) {
-        *param0 -= 1;
+        *value -= 1;
 
-        if (*param0 <= 0) {
-            *param0 = param1;
+        if (*value <= 0) {
+            *value = max;
         }
 
-        if (*param0 == v0) {
+        if (*value == previous) {
             return 0;
         }
 
@@ -119,13 +143,13 @@ u8 sub_0208C15C(s16 *param0, u16 param1)
     }
 
     if (gSystem.pressedKeysRepeatable & PAD_KEY_LEFT) {
-        *param0 -= 10;
+        *value -= 10;
 
-        if (*param0 <= 0) {
-            *param0 = 1;
+        if (*value <= 0) {
+            *value = 1;
         }
 
-        if (*param0 == v0) {
+        if (*value == previous) {
             return 0;
         }
 
@@ -133,13 +157,13 @@ u8 sub_0208C15C(s16 *param0, u16 param1)
     }
 
     if (gSystem.pressedKeysRepeatable & PAD_KEY_RIGHT) {
-        *param0 += 10;
+        *value += 10;
 
-        if (*param0 > param1) {
-            *param0 = param1;
+        if (*value > max) {
+            *value = max;
         }
 
-        if (*param0 == v0) {
+        if (*value == previous) {
             return 0;
         }
 

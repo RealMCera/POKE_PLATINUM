@@ -48,7 +48,7 @@
 #include "touch_screen.h"
 #include "type_icon.h"
 #include "font_oam.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 #include "res/text/bank/battle_strings.h"
 
@@ -925,7 +925,7 @@ void *BattleSubscreen_New(NARC *unused1, NARC *unused2, BattleSystem *battleSys,
 
     for (int i = 0; i < SNELEMS(btlSubscreen->moveDisplayData); i++) {
         for (j = 0; j < SNELEMS(btlSubscreen->moveDisplayData[0].moveIcons); j++) {
-            btlSubscreen->moveDisplayData[i].moveIcons[j] = Heap_Alloc(HEAP_ID_BATTLE, sub_0208C098(6));
+            btlSubscreen->moveDisplayData[i].moveIcons[j] = Heap_Alloc(HEAP_ID_BATTLE, App_GetGraphicSize(6));
         }
     }
 
@@ -2371,7 +2371,7 @@ void BattleSubscreen_UpdateMoveDisplay(BattleSubscreen *btlSubscreen, int battle
     StringTemplate *strTemplate;
     MessageLoader *msgLoader = BattleSystem_GetMessageLoader(btlSubscreen->battleSys);
     moveDisplayData = GetMoveDisplayData(btlSubscreen, battlerSlot);
-    int charDataSize = sub_0208C098(6);
+    int charDataSize = App_GetGraphicSize(6);
     PPMsg = MessageLoader_GetNewString(msgLoader, BattleStrings_Text_PP);
     strTemplate = BattleSystem_GetStringTemplate(btlSubscreen->battleSys);
     ppCountMsg = String_Init((2 + 2 + 1 + 2) * 2 + 2, HEAP_ID_BATTLE);
@@ -2470,7 +2470,7 @@ static void DrawMoveTypeIcons(BattleSubscreen *btlSubscreen)
                 objCharPtr = G2S_GetOBJCharPtr();
                 imageProxy = Sprite_GetImageProxy(btlSubscreen->moveSelectSprites[i]->sprite);
 
-                MI_CpuCopy16(moveDisplayData->moveIcons[i], (void *)((u32)objCharPtr + imageProxy->vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DSUB]), sub_0208C098(6));
+                MI_CpuCopy16(moveDisplayData->moveIcons[i], (void *)((u32)objCharPtr + imageProxy->vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DSUB]), App_GetGraphicSize(6));
             }
         }
     }

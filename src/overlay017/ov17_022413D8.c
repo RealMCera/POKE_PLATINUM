@@ -41,7 +41,7 @@
 #include "sys_task_manager.h"
 #include "text.h"
 #include "font_oam.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "contest_util.h"
 
 #include "res/text/bank/contest_text.h"
@@ -1809,7 +1809,7 @@ void ov17_0224331C(UnkStruct_ov17_02246F24 *param0, int param1, int param2, u8 *
 
         if (*param3 == 0) {
             ManagedSprite_GetPositionXY(param0->unk_0C.unk_C4[param1][v7], &v3, &v4);
-            v8 = sub_0208C0A4(
+            v8 = App_Distance(
                      MATH_IAbs(v3 - v1), MATH_IAbs(v4 - v2))
                 * 0x100;
 

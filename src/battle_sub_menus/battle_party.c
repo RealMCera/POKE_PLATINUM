@@ -39,7 +39,7 @@
 #include "system.h"
 #include "text.h"
 #include "touch_screen.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "contest_util.h"
 
 #include "res/text/bank/battle_party.h"

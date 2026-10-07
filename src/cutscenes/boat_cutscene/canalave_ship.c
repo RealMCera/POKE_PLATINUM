@@ -14,7 +14,7 @@
 #include "sound_playback.h"
 #include "system.h"
 #include "unk_0202419C.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 #define BOAT_TRAVEL_CUTSCENE_NUM_ANIMATIONS 4
 

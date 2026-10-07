@@ -29,7 +29,7 @@
 #include "string_template.h"
 #include "system.h"
 #include "text.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "vram_transfer.h"
 #include "wifi_battle_tower_save.h"
 

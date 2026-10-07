@@ -22,7 +22,7 @@
 #include "string_gf.h"
 #include "system.h"
 #include "touch_pad.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 #include "res/graphics/town_map/town_map_graphics.naix"
 

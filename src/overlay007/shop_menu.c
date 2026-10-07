@@ -57,7 +57,7 @@
 #include "tv_segment.h"
 #include "underground.h"
 #include "field_system_apps.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"
 
@@ -996,7 +996,7 @@ static void Shop_ShowQtyWithinInventory(ShopMenu *shopMenu)
 
 static u8 Shop_SelectPurchaseMenu(ShopMenu *shopMenu)
 {
-    if (sub_0208C15C(&shopMenu->itemAmount, shopMenu->itemAmountMax) != FALSE) {
+    if (App_AdjustValueWithDPad(&shopMenu->itemAmount, shopMenu->itemAmountMax) != FALSE) {
         Sound_PlayEffect(SEQ_SE_DP_BAG_004_sseq);
         Shop_ShowQtyTotalItemPurchase(shopMenu, TRUE);
         return SHOP_STATE_SELECT_PURCHASE_MENU;

@@ -47,7 +47,7 @@
 #include "touch_pad.h"
 #include "touch_screen.h"
 #include "trainer_info.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 #include "vram_transfer.h"
 
 #include "res/graphics/bag/bag_graphics.naix"
@@ -2363,7 +2363,7 @@ static int ProcessItemCountInput_TrashCount(BagController *controller)
         return BAG_APP_STATE_SHOW_CONFIRM_TRASH_MSG;
     }
 
-    switch (sub_0208C15C(&controller->selectedItemCount, controller->selectedItemCountLimit)) {
+    switch (App_AdjustValueWithDPad(&controller->selectedItemCount, controller->selectedItemCountLimit)) {
     case 0:
         break;
     case 1:
@@ -2683,7 +2683,7 @@ static int ProcessItemCountInput_SellCount(BagController *interface)
         return BAG_APP_STATE_PRINT_CONFIRM_SALE_MSG;
     }
 
-    switch (sub_0208C15C(&interface->selectedItemCount, interface->selectedItemCountLimit)) {
+    switch (App_AdjustValueWithDPad(&interface->selectedItemCount, interface->selectedItemCountLimit)) {
     case 0:
         break;
     case 1:

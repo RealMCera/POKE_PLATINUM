@@ -29,7 +29,7 @@
 #include "string_list.h"
 #include "string_template.h"
 #include "text.h"
-#include "unk_0208C098.h"
+#include "app_graphics.h"
 
 #include "res/text/bank/party_menu.h"
 
