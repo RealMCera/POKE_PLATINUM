@@ -163,7 +163,7 @@ Static main
 	Object main.nef.p/src_comm_tool.c.o
 	Object main.nef.p/src_comm_manager.c.o
 	Object main.nef.p/src_comm_sync_save.c.o
-	Object main.nef.p/src_unk_02038F8C.c.o
+	Object main.nef.p/src_wifi_history_geonet.c.o
 	Object main.nef.p/src_wifi_list_util.c.o
 	Object main.nef.p/src_wifi_friend_registration.c.o
 	Object main.nef.p/src_network_icon.c.o

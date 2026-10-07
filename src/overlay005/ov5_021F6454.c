@@ -54,7 +54,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "system_vars.h"
-#include "unk_02038F8C.h"
+#include "wifi_history_geonet.h"
 #include "vars_flags.h"
 #include "wifi_history_save_data.h"
 

@@ -30,7 +30,7 @@
 #include "string_gf.h"
 #include "string_template.h"
 #include "trainer_info.h"
-#include "unk_02038F8C.h"
+#include "wifi_history_geonet.h"
 #include "app_graphics.h"
 #include "pokemon_info_display.h"
 #include "wifi_history_save_data.h"
