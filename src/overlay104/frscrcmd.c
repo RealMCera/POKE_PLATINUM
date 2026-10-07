@@ -2442,7 +2442,7 @@ static BOOL FrontierScrCmd_4B(FrontierScriptContext *ctx)
     u16 *destVar = FrontierScriptContext_TryGetVarPointer(ctx);
 
     fieldData = BattleFrontier_GetFieldData(ctx->scriptMan->frontier);
-    *destVar = sub_0205E6D8(fieldData->saveData);
+    *destVar = BattleFrontierStats_IsDebugBuild(fieldData->saveData);
 
     return FALSE;
 }

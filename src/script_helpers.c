@@ -35,7 +35,7 @@ typedef struct MapObjectFlickerData {
 } MapObjectFlickerData;
 
 static u8 GetPartnerGameCode(void);
-u8 sub_0205E6D8(SaveData *saveData);
+u8 BattleFrontierStats_IsDebugBuild(SaveData *saveData);
 
 /**
  * @brief Return the number of decimal digits needed to represent @p number.
