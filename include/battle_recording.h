@@ -45,10 +45,10 @@ void BattleRecording_SetSystemVersion(int battler, u32 version);
 BOOL BattleRecording_CheckSystemVersions(void);
 void BattleRecording_RestoreBattleInfo(FieldBattleDTO *dto, SaveData *saveData);
 BattleRecordingSummary *BattleRecording_CloneSummary(enum HeapID heapID);
-UnkStruct_02030A80 *BattleRecording_CloneHeader(enum HeapID heapID);
-UnkStruct_02030A80 *BattleRecording_GetHeader(void);
+PlayerProfile *BattleRecording_CloneHeader(enum HeapID heapID);
+PlayerProfile *BattleRecording_GetHeader(void);
 BattleRecordingSummary *BattleRecording_GetSummary(void);
-void BattleRecording_Store(UnkStruct_02030A80 *header, BattleRecordingSummary *summary, BattleRecordingData *data, FieldBattleDTO *dto, SaveData *saveData);
+void BattleRecording_Store(PlayerProfile *header, BattleRecordingSummary *summary, BattleRecordingData *data, FieldBattleDTO *dto, SaveData *saveData);
 // Reads one field of the summary: 0/1 = species/form at `index`, 2 = battle
 // number, 3 = battle type, 4 = the opaque u64, 5 = the opaque flag.
 u64 BattleRecording_GetSummaryValue(BattleRecordingSummary *summary, int field, int index);

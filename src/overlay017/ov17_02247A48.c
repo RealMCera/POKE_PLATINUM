@@ -48,7 +48,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "system.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 
 static int ov17_02247A88(UnkStruct_ov17_0224F30C *param0, void *param1, int param2, void *param3);
 static void ov17_02247A9C(UnkStruct_ov17_0224F30C *param0, void *param1, const UnkStruct_ov17_02243C80 *param2, void *param3);
@@ -189,7 +189,7 @@ static void ov17_02247AC4(UnkStruct_ov17_0224F30C *param0, void *param1, const U
 
     v0->unk_F14 = 1;
 
-    if (sub_02094EDC(v0->unk_00) == FALSE) {
+    if (Contest_IsPlayerLeader(v0->unk_00) == FALSE) {
         ov17_0224F26C(param0, param2, NULL, 0);
     }
 }

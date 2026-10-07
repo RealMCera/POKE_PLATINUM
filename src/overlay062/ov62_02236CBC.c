@@ -25,7 +25,7 @@
 #include "system_vars.h"
 #include "touch_screen.h"
 #include "font_oam.h"
-#include "unk_02030A80.h"
+#include "player_profile.h"
 #include "vs_recorder_ring.h"
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"
@@ -177,7 +177,7 @@ static void ov62_02236E14(UnkStruct_0208C06C *param0)
         int v12 = 14;
         int v13 = 9;
         int v14 = 10;
-        int v15 = sub_02030BAC(param0->unk_88C[0]);
+        int v15 = PlayerProfile_GetGender(param0->unk_88C[0]);
 
         v3 = param0->unk_14.unk_04;
         v4 = param0->unk_14.unk_08;

@@ -42,7 +42,7 @@
 #include "text.h"
 #include "font_oam.h"
 #include "unk_0208C098.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 
 #include "res/text/bank/contest_text.h"
 
@@ -479,7 +479,7 @@ void ov17_02241524(UnkStruct_ov17_0223F88C *param0, int contestantID)
     GF_ASSERT(param0->pokemonSpriteDataArray[contestantID].tiles != NULL);
     MI_CpuClear8(param0->pokemonSpriteDataArray[contestantID].tiles, (32 * 10 * 10));
 
-    param0->unk_08[contestantID] = sub_02095484(param0->unk_04, contestantID, param0->unk_00->contestMons[contestantID], 0, &param0->pokemonSpriteDataArray[contestantID], HEAP_ID_21, (256 - 40) - 32 * contestantID, (104 + 8) - 32 * contestantID, -0x200);
+    param0->unk_08[contestantID] = Contest_CreateMonSprite(param0->unk_04, contestantID, param0->unk_00->contestMons[contestantID], 0, &param0->pokemonSpriteDataArray[contestantID], HEAP_ID_21, (256 - 40) - 32 * contestantID, (104 + 8) - 32 * contestantID, -0x200);
 
     PokemonSprite_SetAttribute(param0->unk_08[contestantID], MON_SPRITE_HIDE, 1);
     PokemonSprite_SetAttribute(param0->unk_08[contestantID], MON_SPRITE_HIDE_2, 1);
@@ -498,7 +498,7 @@ void ov17_022415E4(UnkStruct_ov17_0223F88C *param0)
         GF_ASSERT(param0->pokemonSpriteDataArray[i].tiles == NULL);
 
         param0->pokemonSpriteDataArray[i].tiles = Heap_Alloc(HEAP_ID_21, (32 * 10 * 10));
-        param0->unk_08[i] = sub_02095484(param0->unk_04, i, param0->unk_00->contestMons[i], 0, &param0->pokemonSpriteDataArray[i], HEAP_ID_21, (256 - 40) - 32 * i, (104 + 8) - 32 * i, -0x200);
+        param0->unk_08[i] = Contest_CreateMonSprite(param0->unk_04, i, param0->unk_00->contestMons[i], 0, &param0->pokemonSpriteDataArray[i], HEAP_ID_21, (256 - 40) - 32 * i, (104 + 8) - 32 * i, -0x200);
 
         PokemonSprite_SetAttribute(param0->unk_08[i], MON_SPRITE_HIDE, 1);
         PokemonSprite_SetAttribute(param0->unk_08[i], MON_SPRITE_HIDE_2, 1);
@@ -1532,7 +1532,7 @@ void ov17_02242E9C(UnkStruct_ov17_02246F24 *param0, int contestMoveEffect, int p
 {
     u32 messageID, v1;
 
-    sub_02095790(contestMoveEffect, param2, &messageID, &v1);
+    Contest_LoadContestEffectMessage(contestMoveEffect, param2, &messageID, &v1);
     ov17_02242DC0(param0, param0->unk_0C.contestActingCompetitionMessages, messageID, v1, param3, param4, FALSE);
 }
 

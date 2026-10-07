@@ -667,19 +667,19 @@ BattleRecordingSummary *BattleRecording_CloneSummary(enum HeapID heapID)
     return v0;
 }
 
-UnkStruct_02030A80 *BattleRecording_CloneHeader(enum HeapID heapID)
+PlayerProfile *BattleRecording_CloneHeader(enum HeapID heapID)
 {
-    UnkStruct_02030A80 *v0;
+    PlayerProfile *v0;
 
     GF_ASSERT(gBattleRecording != NULL);
 
-    v0 = Heap_Alloc(heapID, sizeof(UnkStruct_02030A80));
-    MI_CpuCopy32(&gBattleRecording->header, v0, sizeof(UnkStruct_02030A80));
+    v0 = Heap_Alloc(heapID, sizeof(PlayerProfile));
+    MI_CpuCopy32(&gBattleRecording->header, v0, sizeof(PlayerProfile));
 
     return v0;
 }
 
-UnkStruct_02030A80 *BattleRecording_GetHeader(void)
+PlayerProfile *BattleRecording_GetHeader(void)
 {
     GF_ASSERT(gBattleRecording != NULL);
     return &gBattleRecording->header;
@@ -691,7 +691,7 @@ BattleRecordingSummary *BattleRecording_GetSummary(void)
     return &gBattleRecording->summary;
 }
 
-void BattleRecording_Store(UnkStruct_02030A80 *header, BattleRecordingSummary *summary, BattleRecordingData *data, FieldBattleDTO *dto, SaveData *saveData)
+void BattleRecording_Store(PlayerProfile *header, BattleRecordingSummary *summary, BattleRecordingData *data, FieldBattleDTO *dto, SaveData *saveData)
 {
     GF_ASSERT(gBattleRecording != NULL);
 
@@ -699,7 +699,7 @@ void BattleRecording_Store(UnkStruct_02030A80 *header, BattleRecordingSummary *s
     // battle data so it can be read back.
     MI_CpuCopy8(summary, &gBattleRecording->summary, sizeof(BattleRecordingSummary));
     MI_CpuCopy8(data, &gBattleRecording->data, sizeof(BattleRecordingData));
-    MI_CpuCopy8(header, &gBattleRecording->header, sizeof(UnkStruct_02030A80));
+    MI_CpuCopy8(header, &gBattleRecording->header, sizeof(PlayerProfile));
 
     BattleRecording_Decode(&gBattleRecording->data, sizeof(BattleRecordingData) - (sizeof(BattleRecordingChecksum)), gBattleRecording->data.checksum.checksum + ((gBattleRecording->data.checksum.checksum ^ 0xffff) << 16));
 

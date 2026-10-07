@@ -12,7 +12,7 @@
 #include "heap.h"
 #include "move_table.h"
 #include "pokemon.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 
 typedef struct {
     u16 moveID;
@@ -1352,7 +1352,7 @@ static void ov17_02246F9C(UnkStruct_ov17_02246F24 *param0, UnkStruct_ov17_02246F
                     break;
                 case 241:
                     for (v3 = 0; v3 < 4; v3++) {
-                        if (sub_02095734(param1->unk_00[v3].moveContestEffect) >= 10 * 2) {
+                        if (Contest_GetAppealPoints(param1->unk_00[v3].moveContestEffect) >= 10 * 2) {
                             param1->unk_00[v3].unk_02 += v6;
 
                             for (v4 = 0; v4 < (1 + 2); v4++) {

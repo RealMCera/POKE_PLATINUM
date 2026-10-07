@@ -8,7 +8,7 @@
 #include "sprite_system.h"
 
 typedef struct {
-    UnkStruct_02030A80 *unk_00;
+    PlayerProfile *unk_00;
     BattleRecordingSummary *unk_04;
     u8 padding_08[4];
     ManagedSprite *unk_0C[12];

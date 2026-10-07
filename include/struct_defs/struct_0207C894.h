@@ -3,9 +3,11 @@
 
 #include "constants/heap.h"
 
+// Construction parameters for the evolution scene's particle system.
 typedef struct {
     enum HeapID heapID;
-    int unk_04;
-} UnkStruct_0207C894;
+    // Member index into the Shinka (evolution) demo particle NARC.
+    int narcIdx;
+} EvolutionParticleSystemArgs;
 
 #endif // POKEPLATINUM_STRUCT_0207C894_H

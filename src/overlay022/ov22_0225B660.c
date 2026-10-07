@@ -31,7 +31,7 @@
 #include "text.h"
 #include "unk_0202419C.h"
 #include "image_clips.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 
 typedef struct {
     const DressUpPhoto *photo;

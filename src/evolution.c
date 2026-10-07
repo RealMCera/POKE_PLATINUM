@@ -18,6 +18,7 @@
 
 #include "bag.h"
 #include "bg_window.h"
+#include "evolution_graphics.h"
 #include "g3d_pipeline.h"
 #include "game_options.h"
 #include "game_records.h"
@@ -49,7 +50,6 @@
 #include "system.h"
 #include "text.h"
 #include "unk_0202419C.h"
-#include "unk_0207C63C.h"
 #include "vram_transfer.h"
 
 #include "constdata/const_020F410C.h"
@@ -115,11 +115,11 @@ EvolutionData *Evolution_Begin(Party *party, Pokemon *mon, int targetSpecies, Op
     evolutionData->bgConfig = BgConfig_New(heapID);
     evolutionData->window = Window_New(heapID, 1);
     evolutionData->options = options;
-    evolutionData->pipelineBuffers = sub_0207C690(heapID);
+    evolutionData->pipelineBuffers = EvolutionGraphics_InitG3DPipeline(heapID);
 
-    sub_0207C63C();
-    sub_0207C664();
-    sub_0207C730();
+    EvolutionGraphics_InitPlane();
+    EvolutionGraphics_SetBlendAlphas();
+    EvolutionGraphics_ZeroParticleSystem();
     Evolution_InitGraphics(evolutionData, evolutionData->bgConfig);
     Window_Add(evolutionData->bgConfig, evolutionData->window, BG_LAYER_MAIN_1, 2, 19, 27, 4, 11, (18 + 12) + 1);
     Window_FillTilemap(evolutionData->window, 0xFF);
@@ -164,7 +164,7 @@ static void SysTask_Evolution(SysTask *task, void *data)
 
     Evolution_Main(evolutionData);
     PokemonSpriteManager_DrawSprites(evolutionData->monSpriteMan);
-    sub_0207C770();
+    EvolutionGraphics_UpdateParticleSystem();
     G3_RequestSwapBuffers(GX_SORTMODE_MANUAL, GX_BUFFERMODE_Z);
 
     if (evolutionData->done) {
@@ -347,13 +347,13 @@ static void Evolution_Main(EvolutionData *evolutionData)
         break;
     case EVOLUTION_STATE_START_FADE:
         if (--evolutionData->delay == 0) {
-            UnkStruct_0207C894 v1;
+            EvolutionParticleSystemArgs v1;
 
             v1.heapID = evolutionData->heapID;
-            v1.unk_04 = 0;
-            evolutionData->unk_30 = sub_0207C894(&v1);
+            v1.narcIdx = 0;
+            evolutionData->unk_30 = EvolutionParticleSystem_New(&v1);
 
-            sub_0207C8C4(evolutionData->unk_30, 0);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 0);
             PokemonSprite_StartFade(evolutionData->monSprites[0], 0, 16, 4, 0x7FFF);
             PokemonSprite_StartFade(evolutionData->monSprites[1], 0, 16, 4, 0x7FFF);
 
@@ -371,12 +371,12 @@ static void Evolution_Main(EvolutionData *evolutionData)
         }
 
         if (--evolutionData->delay == 0) {
-            sub_0207C8C4(evolutionData->unk_30, 1);
-            sub_0207C8C4(evolutionData->unk_30, 2);
-            sub_0207C8C4(evolutionData->unk_30, 7);
-            sub_0207C8C4(evolutionData->unk_30, 8);
-            sub_0207C8C4(evolutionData->unk_30, 9);
-            sub_0207C8C4(evolutionData->unk_30, 11);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 1);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 2);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 7);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 8);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 9);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 11);
             Sound_PlayEffect(SEQ_SE_DP_W060C_sseq);
             evolutionData->shrinkAndGrowState = 0x10;
             evolutionData->attributeDelta = 8;
@@ -384,12 +384,12 @@ static void Evolution_Main(EvolutionData *evolutionData)
         }
         break;
     case EVOLUTION_STATE_ANIMATION_ALTERNATE_POKEMON:
-        if (sub_0207C8E0(evolutionData->unk_30) == FALSE) {
-            sub_0207C8C4(evolutionData->unk_30, 3);
-            sub_0207C8C4(evolutionData->unk_30, 4);
-            sub_0207C8C4(evolutionData->unk_30, 5);
-            sub_0207C8C4(evolutionData->unk_30, 6);
-            sub_0207C8C4(evolutionData->unk_30, 10);
+        if (EvolutionParticleSystem_EmittersActive(evolutionData->unk_30) == FALSE) {
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 3);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 4);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 5);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 6);
+            EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 10);
             PaletteData_StartFade(evolutionData->paletteData, PLTTBUF_MAIN_BG_F | PLTTBUF_SUB_BG_F | PLTTBUF_MAIN_OBJ_F | PLTTBUF_SUB_OBJ_F, 0xC00 ^ 0xFFFF, 2, 0, 16, 0x7FFF);
             PokemonSprite_SetAttribute(evolutionData->monSprites[0], MON_SPRITE_SCALE_X, 0);
             PokemonSprite_SetAttribute(evolutionData->monSprites[0], MON_SPRITE_SCALE_Y, 0);
@@ -409,7 +409,7 @@ static void Evolution_Main(EvolutionData *evolutionData)
 
         if (PaletteData_GetSelectedBuffersMask(evolutionData->paletteData) == 0) {
             if (--evolutionData->delay == 0) {
-                sub_0207C8C4(evolutionData->unk_30, 12);
+                EvolutionParticleSystem_CreateEmitter(evolutionData->unk_30, 12);
                 PaletteData_StartFade(evolutionData->paletteData, PLTTBUF_MAIN_BG_F | PLTTBUF_SUB_BG_F | PLTTBUF_MAIN_OBJ_F | PLTTBUF_SUB_OBJ_F, 0xC00 ^ 0xFFFF, 4, 16, 0, 0x7FFF);
                 PokemonSpriteManager_StartFadeAll(evolutionData->monSpriteMan, 16, 0, 3, 0x7FFF);
                 Sound_PlayEffect(SEQ_SE_DP_W080_sseq);
@@ -418,7 +418,7 @@ static void Evolution_Main(EvolutionData *evolutionData)
         }
         break;
     case EVOLUTION_STATE_PLAY_EVOLVED_POKEMON_ANIMATION_AND_CRY:
-        if (PaletteData_GetSelectedBuffersMask(evolutionData->paletteData) == 0 && sub_0207C8E0(evolutionData->unk_30) == FALSE) {
+        if (PaletteData_GetSelectedBuffersMask(evolutionData->paletteData) == 0 && EvolutionParticleSystem_EmittersActive(evolutionData->unk_30) == FALSE) {
             SpriteAnimFrame animFrames[MAX_ANIMATION_FRAMES];
 
             PokemonSprite_LoadAnim(evolutionData->narc, evolutionData->monAnimMan, evolutionData->monSprites[1], evolutionData->targetSpecies, FACE_FRONT, 0, 0);
@@ -653,7 +653,7 @@ static void Evolution_Main(EvolutionData *evolutionData)
         break;
     case EVOLUTION_STATE_END:
         if (PaletteData_GetSelectedBuffersMask(evolutionData->paletteData) == 0) {
-            sub_0207C8F4(evolutionData->unk_30);
+            EvolutionParticleSystem_Free(evolutionData->unk_30);
             Evolution_ProcessEvolutionEffects(evolutionData);
             evolutionData->done = TRUE;
         }
@@ -673,7 +673,7 @@ static void Evolution_Main(EvolutionData *evolutionData)
             evolutionData->windowBottom = 160;
             evolutionData->shrinkAndGrowState = 0;
             Sound_StopBGM(SEQ_SHINKA_sseq, 0);
-            sub_0207C8F4(evolutionData->unk_30);
+            EvolutionParticleSystem_Free(evolutionData->unk_30);
             evolutionData->state++;
         }
         break;

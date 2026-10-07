@@ -42,10 +42,21 @@
 
 #include "res/text/bank/tv_reporter_interviews.h"
 
+// Script commands for the TV broadcast system. The broadcast state itself (the
+// pending program, its segments, and the saved segment data) lives in
+// tv_broadcast.c; these handlers are the scripting front end that starts a
+// broadcast, loads its framing/segment/commercial messages, and records TV
+// segments from field events. The interview segment table below maps each
+// interview segment to the callbacks that load its message and decide whether
+// it can be recorded.
+
 typedef void (*TVInterview_SaveResponseFunction)(FieldSystem *, u16);
 typedef void (*TVInterview_LoadMessageFunction)(FieldSystem *, StringTemplate *);
 typedef BOOL (*TVInterview_IsEligibleFunction)(FieldSystem *);
 
+// One entry per interview segment. The callbacks are optional: a segment with
+// no loadMessageFn uses its messageID verbatim, and a segment with no
+// isEligibleFn is always eligible.
 typedef struct TVInterview {
     TVInterview_SaveResponseFunction saveResponseFn;
     TVInterview_LoadMessageFunction loadMessageFn;
@@ -53,10 +64,14 @@ typedef struct TVInterview {
     u32 messageID;
 } TVInterview;
 
-static int TVInterview_LoadMessage(int param0, FieldSystem *fieldSystem, StringTemplate *template);
+static int TVInterview_LoadMessage(int segmentID, FieldSystem *fieldSystem, StringTemplate *template);
 static void TVInterview_SaveResponse(FieldSystem *fieldSystem, int segmentID, u16 customMessageWord, u16 unused);
-static BOOL TVInterview_IsEligible(FieldSystem *fieldSystem, int param1);
+static BOOL TVInterview_IsEligible(FieldSystem *fieldSystem, int segmentID);
 
+// Drives a broadcast from a script. The sub-command selects one of the
+// TV_BROADCAST_CALL_* operations: query the pending broadcast, load the
+// framing/segment/commercial message, mark the program finished, or fetch the
+// next segment ID.
 BOOL ScrCmd_CallTVBroadcast(ScriptContext *ctx)
 {
     switch (ScriptContext_ReadHalfWord(ctx)) {
@@ -92,11 +107,11 @@ BOOL ScrCmd_CallTVBroadcast(ScriptContext *ctx)
         *messageDestVar = TVBroadcast_GetProgramCommercialMessage(ctx->fieldSystem);
     } break;
     case TV_BROADCAST_CALL_UNUSED: {
-        u16 v10 = ScriptContext_GetVar(ctx);
-        u16 v11 = ScriptContext_GetVar(ctx);
-        u16 *v12 = ScriptContext_GetVarPointer(ctx);
+        u16 filter1 = ScriptContext_GetVar(ctx);
+        u16 filter2 = ScriptContext_GetVar(ctx);
+        u16 *segmentDestVar = ScriptContext_GetVarPointer(ctx);
 
-        *v12 = ov6_022468B0(ctx->fieldSystem, v10, v11);
+        *segmentDestVar = ov6_022468B0(ctx->fieldSystem, filter1, filter2);
     } break;
     case TV_BROADCAST_CALL_GET_NEXT_SEGMENT_ID: {
         u16 *segmentDestVar = ScriptContext_GetVarPointer(ctx);
@@ -113,18 +128,20 @@ BOOL ScrCmd_SaveTVSegmentHiddenItem(ScriptContext *ctx)
     return FALSE;
 }
 
-BOOL ScrCmd_2B8(ScriptContext *param0)
+// Records a "Rate That Name Change" TV segment for the party Pokemon in the
+// given slot.
+BOOL ScrCmd_SaveTVSegmentRateThatNameChange(ScriptContext *ctx)
 {
-    Party *v0 = SaveData_GetParty(param0->fieldSystem->saveData);
-    Pokemon *v1 = Party_GetPokemonBySlotIndex(v0, ScriptContext_GetVar(param0));
+    Party *party = SaveData_GetParty(ctx->fieldSystem->saveData);
+    Pokemon *mon = Party_GetPokemonBySlotIndex(party, ScriptContext_GetVar(ctx));
 
-    FieldSystem_SaveTVSegment_RateThatNameChange(param0->fieldSystem, v1);
+    FieldSystem_SaveTVSegment_RateThatNameChange(ctx->fieldSystem, mon);
     return FALSE;
 }
 
-BOOL ScrCmd_SaveTVSegmentPokemonStorageBulletin(ScriptContext *param0)
+BOOL ScrCmd_SaveTVSegmentPokemonStorageBulletin(ScriptContext *ctx)
 {
-    FieldSystem_SaveTVSegment_PokemonStorageSpecialNewsBulletin(param0->fieldSystem);
+    FieldSystem_SaveTVSegment_PokemonStorageSpecialNewsBulletin(ctx->fieldSystem);
     return FALSE;
 }
 
@@ -144,6 +161,9 @@ BOOL ScrCmd_SaveTVSegmentHomeAndManor(ScriptContext *ctx)
 
 static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS];
 
+// Handles the TV_INTERVIEW_CALL_* sub-commands: load the message for an
+// interview segment (running its loadMessageFn first to fill the template), or
+// save the player's response to a segment and award trainer score.
 BOOL ScrCmd_CallTVInterview(ScriptContext *ctx)
 {
     StringTemplate **template = FieldSystem_GetScriptMemberPtr(ctx->fieldSystem, SCRIPT_MANAGER_STR_TEMPLATE);
@@ -173,6 +193,8 @@ BOOL ScrCmd_CallTVInterview(ScriptContext *ctx)
     return FALSE;
 }
 
+// Writes whether the given interview segment can currently be recorded into a
+// script variable.
 BOOL ScrCmd_CheckTVInterviewEligible(ScriptContext *ctx)
 {
     u16 segmentID;
@@ -185,28 +207,32 @@ BOOL ScrCmd_CheckTVInterviewEligible(ScriptContext *ctx)
     return FALSE;
 }
 
-BOOL ScrCmd_27C(ScriptContext *param0)
+// Populates the Amity Square Watch TV segment. The sub-command selects what to
+// record: the watched Pokemon (0), a found item (1), or a found accessory (2).
+BOOL ScrCmd_SaveAmitySquareWatchData(ScriptContext *ctx)
 {
-    TVBroadcast *broadcast = SaveData_GetTVBroadcast(param0->fieldSystem->saveData);
+    TVBroadcast *broadcast = SaveData_GetTVBroadcast(ctx->fieldSystem->saveData);
 
-    switch (ScriptContext_ReadHalfWord(param0)) {
+    switch (ScriptContext_ReadHalfWord(ctx)) {
     case 0: {
-        Party *party = SaveData_GetParty(param0->fieldSystem->saveData);
-        Pokemon *v2 = Party_GetPokemonBySlotIndex(party, ScriptContext_GetVar(param0));
+        Party *party = SaveData_GetParty(ctx->fieldSystem->saveData);
+        Pokemon *mon = Party_GetPokemonBySlotIndex(party, ScriptContext_GetVar(ctx));
 
-        TVBroadcast_SetAmitySquareWatchInfo(broadcast, v2, HEAP_ID_FIELD1);
+        TVBroadcast_SetAmitySquareWatchInfo(broadcast, mon, HEAP_ID_FIELD1);
     } break;
     case 1:
-        TVBroadcast_SetAmitySquareWatchFoundItem(broadcast, ScriptContext_GetVar(param0));
+        TVBroadcast_SetAmitySquareWatchFoundItem(broadcast, ScriptContext_GetVar(ctx));
         break;
     case 2:
-        TVBroadcast_SetAmitySquareWatchFoundAccessory(broadcast, ScriptContext_GetVar(param0));
+        TVBroadcast_SetAmitySquareWatchFoundAccessory(broadcast, ScriptContext_GetVar(ctx));
         break;
     }
 
     return FALSE;
 }
 
+// Runs the segment's saveResponseFn, if it has one. The custom message word is
+// the player's answer to the interview question.
 static void TVInterview_SaveResponse(FieldSystem *fieldSystem, int segmentID, u16 customMessageWord, u16 unused)
 {
     TVInterview_SaveResponseFunction saveResponseFn = sInterviews[segmentID - 1].saveResponseFn;
@@ -216,6 +242,8 @@ static void TVInterview_SaveResponse(FieldSystem *fieldSystem, int segmentID, u1
     }
 }
 
+// Runs the segment's loadMessageFn, if it has one, to fill the string template,
+// then returns the segment's message ID.
 static int TVInterview_LoadMessage(int segmentID, FieldSystem *fieldSystem, StringTemplate *template)
 {
     TVInterview_LoadMessageFunction loadMessageFn = sInterviews[segmentID - 1].loadMessageFn;
@@ -227,6 +255,8 @@ static int TVInterview_LoadMessage(int segmentID, FieldSystem *fieldSystem, Stri
     return sInterviews[segmentID - 1].messageID;
 }
 
+// A segment is eligible if the broadcast can still save it and, when the
+// segment defines an isEligibleFn, that callback agrees.
 static BOOL TVInterview_IsEligible(FieldSystem *fieldSystem, int segmentID)
 {
     TVInterview_IsEligibleFunction isEligibleFn;
@@ -245,110 +275,122 @@ static BOOL TVInterview_IsEligible(FieldSystem *fieldSystem, int segmentID)
     return isEligibleFn(fieldSystem);
 }
 
-static void sub_0204922C(StringTemplate *param0, int param1, const u16 *param2, int param3, int language, int param5)
+// Copies a raw character buffer into a String and installs it as a template
+// argument. Used to insert species names that were loaded as character arrays.
+static void TVInterview_SetTemplateString(StringTemplate *template, int idx, const u16 *chars, int gender, int language, int unused)
 {
-    String *v0 = String_Init(64, HEAP_ID_FIELD1);
+    String *string = String_Init(64, HEAP_ID_FIELD1);
 
-    String_CopyChars(v0, param2);
-    StringTemplate_SetString(param0, param1, v0, param3, param5, language);
-    String_Free(v0);
+    String_CopyChars(string, chars);
+    StringTemplate_SetString(template, idx, string, gender, unused, language);
+    String_Free(string);
 }
 
-static void sub_02049268(FieldSystem *fieldSystem, StringTemplate *param1)
+// Fills the template with the species name of the first hatched party Pokemon.
+static void TVInterview_LoadYourPokemonCornerMessage(FieldSystem *fieldSystem, StringTemplate *template)
 {
-    Party *v0 = SaveData_GetParty(fieldSystem->saveData);
-    Pokemon *v1 = Party_FindFirstHatchedMon(v0);
+    Party *party = SaveData_GetParty(fieldSystem->saveData);
+    Pokemon *mon = Party_FindFirstHatchedMon(party);
 
-    StringTemplate_SetSpeciesName(param1, 0, Pokemon_GetBoxPokemon(v1));
+    StringTemplate_SetSpeciesName(template, 0, Pokemon_GetBoxPokemon(mon));
 }
 
-static void sub_02049288(FieldSystem *fieldSystem, StringTemplate *param1)
+// Fills the template with the name of the Poketch app currently on screen.
+static void TVInterview_LoadPoketchWatchMessage(FieldSystem *fieldSystem, StringTemplate *template)
 {
-    int v0 = PoketchSystem_CurrentAppID(fieldSystem->unk_04->poketchSys);
-    StringTemplate_SetPoketchAppName(param1, 0, v0);
+    int appID = PoketchSystem_CurrentAppID(fieldSystem->unk_04->poketchSys);
+    StringTemplate_SetPoketchAppName(template, 0, appID);
 }
 
-static void sub_020492A0(FieldSystem *fieldSystem, StringTemplate *param1)
+// Fills the template with the species name of the Pokemon watched in Amity
+// Square.
+static void TVInterview_LoadAmitySquareWatchMessage(FieldSystem *fieldSystem, StringTemplate *template)
 {
-    u16 v0[10 + 1];
+    u16 speciesName[10 + 1];
     TVBroadcast *broadcast = SaveData_GetTVBroadcast(fieldSystem->saveData);
-    TVSegment_AmitySquareWatchData *v2 = TVBroadcast_GetAmitySquareWatch(broadcast);
+    TVSegment_AmitySquareWatchData *watch = TVBroadcast_GetAmitySquareWatch(broadcast);
 
-    MessageLoader_GetSpeciesName(v2->species, HEAP_ID_FIELD1, v0);
-    sub_0204922C(param1, 0, v0, 0, GAME_LANGUAGE, 1);
+    MessageLoader_GetSpeciesName(watch->species, HEAP_ID_FIELD1, speciesName);
+    TVInterview_SetTemplateString(template, 0, speciesName, 0, GAME_LANGUAGE, 1);
 }
 
-static void sub_020492D4(FieldSystem *fieldSystem, StringTemplate *param1)
+// Fills the template with the species name from the single Battle Frontier
+// Frontline News segment.
+static void TVInterview_LoadFrontlineNewsSingleMessage(FieldSystem *fieldSystem, StringTemplate *template)
 {
-    u16 v0[10 + 1];
+    u16 speciesName[10 + 1];
     TVBroadcast *broadcast = SaveData_GetTVBroadcast(fieldSystem->saveData);
-    TVSegment_BattleFrontierFrontlineNewsSingleData *v2 = TVBroadcast_GetFrontlineNewsSingle(broadcast);
+    TVSegment_BattleFrontierFrontlineNewsSingleData *news = TVBroadcast_GetFrontlineNewsSingle(broadcast);
 
-    MessageLoader_GetSpeciesName(v2->species, HEAP_ID_FIELD1, v0);
-    sub_0204922C(param1, 0, v0, 0, GAME_LANGUAGE, 1);
+    MessageLoader_GetSpeciesName(news->species, HEAP_ID_FIELD1, speciesName);
+    TVInterview_SetTemplateString(template, 0, speciesName, 0, GAME_LANGUAGE, 1);
 }
 
-static void sub_02049308(FieldSystem *fieldSystem, StringTemplate *param1)
+// Fills the template with the trainer name from the multi Battle Frontier
+// Frontline News segment.
+static void TVInterview_LoadFrontlineNewsMultiMessage(FieldSystem *fieldSystem, StringTemplate *template)
 {
-    String *v0;
+    String *trainerName;
     TVBroadcast *broadcast = SaveData_GetTVBroadcast(fieldSystem->saveData);
-    TVSegment_BattleFrontierFrontlineNewsMultiData *v2 = TVBroadcast_GetFrontlineNewsMulti(broadcast);
+    TVSegment_BattleFrontierFrontlineNewsMultiData *news = TVBroadcast_GetFrontlineNewsMulti(broadcast);
 
-    v0 = String_Init(64, HEAP_ID_FIELD1);
+    trainerName = String_Init(64, HEAP_ID_FIELD1);
 
-    String_CopyChars(v0, v2->trainerName);
-    StringTemplate_SetString(param1, 0, v0, v2->gender, 1, GAME_LANGUAGE);
-    String_Free(v0);
+    String_CopyChars(trainerName, news->trainerName);
+    StringTemplate_SetString(template, 0, trainerName, news->gender, 1, GAME_LANGUAGE);
+    String_Free(trainerName);
 }
 
-static BOOL sub_02049348(FieldSystem *fieldSystem)
+static BOOL TVInterview_IsBattleTowerCornerEligible(FieldSystem *fieldSystem)
 {
-    TVSegment_BattleTowerCornerData *v0 = TVBroadcast_GetBattleTowerCorner(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->active;
+    TVSegment_BattleTowerCornerData *data = TVBroadcast_GetBattleTowerCorner(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return data->active;
 }
 
-static BOOL sub_02049358(FieldSystem *fieldSystem)
+static BOOL TVInterview_IsPoketchWatchEligible(FieldSystem *fieldSystem)
 {
     Poketch *poketch = SaveData_GetPoketch(fieldSystem->saveData);
     return Poketch_IsEnabled(poketch);
 }
 
-static BOOL sub_02049368(FieldSystem *fieldSystem)
+static BOOL TVInterview_IsContestHallEligible(FieldSystem *fieldSystem)
 {
-    TVSegment_ContestHall_ShowcasedPokemon *v0 = TVBroadcast_GetShowcasedPokemon(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->unk_00;
+    TVSegment_ContestHall_ShowcasedPokemon *data = TVBroadcast_GetShowcasedPokemon(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return data->unk_00;
 }
 
-static BOOL sub_02049378(FieldSystem *fieldSystem)
+static BOOL TVInterview_IsRightOnPhotoCornerEligible(FieldSystem *fieldSystem)
 {
     ImageClips *imageClips = SaveData_GetImageClips(fieldSystem->saveData);
     return ImageClips_DressUpPhotoHasData(imageClips, 0);
 }
 
-static BOOL sub_02049388(FieldSystem *fieldSystem)
+static BOOL TVInterview_IsThreeCheersForPoffinCornerEligible(FieldSystem *fieldSystem)
 {
-    TVSegment_ThreeCheersForPoffinCornerData *v0 = TVBroadcast_GetPoffinCorner(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->active;
+    TVSegment_ThreeCheersForPoffinCornerData *data = TVBroadcast_GetPoffinCorner(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return data->active;
 }
 
-static BOOL sub_02049398(FieldSystem *fieldSystem)
+static BOOL TVInterview_IsAmitySquareWatchEligible(FieldSystem *fieldSystem)
 {
-    TVSegment_AmitySquareWatchData *v0 = TVBroadcast_GetAmitySquareWatch(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->active;
+    TVSegment_AmitySquareWatchData *data = TVBroadcast_GetAmitySquareWatch(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return data->active;
 }
 
-static BOOL sub_020493A8(FieldSystem *fieldSystem)
+static BOOL TVInterview_IsFrontlineNewsSingleEligible(FieldSystem *fieldSystem)
 {
-    TVSegment_BattleFrontierFrontlineNewsSingleData *v0 = TVBroadcast_GetFrontlineNewsSingle(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->active;
+    TVSegment_BattleFrontierFrontlineNewsSingleData *data = TVBroadcast_GetFrontlineNewsSingle(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return data->active;
 }
 
-static BOOL sub_020493B8(FieldSystem *fieldSystem)
+static BOOL TVInterview_IsFrontlineNewsMultiEligible(FieldSystem *fieldSystem)
 {
-    TVSegment_BattleFrontierFrontlineNewsMultiData *v0 = TVBroadcast_GetFrontlineNewsMulti(SaveData_GetTVBroadcast(fieldSystem->saveData));
-    return v0->active;
+    TVSegment_BattleFrontierFrontlineNewsMultiData *data = TVBroadcast_GetFrontlineNewsMulti(SaveData_GetTVBroadcast(fieldSystem->saveData));
+    return data->active;
 }
 
+// Interview segment table, indexed by segment ID minus one. Unused segments
+// have no callbacks and point at a dummy message.
 static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = {
     [TV_PROGRAM_SEGMENT_INTERVIEW_UNUSED_01 - 1] = {
         .saveResponseFn = NULL,
@@ -359,7 +401,7 @@ static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = 
     [TV_PROGRAM_SEGMENT_BATTLE_TOWER_CORNER - 1] = {
         .saveResponseFn = FieldSystem_SaveTVSegment_BattleTowerCorner,
         .loadMessageFn = NULL,
-        .isEligibleFn = sub_02049348,
+        .isEligibleFn = TVInterview_IsBattleTowerCornerEligible,
         .messageID = TVReporterInterviews_Text_BattleTowerCorner,
     },
     [TV_PROGRAM_SEGMENT_INTERVIEW_UNUSED_03 - 1] = {
@@ -370,7 +412,7 @@ static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = 
     },
     [TV_PROGRAM_SEGMENT_YOUR_POKEMON_CORNER - 1] = {
         .saveResponseFn = FieldSystem_SaveTVSegment_YourPokemonCorner,
-        .loadMessageFn = sub_02049268,
+        .loadMessageFn = TVInterview_LoadYourPokemonCornerMessage,
         .isEligibleFn = NULL,
         .messageID = TVReporterInterviews_Text_YourPokemonCorner,
     },
@@ -382,14 +424,14 @@ static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = 
     },
     [TV_PROGRAM_SEGMENT_THE_POKETCH_WATCH - 1] = {
         .saveResponseFn = FieldSystem_SaveTVSegment_ThePoketchWatch,
-        .loadMessageFn = sub_02049288,
-        .isEligibleFn = sub_02049358,
+        .loadMessageFn = TVInterview_LoadPoketchWatchMessage,
+        .isEligibleFn = TVInterview_IsPoketchWatchEligible,
         .messageID = TVReporterInterviews_Text_ThePoketchWatch,
     },
     [TV_PROGRAM_SEGMENT_CONTEST_HALL - 1] = {
         .saveResponseFn = FieldSystem_SaveTVSegment_ContestHall,
         .loadMessageFn = NULL,
-        .isEligibleFn = sub_02049368,
+        .isEligibleFn = TVInterview_IsContestHallEligible,
         .messageID = TVReporterInterviews_Text_ContestHall,
     },
     [TV_PROGRAM_SEGMENT_INTERVIEW_UNUSED_08 - 1] = {
@@ -401,7 +443,7 @@ static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = 
     [TV_PROGRAM_SEGMENT_RIGHT_ON_PHOTO_CORNER - 1] = {
         .saveResponseFn = FieldSystem_SaveTVSegment_RightOnPhotoCorner,
         .loadMessageFn = NULL,
-        .isEligibleFn = sub_02049378,
+        .isEligibleFn = TVInterview_IsRightOnPhotoCornerEligible,
         .messageID = TVReporterInterviews_Text_RightOnPhotoCorner,
     },
     [TV_PROGRAM_SEGMENT_STREET_CORNER_PERSONALITY_CHECKUP - 1] = {
@@ -413,7 +455,7 @@ static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = 
     [TV_PROGRAM_SEGMENT_THREE_CHEERS_FOR_POFFIN_CORNER - 1] = {
         .saveResponseFn = FieldSystem_SaveTVSegment_ThreeCheersForPoffinCorner,
         .loadMessageFn = NULL,
-        .isEligibleFn = sub_02049388,
+        .isEligibleFn = TVInterview_IsThreeCheersForPoffinCornerEligible,
         .messageID = TVReporterInterviews_Text_ThreeCheersForPoffinCorner,
     },
     [TV_PROGRAM_SEGMENT_INTERVIEW_UNUSED_12 - 1] = {
@@ -424,14 +466,14 @@ static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = 
     },
     [TV_PROGRAM_SEGMENT_AMITY_SQUARE_WATCH - 1] = {
         .saveResponseFn = FieldSystem_SaveTVSegment_AmitySquareWatch,
-        .loadMessageFn = sub_020492A0,
-        .isEligibleFn = sub_02049398,
+        .loadMessageFn = TVInterview_LoadAmitySquareWatchMessage,
+        .isEligibleFn = TVInterview_IsAmitySquareWatchEligible,
         .messageID = TVReporterInterviews_Text_AmitySquareWatch,
     },
     [TV_PROGRAM_SEGMENT_BATTLE_FRONTIER_FRONTLINE_NEWS_SINGLE - 1] = {
         .saveResponseFn = FieldSystem_SaveTVSegment_BattleFrontierFrontlineNews_Single,
-        .loadMessageFn = sub_020492D4,
-        .isEligibleFn = sub_020493A8,
+        .loadMessageFn = TVInterview_LoadFrontlineNewsSingleMessage,
+        .isEligibleFn = TVInterview_IsFrontlineNewsSingleEligible,
         .messageID = TVReporterInterviews_Text_BattleFrontierFrontlineNews_Single,
     },
     [TV_PROGRAM_SEGMENT_IN_YOUR_FACE_INTERVIEW_QUESTION_1 - 1] = {
@@ -460,12 +502,14 @@ static const TVInterview sInterviews[TV_PROGRAM_TYPE_INTERVIEWS_NUM_SEGMENTS] = 
     },
     [TV_PROGRAM_SEGMENT_BATTLE_FRONTIER_FRONTLINE_NEWS_MULTI - 1] = {
         .saveResponseFn = FieldSystem_SaveTVSegment_BattleFrontierFrontlineNews_Multi,
-        .loadMessageFn = sub_02049308,
-        .isEligibleFn = sub_020493B8,
+        .loadMessageFn = TVInterview_LoadFrontlineNewsMultiMessage,
+        .isEligibleFn = TVInterview_IsFrontlineNewsMultiEligible,
         .messageID = TVReporterInterviews_Text_BattleFrontierFrontlineNews_Multi,
     },
 };
 
+// Writes the number of Pokemon caught in the current Safari Game into a script
+// variable.
 BOOL ScrCmd_GetCurrentSafariGameCaughtNum(ScriptContext *ctx)
 {
     TVBroadcast *broadcast;
@@ -479,19 +523,23 @@ BOOL ScrCmd_GetCurrentSafariGameCaughtNum(ScriptContext *ctx)
     return FALSE;
 }
 
+// Writes the position, facing direction, and movement type of the Battle
+// Frontier reporter into script variables. The position depends on which
+// facility the multi Battle Frontier Frontline News segment was recorded at
+// (1 = Tower, 2/3 = Factory, 4 = Castle, 5 = Hall, 6 = Arcade).
 BOOL ScrCmd_GetBattleFrontierReporterPosition(ScriptContext *ctx)
 {
     TVBroadcast *broadcast;
-    TVSegment_BattleFrontierFrontlineNewsMultiData *v1;
+    TVSegment_BattleFrontierFrontlineNewsMultiData *news;
     u16 *x = ScriptContext_GetVarPointer(ctx);
     u16 *z = ScriptContext_GetVarPointer(ctx);
     u16 *dir = ScriptContext_GetVarPointer(ctx);
     u16 *movementType = ScriptContext_GetVarPointer(ctx);
 
     broadcast = SaveData_GetTVBroadcast(ctx->fieldSystem->saveData);
-    v1 = TVBroadcast_GetFrontlineNewsMulti(broadcast);
+    news = TVBroadcast_GetFrontlineNewsMulti(broadcast);
 
-    switch (v1->facility) {
+    switch (news->facility) {
     case 5:
         *x = 25;
         *z = 36;

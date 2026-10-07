@@ -19,7 +19,7 @@
 #include "string_template.h"
 #include "text.h"
 #include "touch_screen.h"
-#include "unk_02030A80.h"
+#include "player_profile.h"
 
 typedef struct {
     int unk_00;
@@ -64,11 +64,11 @@ static void ov62_02247DD8(UnkStruct_0208C06C *param0, int param1, int param2)
         StringTemplate *v2;
         String *v3;
         String *v4;
-        UnkStruct_02030A80 *v5 = param0->unk_88C[param2];
+        PlayerProfile *v5 = param0->unk_88C[param2];
 
         v2 = ov62_02231690(HEAP_ID_102);
         v0 = String_Init(255, HEAP_ID_102);
-        v3 = sub_02030B94(v5, HEAP_ID_102);
+        v3 = PlayerProfile_GetName(v5, HEAP_ID_102);
 
         ov62_022349A8(param0, v3);
         v4 = MessageLoader_GetNewString(param0->unk_14.unk_34, param1);

@@ -12,7 +12,7 @@ typedef struct BattleRecording {
     // Set to 0xFFFFFFFF by BattleRecording_Init; never read back.
     u32 unk_00;
     // Player profile shown alongside the recording (trainer card data).
-    UnkStruct_02030A80 header;
+    PlayerProfile header;
     // Compact summary: the party preview and battle regulation.
     BattleRecordingSummary summary;
     // The full recorded battle: parties, trainer info, options and input log.

@@ -47,7 +47,7 @@
 #include "font_oam.h"
 #include "unk_0202419C.h"
 #include "image_clips.h"
-#include "unk_02030A80.h"
+#include "player_profile.h"
 #include "vs_recorder_ring.h"
 #include "vram_transfer.h"
 
@@ -79,7 +79,7 @@ typedef struct {
     DressUpPhoto *photo;
     UnkStruct_ov62_02237D24_sub1 unk_230;
     UnkStruct_ov62_022323B8 unk_250;
-    UnkStruct_02030A80 *unk_2DC;
+    PlayerProfile *unk_2DC;
     int unk_2E0;
     int unk_2E4;
 } UnkStruct_ov62_02237D24;
@@ -217,7 +217,7 @@ static BOOL ov62_02237D24(UnkStruct_0208C06C *param0)
 
     {
         v0->unk_230.photo = DressUpPhoto_New(HEAP_ID_102);
-        v0->unk_250.unk_00 = sub_02030A80(HEAP_ID_102);
+        v0->unk_250.unk_00 = PlayerProfile_New(HEAP_ID_102);
     }
 
     Bg_ClearTilemap(param0->unk_14.unk_10, 2);
@@ -381,7 +381,7 @@ static BOOL ov62_022380B0(UnkStruct_0208C06C *param0)
 
         {
             Heap_Free(v0->unk_230.photo);
-            sub_02030A98(v0->unk_250.unk_00);
+            PlayerProfile_Free(v0->unk_250.unk_00);
         }
 
         Bg_ClearTilemap(param0->unk_14.unk_10, 2);
@@ -410,14 +410,14 @@ static BOOL ov62_022380B0(UnkStruct_0208C06C *param0)
         VsRecorderRing_SetVisible(param0->unk_6F0, 1);
         VsRecorderRing_SetOrbitRadii(param0->unk_6F0, 24, 24);
         ov62_02231AAC(param0, 286);
-        v0->unk_2DC = sub_02030A80(HEAP_ID_102);
-        sub_02030AA0(v0->unk_2DC, param0->saveData);
+        v0->unk_2DC = PlayerProfile_New(HEAP_ID_102);
+        PlayerProfile_Init(v0->unk_2DC, param0->saveData);
         Sound_PlayEffect(SEQ_SE_PL_BREC80_sseq);
         param0->unk_08++;
         break;
     case 3:
         if (ov61_0222B1B4(ov62_0224112C(param0), v0->unk_2DC, v0->photo) == 1) {
-            sub_02030A98(v0->unk_2DC);
+            PlayerProfile_Free(v0->unk_2DC);
             param0->unk_08++;
         }
         break;
@@ -505,7 +505,7 @@ static BOOL ov62_022383E4(UnkStruct_0208C06C *param0)
 
         {
             Heap_Free(v0->unk_230.photo);
-            sub_02030A98(v0->unk_250.unk_00);
+            PlayerProfile_Free(v0->unk_250.unk_00);
         }
 
         Bg_ClearTilemap(param0->unk_14.unk_10, 2);
@@ -756,7 +756,7 @@ static BOOL ov62_0223896C(UnkStruct_0208C06C *param0)
 
         {
             Heap_Free(v0->unk_230.photo);
-            sub_02030A98(v0->unk_250.unk_00);
+            PlayerProfile_Free(v0->unk_250.unk_00);
         }
 
         Bg_ClearTilemap(param0->unk_14.unk_10, 2);

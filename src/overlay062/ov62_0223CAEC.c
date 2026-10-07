@@ -38,7 +38,7 @@
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
 #include "font_oam.h"
-#include "unk_02030A80.h"
+#include "player_profile.h"
 #include "vs_recorder_ring.h"
 #include "vs_recorder.h"
 
@@ -462,24 +462,24 @@ static void ov62_0223D160(UnkStruct_0208C06C *a0)
     Text_AddPrinterWithParamsAndColor(&r4->unk_24[1], 0, r7, 0, 0, 0xff, 0x000f0d00, 0);
     Window_ScheduleCopyToVRAM(&r4->unk_24[1]);
     String_Free(r7);
-    sp18 = sub_02030B94(r5->unk_88C[0], 0x66);
+    sp18 = PlayerProfile_GetName(r5->unk_88C[0], 0x66);
     ov62_022349A8(r5, sp18);
     switch (r4->unk_14) {
     case 0:
-        int sp20 = sub_02030CDC(r5->unk_88C[0]);
+        int sp20 = PlayerProfile_GetAppearance(r5->unk_88C[0]);
         r7 = MessageLoader_GetNewString(r5->unk_14.unk_34, 0x55);
         sp1c = MessageLoader_GetNewString(r4->unk_744, ov62_02232234(sp20, 4));
         StringTemplate_SetString(r6, 0, sp1c, 0, 1, GAME_LANGUAGE);
         break;
     case 1:
-        int sp24 = sub_02030CCC(r5->unk_88C[0]);
+        int sp24 = PlayerProfile_GetBirthdayMonth(r5->unk_88C[0]);
         r7 = MessageLoader_GetNewString(r5->unk_14.unk_34, 0x56);
         sp1c = String_Init(0xff, 0x66);
         StringTemplate_SetMonthName(r6, 0, sp24);
         break;
     case 2:
-        int sp10 = sub_02030BBC(r5->unk_88C[0]);
-        int sp28 = sub_02030BEC(r5->unk_88C[0]);
+        int sp10 = PlayerProfile_GetSpecies(r5->unk_88C[0]);
+        int sp28 = PlayerProfile_GetIsEgg(r5->unk_88C[0]);
         r7 = MessageLoader_GetNewString(r5->unk_14.unk_34, 0x57);
         if (sp28) {
             sp10 = 0x1ee;

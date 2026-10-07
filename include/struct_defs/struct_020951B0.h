@@ -3,12 +3,14 @@
 
 #include "struct_defs/struct_020951B0_sub1.h"
 
+// A preset contest photo used by NPC contestants. The game picks one of these
+// (via the contest's npcPhotoPreset) and applies it to the NPC's photo.
 typedef struct {
-    UnkStruct_020951B0_sub1 unk_00[20];
-    u8 unk_50;
-    s8 unk_51;
-    s8 unk_52;
+    ContestPhotoAccessory accessories[20];
+    u8 accessoryCount;
+    s8 monPriority; // draw priority of the Pokemon in the photo
+    s8 backdrop;
     u8 padding_53;
-} UnkStruct_020951B0;
+} ContestPhotoPreset;
 
 #endif // POKEPLATINUM_STRUCT_020951B0_H

@@ -45,7 +45,7 @@ typedef struct {
     u32 unk_874;
     u8 *unk_878;
     BattleRecordingSummary *unk_87C[4];
-    UnkStruct_02030A80 *unk_88C[4];
+    PlayerProfile *unk_88C[4];
     BOOL unk_89C;
     BOOL unk_8A0;
     Window unk_8A4;

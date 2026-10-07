@@ -52,7 +52,7 @@
 #include "sys_task_manager.h"
 #include "text.h"
 #include "font_oam.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 
 #include "res/text/bank/contest_dance_competition.h"
 

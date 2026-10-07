@@ -49,7 +49,7 @@
 #include "system.h"
 #include "touch_pad.h"
 #include "font_oam.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 #include "vram_transfer.h"
 
 FS_EXTERN_OVERLAY(overlay11);
@@ -342,7 +342,7 @@ int DanceCompetition_Main(ApplicationManager *appMan, int *param1)
         }
         break;
     case 1:
-        if (sub_02094EDC(v0->unk_00) == TRUE) {
+        if (Contest_IsPlayerLeader(v0->unk_00) == TRUE) {
             v1 = Unk_ov17_02253050[v0->unk_1096](v0, &v0->unk_1B1C);
 
             if ((v1 == 1) || (v1 == 2)) {
@@ -364,7 +364,7 @@ int DanceCompetition_Main(ApplicationManager *appMan, int *param1)
         ov17_0224F35C(&v0->unk_109C);
         ov17_0224F3D8(&v0->unk_109C, v0);
 
-        if ((v0->unk_1B24 == 1) && (ov17_0224F3D0(&v0->unk_109C) == 0) && (sub_02094EDC(v0->unk_00) == FALSE)) {
+        if ((v0->unk_1B24 == 1) && (ov17_0224F3D0(&v0->unk_109C) == 0) && (Contest_IsPlayerLeader(v0->unk_00) == FALSE)) {
             *param1 = 2;
             MI_CpuClear8(&v0->unk_1B1C, sizeof(UnkStruct_ov17_0223E838));
             StartScreenFade(FADE_SUB_THEN_MAIN, FADE_TYPE_UNK_30, FADE_TYPE_UNK_30, COLOR_BLACK, 6, 1, HEAP_ID_23);

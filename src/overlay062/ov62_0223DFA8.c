@@ -41,7 +41,7 @@
 #include "touch_screen_actions.h"
 #include "font_oam.h"
 #include "battle_recording.h"
-#include "unk_02030A80.h"
+#include "player_profile.h"
 #include "vs_recorder_ring.h"
 #include "vs_recorder.h"
 
@@ -242,11 +242,11 @@ static void ov62_0223E0FC(UnkStruct_0208C06C *param0, int param1, int param2)
         StringTemplate *v3;
         String *v4;
         String *v5;
-        UnkStruct_02030A80 *v6 = v2->unk_194.unk_00;
+        PlayerProfile *v6 = v2->unk_194.unk_00;
 
         v3 = ov62_02231690(HEAP_ID_102);
         v0 = String_Init(255, HEAP_ID_102);
-        v4 = sub_02030B94(v6, HEAP_ID_102);
+        v4 = PlayerProfile_GetName(v6, HEAP_ID_102);
         ov62_022349A8(param0, v4);
         v5 = MessageLoader_GetNewString(param0->unk_14.unk_34, param1);
         StringTemplate_SetString(v3, 0, v4, 0, 1, GAME_LANGUAGE);
@@ -258,11 +258,11 @@ static void ov62_0223E0FC(UnkStruct_0208C06C *param0, int param1, int param2)
         StringTemplate *v7;
         String *v8;
         String *v9;
-        UnkStruct_02030A80 *v10 = param0->unk_88C[param2];
+        PlayerProfile *v10 = param0->unk_88C[param2];
 
         v7 = ov62_02231690(HEAP_ID_102);
         v0 = String_Init(255, HEAP_ID_102);
-        v8 = sub_02030B94(v10, HEAP_ID_102);
+        v8 = PlayerProfile_GetName(v10, HEAP_ID_102);
         ov62_022349A8(param0, v8);
         v9 = MessageLoader_GetNewString(param0->unk_14.unk_34, param1);
 
@@ -363,7 +363,7 @@ static void ov62_0223E428(UnkStruct_0208C06C *param0)
     UnkStruct_ov62_0223E01C *v0 = param0->unk_860;
 
     BattleRecording_FreeSummary(v0->unk_220.unk_04);
-    sub_02030A98(v0->unk_194.unk_00);
+    PlayerProfile_Free(v0->unk_194.unk_00);
 }
 
 static BOOL ov62_0223E448(UnkStruct_0208C06C *param0)
@@ -826,7 +826,7 @@ static void ov62_0223EE88(UnkStruct_ov62_022312B0 *param0, UnkStruct_0208C06C *p
     } else {
         v3 = ov62_02231690(HEAP_ID_102);
         v4 = MessageLoader_GetNewString(param1->unk_14.unk_34, 7);
-        v5 = sub_02030B94(param1->unk_88C[param2], HEAP_ID_102);
+        v5 = PlayerProfile_GetName(param1->unk_88C[param2], HEAP_ID_102);
         ov62_022349A8(param1, v5);
         v0 = String_Init(255, HEAP_ID_102);
 
@@ -1668,11 +1668,11 @@ static void ov62_022402FC(UnkStruct_0208C06C *param0, int param1, BOOL param2)
         StringTemplate *v3;
         String *v4;
         String *v5;
-        UnkStruct_02030A80 *v6 = v2->unk_194.unk_00;
+        PlayerProfile *v6 = v2->unk_194.unk_00;
 
         v3 = ov62_02231690(HEAP_ID_102);
         v0 = String_Init(255, HEAP_ID_102);
-        v4 = sub_02030B94(v6, HEAP_ID_102);
+        v4 = PlayerProfile_GetName(v6, HEAP_ID_102);
         ov62_022349A8(param0, v4);
         v5 = MessageLoader_GetNewString(param0->unk_14.unk_34, param1);
         StringTemplate_SetString(v3, 0, v4, 0, 1, GAME_LANGUAGE);
@@ -2025,7 +2025,7 @@ static void ov62_02240B94(UnkStruct_0208C06C *param0)
 {
     UnkStruct_ov62_0223E01C *v0 = param0->unk_860;
 
-    v0->unk_194.unk_00 = sub_02030A80(HEAP_ID_102);
+    v0->unk_194.unk_00 = PlayerProfile_New(HEAP_ID_102);
     ov61_0222AFC0(&param0->unk_8B4.unk_1D58[param0->unk_14.unk_48C.unk_38.unk_00]->unk_00, v0->unk_194.unk_00);
     v0->unk_220.unk_00 = v0->unk_194.unk_00;
     v0->unk_220.unk_04 = BattleRecording_NewSummary(HEAP_ID_102);

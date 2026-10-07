@@ -37,7 +37,7 @@
 #include "system.h"
 #include "touch_pad.h"
 #include "font_oam.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 #include "vram_transfer.h"
 
 FS_EXTERN_OVERLAY(overlay11);
@@ -234,7 +234,7 @@ int ContestFinalScoring_Main(ApplicationManager *appMan, int *param1)
         }
         break;
     case 1:
-        if (sub_02094EDC(v0->unk_00) == TRUE) {
+        if (Contest_IsPlayerLeader(v0->unk_00) == TRUE) {
             v1 = Unk_ov17_02254B54[v0->unk_84E](v0, &v0->unk_1270);
 
             if ((v1 == 1) || (v1 == 2)) {

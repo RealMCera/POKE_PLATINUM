@@ -162,7 +162,7 @@ static int ov61_0222B190(UnkStruct_ov62_022349A8 *param0, UnkStruct_ov61_0222B13
     return 0;
 }
 
-int ov61_0222B1B4(UnkStruct_ov62_022349A8 *param0, UnkStruct_02030A80 *param1, DressUpPhoto *photo)
+int ov61_0222B1B4(UnkStruct_ov62_022349A8 *param0, PlayerProfile *param1, DressUpPhoto *photo)
 {
     if (ov61_0222BBBC(param0) == 0) {
         return 0;
@@ -189,7 +189,7 @@ int ov61_0222B1FC(UnkStruct_ov62_022349A8 *param0, int param1)
     return 1;
 }
 
-int ov61_0222B224(UnkStruct_ov62_022349A8 *param0, int param1, UnkStruct_02030A80 *param2, const PCBoxes *pcBoxes, int param4)
+int ov61_0222B224(UnkStruct_ov62_022349A8 *param0, int param1, PlayerProfile *param2, const PCBoxes *pcBoxes, int param4)
 {
     if (ov61_0222BBBC(param0) == 0) {
         return 0;
@@ -230,7 +230,7 @@ int ov61_0222B2B8(UnkStruct_ov62_022349A8 *param0)
     return 1;
 }
 
-int ov61_0222B2D8(UnkStruct_ov62_022349A8 *param0, UnkStruct_02030A80 *param1, UnkStruct_ov61_0222B2D8 param2[])
+int ov61_0222B2D8(UnkStruct_ov62_022349A8 *param0, PlayerProfile *param1, UnkStruct_ov61_0222B2D8 param2[])
 {
     PlayTime *playTime;
     int v1;
@@ -251,16 +251,16 @@ int ov61_0222B2D8(UnkStruct_ov62_022349A8 *param0, UnkStruct_02030A80 *param1, U
     return 1;
 }
 
-int ov61_0222B338(UnkStruct_ov62_022349A8 *param0, UnkStruct_02030A80 *param1)
+int ov61_0222B338(UnkStruct_ov62_022349A8 *param0, PlayerProfile *param1)
 {
-    UnkStruct_02030A80 *v0;
+    PlayerProfile *v0;
 
     if (ov61_0222BBBC(param0) == 0) {
         return 0;
     }
 
     GF_ASSERT((BattleRecording_SaveSize() - sizeof(u32)) == sizeof(UnkStruct_ov62_022349A8_sub3_sub3));
-    GF_ASSERT(sizeof(UnkStruct_ov61_0222AFC0) == sizeof(UnkStruct_02030A80));
+    GF_ASSERT(sizeof(UnkStruct_ov61_0222AFC0) == sizeof(PlayerProfile));
 
     param0->unk_190.unk_00_val4 = (UnkStruct_ov62_022349A8_sub3_sub3 *)BattleRecording_GetData();
 

@@ -32,7 +32,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "text.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 
 #include "res/text/bank/contest_results.h"
 
@@ -200,7 +200,7 @@ void ov17_02250744(UnkStruct_ov17_0224FCA0 *param0)
         GF_ASSERT(param0->unk_10.pokemonSpriteDataArray[v1].tiles == NULL);
 
         param0->unk_10.pokemonSpriteDataArray[v1].tiles = Heap_Alloc(HEAP_ID_24, (32 * 10 * 10));
-        param0->unk_10.unk_08[v1] = sub_02095484(param0->unk_10.unk_04, v0, param0->unk_10.unk_00->contestMons[v1], 2, &param0->unk_10.pokemonSpriteDataArray[v1], HEAP_ID_24, Unk_ov17_02254BF4[v0][0], Unk_ov17_02254BF4[v0][1], Unk_ov17_02254BF4[v0][2]);
+        param0->unk_10.unk_08[v1] = Contest_CreateMonSprite(param0->unk_10.unk_04, v0, param0->unk_10.unk_00->contestMons[v1], 2, &param0->unk_10.pokemonSpriteDataArray[v1], HEAP_ID_24, Unk_ov17_02254BF4[v0][0], Unk_ov17_02254BF4[v0][1], Unk_ov17_02254BF4[v0][2]);
     }
 }
 
@@ -953,7 +953,7 @@ void ov17_02251930(Contest *param0, int param1, s16 param2[])
     for (v4 = 0; v4 < 4; v4++) {
         switch (param1) {
         case 0:
-            v0[v4] = sub_02095928(param0, v4) + sub_0209598C(param0, v4);
+            v0[v4] = Contest_GetVisualScoreRank(param0, v4) + Contest_GetDanceScoreRank(param0, v4);
             break;
         case 1:
             v0[v4] = param0->data.results[v4].danceCompetitionScore;

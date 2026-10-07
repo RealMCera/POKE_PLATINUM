@@ -43,7 +43,7 @@
 #include "sound_playback.h"
 #include "sys_task.h"
 #include "sys_task_manager.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 
 static int ov17_0224CFF8(UnkStruct_ov17_0224F30C *param0, void *param1, int param2, void *param3);
 static void ov17_0224D00C(UnkStruct_ov17_0224F30C *param0, void *param1, const UnkStruct_ov17_02243C80 *param2, void *param3);
@@ -446,7 +446,7 @@ static void ov17_0224D500(UnkStruct_ov17_0224F30C *param0, void *param1, const U
         v0->unk_00->contestantOrder[v2] = v1->unk_00[v2];
     }
 
-    if (sub_02094EDC(v0->unk_00) == FALSE) {
+    if (Contest_IsPlayerLeader(v0->unk_00) == FALSE) {
         ov17_0224F26C(param0, param2, NULL, 0);
     }
 }

@@ -7,7 +7,7 @@
 #include "sprite_system.h"
 
 typedef struct {
-    UnkStruct_02030A80 *unk_00;
+    PlayerProfile *unk_00;
     ManagedSprite *unk_04;
     ManagedSprite *unk_08;
     Window unk_0C[8];

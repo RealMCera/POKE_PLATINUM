@@ -46,12 +46,12 @@
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
 #include "font_oam.h"
-#include "unk_02030A80.h"
+#include "player_profile.h"
 #include "vs_recorder_ring.h"
 
 typedef struct {
     int unk_00;
-    UnkStruct_02030A80 *unk_04;
+    PlayerProfile *unk_04;
     int unk_08;
 } UnkStruct_ov62_02239DBC_sub1;
 
@@ -162,14 +162,14 @@ static void ov62_02239D60(UnkStruct_0208C06C *param0, int param1)
 {
     UnkStruct_ov62_02239DBC *v0 = param0->unk_860;
 
-    v0->unk_2ED8.unk_00 = sub_02030A80(HEAP_ID_102);
+    v0->unk_2ED8.unk_00 = PlayerProfile_New(HEAP_ID_102);
     ov61_0222AFC0(&v0->unk_38C[param1]->unk_00, v0->unk_2ED8.unk_00);
 }
 
 static void ov62_02239D8C(UnkStruct_0208C06C *param0)
 {
     UnkStruct_ov62_02239DBC *v0 = param0->unk_860;
-    sub_02030A98(v0->unk_2ED8.unk_00);
+    PlayerProfile_Free(v0->unk_2ED8.unk_00);
 }
 
 static BOOL ov62_02239DA4(UnkStruct_ov62_02239DA4 *param0)
@@ -465,9 +465,9 @@ static BOOL ov62_0223A17C(UnkStruct_0208C06C *param0)
     v0->unk_330[2] = TouchScreenActions_RegisterHandler(Unk_ov62_02248DDC, NELEMS(Unk_ov62_02248DDC), ov62_02239EFC, param0, HEAP_ID_102);
     v0->unk_330[3] = TouchScreenActions_RegisterHandler(Unk_ov62_02248D6C, NELEMS(Unk_ov62_02248D6C), ov62_02239F38, param0, HEAP_ID_102);
     v0->unk_330[4] = TouchScreenActions_RegisterHandler(Unk_ov62_02248D54, NELEMS(Unk_ov62_02248D54), ov62_02239F98, param0, HEAP_ID_102);
-    v0->unk_380.unk_04 = sub_02030A80(HEAP_ID_102);
+    v0->unk_380.unk_04 = PlayerProfile_New(HEAP_ID_102);
 
-    sub_02030AA0(v0->unk_380.unk_04, param0->saveData);
+    PlayerProfile_Init(v0->unk_380.unk_04, param0->saveData);
     ov62_0222FB60(param0, 1);
 
     return 0;
@@ -1378,7 +1378,7 @@ static BOOL ov62_0223B424(UnkStruct_0208C06C *param0)
             ov62_0222FB44(param0, 1, 1, param0->unk_10);
             ov62_0222FB60(param0, 5);
 
-            sub_02030A98(v0->unk_380.unk_04);
+            PlayerProfile_Free(v0->unk_380.unk_04);
             Heap_Free(v0);
         } else {
             PaletteData_BlendMulti(param0->unk_14.unk_14, PLTTBUF_SUB_BG, 0x2, v0->unk_1AC, param0->unk_14.unk_44);
@@ -2214,7 +2214,7 @@ static BOOL ov62_0223C948(UnkStruct_0208C06C *param0)
             ov62_0222FB44(param0, 1, 1, param0->unk_10);
             ov62_0222FB60(param0, 5);
 
-            sub_02030A98(v0->unk_380.unk_04);
+            PlayerProfile_Free(v0->unk_380.unk_04);
             Heap_Free(v0);
         } else {
             PaletteData_BlendMulti(param0->unk_14.unk_14, PLTTBUF_SUB_BG, 0x2, v0->unk_1AC, param0->unk_14.unk_44);

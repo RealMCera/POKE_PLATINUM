@@ -38,7 +38,7 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "font_oam.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 
 #include "res/text/bank/contest_text.h"
 
@@ -870,7 +870,7 @@ static void ov17_0223FCAC(UnkStruct_ov17_0223F7E4 *param0, int param1, int param
             continue;
         }
 
-        v10 = sub_02095734(moveContestEffects[i]);
+        v10 = Contest_GetAppealPoints(moveContestEffects[i]);
         v11 = MATH_IAbs(v10) / 10;
 
         GF_ASSERT(v11 <= 6);

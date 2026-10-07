@@ -57,7 +57,7 @@
 #include "tv_segment.h"
 #include "image_clips.h"
 #include "unk_020363E8.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 #include "unk_02095AF0.h"
 #include "vars_flags.h"
 
@@ -329,7 +329,7 @@ static BOOL FieldTask_RunPracticeCompetition(FieldTask *fieldTask)
         switch (taskEnv->contest->data.competitionType) {
         case CONTEST_COMPETITION_PRACTICE_DANCE:
         case CONTEST_COMPETITION_DANCE:
-            sub_02095338(taskEnv->contest);
+            Contest_InitPhotos(taskEnv->contest);
             FieldTask_RunApplication(fieldTask, &DanceCompetitionAppTemplate, taskEnv->contest);
             break;
         }
@@ -354,8 +354,8 @@ static BOOL FieldTask_RunPracticeCompetition(FieldTask *fieldTask)
         case CONTEST_COMPETITION_PRACTICE_VISUAL:
         case CONTEST_COMPETITION_VISUAL:
             for (v3 = 0; v3 < 4; v3++) {
-                v2[v3] = sub_02095928(taskEnv->contest, v3)
-                    + sub_0209598C(taskEnv->contest, v3);
+                v2[v3] = Contest_GetVisualScoreRank(taskEnv->contest, v3)
+                    + Contest_GetDanceScoreRank(taskEnv->contest, v3);
             }
             break;
         case CONTEST_COMPETITION_PRACTICE_DANCE:
@@ -432,7 +432,7 @@ Contest *Contest_Init(const PlayerMonContestDTO *playerMonContestDTO)
     contest->data.contestType = playerMonContestDTO->contestType;
     contest->data.contestRank = playerMonContestDTO->contestRank;
     contest->data.competitionType = playerMonContestDTO->competitionType;
-    contest->data.npcPhotoPreset = sub_02095A74(playerMonContestDTO->contestRank, FALSE);
+    contest->data.npcPhotoPreset = Contest_GetRandomNPCPhotoPreset(playerMonContestDTO->contestRank, FALSE);
     contest->data.leaderContestantID = contest->data.playerContestantID;
     contest->data.leaderElectionValue = 110;
     contest->data.leaderElectionResult = contest->data.leaderElectionValue;
@@ -451,7 +451,7 @@ Contest *Contest_Init(const PlayerMonContestDTO *playerMonContestDTO)
         contest->data.photos[i] = ContestPhoto_New(HEAP_ID_20);
     }
 
-    sub_020954F0(contest, HEAP_ID_FIELD2, contest->data.bonusJudgeIndex, contest->data.contestType, contest->data.contestRank);
+    Contest_SelectJudges(contest, HEAP_ID_FIELD2, contest->data.bonusJudgeIndex, contest->data.contestType, contest->data.contestRank);
     contest->party = Party_New(HEAP_ID_20);
 
     for (i = 0; i < CONTEST_NUM_PARTICIPANTS; i++) {
@@ -510,11 +510,11 @@ static void Contest_InitNPCContestants(Contest *contest, int isGameCompleted, in
     int v0 = 4 - 1;
     int i;
 
-    sub_02094F04(contest, HEAP_ID_FIELD2, v0, contest->data.contestType, contest->data.contestRank, contest->data.competitionType, isGameCompleted, isNatDexObtained);
+    Contest_SelectOpponents(contest, HEAP_ID_FIELD2, v0, contest->data.contestType, contest->data.contestRank, contest->data.competitionType, isGameCompleted, isNatDexObtained);
 
     // starts at 1, because 0 was already initialized for player
     for (i = 1; i < CONTEST_NUM_PARTICIPANTS; i++) {
-        sub_02095380(&contest->data.opponentData[i], contest->data.contestMons[i], HEAP_ID_20);
+        Contest_InitOpponentMon(&contest->data.opponentData[i], contest->data.contestMons[i], HEAP_ID_20);
     }
 
     for (i = 1; i < CONTEST_NUM_PARTICIPANTS; i++) {
@@ -541,7 +541,7 @@ static void Contest_InitNPCContestants(Contest *contest, int isGameCompleted, in
         contest->data.contestantObjEventGFX[i] = contest->data.opponentData[i].unk_08;
     }
 
-    sub_020951B0(contest, HEAP_ID_FIELD2);
+    Contest_SetupNPCPhotos(contest, HEAP_ID_FIELD2);
 }
 
 void Contest_Free(Contest *contest)
@@ -1058,7 +1058,7 @@ BOOL Contest_SetUpLinkContest(Contest *contest)
     contest->data.connectionCount = connectionCount;
     contest->data.playerContestantID = netID;
     contest->data.leaderElectionValue = 110;
-    contest->data.npcPhotoPreset = sub_02095A74(contest->data.contestRank, TRUE);
+    contest->data.npcPhotoPreset = Contest_GetRandomNPCPhotoPreset(contest->data.contestRank, TRUE);
 
     sub_02095AF0(contest);
 

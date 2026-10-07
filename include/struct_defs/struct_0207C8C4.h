@@ -6,10 +6,12 @@
 #include "particle_system.h"
 #include "spl.h"
 
+// Wraps the particle system used by the evolution scene together with the
+// parameters it was created from.
 typedef struct {
-    UnkStruct_0207C894 unk_00;
-    SPLEmitter *unk_08;
-    ParticleSystem *unk_0C;
-} UnkStruct_0207C8C4;
+    EvolutionParticleSystemArgs args;
+    SPLEmitter *emitter;
+    ParticleSystem *ps;
+} EvolutionParticleSystem;
 
 #endif // POKEPLATINUM_STRUCT_0207C8C4_H

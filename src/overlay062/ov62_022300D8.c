@@ -30,7 +30,7 @@
 #include "sys_task_manager.h"
 #include "text.h"
 #include "font_oam.h"
-#include "unk_02030A80.h"
+#include "player_profile.h"
 #include "unk_0208C010.h"
 
 static const u8 Unk_ov62_022488A8[][5] = {
@@ -703,7 +703,7 @@ void ov62_02230FC8(UnkStruct_0208C06C *param0, UnkStruct_ov62_022307C0_sub1 *par
         } else {
             v3 = ov62_02231690(HEAP_ID_102);
             v4 = MessageLoader_GetNewString(param0->unk_14.unk_34, 7);
-            v5 = sub_02030B94(param0->unk_88C[param3->unk_18], HEAP_ID_102);
+            v5 = PlayerProfile_GetName(param0->unk_88C[param3->unk_18], HEAP_ID_102);
             ov62_022349A8(param0, v5);
             v0 = String_Init(255, HEAP_ID_102);
 
@@ -719,7 +719,7 @@ void ov62_02230FC8(UnkStruct_0208C06C *param0, UnkStruct_ov62_022307C0_sub1 *par
         } else {
             v3 = ov62_02231690(HEAP_ID_102);
             v4 = MessageLoader_GetNewString(param0->unk_14.unk_34, 7);
-            v5 = sub_02030B94(param0->unk_88C[param3->unk_18], HEAP_ID_102);
+            v5 = PlayerProfile_GetName(param0->unk_88C[param3->unk_18], HEAP_ID_102);
             ov62_022349A8(param0, v5);
             v0 = String_Init(255, HEAP_ID_102);
 

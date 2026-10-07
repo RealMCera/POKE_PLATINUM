@@ -12,7 +12,7 @@
 
 #include "contest.h"
 #include "move_table.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 
 typedef int (*UnkFuncPtr_ov17_02253AF8)(UnkStruct_ov17_02246F24 *, UnkStruct_ov17_02246540 *, int, int, int);
 
@@ -198,7 +198,7 @@ void ov17_022460DC(UnkStruct_ov17_02246F24 *param0, UnkStruct_ov17_02246540 *par
     ov17_02246090(param1, contestantID);
 
     if (Unk_ov17_02253AF8[param1->unk_00[contestantID].contestMoveEffect].unk_05 == 0) {
-        sub_02095790(param1->unk_00[contestantID].contestMoveEffect, 4, &v0, &v1);
+        Contest_LoadContestEffectMessage(param1->unk_00[contestantID].contestMoveEffect, 4, &v0, &v1);
 
         if (v0 != 0xffff) {
             ov17_02245F14(&param1->unk_00[contestantID], param1->unk_00[contestantID].contestMoveEffect, 4, contestantID, 30000, 30000, 30000);
@@ -210,7 +210,7 @@ void ov17_02246138(UnkStruct_ov17_02246F24 *param0, UnkStruct_ov17_02246540 *par
 {
     ov17_02246090(param1, contestantID);
 
-    param1->unk_00[contestantID].unk_04 = sub_02095734(param1->unk_00[contestantID].contestMoveEffect);
+    param1->unk_00[contestantID].unk_04 = Contest_GetAppealPoints(param1->unk_00[contestantID].contestMoveEffect);
     param1->unk_00[contestantID].unk_18 = param1->unk_00[contestantID].unk_04;
 }
 

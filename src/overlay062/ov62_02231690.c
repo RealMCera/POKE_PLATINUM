@@ -56,7 +56,7 @@
 #include "touch_screen.h"
 #include "font_oam.h"
 #include "battle_recording.h"
-#include "unk_02030A80.h"
+#include "player_profile.h"
 #include "vs_recorder_ring.h"
 
 static void ov62_022349E4(String *param0, enum HeapID heapID);
@@ -406,13 +406,13 @@ static void ov62_02231C78(UnkStruct_ov62_022323B8 *param0, UnkStruct_0208C06C *p
         String *v8;
         StringTemplate *v9;
         Window *v10;
-        UnkStruct_02030A80 *v11;
+        PlayerProfile *v11;
 
         v11 = param0->unk_00;
         v9 = ov62_02231690(HEAP_ID_102);
 
         v10 = &param0->unk_0C[0];
-        v6 = sub_02030B94(v11, HEAP_ID_102);
+        v6 = PlayerProfile_GetName(v11, HEAP_ID_102);
         ov62_022349A8(param1, v6);
         v7 = MessageLoader_GetNewString(param1->unk_14.unk_34, 13);
         v8 = String_Init(255, HEAP_ID_102);
@@ -430,11 +430,11 @@ static void ov62_02231C78(UnkStruct_ov62_022323B8 *param0, UnkStruct_0208C06C *p
         StringTemplate_ClearArgs(v9);
 
         {
-            int v12 = sub_02030CCC(v11);
+            int v12 = PlayerProfile_GetBirthdayMonth(v11);
 
             v10 = &param0->unk_0C[2];
             v6 = MessageLoader_GetNewString(param1->unk_14.unk_34, 15);
-            v7 = sub_02030B94(v11, HEAP_ID_102);
+            v7 = PlayerProfile_GetName(v11, HEAP_ID_102);
             ov62_022349A8(param1, v7);
             v8 = String_Init(255, HEAP_ID_102);
 
@@ -460,8 +460,8 @@ static void ov62_02231C78(UnkStruct_ov62_022323B8 *param0, UnkStruct_0208C06C *p
             String_Free(v8);
 
             {
-                int v13 = sub_02030BFC(v11);
-                int v14 = sub_02030C08(v11);
+                int v13 = PlayerProfile_GetCountry(v11);
+                int v14 = PlayerProfile_GetRegion(v11);
 
                 v10 = &param0->unk_0C[4];
                 Window_FillTilemap(v10, 0x00);
@@ -513,7 +513,7 @@ static void ov62_02231C78(UnkStruct_ov62_022323B8 *param0, UnkStruct_0208C06C *p
 
                 v10 = &param0->unk_0C[7];
 
-                v8 = sub_02030C28(v11, &v15, HEAP_ID_102);
+                v8 = PlayerProfile_GetIntroMessage(v11, &v15, HEAP_ID_102);
                 if (v8 == NULL) {
                     v8 = EasyChatSentence_ToString(&v15, HEAP_ID_102);
                 }
@@ -591,9 +591,9 @@ static void ov62_022320EC(UnkStruct_ov62_022323B8 *param0, UnkStruct_0208C06C *p
     {
         int v11;
 
-        v1 = sub_02030BBC(param0->unk_00);
-        v3 = sub_02030BCC(param0->unk_00);
-        v0 = sub_02030BEC(param0->unk_00);
+        v1 = PlayerProfile_GetSpecies(param0->unk_00);
+        v3 = PlayerProfile_GetForm(param0->unk_00);
+        v0 = PlayerProfile_GetIsEgg(param0->unk_00);
 
         if (v1 == 0) {
             return;
@@ -692,7 +692,7 @@ static void ov62_0223226C(UnkStruct_ov62_022323B8 *param0, UnkStruct_0208C06C *p
     int v7 = 9;
     int v8 = 10;
 
-    v0 = sub_02030BAC(param0->unk_00);
+    v0 = PlayerProfile_GetGender(param0->unk_00);
     v1 = param1->unk_14.unk_04;
     v2 = param1->unk_14.unk_08;
     v3 = param1->unk_14.unk_14;
@@ -703,7 +703,7 @@ static void ov62_0223226C(UnkStruct_ov62_022323B8 *param0, UnkStruct_0208C06C *p
             v6 = 16;
         }
     } else {
-        int v9 = sub_02030CDC(param0->unk_00);
+        int v9 = PlayerProfile_GetAppearance(param0->unk_00);
 
         if (v9 >= 16) {
             v9 = 0;
@@ -766,8 +766,8 @@ static void ov62_022323CC(UnkStruct_ov62_02233310 *param0, UnkStruct_0208C06C *p
     String *v1;
     StringTemplate *v2;
     Window *v3;
-    int v4 = sub_02030BFC(param1->unk_88C[0]);
-    int v5 = sub_02030C08(param1->unk_88C[0]);
+    int v4 = PlayerProfile_GetCountry(param1->unk_88C[0]);
+    int v5 = PlayerProfile_GetRegion(param1->unk_88C[0]);
 
     v3 = &param0->unk_18;
 
@@ -1706,7 +1706,7 @@ void ov62_0223371C(UnkStruct_0208C06C *param0)
     BattleRecording_New(param0->saveData, HEAP_ID_119, &v0);
 
     {
-        UnkStruct_02030A80 *v1 = (UnkStruct_02030A80 *)(&param0->unk_8B4.unk_00->unk_00);
+        PlayerProfile *v1 = (PlayerProfile *)(&param0->unk_8B4.unk_00->unk_00);
         BattleRecordingSummary *v2 = (BattleRecordingSummary *)(&param0->unk_8B4.unk_00->unk_80);
         BattleRecordingData *v3 = (BattleRecordingData *)(&param0->unk_8B4.unk_00->unk_E4);
         BattleRecording_Store(v1, v2, v3, NULL, param0->saveData);
@@ -1818,8 +1818,8 @@ void ov62_022338A8(UnkStruct_0208C06C *param0)
             param0->unk_88C[v0] = NULL;
 
             if (v0 == 0) {
-                param0->unk_88C[v0] = sub_02030A80(HEAP_ID_102);
-                sub_02030AA0(param0->unk_88C[v0], param0->saveData);
+                param0->unk_88C[v0] = PlayerProfile_New(HEAP_ID_102);
+                PlayerProfile_Init(param0->unk_88C[v0], param0->saveData);
             }
             break;
         case 2:
@@ -1827,8 +1827,8 @@ void ov62_022338A8(UnkStruct_0208C06C *param0)
             param0->unk_88C[v0] = NULL;
 
             if (v0 == 0) {
-                param0->unk_88C[v0] = sub_02030A80(HEAP_ID_102);
-                sub_02030AA0(param0->unk_88C[v0], param0->saveData);
+                param0->unk_88C[v0] = PlayerProfile_New(HEAP_ID_102);
+                PlayerProfile_Init(param0->unk_88C[v0], param0->saveData);
             }
             break;
         case 3:
@@ -1836,16 +1836,16 @@ void ov62_022338A8(UnkStruct_0208C06C *param0)
             param0->unk_88C[v0] = NULL;
 
             if (v0 == 0) {
-                param0->unk_88C[v0] = sub_02030A80(HEAP_ID_102);
-                sub_02030AA0(param0->unk_88C[v0], param0->saveData);
+                param0->unk_88C[v0] = PlayerProfile_New(HEAP_ID_102);
+                PlayerProfile_Init(param0->unk_88C[v0], param0->saveData);
             }
             break;
         case 1:
             param0->unk_87C[v0] = BattleRecording_CloneSummary(HEAP_ID_102);
 
             if (v0 == 0) {
-                param0->unk_88C[v0] = sub_02030A80(HEAP_ID_102);
-                sub_02030AA0(param0->unk_88C[v0], param0->saveData);
+                param0->unk_88C[v0] = PlayerProfile_New(HEAP_ID_102);
+                PlayerProfile_Init(param0->unk_88C[v0], param0->saveData);
             } else {
                 param0->unk_88C[v0] = BattleRecording_CloneHeader(HEAP_ID_102);
             }
@@ -2019,13 +2019,13 @@ static void ov62_02233B50(UnkStruct_ov62_02233F74 *param0, UnkStruct_0208C06C *p
         String *v8;
         StringTemplate *v9;
         Window *v10;
-        UnkStruct_02030A80 *v11;
+        PlayerProfile *v11;
 
         v11 = param0->unk_00;
         v9 = ov62_02231690(HEAP_ID_102);
 
         v10 = &param0->unk_3C[0];
-        v6 = sub_02030B94(v11, HEAP_ID_102);
+        v6 = PlayerProfile_GetName(v11, HEAP_ID_102);
         ov62_022349A8(param1, v6);
         v7 = MessageLoader_GetNewString(param1->unk_14.unk_34, 7);
         v8 = String_Init(255, HEAP_ID_102);

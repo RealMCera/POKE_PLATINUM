@@ -73,7 +73,7 @@
 #include "trainer_info.h"
 #include "image_clips.h"
 #include "unk_020363E8.h"
-#include "unk_02094EDC.h"
+#include "contest_util.h"
 #include "unk_02095AF0.h"
 #include "yes_no_touch_menu.h"
 

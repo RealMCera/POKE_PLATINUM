@@ -64,20 +64,20 @@ void ov61_0222AF88(SaveData *saveData, UnkStruct_ov62_02239DA4 *param1, int para
     param1->unk_198.unk_00 = SaveData_CalculateChecksum(saveData, param1, sizeof(UnkStruct_ov62_02239DA4) - (sizeof(UnkStruct_ov62_02239DA4_sub1)));
 }
 
-void ov61_0222AFA4(SaveData *saveData, const UnkStruct_02030A80 *param1, UnkStruct_ov61_0222AFC0 *param2)
+void ov61_0222AFA4(SaveData *saveData, const PlayerProfile *param1, UnkStruct_ov61_0222AFC0 *param2)
 {
-    GF_ASSERT(sizeof(UnkStruct_ov61_0222AFC0) == sizeof(UnkStruct_02030A80));
+    GF_ASSERT(sizeof(UnkStruct_ov61_0222AFC0) == sizeof(PlayerProfile));
     MI_CpuClear8(param2, sizeof(UnkStruct_ov61_0222AFC0));
     MI_CpuCopy8(param1, param2, sizeof(UnkStruct_ov61_0222AFC0));
 }
 
-void ov61_0222AFC0(const UnkStruct_ov61_0222AFC0 *param0, UnkStruct_02030A80 *param1)
+void ov61_0222AFC0(const UnkStruct_ov61_0222AFC0 *param0, PlayerProfile *param1)
 {
-    GF_ASSERT(sizeof(UnkStruct_ov61_0222AFC0) == sizeof(UnkStruct_02030A80));
+    GF_ASSERT(sizeof(UnkStruct_ov61_0222AFC0) == sizeof(PlayerProfile));
     MI_CpuCopy8(param0, param1, sizeof(UnkStruct_ov61_0222AFC0));
 }
 
-void ov61_0222AFCC(SaveData *saveData, const UnkStruct_02030A80 *param1, UnkStruct_ov61_0222AFCC *param2)
+void ov61_0222AFCC(SaveData *saveData, const PlayerProfile *param1, UnkStruct_ov61_0222AFCC *param2)
 {
     MI_CpuClear8(param2, sizeof(UnkStruct_ov61_0222AFCC));
 

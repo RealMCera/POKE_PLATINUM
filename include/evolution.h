@@ -31,7 +31,7 @@ typedef struct EvolutionData {
     Party *party;
     Pokemon *mon;
     Options *options;
-    UnkStruct_0207C8C4 *unk_30;
+    EvolutionParticleSystem *unk_30;
     G3DPipelineBuffers *pipelineBuffers;
     ApplicationManager *summaryScreenAppMan;
     PokemonSummary *monSummary;
