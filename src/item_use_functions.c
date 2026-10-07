@@ -58,7 +58,7 @@
 #include "system_flags.h"
 #include "system_vars.h"
 #include "terrain_collision_manager.h"
-#include "unk_0203C954.h"
+#include "field_event.h"
 #include "field_system_apps.h"
 #include "battle_salon.h"
 #include "vars_flags.h"
@@ -227,7 +227,7 @@ void ItemUseContext_Init(FieldSystem *fieldSystem, ItemUseContext *ctxOut)
 
     ctxOut->facingTileBehavior = TerrainCollisionManager_GetTileBehavior(fieldSystem, x, z);
     MapObject *mapObj;
-    sub_0203C9D4(fieldSystem, &mapObj);
+    FieldEvent_FindFacingMapObject(fieldSystem, &mapObj);
 
     ctxOut->berryPatchFlags = BerryPatches_GetPatchFlags(fieldSystem, mapObj);
     ctxOut->playerAvatar = fieldSystem->playerAvatar;
@@ -297,7 +297,7 @@ static BOOL RunItemScriptTask(FieldTask *task)
 
     switch (*state) {
     case 0:
-        sub_0203C9D4(fieldSystem, &mapObj);
+        FieldEvent_FindFacingMapObject(fieldSystem, &mapObj);
         ScriptManager_Start(task, ctx->scriptID, mapObj, NULL);
 
         *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_0) = ctx->param0;
