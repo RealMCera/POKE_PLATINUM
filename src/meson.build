@@ -222,7 +222,7 @@ pokeplatinum_c = files(
     'poketch.c',
     'map_transition.c',
     'goods.c',
-    'unk_0205749C.c',
+    'wifi_lobby_task.c',
     'comm_player_manager.c',
     'field_comm_manager.c',
     'colosseum.c',

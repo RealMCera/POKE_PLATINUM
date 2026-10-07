@@ -235,7 +235,7 @@ Static main
 	Object main.nef.p/src_poketch.c.o
 	Object main.nef.p/src_map_transition.c.o
 	Object main.nef.p/src_goods.c.o
-	Object main.nef.p/src_unk_0205749C.c.o
+	Object main.nef.p/src_wifi_lobby_task.c.o
 	Object main.nef.p/src_comm_player_manager.c.o
 	Object main.nef.p/src_field_comm_manager.c.o
 	Object main.nef.p/src_colosseum.c.o

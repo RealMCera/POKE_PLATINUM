@@ -205,7 +205,7 @@
 #include "battle_tower_partner.h"
 #include "field_blackout.h"
 #include "field_system_time.h"
-#include "unk_0205749C.h"
+#include "wifi_lobby_task.h"
 #include "union_room.h"
 #include "union_room_trainers.h"
 #include "unk_0205DFC4.h"
@@ -6937,7 +6937,7 @@ static BOOL ScrCmd_2F7(ScriptContext *ctx)
     u16 *v1 = ScriptContext_GetVarPointer(ctx);
 
     if (WiFiList_HasValidLogin(ctx->fieldSystem->saveData)) {
-        sub_0205749C(ctx->task, *v1);
+        WiFiLobbyTask_Start(ctx->task, *v1);
     }
 
     return TRUE;
