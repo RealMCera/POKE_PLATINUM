@@ -21,7 +21,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "system.h"
-#include "unk_0203266C.h"
+#include "comm_local.h"
 #include "comm_cmd.h"
 #include "comm_server_client.h"
 #include "comm_tool.h"
@@ -576,7 +576,7 @@ BOOL CommSys_Update(void)
                 CommSys_RecvData();
             }
 
-            if ((CommSys_CurNetId() == 0 && CommSys_IsPlayerConnected(0) || CommSys_IsAlone()) && !sub_0203272C(CommManager_GetCommType())) {
+            if ((CommSys_CurNetId() == 0 && CommSys_IsPlayerConnected(0) || CommSys_IsAlone()) && !CommLocal_IsWifiConferenceGroup(CommManager_GetCommType())) {
                 CommSys_TransmitInputServer();
             }
 
@@ -650,7 +650,7 @@ void CommSys_ResetBattleClient(void)
 // local wireless delegates to CommSys_TransmitInputWireless.
 static void CommSys_TransmitInput(void)
 {
-    if (sub_0203272C(CommManager_GetCommType())) {
+    if (CommLocal_IsWifiConferenceGroup(CommManager_GetCommType())) {
         if (sCommunicationSystem->wifiConnected) {
             if (sCommunicationSystem->recvLimitEnabled) {
                 if (!CommSys_CheckRecvLimit()) {
@@ -1916,7 +1916,7 @@ int CommType_MaxPlayers(int param0)
 
 int CommType_MinPlayers(int param0)
 {
-    return sub_02032698(param0) + 1;
+    return CommLocal_MinMachines(param0) + 1;
 }
 
 void CommSys_SetAlone(BOOL param0)

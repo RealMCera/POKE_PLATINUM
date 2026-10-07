@@ -10,7 +10,7 @@
 #include "struct_defs/struct_0203330C.h"
 
 #include "comm_manager.h"
-#include "unk_0203266C.h"
+#include "comm_local.h"
 
 /**
  * @struct WirelessManager
@@ -1363,7 +1363,7 @@ static void WirelessManager_FinishSetLifeTime(void *wm_callback)
  */
 BOOL WirelessManager_ConnectServer(int connectionType, u16 tgid, u16 channel, u16 maxEntry, u16 beaconPeriod, BOOL entryFlag)
 {
-    if (sub_0203276C(CommManager_GetCommType())) {
+    if (CommLocal_IsBattleOrContestGroup(CommManager_GetCommType())) {
         WM_SetLifeTime(WirelessManager_FinishSetLifeTime, 0xFFFF, 100, 5, 100);
     }
 
@@ -1422,7 +1422,7 @@ BOOL WirelessManager_ConnectServer(int connectionType, u16 tgid, u16 channel, u1
  */
 BOOL WirelessManager_ConnectClient(int connectionType, WMBssDesc *bssDesc)
 {
-    if (sub_0203276C(CommManager_GetCommType())) {
+    if (CommLocal_IsBattleOrContestGroup(CommManager_GetCommType())) {
         WM_SetLifeTime(WirelessManager_FinishSetLifeTime, 0xFFFF, 100, 5, 100);
     }
 

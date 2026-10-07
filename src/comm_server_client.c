@@ -16,7 +16,7 @@
 #include "heap.h"
 #include "system.h"
 #include "trainer_info.h"
-#include "unk_0203266C.h"
+#include "comm_local.h"
 #include "wireless_manager.h"
 
 // Wireless server/client manager for local (non-Wi-Fi) multiplayer. It wraps
@@ -139,7 +139,7 @@ static void CommServerClient_ScanCallback(WMBssDesc *bssDesc)
 
     if (commType == 14) {
         (void)0;
-    } else if (sub_020326C4(gameInfo->unk_04) && sub_020326C4(commType)) {
+    } else if (CommLocal_IsUnionGroup(gameInfo->unk_04) && CommLocal_IsUnionGroup(commType)) {
         // Both comm types are in the same "compatible group".
         (void)0;
     } else if (gameInfo->unk_54 && gameInfo->unk_04 == 10) {
@@ -586,7 +586,7 @@ BOOL CommServerClient_ConnectToServer(u16 index)
         int commType = CommManager_GetCommType();
         sCommServerClient->channel = sCommServerClient->serverBssDesc[index].channel;
 
-        if (sub_020326C4(commType)) {
+        if (CommLocal_IsUnionGroup(commType)) {
             WirelessManager_ConnectClientAuto(1, sCommServerClient->serverBssDesc[index].bssid, 0);
         } else {
             WirelessManager_ConnectClient(1, &sCommServerClient->serverBssDesc[index]);

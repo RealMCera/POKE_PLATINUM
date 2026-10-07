@@ -9,7 +9,7 @@
 
 #include "comm_manager.h"
 #include "heap.h"
-#include "unk_0203266C.h"
+#include "comm_local.h"
 
 #define VOICE_CHAT_BUFFER_SIZE    ((8000 * VCT_AUDIO_FRAME_LENGTH * 2 * 2) / 1000)
 #define FRAME_LENGTH_MICROSECONDS (1000000 / 60)
@@ -383,7 +383,7 @@ void VoiceChat_Start(enum HeapID heapID, int codec, int numConferenceSessions)
 
     VCTConfig voiceChatConfig;
 
-    if (!sub_0203272C(CommManager_GetCommType())) {
+    if (!CommLocal_IsWifiConferenceGroup(CommManager_GetCommType())) {
         voiceChatConfig.mode = VCT_MODE_PHONE;
     } else {
         voiceChatConfig.mode = VCT_MODE_CONFERENCE;
