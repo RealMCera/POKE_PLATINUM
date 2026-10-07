@@ -268,7 +268,7 @@ pokeplatinum_c = files(
     'map_header_util.c',
     'trainer_case.c',
     'mailbox.c',
-    'unk_02073700.c',
+    'wifi_player_profile.c',
     'simple3d.c',
     'pokemon.c',
     'trainer_data.c',

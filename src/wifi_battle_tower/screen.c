@@ -36,8 +36,8 @@
 #include "system_data.h"
 #include "text.h"
 #include "email.h"
-#include "unk_02073700.h"
 #include "wifi_battle_tower_save.h"
+#include "wifi_player_profile.h"
 
 #define POPUP_TILEMAP_TOP 13
 
@@ -1024,7 +1024,7 @@ static int WifiBattleTower_State_RequestUpload(WifiBattleTowerAppState *appState
     int ratingTier = WifiBattleTowerRecord_GetRatingTier(appState->args->record);
 
     WifiBattleTowerDownloadData_GetIndices(appState->args->downloadData, &indices);
-    sub_02073700(appState->args->saveData, 1, (WifiPlayerProfile *)&appState->wifiPlayerProfile);
+    WifiPlayerProfile_Build(appState->args->saveData, 1, (WifiPlayerProfile *)&appState->wifiPlayerProfile);
     BattleTowerHttp_RequestUpload(indices.rank, indices.opponentIdx, ratingTier, &appState->wifiPlayerProfile);
 
     appState->state = BT_STATE_WAIT_UPLOAD;

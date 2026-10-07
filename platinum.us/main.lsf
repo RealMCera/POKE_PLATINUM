@@ -282,7 +282,7 @@ Static main
 	Object main.nef.p/src_map_header_util.c.o
 	Object main.nef.p/src_trainer_case.c.o
 	Object main.nef.p/src_mailbox.c.o
-	Object main.nef.p/src_unk_02073700.c.o
+	Object main.nef.p/src_wifi_player_profile.c.o
 	Object main.nef.p/src_simple3d.c.o
 	Object main.nef.p/src_pokemon.c.o
 	Object main.nef.p/src_move_table.c.o
