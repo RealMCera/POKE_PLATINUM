@@ -28,37 +28,42 @@
 #include "special_encounter.h"
 #include "terrain_collision_manager.h"
 
+// A single shaking grass patch spawned by the Poké Radar. Patches are arranged
+// in concentric rings around the player, with at most one patch per ring.
 typedef struct {
-    int x;
-    int z;
-    int shakeType;
-    BOOL active;
-    BOOL continueChain;
-    BOOL shiny;
-    OverworldAnimManager *unk_18;
-    VecFx32 position;
+    int x; // Tile X coordinate of the patch.
+    int z; // Tile Z coordinate of the patch.
+    int shakeType; // PATCH_SHAKE_SOFT or PATCH_SHAKE_HARD.
+    BOOL active; // Whether this ring currently holds a valid patch.
+    BOOL continueChain; // Whether stepping on this patch continues the radar chain.
+    BOOL shiny; // Whether this patch triggers a shiny encounter.
+    OverworldAnimManager *animManager; // Animation manager for the shaking patch sprite.
+    VecFx32 position; // World-space position of the patch.
 } GrassPatch;
 
+// State of the Poké Radar chain. The chain tracks consecutive encounters
+// started from shaking grass patches and is used to bias the encounter table
+// and the shiny odds.
 typedef struct RadarChain {
-    int shakeType;
-    int count;
-    int species;
-    int level;
-    BOOL active;
-    BOOL unk_14;
-    BOOL unk_18;
-    GrassPatch patch[NUM_GRASS_PATCHES];
-    GFXTestBox grassPatchVolume;
-    u8 unk_D0;
+    int shakeType; // Shake type the chain is currently set to.
+    int count; // Number of consecutive encounters in the chain (capped at 999).
+    int species; // Species of the last radar encounter.
+    int level; // Level of the last radar encounter.
+    BOOL active; // Whether the radar chain is currently active.
+    BOOL awaitingFirstEncounter; // TRUE until the first patch encounter starts the chain.
+    BOOL patchEncounter; // TRUE if the current encounter was triggered by a patch.
+    GrassPatch patch[NUM_GRASS_PATCHES]; // One patch per ring, outermost first.
+    GFXTestBox grassPatchVolume; // View volume used to cull patches off-screen.
+    u8 recordSlot; // Chain-record slot this chain is tracking.
 } RadarChain;
 
-static BOOL CheckTileIsGrass(FieldSystem *fieldSystem, const fx32 param1, const int param2, const int param3, const u8 param4, const u8 param5, GrassPatch *patch);
+static BOOL CheckTileIsGrass(FieldSystem *fieldSystem, const fx32 playerY, const int playerX, const int playerZ, const u8 xOffset, const u8 zOffset, GrassPatch *patch);
 static BOOL PlayerStandingInPatch(const RadarChain *chain, const int x, const int z, u8 *patchMatch);
 static void TryReplaceLowestChainRecord(FieldSystem *fieldSystem, RadarChain *chain);
 static u8 GetLowestChainRecordSlot(FieldSystem *fieldSystem);
 static BOOL CheckPatchContinueChain(const u8 patchRing, const int battleResult);
-static BOOL CheckPatchShiny(const int param0);
-static void IncWithCap(int *param0);
+static BOOL CheckPatchShiny(const int chainCount);
+static void IncWithCap(int *count);
 
 RadarChain *RadarChain_Init(const enum HeapID heapID)
 {
@@ -79,22 +84,25 @@ void RadarChain_Clear(RadarChain *chain)
     chain->species = 0;
     chain->level = 0;
     chain->active = FALSE;
-    chain->unk_D0 = 0;
-    chain->unk_14 = 1;
-    chain->unk_18 = 0;
+    chain->recordSlot = 0;
+    chain->awaitingFirstEncounter = 1;
+    chain->patchEncounter = 0;
     MI_CpuClear8(chain->patch, sizeof(GrassPatch) * NUM_GRASS_PATCHES);
     for (u8 patchRing = 0; patchRing < NUM_GRASS_PATCHES; patchRing++) {
         chain->patch[patchRing].active = FALSE;
     }
 }
 
-BOOL RadarSpawnPatches(FieldSystem *fieldSystem, const int param1, const int param2, RadarChain *chain)
+// Attempts to spawn one shaking patch in each ring around the player. Returns
+// TRUE if at least one patch was placed; otherwise the chain is cleared and the
+// radar BGM fades out.
+BOOL RadarSpawnPatches(FieldSystem *fieldSystem, const int playerX, const int playerZ, RadarChain *chain)
 {
     u8 v1, v2;
     u8 v3;
     u8 v4;
     int v5, v6;
-    u8 v7;
+    u8 patchesSpawned;
     u8 ringTileCount[NUM_GRASS_PATCHES] = { // Number of tiles in each ring of the radar. Lowest being the most outer ring
         32,
         24,
@@ -102,8 +110,8 @@ BOOL RadarSpawnPatches(FieldSystem *fieldSystem, const int param1, const int par
         8
     };
 
-    const VecFx32 *v8 = PlayerAvatar_GetPos(fieldSystem->playerAvatar);
-    v7 = 0;
+    const VecFx32 *playerPos = PlayerAvatar_GetPos(fieldSystem->playerAvatar);
+    patchesSpawned = 0;
 
     for (u8 patchRing = 0; patchRing < NUM_GRASS_PATCHES; patchRing++) {
         v3 = LCRNG_RandMod(ringTileCount[patchRing]);
@@ -128,13 +136,13 @@ BOOL RadarSpawnPatches(FieldSystem *fieldSystem, const int param1, const int par
             }
         }
 
-        BOOL v10 = CheckTileIsGrass(fieldSystem, v8->y, param1, param2, v5, v6, &chain->patch[patchRing]);
-        if (v10) {
-            v7++;
+        BOOL spawned = CheckTileIsGrass(fieldSystem, playerPos->y, playerX, playerZ, v5, v6, &chain->patch[patchRing]);
+        if (spawned) {
+            patchesSpawned++;
         }
     }
 
-    if (v7 == 0) {
+    if (patchesSpawned == 0) {
         RadarChain_Clear(chain);
         FieldBGM_TryFadeOut(fieldSystem, FieldBGM_GetEffective(fieldSystem, fieldSystem->location->mapHeaderID), 1);
     } else {
@@ -144,11 +152,14 @@ BOOL RadarSpawnPatches(FieldSystem *fieldSystem, const int param1, const int par
     return chain->active;
 }
 
-void SetupGrassPatches(FieldSystem *fieldSystem, const int param1, RadarChain *chain)
+// Decides, for every active patch, whether it continues the chain and what
+// shake type/shiny state it should display. `battleResult` is the result of the
+// battle that spawned these patches.
+void SetupGrassPatches(FieldSystem *fieldSystem, const int battleResult, RadarChain *chain)
 {
     for (u8 patchRing = 0; patchRing < NUM_GRASS_PATCHES; patchRing++) {
         if (chain->patch[patchRing].active) {
-            chain->patch[patchRing].continueChain = CheckPatchContinueChain(patchRing, param1);
+            chain->patch[patchRing].continueChain = CheckPatchContinueChain(patchRing, battleResult);
             if (!chain->patch[patchRing].continueChain) {
                 if (LCRNG_RandMod(100) < 50) { // If the patch will break the chain, it has a 50/50 chance of shaking the other type
                     chain->patch[patchRing].shakeType = PATCH_SHAKE_SOFT;
@@ -168,46 +179,52 @@ void FieldSystem_CreateShakingRadarPatches(FieldSystem *fieldSystem, RadarChain 
 {
     for (u8 patchRing = 0; patchRing < NUM_GRASS_PATCHES; patchRing++) {
         if (chain->patch[patchRing].active) {
-            int v1 = chain->patch[patchRing].x;
-            int v2 = chain->patch[patchRing].z;
+            int x = chain->patch[patchRing].x;
+            int z = chain->patch[patchRing].z;
             if (chain->patch[patchRing].shiny) {
-                chain->patch[patchRing].unk_18 = ov5_021F3154(fieldSystem, v1, v2, 2);
+                chain->patch[patchRing].animManager = ov5_021F3154(fieldSystem, x, z, 2);
             } else {
                 if (chain->patch[patchRing].shakeType == PATCH_SHAKE_SOFT) {
-                    chain->patch[patchRing].unk_18 = ov5_021F3154(fieldSystem, v1, v2, 0);
+                    chain->patch[patchRing].animManager = ov5_021F3154(fieldSystem, x, z, 0);
                 } else {
-                    chain->patch[patchRing].unk_18 = ov5_021F3154(fieldSystem, v1, v2, 1);
+                    chain->patch[patchRing].animManager = ov5_021F3154(fieldSystem, x, z, 1);
                 }
             }
         } else {
-            chain->patch[patchRing].unk_18 = NULL;
+            chain->patch[patchRing].animManager = NULL;
         }
     }
 }
 
-BOOL sub_02069690(RadarChain *chain)
+// Returns TRUE once every patch's shake animation has finished (or has no
+// animation), finishing and releasing each animation manager as it completes.
+BOOL RadarChain_ArePatchesFinished(RadarChain *chain)
 {
-    u8 v0 = 0;
+    u8 finishedPatches = 0;
 
     for (u8 patchRing = 0; patchRing < NUM_GRASS_PATCHES; patchRing++) {
-        if (chain->patch[patchRing].unk_18 != NULL) {
-            if (ov5_021F31A8(chain->patch[patchRing].unk_18)) {
-                OverworldAnimManager_Finish(chain->patch[patchRing].unk_18);
-                chain->patch[patchRing].unk_18 = NULL;
-                v0++;
+        if (chain->patch[patchRing].animManager != NULL) {
+            if (ov5_021F31A8(chain->patch[patchRing].animManager)) {
+                OverworldAnimManager_Finish(chain->patch[patchRing].animManager);
+                chain->patch[patchRing].animManager = NULL;
+                finishedPatches++;
             }
         } else {
-            v0++;
+            finishedPatches++;
         }
     }
 
-    if (v0 >= 4) {
+    if (finishedPatches >= 4) {
         return TRUE;
     }
 
     return FALSE;
 }
 
+// Called when the player may have stepped onto a shaking patch. If so, it
+// updates the chain (incrementing the count and preserving the chain when the
+// patch continues it) and reports the shake type, whether the chain is
+// preserved, and whether the encounter is shiny.
 BOOL PokeRadar_ShouldDoRadarEncounter(const int playerX, const int playerZ, FieldSystem *fieldSystem, RadarChain *chain, int *shake, BOOL *preserveChain, BOOL *isShiny)
 {
     u8 patchRing;
@@ -218,11 +235,11 @@ BOOL PokeRadar_ShouldDoRadarEncounter(const int playerX, const int playerZ, Fiel
         return FALSE;
     }
 
-    chain->unk_18 = 1;
+    chain->patchEncounter = 1;
     BOOL continueChain = chain->patch[patchRing].continueChain;
     int shakeType = chain->patch[patchRing].shakeType;
 
-    if (chain->unk_14 == 0) {
+    if (chain->awaitingFirstEncounter == 0) {
         if (continueChain) {
             IncWithCap(&(chain->count));
             *shake = shakeType;
@@ -235,8 +252,8 @@ BOOL PokeRadar_ShouldDoRadarEncounter(const int playerX, const int playerZ, Fiel
         }
     } else {
         *shake = shakeType;
-        chain->unk_14 = 0;
-        chain->unk_D0 = GetLowestChainRecordSlot(fieldSystem);
+        chain->awaitingFirstEncounter = 0;
+        chain->recordSlot = GetLowestChainRecordSlot(fieldSystem);
     }
 
     chain->shakeType = *shake;
@@ -256,9 +273,10 @@ void GetRadarMon(RadarChain *chain, int *species, int *level)
     *level = chain->level;
 }
 
-const BOOL sub_02069798(const RadarChain *chain)
+// Returns TRUE if the current encounter was triggered by a shaking patch.
+const BOOL RadarChain_IsPatchEncounter(const RadarChain *chain)
 {
-    return chain->unk_18;
+    return chain->patchEncounter;
 }
 
 void PokeRadar_ClearIfAllOutOfView(FieldSystem *fieldSystem)
@@ -298,29 +316,31 @@ BOOL GetRadarChainActive(const RadarChain *chain)
     return chain->active;
 }
 
-static BOOL CheckTileIsGrass(FieldSystem *fieldSystem, const fx32 param1, const int param2, const int param3, const u8 param4, const u8 param5, GrassPatch *patch)
+// Tests whether the tile at the given ring offset is tall grass on the same map
+// and at the same height as the player, and if so records it as a patch.
+static BOOL CheckTileIsGrass(FieldSystem *fieldSystem, const fx32 playerY, const int playerX, const int playerZ, const u8 xOffset, const u8 zOffset, GrassPatch *patch)
 {
-    int v0 = (param2 - (9 / 2)) + param4;
-    int v1 = (param3 - (9 / 2)) + param5;
-    patch->x = v0;
-    patch->z = v1;
-    u8 v2 = TerrainCollisionManager_GetTileBehavior(fieldSystem, v0, v1);
+    int x = (playerX - (9 / 2)) + xOffset;
+    int z = (playerZ - (9 / 2)) + zOffset;
+    patch->x = x;
+    patch->z = z;
+    u8 tileBehavior = TerrainCollisionManager_GetTileBehavior(fieldSystem, x, z);
 
-    if (TileBehavior_IsTallGrass(v2)) {
-        u8 v3;
-        patch->position.x = FX32_ONE * 16 * v0;
-        patch->position.z = FX32_ONE * 16 * v1;
-        patch->position.y = TerrainCollisionManager_GetHeight(fieldSystem, 0, patch->position.x, patch->position.z, &v3);
+    if (TileBehavior_IsTallGrass(tileBehavior)) {
+        u8 height;
+        patch->position.x = FX32_ONE * 16 * x;
+        patch->position.z = FX32_ONE * 16 * z;
+        patch->position.y = TerrainCollisionManager_GetHeight(fieldSystem, 0, patch->position.x, patch->position.z, &height);
 
-        if (param1 != patch->position.y) {
+        if (playerY != patch->position.y) {
             patch->active = FALSE;
             return FALSE;
         }
 
-        int v5 = v0 / 32;
-        int v6 = v1 / 32;
-        int v4 = MapMatrix_GetMapHeaderIDAtCoords(fieldSystem->mapMatrix, v5, v6);
-        if (fieldSystem->location->mapHeaderID != v4) {
+        int mapX = x / 32;
+        int mapZ = z / 32;
+        int mapHeaderID = MapMatrix_GetMapHeaderIDAtCoords(fieldSystem->mapMatrix, mapX, mapZ);
+        if (fieldSystem->location->mapHeaderID != mapHeaderID) {
             patch->active = FALSE;
             return FALSE;
         }
@@ -349,16 +369,16 @@ static BOOL PlayerStandingInPatch(const RadarChain *chain, const int x, const in
 static void TryReplaceLowestChainRecord(FieldSystem *fieldSystem, RadarChain *chain)
 {
     RadarChainRecords *chainRecordData = SpecialEncounter_GetRadarChainRecords(SaveData_GetSpecialEncounters(fieldSystem->saveData));
-    int lowestRecord = chainRecordData->records[chain->unk_D0].chainCount;
+    int lowestRecord = chainRecordData->records[chain->recordSlot].chainCount;
 
     if (lowestRecord < chain->count) {
-        chainRecordData->records[chain->unk_D0].chainCount = chain->count;
-        chainRecordData->records[chain->unk_D0].species = chain->species;
+        chainRecordData->records[chain->recordSlot].chainCount = chain->count;
+        chainRecordData->records[chain->recordSlot].species = chain->species;
         RadarChainRecords_SortSavedRecords(chainRecordData);
-        if (chainRecordData->records[chain->unk_D0].chainCount <= chain->count) {
-            for (int v2 = 0; v2 < NUM_RADAR_RECORDS; v2++) {
-                if (chainRecordData->records[((NUM_RADAR_RECORDS - 1) - v2)].chainCount == chain->count) {
-                    chain->unk_D0 = ((NUM_RADAR_RECORDS - 1) - v2);
+        if (chainRecordData->records[chain->recordSlot].chainCount <= chain->count) {
+            for (int i = 0; i < NUM_RADAR_RECORDS; i++) {
+                if (chainRecordData->records[((NUM_RADAR_RECORDS - 1) - i)].chainCount == chain->count) {
+                    chain->recordSlot = ((NUM_RADAR_RECORDS - 1) - i);
                     return;
                 }
             }
@@ -395,6 +415,9 @@ static u8 GetLowestChainRecordSlot(FieldSystem *fieldSystem)
     return slotToReplace;
 }
 
+// Rolls whether a patch continues the chain. The chance depends on the ring
+// (outer rings are more likely) and is boosted when the previous battle ended
+// in a capture rather than a faint.
 static BOOL CheckPatchContinueChain(const u8 patchRing, const int battleResult)
 {
     u8 *rates;
@@ -417,54 +440,56 @@ static BOOL CheckPatchContinueChain(const u8 patchRing, const int battleResult)
 BOOL RefreshRadarChain(FieldTask *taskMan)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(taskMan);
-    int *v1 = FieldTask_GetEnv(taskMan);
+    int *state = FieldTask_GetEnv(taskMan);
 
-    switch (*v1) {
+    switch (*state) {
     case 0:
         MapObjectMan_PauseAllMovement(fieldSystem->mapObjMan);
-        u8 *v2 = SpecialEncounter_GetRadarCharge(SaveData_GetSpecialEncounters(fieldSystem->saveData));
+        u8 *radarCharge = SpecialEncounter_GetRadarCharge(SaveData_GetSpecialEncounters(fieldSystem->saveData));
 
-        if (*v2 < RADAR_BATTERY_STEPS) {
+        if (*radarCharge < RADAR_BATTERY_STEPS) {
             ScriptManager_Start(taskMan, SCRIPT_ID(POKE_RADAR, 0), NULL, NULL);
-            *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_0) = RADAR_BATTERY_STEPS - (*v2);
-            *v1 = 4;
+            *(u16 *)FieldSystem_GetScriptMemberPtr(fieldSystem, SCRIPT_DATA_PARAMETER_0) = RADAR_BATTERY_STEPS - (*radarCharge);
+            *state = 4;
         } else {
-            *v2 = 0;
-            int v3 = PlayerAvatar_GetXPos(fieldSystem->playerAvatar);
-            int v4 = PlayerAvatar_GetZPos(fieldSystem->playerAvatar);
-            RadarSpawnPatches(fieldSystem, v3, v4, fieldSystem->chain);
+            *radarCharge = 0;
+            int playerX = PlayerAvatar_GetXPos(fieldSystem->playerAvatar);
+            int playerZ = PlayerAvatar_GetZPos(fieldSystem->playerAvatar);
+            RadarSpawnPatches(fieldSystem, playerX, playerZ, fieldSystem->chain);
             if (fieldSystem->chain->active) {
                 SetupGrassPatches(fieldSystem, 0x1, fieldSystem->chain);
                 FieldSystem_CreateShakingRadarPatches(fieldSystem, fieldSystem->chain);
-                *v1 = 1;
+                *state = 1;
             } else {
-                *v1 = 3;
+                *state = 3;
             }
         }
         break;
     case 1:
         Sound_PlayBGM(SEQ_KUSAGASA_sseq);
-        *v1 = 2;
+        *state = 2;
         break;
     case 2:
-        if (sub_02069690(fieldSystem->chain)) {
-            *v1 = 4;
+        if (RadarChain_ArePatchesFinished(fieldSystem->chain)) {
+            *state = 4;
         }
         break;
     case 4:
-        Heap_Free(v1);
+        Heap_Free(state);
         MapObjectMan_UnpauseAllMovement(fieldSystem->mapObjMan);
         return TRUE;
         break;
     case 3:
         ScriptManager_Start(taskMan, SCRIPT_ID(POKE_RADAR, 1), NULL, NULL);
-        *v1 = 4;
+        *state = 4;
         break;
     }
 
     return FALSE;
 }
 
+// Rolls whether a patch is shiny. The rate starts at 1/8200 and improves by
+// 200 per chain step, down to a floor of 1/200.
 static BOOL CheckPatchShiny(const int chainCount)
 {
     if (!chainCount) {
@@ -496,20 +521,20 @@ int GetChainCount(FieldSystem *fieldSystem)
 
 void RadarChargeStep(FieldSystem *fieldSystem)
 {
-    u8 *v0;
+    u8 *radarCharge;
 
     if (Bag_CanRemoveItem(SaveData_GetBag(fieldSystem->saveData), ITEM_POKE_RADAR, 1, HEAP_ID_FIELD1) == TRUE) {
-        v0 = SpecialEncounter_GetRadarCharge(SaveData_GetSpecialEncounters(fieldSystem->saveData));
-        if ((*v0) < RADAR_BATTERY_STEPS) {
-            (*v0)++;
+        radarCharge = SpecialEncounter_GetRadarCharge(SaveData_GetSpecialEncounters(fieldSystem->saveData));
+        if ((*radarCharge) < RADAR_BATTERY_STEPS) {
+            (*radarCharge)++;
         }
     }
 }
 
-static void IncWithCap(int *param0)
+static void IncWithCap(int *count)
 {
-    (*param0)++;
-    if ((*param0) > 999) {
-        (*param0) = 999;
+    (*count)++;
+    if ((*count) > 999) {
+        (*count) = 999;
     }
 }

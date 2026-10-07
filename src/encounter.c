@@ -403,7 +403,7 @@ static BOOL FieldTask_WildEncounter(FieldTask *task)
         UpdateJournal(fieldSystem, encounter->dto);
 
         if (GetRadarChainActive(fieldSystem->chain)) {
-            if (sub_02069798(fieldSystem->chain)) {
+            if (RadarChain_IsPatchEncounter(fieldSystem->chain)) {
                 if (encounter->dto->resultMask != BATTLE_RESULT_WIN
                     && encounter->dto->resultMask != BATTLE_RESULT_CAPTURED_MON) {
                     RadarChain_Clear(fieldSystem->chain);
@@ -433,7 +433,7 @@ static BOOL FieldTask_WildEncounter(FieldTask *task)
         break;
 
     case 6:
-        if (sub_02069690(fieldSystem->chain)) {
+        if (RadarChain_ArePatchesFinished(fieldSystem->chain)) {
             MapObjectMan_UnpauseAllMovement(fieldSystem->mapObjMan);
             FreeWildEncounter(encounter);
             return TRUE;
