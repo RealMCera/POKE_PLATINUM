@@ -210,7 +210,7 @@ pokeplatinum_c = files(
     'field_blackout.c',
     'clear_game.c',
     'field_map_change.c',
-    'unk_02054884.c',
+    'party_helpers.c',
     'terrain_attributes.c',
     'terrain_collision_manager.c',
     'field_bgm.c',

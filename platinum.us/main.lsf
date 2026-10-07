@@ -223,7 +223,7 @@ Static main
 	Object main.nef.p/src_field_blackout.c.o
 	Object main.nef.p/src_clear_game.c.o
 	Object main.nef.p/src_field_map_change.c.o
-	Object main.nef.p/src_unk_02054884.c.o
+	Object main.nef.p/src_party_helpers.c.o
 	Object main.nef.p/src_terrain_attributes.c.o
 	Object main.nef.p/src_terrain_collision_manager.c.o
 	Object main.nef.p/src_field_bgm.c.o

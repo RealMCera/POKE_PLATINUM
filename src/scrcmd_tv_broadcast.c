@@ -38,7 +38,7 @@
 #include "tv_segment.h"
 #include "image_clips.h"
 #include "tv_broadcast.h"
-#include "unk_02054884.h"
+#include "party_helpers.h"
 
 #include "res/text/bank/tv_reporter_interviews.h"
 

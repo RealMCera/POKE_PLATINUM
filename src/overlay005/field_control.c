@@ -63,7 +63,7 @@
 #include "trainer_encounter.h"
 #include "trainer_info.h"
 #include "field_event.h"
-#include "unk_02054884.h"
+#include "party_helpers.h"
 #include "map_transition.h"
 #include "colosseum.h"
 #include "union_room.h"

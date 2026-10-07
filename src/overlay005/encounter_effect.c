@@ -39,7 +39,7 @@
 #include "sys_task.h"
 #include "sys_task_extensions.h"
 #include "sys_task_manager.h"
-#include "unk_02054884.h"
+#include "party_helpers.h"
 
 enum ScreenFlashState {
     SCREENFLASH_STATE_INIT_OTHER_SCREEN_FADE = 0,

@@ -23,7 +23,7 @@
 #include "system_vars.h"
 #include "trainer_encounter.h"
 #include "field_blackout.h"
-#include "unk_02054884.h"
+#include "party_helpers.h"
 #include "vars_flags.h"
 
 BOOL ScrCmd_StartApproachingTrainerTask(ScriptContext *ctx)

@@ -34,7 +34,7 @@
 #include "underground.h"
 #include "special_met_location.h"
 #include "image_clips.h"
-#include "unk_02054884.h"
+#include "party_helpers.h"
 #include "pokemon_info_display.h"
 #include "vars_flags.h"
 
@@ -163,7 +163,7 @@ static BOOL CanReceivePokemon(FieldSystem *fieldSystem, GiftData *dummy)
 
 static void GenerateManaphyEgg(FieldSystem *fieldSystem, GiftData *dummy)
 {
-    sub_02054930(HEAP_ID_FIELD3, fieldSystem->saveData, SPECIES_MANAPHY, 1, 2, 1);
+    Pokemon_GiveEggFromScript(HEAP_ID_FIELD3, fieldSystem->saveData, SPECIES_MANAPHY, 1, 2, 1);
 }
 
 static void PrepReceivedManaphyEggMsg(MystGiftGiveMsgFormatter *formatter, u16 *outTextBank, u16 *outStringID)

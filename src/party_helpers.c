@@ -1,4 +1,4 @@
-#include "unk_02054884.h"
+#include "party_helpers.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -19,6 +19,7 @@
 #include "trainer_info.h"
 #include "special_met_location.h"
 
+// A Pokémon can battle if it has any HP left and is not still an egg.
 BOOL Pokemon_CanBattle(Pokemon *mon)
 {
     // this can be simplified further, but it won't match
@@ -29,6 +30,9 @@ BOOL Pokemon_CanBattle(Pokemon *mon)
     return !Pokemon_GetValue(mon, MON_DATA_IS_EGG, NULL);
 }
 
+// Creates a Pokémon of the given species and level, gives it the requested
+// held item and met data, and adds it to the party. Returns whether the mon
+// was successfully added, recording the catch only in that case.
 BOOL Pokemon_GiveMonFromScript(enum HeapID heapID, SaveData *saveData, u16 species, u8 level, u16 heldItem, int metLocation, int metTerrain)
 {
     BOOL result;
@@ -57,9 +61,13 @@ BOOL Pokemon_GiveMonFromScript(enum HeapID heapID, SaveData *saveData, u16 speci
     return result;
 }
 
-BOOL sub_02054930(int unused, SaveData *saveData, u16 param2, u8 param3, int param4, int param5)
+// Creates an egg of the given species and adds it to the party. Used to hand
+// out eggs from scripts, such as the Manaphy egg granted by a Mystery Gift.
+// The met/egg location is built from a base type and an offset into that
+// type's table. Returns whether the egg was added.
+BOOL Pokemon_GiveEggFromScript(int unused, SaveData *saveData, u16 species, u8 eggLocation, int metLocationBase, int metLocationOffset)
 {
-    int v0;
+    int specialMetLocation;
     BOOL result;
     TrainerInfo *trainerInfo = SaveData_GetTrainerInfo(saveData);
     Party *party = SaveData_GetParty(saveData);
@@ -67,8 +75,8 @@ BOOL sub_02054930(int unused, SaveData *saveData, u16 param2, u8 param3, int par
 
     Pokemon_Init(mon);
 
-    v0 = SpecialMetLoc_GetId(param4, param5);
-    Egg_CreateEgg(mon, param2, param3, trainerInfo, 4, v0);
+    specialMetLocation = SpecialMetLoc_GetId(metLocationBase, metLocationOffset);
+    Egg_CreateEgg(mon, species, eggLocation, trainerInfo, 4, specialMetLocation);
 
     result = Party_AddPokemon(party, mon);
     Heap_Free(mon);
@@ -76,6 +84,7 @@ BOOL sub_02054930(int unused, SaveData *saveData, u16 param2, u8 param3, int par
     return result;
 }
 
+// Overwrites the move in the given move slot of the given party member.
 void Party_ResetMonMoveSlot(Party *party, int partySlot, int moveSlot, u16 moveID)
 {
     Pokemon_ResetMoveSlot(Party_GetPokemonBySlotIndex(party, partySlot), moveID, moveSlot);
@@ -83,6 +92,8 @@ void Party_ResetMonMoveSlot(Party *party, int partySlot, int moveSlot, u16 moveI
 
 // In many of the functions below, C99-style iterator declaration doesn't match
 
+// Returns the slot index of the first non-egg party member that knows the
+// given move, or PARTY_SLOT_NONE if none does.
 int Party_HasMonWithMove(Party *party, u16 moveID)
 {
     int i;
@@ -106,6 +117,7 @@ int Party_HasMonWithMove(Party *party, u16 moveID)
     return PARTY_SLOT_NONE;
 }
 
+// Counts the party members that can battle (see Pokemon_CanBattle).
 int Party_AliveMonsCount(const Party *party)
 {
     int i;
@@ -121,6 +133,8 @@ int Party_AliveMonsCount(const Party *party)
     return count;
 }
 
+// Returns the first party member that can battle, asserting if the party has
+// no eligible battler at all.
 Pokemon *Party_FindFirstEligibleBattler(const Party *party)
 {
     int i;
@@ -138,6 +152,8 @@ Pokemon *Party_FindFirstEligibleBattler(const Party *party)
     return NULL;
 }
 
+// Returns the first hatched (non-egg) party member, or NULL if every slot
+// still holds an egg.
 Pokemon *Party_FindFirstHatchedMon(const Party *party)
 {
     u16 i;
@@ -154,11 +170,13 @@ Pokemon *Party_FindFirstHatchedMon(const Party *party)
     return NULL;
 }
 
+// Returns whether at least two party members can battle.
 BOOL Party_HasTwoAliveMons(const Party *party)
 {
     return Party_AliveMonsCount(party) >= 2;
 }
 
+// Awards the Sinnoh Champion Ribbon to every non-egg party member.
 void Party_GiveChampionRibbons(Party *party)
 {
     int i;
@@ -174,6 +192,11 @@ void Party_GiveChampionRibbons(Party *party)
     }
 }
 
+// Applies overworld poison damage: each poisoned, battle-able party member
+// loses 1 HP, never dropping below 1. A member left at exactly 1 HP is
+// reported as fainted and gains friendship for surviving the poison.
+// Returns FLDPSN_FAINTED if any member reached 1 HP, otherwise FLDPSN_POISONED
+// if any were poisoned, otherwise FLDPSN_NONE.
 int Pokemon_DoPoisonDamage(Party *party, u16 mapLabelTextID)
 {
     int numPoisoned = 0;
@@ -212,6 +235,9 @@ int Pokemon_DoPoisonDamage(Party *party, u16 mapLabelTextID)
     }
 }
 
+// If the Pokémon is poisoned and down to exactly 1 HP, it survives the poison:
+// its status condition is cleared and TRUE is returned. Otherwise returns
+// FALSE.
 BOOL Pokemon_TrySurvivePoison(Pokemon *mon)
 {
     if (Pokemon_GetValue(mon, MON_DATA_STATUS, NULL) & (MON_CONDITION_TOXIC | MON_CONDITION_POISON)

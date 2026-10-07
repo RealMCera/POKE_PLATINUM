@@ -61,7 +61,7 @@
 #include "trainer_info.h"
 #include "image_clips.h"
 #include "tv_broadcast.h"
-#include "unk_02054884.h"
+#include "party_helpers.h"
 #include "unk_0205DFC4.h"
 #include "contest_util.h"
 #include "vars_flags.h"

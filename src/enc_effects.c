@@ -13,7 +13,7 @@
 #include "field_battle_data_transfer.h"
 #include "party.h"
 #include "pokemon.h"
-#include "unk_02054884.h"
+#include "party_helpers.h"
 
 #include "res/sound/pl_sound_data.naix"
 

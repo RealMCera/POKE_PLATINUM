@@ -33,7 +33,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "tutor_movesets.h"
-#include "unk_02054884.h"
+#include "party_helpers.h"
 
 #include "res/pokemon/species_learnsets_by_tutor.h"
 #include "res/text/bank/menu_entries.h"

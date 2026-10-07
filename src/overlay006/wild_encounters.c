@@ -52,7 +52,7 @@
 #include "terrain_collision_manager.h"
 #include "trainer_data.h"
 #include "trainer_info.h"
-#include "unk_02054884.h"
+#include "party_helpers.h"
 #include "field_system_time.h"
 #include "vars_flags.h"
 
