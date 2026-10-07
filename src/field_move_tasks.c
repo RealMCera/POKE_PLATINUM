@@ -40,7 +40,7 @@
 #include "trainer_info.h"
 #include "field_event.h"
 #include "field_system_apps.h"
-#include "unk_020711C8.h"
+#include "field_move_mon.h"
 #include "vars_flags.h"
 
 #define FIELD_MOVE_FLAG(move) (1 << (move))
@@ -732,7 +732,7 @@ static void FieldMoves_SetTeleportTask(FieldMovePokemon *fieldMoveMon, const Fie
 
     FieldSystem_StartFieldMap(fieldSystem);
 
-    UnkStruct_020711C8 *v2 = sub_020711C8(HEAP_ID_FIELD2, fieldMoveMon->fieldMonId, fieldSystem->saveData);
+    FieldMoveMon *v2 = FieldMoveMon_New(HEAP_ID_FIELD2, fieldMoveMon->fieldMonId, fieldSystem->saveData);
 
     menu->callback = FieldMoves_TeleportTask;
     menu->taskData = v2;
@@ -742,8 +742,8 @@ static void FieldMoves_SetTeleportTask(FieldMovePokemon *fieldMoveMon, const Fie
 static BOOL FieldMoves_TeleportTask(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
-    UnkStruct_020711C8 *v1 = FieldTask_GetEnv(task);
-    FieldWarp *fieldWarp = FieldWarp_InitTeleport(fieldSystem, v1->unk_00, HEAP_ID_FIELD1);
+    FieldMoveMon *v1 = FieldTask_GetEnv(task);
+    FieldWarp *fieldWarp = FieldWarp_InitTeleport(fieldSystem, v1->mon, HEAP_ID_FIELD1);
 
     Heap_Free(v1);
     FieldTask_InitJump(task, FieldWarp_TeleportFadeOut, fieldWarp);
@@ -775,7 +775,7 @@ static void FieldMoves_SetDigTask(FieldMovePokemon *fieldMoveMon, const FieldMov
 
     FieldSystem_StartFieldMap(fieldSystem);
 
-    UnkStruct_020711C8 *v2 = sub_020711C8(HEAP_ID_FIELD2, fieldMoveMon->fieldMonId, fieldSystem->saveData);
+    FieldMoveMon *v2 = FieldMoveMon_New(HEAP_ID_FIELD2, fieldMoveMon->fieldMonId, fieldSystem->saveData);
 
     v1->callback = FieldMoves_DigTask;
     v1->taskData = v2;
@@ -785,8 +785,8 @@ static void FieldMoves_SetDigTask(FieldMovePokemon *fieldMoveMon, const FieldMov
 static BOOL FieldMoves_DigTask(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
-    UnkStruct_020711C8 *v1 = FieldTask_GetEnv(task);
-    FieldWarp *fieldWarp = FieldWarp_InitDig(fieldSystem, v1->unk_00, HEAP_ID_FIELD2);
+    FieldMoveMon *v1 = FieldTask_GetEnv(task);
+    FieldWarp *fieldWarp = FieldWarp_InitDig(fieldSystem, v1->mon, HEAP_ID_FIELD2);
 
     void *journalEntryLocationEvent = JournalEntry_CreateEventUsedMove(FIELD_MOVE_DIG, fieldSystem->location->mapHeaderID, HEAP_ID_FIELD1);
     JournalEntry_SaveData(fieldSystem->journalEntry, journalEntryLocationEvent, JOURNAL_LOCATION);
@@ -814,7 +814,7 @@ static void FieldMoves_SetSweetScentTask(FieldMovePokemon *fieldMoveMon, const F
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(fieldMoveMon->fieldTask);
     StartMenu *startMenu = FieldTask_GetEnv(fieldMoveMon->fieldTask);
-    UnkStruct_020711C8 *v2 = sub_020711C8(HEAP_ID_FIELD2, fieldMoveMon->fieldMonId, fieldSystem->saveData);
+    FieldMoveMon *v2 = FieldMoveMon_New(HEAP_ID_FIELD2, fieldMoveMon->fieldMonId, fieldSystem->saveData);
     int unused;
     void *v4;
 
