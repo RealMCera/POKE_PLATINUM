@@ -403,7 +403,7 @@ int ov65_0223648C(ApplicationManager *appMan, int *param1)
     VramTransfer_New(16, HEAP_ID_96);
 
     v0->unk_00.unk_00 = CommManager_GetUnk00();
-    v0->unk_00.unk_00->unk_00.unk_21 = v0->unk_00.unk_00->unk_00.unk_22;
+    v0->unk_00.unk_00->unk_00.voiceChatEnabled = v0->unk_00.unk_00->unk_00.voiceChatEnabledBackup;
     v0->unk_00.unk_04 = ov65_02236794(&v0->unk_00);
     v0->unk_00.unk_06 = 0xff;
 
@@ -1016,7 +1016,7 @@ static void ov65_0223709C(UnkStruct_ov65_022367A8 *param0, UnkStruct_ov65_022368
     Window_ScheduleCopyToVRAM(&param1->unk_220);
 
     if (param3 == CommSys_CurNetId()) {
-        if (param0->unk_00.unk_00->unk_00.unk_21) {
+        if (param0->unk_00.unk_00->unk_00.voiceChatEnabled) {
             v2 = 2;
         } else {
             v2 = 1;
@@ -1087,19 +1087,19 @@ static void ov65_022372EC(UnkStruct_ov65_02236840 *param0, u32 param1)
 
 static BOOL ov65_0223731C(UnkStruct_ov65_022367A8 *param0, u32 heapID)
 {
-    param0->unk_00.unk_00->unk_00.unk_22 = 1 - param0->unk_00.unk_00->unk_00.unk_22;
-    param0->unk_00.unk_00->unk_00.unk_21 = param0->unk_00.unk_00->unk_00.unk_22;
+    param0->unk_00.unk_00->unk_00.voiceChatEnabledBackup = 1 - param0->unk_00.unk_00->unk_00.voiceChatEnabledBackup;
+    param0->unk_00.unk_00->unk_00.voiceChatEnabled = param0->unk_00.unk_00->unk_00.voiceChatEnabledBackup;
 
-    NintendoWFC_SetVoiceChatEnabled(param0->unk_00.unk_00->unk_00.unk_21);
-    NintendoWFC_SetStatusData(&(param0->unk_00.unk_00->unk_00), sizeof(UnkStruct_0207E060));
+    NintendoWFC_SetVoiceChatEnabled(param0->unk_00.unk_00->unk_00.voiceChatEnabled);
+    NintendoWFC_SetStatusData(&(param0->unk_00.unk_00->unk_00), sizeof(WFCTrainerInfo));
 
-    if (param0->unk_00.unk_00->unk_00.unk_21 == 1) {
+    if (param0->unk_00.unk_00->unk_00.voiceChatEnabled == 1) {
         ov65_02237520(param0);
     } else {
         ov65_02237534(param0);
     }
 
-    return param0->unk_00.unk_00->unk_00.unk_22;
+    return param0->unk_00.unk_00->unk_00.voiceChatEnabledBackup;
 }
 
 static void ov65_02237370(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 param2)
@@ -1182,20 +1182,20 @@ static void ov65_02237498(UnkStruct_ov65_022367A8 *param0, const WiFiCommAppArgs
 {
     switch (param1->appType) {
     case 0:
-        param0->unk_00.unk_00->unk_00.unk_1B = 18;
+        param0->unk_00.unk_00->unk_00.commState = 18;
         break;
     case 1:
-        param0->unk_00.unk_00->unk_00.unk_1B = 22;
+        param0->unk_00.unk_00->unk_00.commState = 22;
         break;
     case 2:
-        param0->unk_00.unk_00->unk_00.unk_1B = 24;
+        param0->unk_00.unk_00->unk_00.commState = 24;
         break;
     case 3:
-        param0->unk_00.unk_00->unk_00.unk_1B = 26;
+        param0->unk_00.unk_00->unk_00.commState = 26;
         break;
     }
 
-    NintendoWFC_SetStatusData(&(param0->unk_00.unk_00->unk_00), sizeof(UnkStruct_0207E060));
+    NintendoWFC_SetStatusData(&(param0->unk_00.unk_00->unk_00), sizeof(WFCTrainerInfo));
 }
 
 static BOOL ov65_022374DC(UnkStruct_ov65_022367A8 *param0)
@@ -1395,7 +1395,7 @@ static void ov65_022376D0(UnkStruct_ov65_022367A8 *param0, u32 param1, u32 heapI
         GF_ASSERT(v1 != NULL);
         v0.unk_0A = TrainerInfo_Appearance(v1);
     } else {
-        if (param0->unk_00.unk_00->unk_00.unk_1E == 0) {
+        if (param0->unk_00.unk_00->unk_00.gender == 0) {
             v0.unk_0A = 0x0;
         } else {
             v0.unk_0A = 0x61;
@@ -1553,11 +1553,11 @@ static void ov65_02237970(UnkStruct_ov65_022367A8 *param0)
 
     for (v0 = 0; v0 < v1; v0++) {
         if (v0 == 0) {
-            v4 = param0->unk_00.unk_00->unk_00.unk_21;
+            v4 = param0->unk_00.unk_00->unk_00.voiceChatEnabled;
         } else {
             v3 = CommInfo_FindFriendSlotForNetId(v0);
             GF_ASSERT(v3 != 32);
-            v4 = param0->unk_00.unk_00->unk_24[v3].unk_21;
+            v4 = param0->unk_00.unk_00->unk_24[v3].voiceChatEnabled;
         }
 
         if (param0->unk_00.unk_20[v0] != v4) {
@@ -1588,7 +1588,7 @@ static void ov65_02237A24(WiFiCommAppArgs *param0, u32 heapID)
 {
     void *journalEntryOnlineEvent;
     JournalEntry *journalEntry;
-    UnkStruct_0207E060 *v2;
+    WFCTrainerInfo *v2;
 
     journalEntry = SaveData_GetJournal(param0->saveData);
     journalEntryOnlineEvent = JournalEntry_CreateEventMisc(heapID, ONLINE_EVENT_WIFI_CLUB);
@@ -1618,7 +1618,7 @@ static BOOL ov65_02237A54(UnkStruct_ov65_022367A8 *param0)
 
 static BOOL ov65_02237A70(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
-    if (param0->unk_00.unk_00->unk_00.unk_21 == 1) {
+    if (param0->unk_00.unk_00->unk_00.voiceChatEnabled == 1) {
         ov65_02237520(param0);
     }
 
@@ -1751,7 +1751,7 @@ static BOOL ov65_02237BF8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
 
             ov65_022376A0(param0, param0->unk_00.unk_06, heapID);
 
-            if (param0->unk_00.unk_00->unk_00.unk_21 == 1) {
+            if (param0->unk_00.unk_00->unk_00.voiceChatEnabled == 1) {
                 ov65_02237504(param0);
                 ov65_02237520(param0);
             }
@@ -1912,7 +1912,7 @@ static BOOL ov65_02237DF8(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
 static BOOL ov65_02237E24(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *param1, u32 heapID)
 {
     if (CommTiming_IsSyncState(14)) {
-        u16 v0 = param0->unk_00.unk_00->unk_00.unk_1B;
+        u16 v0 = param0->unk_00.unk_00->unk_00.commState;
         BOOL v1;
 
         v1 = CommTool_SendTempData(CommSys_CurNetId(), &v0);
@@ -1942,7 +1942,7 @@ static BOOL ov65_02237E54(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
             v3 = CommTool_GetReceivedTempData(v0);
 
             if (v3 != NULL) {
-                if (v3[0] == param0->unk_00.unk_00->unk_00.unk_1B) {
+                if (v3[0] == param0->unk_00.unk_00->unk_00.commState) {
                     v4++;
                 } else {
                     param0->unk_00.unk_05 = 27;
@@ -2156,7 +2156,7 @@ static BOOL ov65_02238134(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
 {
     u32 v0;
 
-    if (param0->unk_00.unk_00->unk_00.unk_21 == 1) {
+    if (param0->unk_00.unk_00->unk_00.voiceChatEnabled == 1) {
         v0 = 125;
     } else {
         v0 = 124;
@@ -2331,7 +2331,7 @@ static BOOL ov65_02238370(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
 
     param0->unk_00.unk_05 = 9;
 
-    if (param0->unk_00.unk_00->unk_00.unk_21 == 1) {
+    if (param0->unk_00.unk_00->unk_00.voiceChatEnabled == 1) {
         ov65_02237520(param0);
     }
 
@@ -2361,7 +2361,7 @@ static BOOL ov65_022383D0(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
     if (param0->unk_00.unk_12) {
         param0->unk_00.unk_12 = 0;
 
-        if (param0->unk_00.unk_00->unk_00.unk_21 == 1) {
+        if (param0->unk_00.unk_00->unk_00.voiceChatEnabled == 1) {
             ov65_02237504(param0);
             ov65_02237520(param0);
         }
@@ -2395,7 +2395,7 @@ static BOOL ov65_0223846C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
     int v0;
 
     if (CommTiming_IsSyncState(14)) {
-        u16 v1 = param0->unk_00.unk_00->unk_00.unk_1B;
+        u16 v1 = param0->unk_00.unk_00->unk_00.commState;
         BOOL v2;
 
         v0 = ov65_02237548(param0);
@@ -2437,7 +2437,7 @@ static BOOL ov65_022384BC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
             v3 = CommTool_GetReceivedTempData(v0);
 
             if (v3 != NULL) {
-                if (v3[0] == param0->unk_00.unk_00->unk_00.unk_1B) {
+                if (v3[0] == param0->unk_00.unk_00->unk_00.commState) {
                     v4++;
                 } else {
                     param0->unk_00.unk_05 = 15;
@@ -2526,7 +2526,7 @@ static BOOL ov65_022385D4(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
 
     ov65_02237550(param0, heapID);
 
-    if (param0->unk_00.unk_00->unk_00.unk_21 == 1) {
+    if (param0->unk_00.unk_00->unk_00.voiceChatEnabled == 1) {
         v0 = 125;
     } else {
         v0 = 124;

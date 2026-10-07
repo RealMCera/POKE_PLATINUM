@@ -302,7 +302,7 @@ Static main
 	Object main.nef.p/src_bag.c.o
 	Object main.nef.p/src_wifi_menu.c.o
 	Object main.nef.p/src_unk_0207DFAC.c.o
-	Object main.nef.p/src_unk_0207E060.c.o
+	Object main.nef.p/src_wfc_trainer_info.c.o
 	Object main.nef.p/src_applications_party_menu_main.c.o
 	Object main.nef.p/src_applications_party_menu_windows.c.o
 	Object main.nef.p/src_applications_party_menu_sprites.c.o
