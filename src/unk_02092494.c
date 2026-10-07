@@ -13,7 +13,7 @@
 #include "string_gf.h"
 #include "string_template.h"
 #include "trainer_info.h"
-#include "unk_02017038.h"
+#include "special_met_location.h"
 
 static int DeterminePokemonStatus(Pokemon *param0, BOOL param1, int param2);
 static void InitializeNatureRelatedString(PokemonInfoDisplayStruct *param0);

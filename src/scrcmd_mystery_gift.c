@@ -32,7 +32,7 @@
 #include "system_vars.h"
 #include "trainer_info.h"
 #include "underground.h"
-#include "unk_02017038.h"
+#include "special_met_location.h"
 #include "image_clips.h"
 #include "unk_02054884.h"
 #include "unk_02092494.h"

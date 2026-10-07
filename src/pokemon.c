@@ -50,7 +50,7 @@
 #include "string_gf.h"
 #include "trainer_data.h"
 #include "trainer_info.h"
-#include "unk_02017038.h"
+#include "special_met_location.h"
 #include "unk_02092494.h"
 
 #include "res/pokemon/regional_pokedex_size.h"
@@ -1732,7 +1732,7 @@ static void BoxPokemon_SetDataInternal(BoxPokemon *boxMon, enum PokemonDataParam
 
     case MON_DATA_EGG_LOCATION:
     case MON_DATA_EGG_LOCATION_PTHGSS:
-        if (*u16Value == 0 || sub_0201708C(*u16Value) == TRUE) {
+        if (*u16Value == 0 || SpecialMetLoc_IsValidId(*u16Value) == TRUE) {
             monDataBlockD->EggLocation_DP = *u16Value;
             monDataBlockB->EggLocation_PtHGSS = *u16Value;
         } else {
@@ -1743,7 +1743,7 @@ static void BoxPokemon_SetDataInternal(BoxPokemon *boxMon, enum PokemonDataParam
 
     case MON_DATA_MET_LOCATION:
     case MON_DATA_MET_LOCATION_PTHGSS:
-        if (*u16Value == 0 || sub_0201708C(*u16Value) == TRUE) {
+        if (*u16Value == 0 || SpecialMetLoc_IsValidId(*u16Value) == TRUE) {
             monDataBlockD->MetLocation_DP = *u16Value;
             monDataBlockB->MetLocation_PtHGSS = *u16Value;
         } else {

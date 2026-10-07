@@ -59,7 +59,7 @@ pokeplatinum_c = files(
     'poffin_types.c',
     'yes_no_touch_menu.c',
     'pokemon_anim.c',
-    'unk_02017038.c',
+    'special_met_location.c',
     'easy3d_object.c',
     'play_time_manager.c',
     'wifi_lobby.c',

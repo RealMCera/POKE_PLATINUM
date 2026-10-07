@@ -17,7 +17,7 @@
 #include "save_player.h"
 #include "savedata.h"
 #include "trainer_info.h"
-#include "unk_02017038.h"
+#include "special_met_location.h"
 
 BOOL Pokemon_CanBattle(Pokemon *mon)
 {
