@@ -27,7 +27,7 @@
 #include "sys_task_manager.h"
 #include "trainer_info.h"
 #include "battle_recording.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 #include "unk_020363E8.h"
 
 // Link battle communication. When a link battle starts, this module registers

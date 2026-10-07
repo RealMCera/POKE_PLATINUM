@@ -22,7 +22,7 @@
 #include "system_flags.h"
 #include "system_vars.h"
 #include "trainer_encounter.h"
-#include "unk_020528D0.h"
+#include "field_blackout.h"
 #include "unk_02054884.h"
 #include "vars_flags.h"
 

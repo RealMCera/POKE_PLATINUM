@@ -22,7 +22,7 @@
 #include "sys_task_manager.h"
 #include "system.h"
 #include "unk_0203266C.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "wireless_manager.h"
@@ -1559,9 +1559,9 @@ static void CommSys_RecvDataSingle(CommRing *ring, int netId, u8 *buffer, CommRe
             param3->packetSize = size;
         }
 
-        if (sub_020328D0(cmd)) {
+        if (CommCmd_HasRecvBuffer(cmd)) {
             if (param3->dataBuffer == NULL) {
-                param3->dataBuffer = sub_0203290C(cmd, netId, param3->packetSize);
+                param3->dataBuffer = CommCmd_GetRecvBuffer(cmd, netId, param3->packetSize);
             }
 
             v3 = CommRing_Read(ring, buffer, size - param3->receivedSize);

@@ -203,7 +203,7 @@
 #include "field_system_apps.h"
 #include "scrcmd_battle_tower.h"
 #include "battle_tower_partner.h"
-#include "unk_020528D0.h"
+#include "field_blackout.h"
 #include "unk_020559DC.h"
 #include "unk_0205749C.h"
 #include "union_room.h"

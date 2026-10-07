@@ -29,7 +29,7 @@
 #include "system.h"
 #include "system_data.h"
 #include "text.h"
-#include "unk_02030CE8.h"
+#include "email.h"
 #include "wifi_list.h"
 
 #include "res/text/bank/gts.h"

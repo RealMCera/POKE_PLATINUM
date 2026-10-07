@@ -25,7 +25,7 @@
 #include "system.h"
 #include "trainer_info.h"
 #include "unk_0203266C.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 #include "comm_server_client.h"
 #include "unk_02039814.h"
 #include "wireless_manager.h"
@@ -192,7 +192,7 @@ static void CommManager_Free(void)
         return;
     }
 
-    sub_020327E0();
+    CommCmd_Free();
 
     if (sCommMan->unk_00) {
         Heap_Free(sCommMan->unk_00);

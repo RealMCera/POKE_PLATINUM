@@ -44,7 +44,7 @@
 #include "wifi_list.h"
 
 typedef struct {
-    UnkStruct_02017498 *unk_00;
+    WiFiLobbyAppState *unk_00;
     BgConfig *unk_04;
     int unk_08;
     int unk_0C;
@@ -190,18 +190,18 @@ int ov61_0222BF44(ApplicationManager *appMan, int *unused)
     RenderControlFlags_SetSpeedUpOnTouch(FALSE);
     SetVBlankCallback(ov61_0222C1FC, v0);
 
-    if (v0->unk_00->unk_10) {
+    if (v0->unk_00->vsRecorderLaunched) {
         NetworkIcon_Init();
         ov61_0222C920(v0, 13, 8);
     } else {
-        if (v0->unk_00->unk_00->unk_08) {
+        if (v0->unk_00->args->unk_08) {
             v0->unk_08 = 1;
         } else {
             v0->unk_08 = 0;
         }
     }
 
-    v0->unk_00->unk_8C = 0;
+    v0->unk_00->vsRecorderRequested = 0;
     return 1;
 }
 
@@ -426,7 +426,7 @@ static void ov61_0222C3B0(UnkStruct_ov61_0222C664 *param0)
     Graphics_LoadPaletteFromOpenNARC(v1, 3, 4, 0, 0, HEAP_ID_117);
     Font_LoadScreenIndicatorsPalette(PAL_LOAD_MAIN_BG, PLTT_OFFSET(13), HEAP_ID_117);
     Font_LoadScreenIndicatorsPalette(PAL_LOAD_SUB_BG, PLTT_OFFSET(13), HEAP_ID_117);
-    LoadMessageBoxGraphics(v0, BG_LAYER_MAIN_0, 1, 10, Options_Frame(SaveData_GetOptions(param0->unk_00->unk_00->saveData)), HEAP_ID_117);
+    LoadMessageBoxGraphics(v0, BG_LAYER_MAIN_0, 1, 10, Options_Frame(SaveData_GetOptions(param0->unk_00->args->saveData)), HEAP_ID_117);
     LoadStandardWindowGraphics(v0, BG_LAYER_MAIN_0, 1 + (18 + 12), 11, 0, HEAP_ID_117);
     Graphics_LoadTilesToBgLayerFromOpenNARC(v1, 2, v0, 1, 0, 0, 0, HEAP_ID_117);
     Graphics_LoadTilemapToBgLayerFromOpenNARC(v1, 5, v0, 1, 0, 32 * 24 * 2, 0, HEAP_ID_117);
@@ -644,7 +644,7 @@ static int ov61_0222CA20(UnkStruct_ov61_0222C664 *param0)
 {
     switch (param0->unk_90) {
     case 0:
-        CommManager_InitializeGlobalWifi(param0->unk_00->unk_00->saveData);
+        CommManager_InitializeGlobalWifi(param0->unk_00->args->saveData);
         NetworkIcon_Init();
         ov61_0222C8B8(param0, param0->unk_28, 1, TEXT_SPEED_FAST, 0xf0f);
         ov61_0222C850(param0);
@@ -656,7 +656,7 @@ static int ov61_0222CA20(UnkStruct_ov61_0222C664 *param0)
         }
         break;
     case 2:
-        DWC_InitInetEx(&param0->unk_00->unk_20, DEFAULT_DWC_DMA_NUMBER, DEFAULT_DWC_POWER_MODE, DEFAULT_DWC_SSL_PRIORITY);
+        DWC_InitInetEx(&param0->unk_00->inetControl, DEFAULT_DWC_DMA_NUMBER, DEFAULT_DWC_POWER_MODE, DEFAULT_DWC_SSL_PRIORITY);
         DWC_SetAuthServer(DWC_CONNECTINET_AUTH_RELEASE);
         DWC_ConnectInetAsync();
         param0->unk_08 = 2;
@@ -787,8 +787,8 @@ static int ov61_0222CB3C(UnkStruct_ov61_0222C664 *param0)
 static int ov61_0222CBF0(UnkStruct_ov61_0222C664 *param0)
 {
     s32 profileID;
-    WiFiList *wiFiList = SaveData_GetWiFiList(param0->unk_00->unk_00->saveData);
-    SystemData *sysData = SaveData_GetSystemData(param0->unk_00->unk_00->saveData);
+    WiFiList *wiFiList = SaveData_GetWiFiList(param0->unk_00->args->saveData);
+    SystemData *sysData = SaveData_GetSystemData(param0->unk_00->args->saveData);
     DWCUserData *userData = WiFiList_GetUserData(wiFiList);
     profileID = SystemData_GetDWCProfileId(sysData);
 
@@ -799,7 +799,7 @@ static int ov61_0222CBF0(UnkStruct_ov61_0222C664 *param0)
     profileID = SystemData_GetDWCProfileId(sysData);
 
     param0->unk_08 = 9;
-    param0->unk_00->unk_8C = 1;
+    param0->unk_00->vsRecorderRequested = 1;
 
     return 0;
 }

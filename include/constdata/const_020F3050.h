@@ -3,6 +3,6 @@
 
 #include "overlay_manager.h"
 
-extern const ApplicationManagerTemplate Unk_020F3050;
+extern const ApplicationManagerTemplate gVsRecorderViewerTemplate;
 
 #endif // POKEPLATINUM_CONST_020F3050_H

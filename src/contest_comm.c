@@ -16,7 +16,7 @@
 #include "contest.h"
 #include "heap.h"
 #include "image_clips.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 
 // Contest communication. This module registers the contest's communication
 // commands and implements the two exchanges that happen over the link cable:

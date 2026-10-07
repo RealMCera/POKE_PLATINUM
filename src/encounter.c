@@ -47,7 +47,7 @@
 #include "tv_segment.h"
 #include "battle_recording.h"
 #include "field_system_apps.h"
-#include "unk_020528D0.h"
+#include "field_blackout.h"
 #include "vars_flags.h"
 
 typedef struct Encounter {

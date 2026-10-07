@@ -39,7 +39,7 @@
 #include "image_clips.h"
 #include "tv_broadcast.h"
 #include "battle_recording.h"
-#include "unk_02030CE8.h"
+#include "email.h"
 #include "vars_flags.h"
 #include "wifi_history_save_data.h"
 #include "wifi_list.h"

@@ -19,7 +19,7 @@
 #include "communication_information.h"
 #include "communication_system.h"
 #include "heap.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 #include "union_room.h"
 #include "union_room_trainers.h"
 #include "comm_field_cmd.h"
@@ -45,7 +45,7 @@ typedef struct UnionRoomCommPacket {
 static BOOL UnionRoomComm_SendCommand(UnionRoomComm *comm, u32 command, const void *data, u32 size);
 
 static const CommCmdTable sUnionRoomCommCmdTable[135];
-static const UnkFuncPtr_020F8E60 sUnionRoomCommHandlers[COMMAND_COUNT];
+static const CommCmdHandler sUnionRoomCommHandlers[COMMAND_COUNT];
 
 UnionRoomComm *UnionRoomComm_New(UnionRoomSpinTradeSession *app, enum HeapID heapID)
 {
@@ -523,7 +523,7 @@ static const CommCmdTable sUnionRoomCommCmdTable[135] = {
 
 // Sub-command handlers for the generic command envelope (command 130). The
 // index is the sub-command stored in UnionRoomCommPacket.command.
-static const UnkFuncPtr_020F8E60 sUnionRoomCommHandlers[COMMAND_COUNT] = {
+static const CommCmdHandler sUnionRoomCommHandlers[COMMAND_COUNT] = {
     UnionRoomComm_HandlePlayerReady,
     UnionRoomComm_HandleEraseMessage,
     UnionRoomComm_HandleConnectionConfirm,

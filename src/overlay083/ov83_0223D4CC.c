@@ -12,7 +12,7 @@
 #include "heap.h"
 #include "sys_task.h"
 #include "sys_task_manager.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 
 typedef struct {
     BOOL unk_00;
@@ -117,7 +117,7 @@ static void ov83_0223D5CC(SysTask *param0, void *param1)
 
     for (v1 = 0; v1 < 8; v1++) {
         if (v0->unk_00[v1].unk_00 == 1) {
-            v0->unk_190[v0->unk_00[v1].unk_04].unk_00(
+            v0->unk_190[v0->unk_00[v1].unk_04].handler(
                 0, v0->unk_00[v1].unk_30, v0->unk_00[v1].unk_08, v0->unk_198);
 
             memset(&v0->unk_00[v1], 0, sizeof(UnkStruct_ov83_0223D5CC));
@@ -147,7 +147,7 @@ static BOOL ov83_0223D638(UnkStruct_ov83_0223D584 *param0, int param1, const voi
     GF_ASSERT(v2);
     param1 -= 22;
 
-    v1 = param0->unk_190[param1].unk_04();
+    v1 = param0->unk_190[param1].packetSize();
 
     GF_ASSERT(v1 == param3);
     GF_ASSERT(param3 < 38);

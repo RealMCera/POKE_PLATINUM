@@ -243,9 +243,9 @@ static BOOL VsRecorder_RunViewer(VsRecorderAppData *param0, enum HeapID heapID)
     switch (param0->state) {
     case 0:
         if (param0->vsRecorder->unk_00 == 0) {
-            param0->appMan = ApplicationManager_New(&Unk_020F3050, param0, heapID);
+            param0->appMan = ApplicationManager_New(&gVsRecorderViewerTemplate, param0, heapID);
         } else {
-            param0->appMan = ApplicationManager_New(&Unk_020F3060, param0, heapID);
+            param0->appMan = ApplicationManager_New(&gVsRecorderViewerWiFiTemplate, param0, heapID);
         }
 
         param0->state++;

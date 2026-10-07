@@ -8,7 +8,7 @@
 #include "overlay065/struct_ov65_02236744_decl.h"
 #include "overlay065/struct_ov65_02236760.h"
 
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 #include "unk_02039A58.h"
 
 // Communication commands shared by the overlay065 WiFi apps (the Nintendo WFC

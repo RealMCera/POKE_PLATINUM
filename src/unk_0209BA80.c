@@ -19,7 +19,7 @@
 #include "communication_system.h"
 #include "party.h"
 #include "pokemon.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 
 static void sub_0209BA94(int param0, int param1, void *param2, void *param3);
 static void BattleTower_HandleTrainerIDListCmd(int netID, int unused, void *data, void *context);

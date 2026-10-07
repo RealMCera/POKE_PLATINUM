@@ -117,7 +117,7 @@
 #include "trainer_case_save_data.h"
 #include "trainer_info.h"
 #include "tv_segment.h"
-#include "unk_02017498.h"
+#include "wifi_lobby.h"
 #include "image_clips.h"
 #include "unk_02038FFC.h"
 #include "unk_020559DC.h"
@@ -1795,9 +1795,9 @@ void FieldSystem_OpenGlobalTerminal(FieldSystem *fieldSystem, int param1, int pa
     FS_EXTERN_OVERLAY(overlay61);
 
     const ApplicationManagerTemplate appTemplate = {
-        sub_02017498,
-        sub_02017524,
-        sub_02017658,
+        WiFiLobby_Init,
+        WiFiLobby_Main,
+        WiFiLobby_Exit,
         FS_OVERLAY_ID(overlay61)
     };
 

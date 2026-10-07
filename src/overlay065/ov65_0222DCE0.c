@@ -78,7 +78,7 @@
 #include "touch_screen_actions.h"
 #include "trainer_info.h"
 #include "font_oam.h"
-#include "unk_02030CE8.h"
+#include "email.h"
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "wifi_friend_registration.h"

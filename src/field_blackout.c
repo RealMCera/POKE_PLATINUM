@@ -1,4 +1,4 @@
-#include "unk_020528D0.h"
+#include "field_blackout.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -35,20 +35,23 @@
 #include "system.h"
 #include "text.h"
 
-typedef struct {
-    int unk_00;
+// State for the black-out message scene shown while the map is changing.
+typedef struct FieldBlackoutScene {
+    int state; // Scene task state.
     FieldSystem *fieldSystem;
-    BgConfig *unk_08;
-    Window unk_0C;
-    MessageLoader *unk_1C;
-    StringTemplate *unk_20;
-} UnkStruct_02052AA4;
+    BgConfig *bgConfig;
+    Window window;
+    MessageLoader *messageLoader;
+    StringTemplate *stringTemplate;
+} FieldBlackoutScene;
 
-static void sub_02052914(FieldSystem *fieldSystem, FieldTask *task);
-static BOOL sub_020529C4(FieldTask *task);
-static void sub_02052AA4(UnkStruct_02052AA4 *param0, u16 param1, u8 param2, u8 param3);
+static void FieldBlackout_InitGraphics(BgConfig *bgConfig);
+static void FieldBlackout_InitScene(FieldSystem *fieldSystem, FieldTask *task);
+static BOOL FieldBlackout_SceneTask(FieldTask *task);
+static void FieldBlackout_PrintMessage(FieldBlackoutScene *scene, u16 messageID, u8 x, u8 y);
 
-static const WindowTemplate Unk_020EC2F0 = {
+// Window used to display the black-out message on the main screen.
+static const WindowTemplate sBlackOutWindowTemplate = {
     0x3,
     0x4,
     0x5,
@@ -58,7 +61,9 @@ static const WindowTemplate Unk_020EC2F0 = {
     0x1
 };
 
-static void sub_020528D0(BgConfig *param0)
+// Configures the graphics banks, display modes and font palette used by the
+// black-out message scene.
+static void FieldBlackout_InitGraphics(BgConfig *bgConfig)
 {
     static const GXBanks v0 = {
         GX_VRAM_BG_128_B,
@@ -95,78 +100,84 @@ static void sub_020528D0(BgConfig *param0)
 
     GXLayers_SetBanks(&v0);
     SetAllGraphicsModes(&v1);
-    Bg_InitFromTemplate(param0, BG_LAYER_MAIN_3, &v2, 0);
+    Bg_InitFromTemplate(bgConfig, BG_LAYER_MAIN_3, &v2, 0);
     Graphics_LoadPalette(NARC_INDEX_GRAPHIC__PL_FONT, 6, 0, 13 * 0x20, 0x20, HEAP_ID_FIELD2);
 }
 
-static void sub_02052914(FieldSystem *fieldSystem, FieldTask *task)
+// Allocates and initializes the black-out message scene, then hands control to
+// FieldBlackout_SceneTask. The message shown depends on where the player blacks
+// out: the Twinleaf player house uses the "scurried back home" text, everywhere
+// else uses the "scurried to a Pokémon Center" text.
+static void FieldBlackout_InitScene(FieldSystem *fieldSystem, FieldTask *task)
 {
-    UnkStruct_02052AA4 *v0 = Heap_Alloc(HEAP_ID_FIELD2, sizeof(UnkStruct_02052AA4));
+    FieldBlackoutScene *scene = Heap_Alloc(HEAP_ID_FIELD2, sizeof(FieldBlackoutScene));
 
-    if (v0 == NULL) {
+    if (scene == NULL) {
         GF_ASSERT(FALSE);
     }
 
-    memset(v0, 0, sizeof(UnkStruct_02052AA4));
+    memset(scene, 0, sizeof(FieldBlackoutScene));
 
-    v0->unk_00 = 0;
-    v0->fieldSystem = fieldSystem;
-    v0->unk_08 = BgConfig_New(HEAP_ID_FIELD2);
+    scene->state = 0;
+    scene->fieldSystem = fieldSystem;
+    scene->bgConfig = BgConfig_New(HEAP_ID_FIELD2);
 
-    sub_020528D0(v0->unk_08);
+    FieldBlackout_InitGraphics(scene->bgConfig);
 
-    v0->unk_1C = MessageLoader_Init(MSG_LOADER_LOAD_ON_DEMAND, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_BLACK_OUT_SCENE, HEAP_ID_FIELD2);
-    v0->unk_20 = StringTemplate_Default(HEAP_ID_FIELD2);
+    scene->messageLoader = MessageLoader_Init(MSG_LOADER_LOAD_ON_DEMAND, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_BLACK_OUT_SCENE, HEAP_ID_FIELD2);
+    scene->stringTemplate = StringTemplate_Default(HEAP_ID_FIELD2);
 
-    Window_AddFromTemplate(v0->unk_08, &v0->unk_0C, &Unk_020EC2F0);
-    StringTemplate_SetPlayerName(v0->unk_20, 0, SaveData_GetTrainerInfo(FieldSystem_GetSaveData(fieldSystem)));
+    Window_AddFromTemplate(scene->bgConfig, &scene->window, &sBlackOutWindowTemplate);
+    StringTemplate_SetPlayerName(scene->stringTemplate, 0, SaveData_GetTrainerInfo(FieldSystem_GetSaveData(fieldSystem)));
 
     if (fieldSystem->location->mapHeaderID == MAP_HEADER_TWINLEAF_TOWN_PLAYER_HOUSE_1F) {
-        sub_02052AA4(v0, 4, 0, 0);
+        FieldBlackout_PrintMessage(scene, 4, 0, 0);
     } else {
-        sub_02052AA4(v0, 3, 0, 0);
+        FieldBlackout_PrintMessage(scene, 3, 0, 0);
     }
 
-    Window_CopyToVRAM(&v0->unk_0C);
-    FieldTask_InitCall(task, sub_020529C4, v0);
+    Window_CopyToVRAM(&scene->window);
+    FieldTask_InitCall(task, FieldBlackout_SceneTask, scene);
 
     return;
 }
 
-static BOOL sub_020529C4(FieldTask *task)
+// Runs the black-out message scene: fade in, wait for the player to dismiss the
+// message, fade out, then tear down the scene.
+static BOOL FieldBlackout_SceneTask(FieldTask *task)
 {
-    UnkStruct_02052AA4 *v0 = FieldTask_GetEnv(task);
+    FieldBlackoutScene *scene = FieldTask_GetEnv(task);
 
-    switch (v0->unk_00) {
+    switch (scene->state) {
     case 0:
         StartScreenFade(FADE_MAIN_ONLY, FADE_TYPE_BRIGHTNESS_IN, FADE_TYPE_MAX, COLOR_BLACK, 8, 1, HEAP_ID_FIELD3);
-        v0->unk_00++;
+        scene->state++;
         break;
     case 1:
         if (IsScreenFadeDone()) {
-            v0->unk_00++;
+            scene->state++;
         }
         break;
     case 2:
         if ((gSystem.pressedKeys & PAD_BUTTON_A) || (gSystem.pressedKeys & PAD_BUTTON_B)) {
             StartScreenFade(FADE_BOTH_SCREENS, FADE_TYPE_BRIGHTNESS_OUT, FADE_TYPE_BRIGHTNESS_OUT, COLOR_BLACK, 8, 1, HEAP_ID_FIELD3);
-            v0->unk_00++;
+            scene->state++;
         }
         break;
     case 3:
         if (IsScreenFadeDone()) {
-            Window_FillTilemap(&v0->unk_0C, 0);
-            v0->unk_00++;
+            Window_FillTilemap(&scene->window, 0);
+            scene->state++;
         }
         break;
     case 4:
-        Window_EraseMessageBox(&v0->unk_0C, 0);
-        Window_Remove(&v0->unk_0C);
-        StringTemplate_Free(v0->unk_20);
-        MessageLoader_Free(v0->unk_1C);
-        Bg_FreeTilemapBuffer(v0->unk_08, BG_LAYER_MAIN_3);
-        Heap_Free(v0->unk_08);
-        Heap_Free(v0);
+        Window_EraseMessageBox(&scene->window, 0);
+        Window_Remove(&scene->window);
+        StringTemplate_Free(scene->stringTemplate);
+        MessageLoader_Free(scene->messageLoader);
+        Bg_FreeTilemapBuffer(scene->bgConfig, BG_LAYER_MAIN_3);
+        Heap_Free(scene->bgConfig);
+        Heap_Free(scene);
 
         return 1;
     }
@@ -174,27 +185,33 @@ static BOOL sub_020529C4(FieldTask *task)
     return 0;
 }
 
-static void sub_02052AA4(UnkStruct_02052AA4 *param0, u16 param1, u8 param2, u8 param3)
+// Formats messageID with the scene's string template and prints it centered
+// horizontally in the scene window.
+static void FieldBlackout_PrintMessage(FieldBlackoutScene *scene, u16 messageID, u8 x, u8 y)
 {
     String *v0 = String_Init(1024, HEAP_ID_FIELD2);
     String *v1 = String_Init(1024, HEAP_ID_FIELD2);
 
-    Window_FillTilemap(&param0->unk_0C, 0);
-    MessageLoader_GetString(param0->unk_1C, param1, v0);
-    StringTemplate_Format(param0->unk_20, v1, v0);
+    Window_FillTilemap(&scene->window, 0);
+    MessageLoader_GetString(scene->messageLoader, messageID, v0);
+    StringTemplate_Format(scene->stringTemplate, v1, v0);
 
     {
         u32 v2 = Font_CalcMaxLineWidth(FONT_SYSTEM, v1, 0);
-        param2 = (u8)(param0->unk_0C.width * 8 - v2) / 2 - 4;
+        x = (u8)(scene->window.width * 8 - v2) / 2 - 4;
     }
 
-    Text_AddPrinterWithParamsAndColor(&param0->unk_0C, FONT_SYSTEM, v1, param2, param3, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(15, 2, 0), NULL);
+    Text_AddPrinterWithParamsAndColor(&scene->window, FONT_SYSTEM, v1, x, y, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(15, 2, 0), NULL);
     String_Free(v0);
     String_Free(v1);
 
     return;
 }
 
+// Field task that handles blacking out from a lost battle. It restores Giratina
+// to its Altered Form, warps the player to the black-out spawn point, fades out
+// the BGM, dims the screens while the black-out message scene plays, performs
+// the map transition, then runs the recovery script that heals the party.
 BOOL FieldTask_BlackOutFromBattle(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
@@ -230,7 +247,7 @@ BOOL FieldTask_BlackOutFromBattle(FieldTask *task)
     case 3:
         BrightnessController_SetScreenBrightness(-16, (GX_BLEND_PLANEMASK_BG0 | GX_BLEND_PLANEMASK_BG1 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 | GX_BLEND_PLANEMASK_OBJ | GX_BLEND_PLANEMASK_BD) ^ GX_BLEND_PLANEMASK_BG3, BRIGHTNESS_MAIN_SCREEN);
         BrightnessController_SetScreenBrightness(-16, GX_BLEND_PLANEMASK_BG0 | GX_BLEND_PLANEMASK_BG1 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 | GX_BLEND_PLANEMASK_OBJ | GX_BLEND_PLANEMASK_BD, BRIGHTNESS_SUB_SCREEN);
-        sub_02052914(fieldSystem, task);
+        FieldBlackout_InitScene(fieldSystem, task);
         (*state)++;
         break;
     case 4:
@@ -240,6 +257,8 @@ BOOL FieldTask_BlackOutFromBattle(FieldTask *task)
     case 5:
         BrightnessController_SetScreenBrightness(0, GX_BLEND_PLANEMASK_BG0 | GX_BLEND_PLANEMASK_BG1 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 | GX_BLEND_PLANEMASK_OBJ | GX_BLEND_PLANEMASK_BD, BRIGHTNESS_BOTH_SCREENS);
 
+        // The default warp means the player blacked out at home; any other warp
+        // means they were sent to a Pokémon Center.
         if (FieldOverworldState_GetDefaultWarpID() == FieldOverworldState_GetBlackOutWarpId(SaveData_GetFieldOverworldState(fieldSystem->saveData))) {
             ScriptManager_Start(task, SCRIPT_ID(COMMON_SCRIPTS, 20), NULL, NULL);
         } else {

@@ -35,7 +35,7 @@
 #include "system.h"
 #include "system_data.h"
 #include "text.h"
-#include "unk_02030CE8.h"
+#include "email.h"
 #include "unk_02073700.h"
 #include "wifi_battle_tower_save.h"
 

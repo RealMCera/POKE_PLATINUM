@@ -22,7 +22,7 @@
 #include "scrcmd_battle_hall.h"
 #include "trainer_case.h"
 #include "trainer_info.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 #include "colosseum.h"
 #include "union_room.h"
 

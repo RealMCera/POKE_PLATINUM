@@ -8,15 +8,15 @@
 
 #include "overlay_manager.h"
 
-typedef struct {
-    UnkStruct_0203E6C0 *unk_00;
-    BOOL unk_10;
-    ApplicationManager *appMan;
-    void *unk_18;
-    NNSFndHeapHandle unk_1C;
-    DWCInetControl unk_20;
-    int unk_88;
-    BOOL unk_8C;
-} UnkStruct_02017498;
+typedef struct WiFiLobbyAppState {
+    UnkStruct_0203E6C0 *args; // Arguments passed in by FieldSystem_OpenGlobalTerminal.
+    BOOL vsRecorderLaunched; // Set when the Vs. Recorder is launched; cleared after the return visit to the Global Terminal.
+    ApplicationManager *appMan; // Child application manager for the Global Terminal / Vs. Recorder.
+    void *dwcHeapBuffer; // Raw allocation backing the DWC heap.
+    NNSFndHeapHandle dwcHeap; // Expanded heap handed to DWC via DWC_SetMemFunc.
+    DWCInetControl inetControl; // DWC internet connection control block.
+    int dwcInitialized; // Non-zero once the DWC heap and overlays are ready.
+    BOOL vsRecorderRequested; // Set by the Global Terminal when it wants the Vs. Recorder launched.
+} WiFiLobbyAppState;
 
 #endif // POKEPLATINUM_STRUCT_02017498_H

@@ -11,7 +11,7 @@
 #include "comm_ring.h"
 #include "communication_system.h"
 #include "heap.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 
 // Returns the first unused entry in the manager's array, or NULL if every entry
 // is occupied. A command byte of 0 marks a free entry.

@@ -3,11 +3,15 @@
 
 #include "constants/string.h"
 
+// Trainer profile uploaded to the GTS World Exchange service. The struct is
+// sent to the server verbatim, so its layout is fixed. It is built from the
+// local save data (see email.c) and the MAC address is filled in just before
+// the request is sent.
 typedef struct WorldExchangeTrainer {
     u8 gameCode;
     u8 language;
     u8 country;
-    u8 unk_03;
+    u8 region;
     u32 trainerId;
     u16 trainerName[TRAINER_NAME_LEN + 1];
     u32 unk_10;
@@ -16,7 +20,8 @@ typedef struct WorldExchangeTrainer {
     char email[56];
     u32 emailInitialised;
     u16 rngValue;
-    u16 unk_5A;
+    // Last four digits of the Wii Registration Code.
+    u16 registrationCode;
 } WorldExchangeTrainer;
 
 enum WorldExchangeValidationError {

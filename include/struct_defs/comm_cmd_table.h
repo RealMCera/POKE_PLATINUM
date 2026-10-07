@@ -6,9 +6,9 @@
 #include "functypes/funcptr_020F8E60.h"
 
 typedef struct CommCmdTable {
-    UnkFuncPtr_020F8E60 unk_00;
-    UnkFuncPtr_02032868 unk_04;
-    UnkFuncPtr_0203290C unk_08;
+    CommCmdHandler handler; // dispatches the command
+    CommCmdPacketSizeFunc packetSize; // returns the payload size in bytes
+    CommCmdRecvBufferFunc recvBuffer; // optional receive buffer provider
 } CommCmdTable;
 
 #endif // POKEPLATINUM_STRUCT_DEF_COMM_CMD_TABLE_H

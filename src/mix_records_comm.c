@@ -14,7 +14,7 @@
 #include "communication_system.h"
 #include "math_util.h"
 #include "sound_playback.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 #include "comm_field_cmd.h"
 #include "wireless_manager.h"
 

@@ -45,7 +45,7 @@
 #include "system_data.h"
 #include "text.h"
 #include "touch_pad.h"
-#include "unk_02030CE8.h"
+#include "email.h"
 #include "unk_02038FFC.h"
 #include "vram_transfer.h"
 #include "wifi_list.h"
@@ -732,7 +732,7 @@ static int ov98_02247B98(UnkStruct_ov98_02247704 *param0)
         const UnkStruct_ov98_02249BDC *v4;
         int v5;
 
-        if (sub_02030D20(param0->unk_00->saveData) == 1) {
+        if (Email_HasEmailString(param0->unk_00->saveData) == 1) {
             v3 = Unk_ov98_02249BC0;
             v4 = Unk_ov98_02249BEC;
             v5 = (NELEMS(Unk_ov98_02249BEC));
@@ -825,10 +825,10 @@ static int ov98_02247D50(UnkStruct_ov98_02247704 *param0)
         if (v0 != 0xffffffff) {
             if (v0 == 0xfffffffe) {
                 ov98_02249714(param0, param0->unk_34, 27, TEXT_SPEED_FAST, 0xf0f);
-                sub_02030D5C(param0->unk_00->saveData, 0, 0);
+                Email_SetValue(param0->unk_00->saveData, 0, 0);
             } else {
                 ov98_02249714(param0, param0->unk_34, 26, TEXT_SPEED_FAST, 0xf0f);
-                sub_02030D5C(param0->unk_00->saveData, 0, 1);
+                Email_SetValue(param0->unk_00->saveData, 0, 1);
             }
 
             param0->unk_94++;
@@ -865,7 +865,7 @@ static int ov98_02247E38(UnkStruct_ov98_02247704 *param0)
                 param0->unk_08 = 0;
             } else {
                 ov98_02249714(param0, param0->unk_34, 29, TEXT_SPEED_FAST, 0xf0f);
-                sub_02030D10(param0->unk_00->saveData);
+                Email_InitSaveData(param0->unk_00->saveData);
                 param0->unk_94++;
             }
         }
@@ -2141,7 +2141,7 @@ static int ov98_022497F8(UnkStruct_ov98_02247704 *param0)
 
     switch (param0->unk_94) {
     case 0:
-        if (ov98_02246FA4(v0) == sub_02030D98(v0->saveData, 3)) {
+        if (ov98_02246FA4(v0) == Email_GetValue(v0->saveData, 3)) {
             ov98_02249ACC(Email_GetEmailString(v0->saveData), v2, 108);
             for (v3 = 0; v3 < 4; v3++) {
                 StringTemplate_SetNumber(param0->unk_20, v3, v2[v3], 4, 2, 1);

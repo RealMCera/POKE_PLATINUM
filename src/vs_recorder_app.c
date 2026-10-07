@@ -23,27 +23,34 @@
 
 FS_EXTERN_OVERLAY(overlay62);
 
-static int sub_0208BF38(ApplicationManager *appMan, int *param1);
-static int sub_0208BF44(ApplicationManager *appMan, int *param1);
-static int sub_0208BEBC(ApplicationManager *appMan, int *param1, int param2);
-static int sub_0208BF50(ApplicationManager *appMan, int *param1);
-static int sub_0208BF6C(ApplicationManager *appMan, int *param1);
+static int VsRecorderApp_InitNormal(ApplicationManager *appMan, int *param1);
+static int VsRecorderApp_InitWiFi(ApplicationManager *appMan, int *param1);
+static int VsRecorderApp_Init(ApplicationManager *appMan, int *param1, int param2);
+static int VsRecorderApp_Main(ApplicationManager *appMan, int *param1);
+static int VsRecorderApp_Exit(ApplicationManager *appMan, int *param1);
 
-const ApplicationManagerTemplate Unk_020F3050 = {
-    sub_0208BF38,
-    sub_0208BF50,
-    sub_0208BF6C,
+// Application manager for the Vs. Recorder viewer (overlay062). The viewer is
+// launched by vs_recorder.c as a child app. The normal template is used for the
+// Vs. Recorder itself (mode 0); the Wi-Fi template is used for the online modes
+// opened from the Global Terminal (modes 2-6).
+const ApplicationManagerTemplate gVsRecorderViewerTemplate = {
+    VsRecorderApp_InitNormal,
+    VsRecorderApp_Main,
+    VsRecorderApp_Exit,
     FS_OVERLAY_ID(overlay62)
 };
 
-const ApplicationManagerTemplate Unk_020F3060 = {
-    sub_0208BF44,
-    sub_0208BF50,
-    sub_0208BF6C,
+const ApplicationManagerTemplate gVsRecorderViewerWiFiTemplate = {
+    VsRecorderApp_InitWiFi,
+    VsRecorderApp_Main,
+    VsRecorderApp_Exit,
     FS_OVERLAY_ID(overlay62)
 };
 
-static int sub_0208BEBC(ApplicationManager *appMan, int *param1, int param2)
+// Shared init for both viewer variants. param2 selects the Wi-Fi/online variant:
+// it plays the Wi-Fi Tower BGM and uses a fixed UI color instead of the color
+// saved in the player's MiscSaveBlock.
+static int VsRecorderApp_Init(ApplicationManager *appMan, int *param1, int param2)
 {
     UnkStruct_0208C06C *v0;
 
@@ -60,6 +67,8 @@ static int sub_0208BEBC(ApplicationManager *appMan, int *param1, int param2)
         {
             MiscSaveBlock *v1 = SaveData_MiscSaveBlock(v0->saveData);
 
+            // Read the player's chosen Vs. Recorder color; clamp out-of-range
+            // values to the first entry, then resolve it to a palette color.
             MiscSaveBlock_VsRecorderColor(v1, &v0->unk_14.unk_48);
 
             if (v0->unk_14.unk_48 >= 7) {
@@ -69,6 +78,7 @@ static int sub_0208BEBC(ApplicationManager *appMan, int *param1, int param2)
             v0->unk_14.unk_44 = ov62_022316A0(v0);
         }
     } else {
+        // The Wi-Fi/online viewer uses a fixed UI color.
         v0->unk_14.unk_44 = 0x7fdd;
     }
 
@@ -77,17 +87,17 @@ static int sub_0208BEBC(ApplicationManager *appMan, int *param1, int param2)
     return 1;
 }
 
-static int sub_0208BF38(ApplicationManager *appMan, int *param1)
+static int VsRecorderApp_InitNormal(ApplicationManager *appMan, int *param1)
 {
-    return sub_0208BEBC(appMan, param1, 0);
+    return VsRecorderApp_Init(appMan, param1, 0);
 }
 
-static int sub_0208BF44(ApplicationManager *appMan, int *param1)
+static int VsRecorderApp_InitWiFi(ApplicationManager *appMan, int *param1)
 {
-    return sub_0208BEBC(appMan, param1, 1);
+    return VsRecorderApp_Init(appMan, param1, 1);
 }
 
-static int sub_0208BF50(ApplicationManager *appMan, int *param1)
+static int VsRecorderApp_Main(ApplicationManager *appMan, int *param1)
 {
     BOOL v0 = 0;
     UnkStruct_0208C06C *v1 = VsRecorder_GetState(appMan);
@@ -98,7 +108,11 @@ static int sub_0208BF50(ApplicationManager *appMan, int *param1)
     return (v0) ? 1 : 0;
 }
 
-static int sub_0208BF6C(ApplicationManager *appMan, int *param1)
+// Shutdown sequence, run one step per frame. First the viewer's sprite tasks and
+// resources are torn down, then the two Vs. Recorder rings are shut down
+// asynchronously, and finally the graphics heap and overlay are released and the
+// 3D screen is restored to the main display.
+static int VsRecorderApp_Exit(ApplicationManager *appMan, int *param1)
 {
     UnkStruct_0208C06C *v0 = VsRecorder_GetState(appMan);
 

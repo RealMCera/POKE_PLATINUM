@@ -67,7 +67,7 @@ Static main
 	Object main.nef.p/src_unk_02017038.c.o
 	Object main.nef.p/src_easy3d_object.c.o
 	Object main.nef.p/src_play_time_manager.c.o
-	Object main.nef.p/src_unk_02017498.c.o
+	Object main.nef.p/src_wifi_lobby.c.o
 	Object main.nef.p/src_system.c.o
 	Object main.nef.p/src_heap.c.o
 	Object main.nef.p/src_bg_window.c.o
@@ -150,13 +150,13 @@ Static main
 	Object main.nef.p/src_battle_frontier_save.c.o
 	Object main.nef.p/src_battle_hall_win_records.c.o
 	Object main.nef.p/src_player_profile.c.o
-	Object main.nef.p/src_unk_02030CE8.c.o
+	Object main.nef.p/src_email.c.o
 	Object main.nef.p/src_wifi_plaza_question_data.c.o
 	Object main.nef.p/src_wireless_manager.c.o
 	Object main.nef.p/src_comm_ring.c.o
 	Object main.nef.p/src_comm_queue.c.o
 	Object main.nef.p/src_unk_0203266C.c.o
-	Object main.nef.p/src_unk_02032798.c.o
+	Object main.nef.p/src_comm_cmd.c.o
 	Object main.nef.p/src_communication_information.c.o
 	Object main.nef.p/src_comm_server_client.c.o
 	Object main.nef.p/src_communication_system.c.o
@@ -220,7 +220,7 @@ Static main
 	Object main.nef.p/src_encounter.c.o
 	Object main.nef.p/src_enc_effects.c.o
 	Object main.nef.p/src_field_battle_data_transfer.c.o
-	Object main.nef.p/src_unk_020528D0.c.o
+	Object main.nef.p/src_field_blackout.c.o
 	Object main.nef.p/src_clear_game.c.o
 	Object main.nef.p/src_field_map_change.c.o
 	Object main.nef.p/src_unk_02054884.c.o
@@ -314,7 +314,7 @@ Static main
 	Object main.nef.p/src_number_entry_graphics.c.o
 	Object main.nef.p/src_vs_recorder_ring.c.o
 	Object main.nef.p/src_vs_recorder.c.o
-	Object main.nef.p/src_unk_0208BEBC.c.o
+	Object main.nef.p/src_vs_recorder_app.c.o
 	Object main.nef.p/src_unk_0208C010.c.o
 	Object main.nef.p/src_unk_0208C098.c.o
 	Object main.nef.p/src_applications_pokemon_summary_screen_main.c.o

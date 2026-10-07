@@ -25,7 +25,7 @@
 #include "string_gf.h"
 #include "system.h"
 #include "system_flags.h"
-#include "unk_02030CE8.h"
+#include "email.h"
 #include "comm_server_client.h"
 #include "unk_02038FFC.h"
 #include "number_entry_app.h"
@@ -273,24 +273,24 @@ void ov98_02246EF8(UnkStruct_ov98_02246E88 *param0)
     char *v0 = Heap_Alloc(HEAP_ID_108, sizeof(char) * 100);
 
     ov98_022499C8(param0->unk_114, v0, HEAP_ID_108);
-    sub_02030D38(param0->saveData, v0);
+    Email_SetEmailString(param0->saveData, v0);
     Heap_Free(v0);
 }
 
 void ov98_02246F24(UnkStruct_ov98_02246E88 *param0)
 {
-    sub_02030D5C(param0->saveData, 1, param0->unk_7C);
-    sub_02030D5C(param0->saveData, 2, param0->unk_10C);
+    Email_SetValue(param0->saveData, 1, param0->unk_7C);
+    Email_SetValue(param0->saveData, 2, param0->unk_10C);
 }
 
 void ov98_02246F48(UnkStruct_ov98_02246E88 *param0)
 {
-    sub_02030D5C(param0->saveData, 3, param0->unk_108);
+    Email_SetValue(param0->saveData, 3, param0->unk_108);
 }
 
 void ov98_02246F5C(UnkStruct_ov98_02246E88 *param0)
 {
-    u32 v0 = sub_02030E48(param0->saveData, &param0->unk_9C);
+    u32 v0 = WorldExchange_InitTrainer(param0->saveData, &param0->unk_9C);
     ov98_02246F94(param0, v0);
 }
 
@@ -301,7 +301,7 @@ void ov98_02246F74(UnkStruct_ov98_02246E88 *param0)
 
 void ov98_02246F88(UnkStruct_ov98_02246E88 *param0)
 {
-    param0->unk_9C.unk_5A = param0->unk_10C;
+    param0->unk_9C.registrationCode = param0->unk_10C;
 }
 
 void ov98_02246F94(UnkStruct_ov98_02246E88 *param0, u32 param1)

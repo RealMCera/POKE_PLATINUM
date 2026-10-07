@@ -13,7 +13,7 @@
 #include "pal_pad.h"
 #include "party.h"
 #include "ribbon_save_data.h"
-#include "unk_02032798.h"
+#include "comm_cmd.h"
 
 void TradeRoom_ReceivePalPad(int senderNetId, int unused, void *data, void *fieldSystem);
 void TradeRoom_ReceiveChatotCry(int senderNetId, int unused, void *data, void *fieldSystem);
