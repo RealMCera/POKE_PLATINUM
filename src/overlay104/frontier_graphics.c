@@ -78,8 +78,8 @@ static void G3DPipelineCallback(void);
 static void FreeG3DPipeline(G3DPipelineBuffers *g3dPipeline);
 static void ov104_0223D3B0(FrontierGraphics *param0);
 static void ov104_0223D498(FrontierGraphics *param0);
-static void ov104_0223D570(UnkStruct_ov104_0223C634 *param0, UnkStruct_ov104_0223D570 *param1);
-static void ov104_0223D584(BattleFrontier *param0, int param1, UnkStruct_ov63_0222BEC0 *param2, UnkStruct_ov63_0222CE44 *param3, const UnkStruct_ov104_0223D570 *param4);
+static void ov104_0223D570(FrontierObject *param0, FrontierObjectParams *param1);
+static void ov104_0223D584(BattleFrontier *param0, int param1, UnkStruct_ov63_0222BEC0 *param2, UnkStruct_ov63_0222CE44 *param3, const FrontierObjectParams *param4);
 static void ov104_0223C798(FrontierGraphics *param0);
 static void ov104_0223C7EC(FrontierGraphics *param0);
 
@@ -258,17 +258,17 @@ void ov104_0223C634(FrontierGraphics *param0)
     int v0;
 
     {
-        UnkStruct_ov104_0223C634 *v1;
+        FrontierObject *v1;
 
         for (v0 = 0; v0 < 32; v0++) {
-            v1 = sub_0209B9D4(param0->frontier, v0);
+            v1 = BattleFrontier_GetObject(param0->frontier, v0);
 
-            if (v1->unk_00 != NULL) {
-                v1->unk_08.unk_0A = ov63_0222BF90(v1->unk_00, 6);
-                v1->unk_08.unk_02 = ov63_0222BF90(v1->unk_00, 5);
-                v1->unk_08.unk_06 = ov63_0222BF90(v1->unk_00, 0);
-                v1->unk_08.unk_08 = ov63_0222BF90(v1->unk_00, 1);
-                v1->unk_08.unk_0B = ov63_0222CFFC(v1->sprite);
+            if (v1->object != NULL) {
+                v1->params.unk_0A = ov63_0222BF90(v1->object, 6);
+                v1->params.unk_02 = ov63_0222BF90(v1->object, 5);
+                v1->params.unk_06 = ov63_0222BF90(v1->object, 0);
+                v1->params.unk_08 = ov63_0222BF90(v1->object, 1);
+                v1->params.unk_0B = ov63_0222CFFC(v1->sprite);
             }
         }
     }
@@ -281,25 +281,25 @@ void ov104_0223C688(FrontierGraphics *param0)
     int v0;
 
     {
-        UnkStruct_ov104_0223C688 *v1;
+        FrontierObjectGfx *v1;
 
-        v1 = sub_0209B9CC(param0->frontier);
+        v1 = BattleFrontier_GetObjectGfxList(param0->frontier);
 
         for (v0 = 0; v0 < 24; v0++) {
-            if (v1[v0].unk_00 != 0xffff) {
-                ov63_0222CDE8(param0->unk_20, v1[v0].unk_00, v1[v0].unk_02, HEAP_ID_94);
+            if (v1[v0].gfxID != 0xffff) {
+                ov63_0222CDE8(param0->unk_20, v1[v0].gfxID, v1[v0].unk_02, HEAP_ID_94);
             }
         }
     }
 
     {
-        UnkStruct_ov104_0223C634 *v2;
-        UnkStruct_ov104_0223D570 v3;
+        FrontierObject *v2;
+        FrontierObjectParams v3;
 
         for (v0 = 0; v0 < 32; v0++) {
-            v2 = sub_0209B9D4(param0->frontier, v0);
+            v2 = BattleFrontier_GetObject(param0->frontier, v0);
 
-            if (v2->unk_08.unk_04 != 0xffff) {
+            if (v2->params.unk_04 != 0xffff) {
                 ov104_0223D570(v2, &v3);
                 ov104_0223D180(param0, &v3, v0);
             }
@@ -342,12 +342,12 @@ static void ov104_0223C738(SysTask *param0, void *param1)
     FrontierGraphics *v0 = param1;
 
     {
-        UnkStruct_ov104_0223C634 *v1;
+        FrontierObject *v1;
 
-        v1 = sub_0209B9D4(v0->frontier, 32 - 1);
+        v1 = BattleFrontier_GetObject(v0->frontier, 32 - 1);
 
-        if (v1->unk_00 != NULL) {
-            ov63_0222D160(&v0->unk_1C, v1->unk_00);
+        if (v1->object != NULL) {
+            ov63_0222D160(&v0->unk_1C, v1->object);
         }
 
         ov104_0223C798(v0);
@@ -714,13 +714,13 @@ static void ov104_0223CEEC(FrontierGraphics *param0)
     int v0;
 
     {
-        UnkStruct_ov104_0223C634 *v1;
+        FrontierObject *v1;
 
-        v1 = sub_0209B9D0(param0->frontier);
+        v1 = BattleFrontier_GetObjects(param0->frontier);
 
         for (v0 = 0; v0 < 32; v0++) {
-            if (v1[v0].unk_00 != NULL) {
-                ov63_0222BF08(v1[v0].unk_00);
+            if (v1[v0].object != NULL) {
+                ov63_0222BF08(v1[v0].object);
                 GF_ASSERT(v1[v0].movementTask == NULL);
             }
         }
@@ -811,21 +811,21 @@ static void FreeSpriteSystem(FrontierGraphics *graphics)
     SpriteSystem_Free(graphics->spriteSystem);
 }
 
-void ov104_0223D0EC(FrontierGraphics *param0, const UnkStruct_ov104_0223C688 *param1)
+void ov104_0223D0EC(FrontierGraphics *param0, const FrontierObjectGfx *param1)
 {
-    UnkStruct_ov104_0223C688 *v0;
+    FrontierObjectGfx *v0;
     int v1, v2;
 
-    v0 = sub_0209B9CC(param0->frontier);
+    v0 = BattleFrontier_GetObjectGfxList(param0->frontier);
 
     for (v1 = 0; v1 < 24; v1++) {
-        if (v0[v1].unk_00 == param1->unk_00) {
+        if (v0[v1].gfxID == param1->gfxID) {
             return;
         }
     }
 
     for (v1 = 0; v1 < 24; v1++) {
-        if (v0[v1].unk_00 == 0xffff) {
+        if (v0[v1].gfxID == 0xffff) {
             break;
         }
     }
@@ -835,36 +835,36 @@ void ov104_0223D0EC(FrontierGraphics *param0, const UnkStruct_ov104_0223C688 *pa
     v2 = v1;
     v0[v2] = *param1;
 
-    ov63_0222CDE8(param0->unk_20, param1->unk_00, param1->unk_02, HEAP_ID_94);
+    ov63_0222CDE8(param0->unk_20, param1->gfxID, param1->unk_02, HEAP_ID_94);
 }
 
 void ov104_0223D148(FrontierGraphics *param0, int param1)
 {
     int v0;
-    UnkStruct_ov104_0223C688 *v1 = sub_0209B9CC(param0->frontier);
+    FrontierObjectGfx *v1 = BattleFrontier_GetObjectGfxList(param0->frontier);
 
     for (v0 = 0; v0 < 24; v0++) {
-        if (v1[v0].unk_00 == param1) {
+        if (v1[v0].gfxID == param1) {
             ov63_0222CE0C(param0->unk_20, param1);
-            v1[v0].unk_00 = 0xffff;
+            v1[v0].gfxID = 0xffff;
             return;
         }
     }
 }
 
-UnkStruct_ov63_0222BEC0 *ov104_0223D180(FrontierGraphics *param0, const UnkStruct_ov104_0223D570 *param1, int param2)
+UnkStruct_ov63_0222BEC0 *ov104_0223D180(FrontierGraphics *param0, const FrontierObjectParams *param1, int param2)
 {
-    UnkStruct_ov104_0223C634 *v0;
+    FrontierObject *v0;
     int v1, v2;
     UnkStruct_ov65_022376D0 v3;
     UnkStruct_ov63_0222BEC0 *v4;
     UnkStruct_ov63_0222CE44 *v5;
 
-    v0 = sub_0209B9D0(param0->frontier);
+    v0 = BattleFrontier_GetObjects(param0->frontier);
 
     if (param2 == -1) {
         for (v1 = 0; v1 < 32; v1++) {
-            if (v0[v1].unk_00 == NULL) {
+            if (v0[v1].object == NULL) {
                 break;
             }
         }
@@ -894,17 +894,17 @@ UnkStruct_ov63_0222BEC0 *ov104_0223D180(FrontierGraphics *param0, const UnkStruc
 void ov104_0223D200(FrontierGraphics *param0, UnkStruct_ov63_0222BEC0 *param1)
 {
     int v0;
-    UnkStruct_ov104_0223C634 *v1 = sub_0209B9D0(param0->frontier);
+    FrontierObject *v1 = BattleFrontier_GetObjects(param0->frontier);
 
     for (v0 = 0; v0 < 32; v0++) {
-        if (v1[v0].unk_00 == param1) {
-            ov63_0222BF08(v1[v0].unk_00);
+        if (v1[v0].object == param1) {
+            ov63_0222BF08(v1[v0].object);
             ov63_0222CECC(v1[v0].sprite);
 
             GF_ASSERT(v1[v0].movementTask == NULL);
-            MI_CpuClear8(&v1[v0], sizeof(UnkStruct_ov104_0223C634));
+            MI_CpuClear8(&v1[v0], sizeof(FrontierObject));
 
-            v1[v0].unk_08.unk_04 = 0xffff;
+            v1[v0].params.unk_04 = 0xffff;
             return;
         }
     }
@@ -913,12 +913,12 @@ void ov104_0223D200(FrontierGraphics *param0, UnkStruct_ov63_0222BEC0 *param1)
 void ov104_0223D258(FrontierGraphics *param0, u16 param1, UnkStruct_ov63_0222BEC0 **param2, UnkStruct_ov63_0222CE44 **param3)
 {
     int v0;
-    UnkStruct_ov104_0223C634 *v1 = sub_0209B9D0(param0->frontier);
+    FrontierObject *v1 = BattleFrontier_GetObjects(param0->frontier);
 
     for (v0 = 0; v0 < 32; v0++) {
-        if (v1[v0].unk_08.unk_04 == param1) {
+        if (v1[v0].params.unk_04 == param1) {
             if (param2 != NULL) {
-                *param2 = v1[v0].unk_00;
+                *param2 = v1[v0].object;
             }
 
             if (param3 != NULL) {
@@ -1005,12 +1005,12 @@ u32 ov104_0223D3A4(FrontierGraphics *param0, u16 param1)
 static void ov104_0223D3B0(FrontierGraphics *param0)
 {
     int v0;
-    UnkStruct_ov104_0223D3B0 *v1 = sub_0209B9E0(param0->frontier);
+    FrontierSpriteStateBuffer *v1 = BattleFrontier_GetSpriteStateBuffer(param0->frontier);
     UnkStruct_ov104_0223D3B0_1 *v2 = &param0->unk_3C;
 
     for (v0 = 0; v0 < 8; v0++) {
         if (v2->unk_34[v0] != 0xffff) {
-            v1->unk_00[v0] = v2->unk_34[v0];
+            v1->spriteIDs[v0] = v2->unk_34[v0];
             v0++;
         }
     }
@@ -1019,13 +1019,13 @@ static void ov104_0223D3B0(FrontierGraphics *param0)
 
     for (v0 = 0; v0 < 8; v0++) {
         if (v2->unk_00[v0] != NULL) {
-            v1->unk_10[v0].unk_05 = ManagedSprite_GetActiveAnim(v2->unk_00[v0]);
-            v1->unk_10[v0].unk_06_0 = ManagedSprite_GetAnimationFrame(v2->unk_00[v0]);
-            v1->unk_10[v0].unk_06_13 = ov104_0223D3A4(param0, v0);
-            v1->unk_10[v0].unk_06_14 = ManagedSprite_GetDrawFlag(v2->unk_00[v0]);
-            v1->unk_10[v0].unk_04 = v2->unk_20[v0];
-            ManagedSprite_GetPositionXY(v2->unk_00[v0], &v1->unk_10[v0].unk_00, &v1->unk_10[v0].unk_02);
-            v1->unk_10[v0].unk_06_15 = 1;
+            v1->states[v0].activeAnim = ManagedSprite_GetActiveAnim(v2->unk_00[v0]);
+            v1->states[v0].animationFrame = ManagedSprite_GetAnimationFrame(v2->unk_00[v0]);
+            v1->states[v0].visible = ov104_0223D3A4(param0, v0);
+            v1->states[v0].drawFlag = ManagedSprite_GetDrawFlag(v2->unk_00[v0]);
+            v1->states[v0].resourceID = v2->unk_20[v0];
+            ManagedSprite_GetPositionXY(v2->unk_00[v0], &v1->states[v0].x, &v1->states[v0].y);
+            v1->states[v0].valid = 1;
         }
     }
 }
@@ -1034,34 +1034,34 @@ static void ov104_0223D498(FrontierGraphics *param0)
 {
     int v0;
     NARC *v1;
-    UnkStruct_ov104_0223D3B0 *v2;
+    FrontierSpriteStateBuffer *v2;
     ManagedSprite *v3;
 
-    v2 = sub_0209B9E0(param0->frontier);
+    v2 = BattleFrontier_GetSpriteStateBuffer(param0->frontier);
     v1 = NARC_ctor(NARC_INDEX_RESOURCE__ENG__FRONTIER_GRAPHIC__FRONTIER_OBJ, HEAP_ID_94);
 
     for (v0 = 0; v0 < 8; v0++) {
-        if (v2->unk_00[v0] != 0xffff) {
-            ov104_0223D768(param0->spriteSystem, param0->spriteMan, v1, param0->plttData, v2->unk_00[v0]);
-            ov104_0223D29C(param0, v2->unk_00[v0]);
+        if (v2->spriteIDs[v0] != 0xffff) {
+            ov104_0223D768(param0->spriteSystem, param0->spriteMan, v1, param0->plttData, v2->spriteIDs[v0]);
+            ov104_0223D29C(param0, v2->spriteIDs[v0]);
         }
     }
 
     for (v0 = 0; v0 < 8; v0++) {
-        if (v2->unk_10[v0].unk_06_15 == 1) {
-            v3 = ov104_0223D2FC(param0, v0, v2->unk_10[v0].unk_04);
-            ManagedSprite_SetPositionXY(v3, v2->unk_10[v0].unk_00, v2->unk_10[v0].unk_02);
-            ManagedSprite_SetDrawFlag(v3, v2->unk_10[v0].unk_06_14);
+        if (v2->states[v0].valid == 1) {
+            v3 = ov104_0223D2FC(param0, v0, v2->states[v0].resourceID);
+            ManagedSprite_SetPositionXY(v3, v2->states[v0].x, v2->states[v0].y);
+            ManagedSprite_SetDrawFlag(v3, v2->states[v0].drawFlag);
 
-            ov104_0223D378(param0, v0, v2->unk_10[v0].unk_06_13);
+            ov104_0223D378(param0, v0, v2->states[v0].visible);
 
-            ManagedSprite_SetAnim(v3, v2->unk_10[v0].unk_05);
-            ManagedSprite_SetAnimationFrame(v3, v2->unk_10[v0].unk_06_0);
+            ManagedSprite_SetAnim(v3, v2->states[v0].activeAnim);
+            ManagedSprite_SetAnimationFrame(v3, v2->states[v0].animationFrame);
         }
     }
 
     NARC_dtor(v1);
-    sub_0209B9EC(param0->frontier);
+    BattleFrontier_ClearSpriteStateBuffer(param0->frontier);
 }
 
 void ov104_0223D554(FrontierGraphics *param0, s16 *param1, s16 *param2)
@@ -1070,27 +1070,27 @@ void ov104_0223D554(FrontierGraphics *param0, s16 *param1, s16 *param2)
     *param1 = ov63_0222D1B8(&param0->unk_1C);
 }
 
-static void ov104_0223D570(UnkStruct_ov104_0223C634 *param0, UnkStruct_ov104_0223D570 *param1)
+static void ov104_0223D570(FrontierObject *param0, FrontierObjectParams *param1)
 {
-    *param1 = param0->unk_08;
+    *param1 = param0->params;
 }
 
-static void ov104_0223D584(BattleFrontier *param0, int param1, UnkStruct_ov63_0222BEC0 *param2, UnkStruct_ov63_0222CE44 *param3, const UnkStruct_ov104_0223D570 *param4)
+static void ov104_0223D584(BattleFrontier *param0, int param1, UnkStruct_ov63_0222BEC0 *param2, UnkStruct_ov63_0222CE44 *param3, const FrontierObjectParams *param4)
 {
-    UnkStruct_ov104_0223C634 *v0 = sub_0209B9D4(param0, param1);
+    FrontierObject *v0 = BattleFrontier_GetObject(param0, param1);
 
-    v0->unk_00 = param2;
+    v0->object = param2;
     v0->sprite = param3;
-    v0->unk_08 = *param4;
+    v0->params = *param4;
 }
 
-UnkStruct_ov104_0223C634 *ov104_0223D5A8(BattleFrontier *param0, int param1)
+FrontierObject *ov104_0223D5A8(BattleFrontier *param0, int param1)
 {
     int v0;
-    UnkStruct_ov104_0223C634 *v1 = sub_0209B9D0(param0);
+    FrontierObject *v1 = BattleFrontier_GetObjects(param0);
 
     for (v0 = 0; v0 < 32; v0++) {
-        if ((v1->unk_00 != NULL) && (v1->unk_08.unk_04 == param1)) {
+        if ((v1->object != NULL) && (v1->params.unk_04 == param1)) {
             return v1;
         }
 

@@ -76,7 +76,7 @@ typedef struct FrontierMenuManager {
 struct FrontierScriptManager {
     BattleFrontier *frontier;
     FrontierScriptContext *ctx[8];
-    UnkStruct_ov104_0222E8C8 unk_24;
+    FrontierScriptLocalVars unk_24;
     enum HeapID heapID;
     u8 unk_38;
     MessageLoader *msgLoader;

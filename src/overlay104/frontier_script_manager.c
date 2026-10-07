@@ -168,15 +168,15 @@ void FrontierScriptManager_UpdateMessageLoader(FrontierScriptManager *scriptMan,
     scriptMan->msgLoader = msgLoader;
 }
 
-UnkStruct_ov104_0222E8C8 *ov104_0222E8C8(FrontierScriptManager *param0, enum HeapID heapID)
+FrontierScriptLocalVars *ov104_0222E8C8(FrontierScriptManager *param0, enum HeapID heapID)
 {
-    UnkStruct_ov104_0222E8C8 *v0 = Heap_Alloc(heapID, sizeof(UnkStruct_ov104_0222E8C8));
+    FrontierScriptLocalVars *v0 = Heap_Alloc(heapID, sizeof(FrontierScriptLocalVars));
     *v0 = param0->unk_24;
 
     return v0;
 }
 
-void ov104_0222E8E8(FrontierScriptManager *param0, UnkStruct_ov104_0222E8C8 *param1)
+void ov104_0222E8E8(FrontierScriptManager *param0, FrontierScriptLocalVars *param1)
 {
     param0->unk_24 = *param1;
     Heap_Free(param1);
@@ -190,7 +190,7 @@ static void FrontierScriptContext_JumpToOffsetID(FrontierScriptContext *ctx, int
 
 u16 *ov104_0222E91C(FrontierScriptManager *param0, int param1)
 {
-    return &param0->unk_24.unk_00[param1];
+    return &param0->unk_24.vars[param1];
 }
 
 FrontierGraphics *FrontierScriptManager_GetGraphics(FrontierScriptManager *scriptMan)

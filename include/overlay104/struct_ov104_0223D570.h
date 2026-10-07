@@ -12,7 +12,7 @@ typedef struct {
     u8 unk_0A;
     u8 unk_0B;
     u8 unk_0C;
-    UnkStruct_ov104_0223D8F0 unk_0E;
-} UnkStruct_ov104_0223D570;
+    FrontierObjectMovement unk_0E;
+} FrontierObjectParams;
 
 #endif // POKEPLATINUM_STRUCT_OV104_0223D570_H

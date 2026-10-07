@@ -679,7 +679,7 @@ void FrontierObject_DoAnimation(SysTask *task, void *data)
             break;
         }
     case 1:
-        if (ov63_0222BF90(animData->frontierObj->unk_00, 5) == 0) {
+        if (ov63_0222BF90(animData->frontierObj->object, 5) == 0) {
             if (action >= FRONTIER_MOVEMENT_DELAY_1 && action <= FRONTIER_MOVEMENT_DELAY_32) {
                 animData->delay++;
 
@@ -705,7 +705,7 @@ void FrontierObject_DoAnimation(SysTask *task, void *data)
                 break;
             }
 
-            ov104_02232C80(&v1, animData->frontierObj->unk_00, animData->localID, action);
+            ov104_02232C80(&v1, animData->frontierObj->object, animData->localID, action);
             ov63_0222D7C8(animData->unk_10, &v1);
 
             animData->elapsed++;
@@ -719,7 +719,7 @@ void FrontierObject_DoAnimation(SysTask *task, void *data)
         }
         break;
     case 2:
-        if (ov63_0222BF90(animData->frontierObj->unk_00, 5) == 0) {
+        if (ov63_0222BF90(animData->frontierObj->object, 5) == 0) {
             (*animData->totalMovementCount)--;
             animData->frontierObj->movementTask = NULL;
             Heap_Free(animData);

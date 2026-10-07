@@ -445,7 +445,7 @@ BOOL FrontierScrCmd_CallBattleArcadeFunction(FrontierScriptContext *ctx)
         if (arg1 == 0) {
             PaletteData_Blend(graphics->plttData, PLTTBUF_MAIN_OBJ, 0, 16 * 16, arg1, 0);
         } else {
-            UnkStruct_ov104_0223C634 *v26 = ov104_0223D5A8(ctx->scriptMan->frontier, arg2);
+            FrontierObject *v26 = ov104_0223D5A8(ctx->scriptMan->frontier, arg2);
             u32 v25 = ov63_0222D050(v26->sprite);
 
             PaletteData_Blend(graphics->plttData, PLTTBUF_MAIN_OBJ, v25 * 16, 16, arg1, 0);

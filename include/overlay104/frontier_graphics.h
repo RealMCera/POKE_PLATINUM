@@ -64,9 +64,9 @@ void FrontierGraphics_Free(FrontierGraphics *graphics);
 
 void ov104_0223C634(FrontierGraphics *param0);
 void ov104_0223C688(FrontierGraphics *param0);
-void ov104_0223D0EC(FrontierGraphics *param0, const UnkStruct_ov104_0223C688 *param1);
+void ov104_0223D0EC(FrontierGraphics *param0, const FrontierObjectGfx *param1);
 void ov104_0223D148(FrontierGraphics *param0, int param1);
-UnkStruct_ov63_0222BEC0 *ov104_0223D180(FrontierGraphics *param0, const UnkStruct_ov104_0223D570 *param1, int param2);
+UnkStruct_ov63_0222BEC0 *ov104_0223D180(FrontierGraphics *param0, const FrontierObjectParams *param1, int param2);
 void ov104_0223D200(FrontierGraphics *param0, UnkStruct_ov63_0222BEC0 *param1);
 void ov104_0223D258(FrontierGraphics *param0, u16 param1, UnkStruct_ov63_0222BEC0 **param2, UnkStruct_ov63_0222CE44 **param3);
 void ov104_0223D29C(FrontierGraphics *param0, u16 param1);
@@ -77,6 +77,6 @@ ManagedSprite *ov104_0223D370(FrontierGraphics *param0, u16 param1);
 void ov104_0223D378(FrontierGraphics *param0, u16 param1, int param2);
 u32 ov104_0223D3A4(FrontierGraphics *param0, u16 param1);
 void ov104_0223D554(FrontierGraphics *param0, s16 *param1, s16 *param2);
-UnkStruct_ov104_0223C634 *ov104_0223D5A8(BattleFrontier *param0, int param1);
+FrontierObject *ov104_0223D5A8(BattleFrontier *param0, int param1);
 
 #endif // POKEPLATINUM_FRONTIER_GRAPHICS_H
