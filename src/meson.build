@@ -144,7 +144,7 @@ pokeplatinum_c = files(
     'wireless_manager.c',
     'comm_ring.c',
     'comm_queue.c',
-    'unk_0203266C.c',
+    'comm_local.c',
     'comm_cmd.c',
     'communication_information.c',
     'comm_server_client.c',

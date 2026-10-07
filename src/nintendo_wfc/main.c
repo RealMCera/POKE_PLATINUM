@@ -19,7 +19,7 @@
 #include "dwc_error.h"
 #include "heap.h"
 #include "savedata.h"
-#include "unk_0203266C.h"
+#include "comm_local.h"
 #include "wifi_list.h"
 
 #define RECEIVE_BUFFER_SIZE 4096
@@ -386,7 +386,7 @@ int NintendoWFC_Process(BOOL cancelConnection)
         }
         break;
     case WFC_STATE_MATCHMAKING_SUCCESS:
-        if (!sub_0203272C(CommManager_GetCommType())) {
+        if (!CommLocal_IsWifiConferenceGroup(CommManager_GetCommType())) {
             NintendoWFC_StartVoiceChat(sNintendoWFCManager->primaryHeapID);
         }
 
@@ -644,7 +644,7 @@ static void SendCallback(int unused, u8 id)
 
 static void SetOtherPlayersEnabledVC(u32 header)
 {
-    if (!sub_0203272C(CommManager_GetCommType())) {
+    if (!CommLocal_IsWifiConferenceGroup(CommManager_GetCommType())) {
         if (header & 0x100) {
             sNintendoWFCManager->otherPlayersEnabledVoiceChat = TRUE;
         } else {
@@ -951,7 +951,7 @@ static void DisableVoiceChat(void)
 void NintendoWFC_StartVoiceChat(enum HeapID heapID)
 {
     int otherPlayersCount = 1;
-    BOOL v2 = sub_0203272C(CommManager_GetCommType());
+    BOOL v2 = CommLocal_IsWifiConferenceGroup(CommManager_GetCommType());
 
     if (v2) {
         otherPlayersCount = CommSys_ConnectedCount() - 1;
@@ -1303,7 +1303,7 @@ static void MatchmakingHostMatchedCallback(DWCError error, BOOL cancelled, BOOL 
 
     if (error == DWC_ERROR_NONE) {
         if (!cancelled) {
-            if (sub_02032740(CommManager_GetCommType()) && (hostFriendIdx == WFC_NOT_A_FRIEND)) {
+            if (CommLocal_IsFriendOnlyWifiGroup(CommManager_GetCommType()) && (hostFriendIdx == WFC_NOT_A_FRIEND)) {
                 refuseNewConnections = TRUE;
             }
 

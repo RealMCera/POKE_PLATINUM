@@ -24,7 +24,7 @@
 #include "sound_playback.h"
 #include "system.h"
 #include "trainer_info.h"
-#include "unk_0203266C.h"
+#include "comm_local.h"
 #include "comm_cmd.h"
 #include "comm_server_client.h"
 #include "unk_02039814.h"
