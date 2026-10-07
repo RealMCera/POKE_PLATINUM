@@ -340,7 +340,7 @@ pokeplatinum_c = files(
     'shop_misc.c',
     'pokedex_memory.c',
     'frontier_easy_chat.c',
-    'unk_0209B344.c',
+    'easy_chat_task.c',
     'battle_frontier.c',
     'frontier_comm_cmd.c',
     'union_room_comm.c',

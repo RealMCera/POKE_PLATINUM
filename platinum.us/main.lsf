@@ -358,7 +358,7 @@ Static main
 	Object main.nef.p/src_shop_misc.c.o
 	Object main.nef.p/src_pokedex_memory.c.o
 	Object main.nef.p/src_frontier_easy_chat.c.o
-	Object main.nef.p/src_unk_0209B344.c.o
+	Object main.nef.p/src_easy_chat_task.c.o
 	Object main.nef.p/src_error_message_reset.c.o
 	Object main.nef.p/src_battle_frontier.c.o
 	Object main.nef.p/src_frontier_comm_cmd.c.o
