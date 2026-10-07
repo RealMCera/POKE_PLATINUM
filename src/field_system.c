@@ -37,7 +37,7 @@
 #include "pokeradar.h"
 #include "savedata.h"
 #include "system.h"
-#include "unk_0209C370.h"
+#include "battle_subscreen_cursor.h"
 
 FS_EXTERN_OVERLAY(overlay5);
 FS_EXTERN_OVERLAY(game_opening);
@@ -171,7 +171,7 @@ static FieldSystem *InitFieldSystem(ApplicationManager *appMan)
     RadarChain_Clear(fieldSystem->chain);
 
     fieldSystem->pokedexMemory = PokedexMemory_New(HEAP_ID_FIELD2);
-    fieldSystem->battleSubscreenCursorOn = sub_0209C370(HEAP_ID_FIELD2);
+    fieldSystem->battleSubscreenCursorOn = BattleSubscreenCursor_New(HEAP_ID_FIELD2);
 
     return fieldSystem;
 }
@@ -185,7 +185,7 @@ static void TeardownFieldSystem(ApplicationManager *appMan)
     Heap_Free(fieldSystem->bagCursor);
     RadarChain_Free(fieldSystem->chain);
     PokedexMemory_Free(fieldSystem->pokedexMemory);
-    sub_0209C388(fieldSystem->battleSubscreenCursorOn);
+    BattleSubscreenCursor_Free(fieldSystem->battleSubscreenCursorOn);
 
     Heap_Free(fieldSystem->processManager);
     ApplicationManager_FreeData(appMan);
