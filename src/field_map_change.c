@@ -67,7 +67,7 @@
 #include "underground.h"
 #include "underground_map_transition.h"
 #include "field_system_apps.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "union_room.h"
 #include "union_room_trainers.h"
 #include "vars_flags.h"
@@ -290,7 +290,7 @@ void FieldMapChange_UpdateGameData(FieldSystem *fieldSystem, BOOL noWarp)
     SystemVars_ResetVsSeeker(SaveData_GetVarsFlags(fieldSystem->saveData));
 
     if (!noWarp) {
-        sub_020559DC(fieldSystem);
+        FieldSystem_UpdateGameTime(fieldSystem);
     }
 
     if (!noWarp) {
@@ -348,7 +348,7 @@ void FieldMapChange_UpdateGameDataDistortionWorld(FieldSystem *fieldSystem, BOOL
     SystemVars_ResetVsSeeker(SaveData_GetVarsFlags(fieldSystem->saveData));
 
     if (!noWarp) {
-        sub_020559DC(fieldSystem);
+        FieldSystem_UpdateGameTime(fieldSystem);
     }
 
     if (!noWarp) {
@@ -557,7 +557,7 @@ static BOOL FieldTask_LoadSavedGameMap(FieldTask *task)
         } else {
             FieldMapChange_SetNewLocation(fieldSystem, NULL);
             FieldMapChange_InitTerrainCollisionManager(fieldSystem);
-            sub_020559DC(fieldSystem);
+            FieldSystem_UpdateGameTime(fieldSystem);
             FieldMapChange_LoadObjects(fieldSystem);
         }
 

@@ -25,7 +25,7 @@
 #include "trainer_info.h"
 #include "underground.h"
 #include "field_system_apps.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "union_room.h"
 #include "vars_flags.h"
 

@@ -53,7 +53,7 @@
 #include "trainer_data.h"
 #include "trainer_info.h"
 #include "unk_02054884.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "vars_flags.h"
 
 typedef struct RadarEncounterData {

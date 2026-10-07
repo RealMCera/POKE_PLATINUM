@@ -216,7 +216,7 @@ pokeplatinum_c = files(
     'field_bgm.c',
     'overworld_map_history.c',
     'field_transition.c',
-    'unk_020559DC.c',
+    'field_system_time.c',
     'berry_patch_manager.c',
     'catching_show.c',
     'poketch.c',

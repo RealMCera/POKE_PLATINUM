@@ -204,7 +204,7 @@
 #include "scrcmd_battle_tower.h"
 #include "battle_tower_partner.h"
 #include "field_blackout.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "unk_0205749C.h"
 #include "union_room.h"
 #include "union_room_trainers.h"

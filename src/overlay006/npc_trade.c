@@ -18,7 +18,7 @@
 #include "save_player.h"
 #include "string_gf.h"
 #include "trainer_info.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "unk_02092494.h"
 
 static inline String *NPCTrade_GetOTName(enum HeapID heapID, u32 npcTradeID);

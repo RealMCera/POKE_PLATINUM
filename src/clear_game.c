@@ -43,7 +43,7 @@
 #include "trainer_info.h"
 #include "field_system_apps.h"
 #include "unk_02054884.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "vars_flags.h"
 
 #include "res/text/bank/common_strings.h"

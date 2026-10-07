@@ -229,7 +229,7 @@ Static main
 	Object main.nef.p/src_field_bgm.c.o
 	Object main.nef.p/src_overworld_map_history.c.o
 	Object main.nef.p/src_field_transition.c.o
-	Object main.nef.p/src_unk_020559DC.c.o
+	Object main.nef.p/src_field_system_time.c.o
 	Object main.nef.p/src_berry_patch_manager.c.o
 	Object main.nef.p/src_catching_show.c.o
 	Object main.nef.p/src_poketch.c.o

@@ -11,7 +11,7 @@
 #include "map_header.h"
 #include "rtc.h"
 #include "system_data.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 
 // clang-format off
 static const u8 sYearlyWeather[DAY_OF_YEAR_COUNT][OVERWORLD_WEATHER_YEARLY_COUNT] = {

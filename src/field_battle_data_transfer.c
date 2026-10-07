@@ -53,7 +53,7 @@
 #include "trainer_info.h"
 #include "tv_segment.h"
 #include "unk_0203266C.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "vars_flags.h"
 
 #include "res/text/bank/location_names.h"

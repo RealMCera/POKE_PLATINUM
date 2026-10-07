@@ -120,7 +120,7 @@
 #include "wifi_lobby.h"
 #include "image_clips.h"
 #include "unk_02038FFC.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "union_room.h"
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"

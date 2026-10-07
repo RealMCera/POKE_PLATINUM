@@ -1,4 +1,4 @@
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -27,28 +27,36 @@
 #include "vars_flags.h"
 #include "wifi_history_save_data.h"
 
-static void FieldSystem_HandleDailyEvents(FieldSystem *fieldSystem, s32 param1);
-static void sub_02055B64(FieldSystem *fieldSystem, s32 param1, const RTCTime *param2);
-static void sub_02055A14(FieldSystem *fieldSystem, GameTime *param1, const RTCDate *param2);
-static void inline_020559DC(FieldSystem *fieldSystem, GameTime *param1, const RTCDate *param2, const RTCTime *param3);
+static void FieldSystem_HandleDailyEvents(FieldSystem *fieldSystem, s32 daysPassed);
+static void FieldSystem_HandleElapsedTimeEvents(FieldSystem *fieldSystem, s32 minutesElapsed, const RTCTime *rtcTime);
+static void FieldSystem_HandleDayChange(FieldSystem *fieldSystem, GameTime *gameTime, const RTCDate *currentDate);
+static void FieldSystem_ProcessElapsedTime(FieldSystem *fieldSystem, GameTime *gameTime, const RTCDate *currentDate, const RTCTime *currentTime);
 
-void sub_020559DC(FieldSystem *fieldSystem)
+// Called when the player enters the overworld (e.g. after a map warp). Reads the
+// RTC and advances the saved GameTime, firing any daily or elapsed-time events
+// that happened while the game was not running.
+void FieldSystem_UpdateGameTime(FieldSystem *fieldSystem)
 {
-    RTCDate v0;
-    RTCTime v1;
-    GameTime *v2 = SaveData_GetGameTime(fieldSystem->saveData);
+    RTCDate currentDate;
+    RTCTime currentTime;
+    GameTime *gameTime = SaveData_GetGameTime(fieldSystem->saveData);
 
-    if (v2->canary == FALSE) {
+    // The canary is only set once GameTime_Clear has initialised the save's clock.
+    if (gameTime->canary == FALSE) {
         return;
     }
 
-    GetCurrentDateTime(&v0, &v1);
-    sub_02055A14(fieldSystem, v2, &v0);
+    GetCurrentDateTime(&currentDate, &currentTime);
+    FieldSystem_HandleDayChange(fieldSystem, gameTime, &currentDate);
 
-    inline_020559DC(fieldSystem, v2, &v0, &v1);
+    FieldSystem_ProcessElapsedTime(fieldSystem, gameTime, &currentDate, &currentTime);
 }
 
-static void sub_02055A14(FieldSystem *fieldSystem, GameTime *gameTime, const RTCDate *currentDate)
+// Compares the RTC's day counter against the day stored in the save. If the RTC
+// has moved backwards (e.g. its battery was removed), the stored day is simply
+// resynced. If it has moved forwards, the daily events for each elapsed day are
+// processed.
+static void FieldSystem_HandleDayChange(FieldSystem *fieldSystem, GameTime *gameTime, const RTCDate *currentDate)
 {
     s32 currentDay = RTC_ConvertDateToDay(currentDate);
 
@@ -60,30 +68,35 @@ static void sub_02055A14(FieldSystem *fieldSystem, GameTime *gameTime, const RTC
     }
 }
 
-static void inline_020559DC(FieldSystem *fieldSystem, GameTime *param1, const RTCDate *param2, const RTCTime *param3)
+// Computes how many whole minutes have elapsed between the timestamp stored in
+// the save and the current RTC time. If the RTC is behind the save (clock rolled
+// back), the stored timestamp is just resynced. Otherwise the playthrough
+// penalty is decremented and the elapsed-time events are run before resyncing.
+static void FieldSystem_ProcessElapsedTime(FieldSystem *fieldSystem, GameTime *gameTime, const RTCDate *currentDate, const RTCTime *currentTime)
 {
-    s64 v0, v1;
-    s32 v2;
+    s64 currentTimestamp, storedTimestamp;
+    s32 minutesElapsed;
 
-    v0 = RTC_ConvertDateTimeToSecond(param2, param3);
-    v1 = RTC_ConvertDateTimeToSecond(&param1->date, &param1->time);
+    currentTimestamp = RTC_ConvertDateTimeToSecond(currentDate, currentTime);
+    storedTimestamp = RTC_ConvertDateTimeToSecond(&gameTime->date, &gameTime->time);
 
-    if (v0 < v1) {
-        param1->date = *param2;
-        param1->time = *param3;
+    if (currentTimestamp < storedTimestamp) {
+        gameTime->date = *currentDate;
+        gameTime->time = *currentTime;
     } else {
-        v2 = (v0 - v1) / 60;
+        minutesElapsed = (currentTimestamp - storedTimestamp) / 60;
 
-        if (v2 > 0) {
-            GameTime_DecrementPenalty(param1, v2);
-            sub_02055B64(fieldSystem, v2, param3);
+        if (minutesElapsed > 0) {
+            GameTime_DecrementPenalty(gameTime, minutesElapsed);
+            FieldSystem_HandleElapsedTimeEvents(fieldSystem, minutesElapsed, currentTime);
 
-            param1->date = *param2;
-            param1->time = *param3;
+            gameTime->date = *currentDate;
+            gameTime->time = *currentTime;
         }
     }
 }
 
+// Runs the once-per-day events for each day that passed while the game was off.
 static void FieldSystem_HandleDailyEvents(FieldSystem *fieldSystem, s32 daysPassed)
 {
     Underground_HandleDailyEvents(FieldSystem_GetSaveData(fieldSystem), daysPassed);
@@ -114,17 +127,19 @@ static void FieldSystem_HandleDailyEvents(FieldSystem *fieldSystem, s32 daysPass
     TVSegment_ResetDailyRecords(fieldSystem->saveData);
 }
 
-static void sub_02055B64(FieldSystem *fieldSystem, s32 param1, const RTCTime *rtcTime)
+// Runs the events that advance with real time: berry patches, honey trees, the
+// Underground gift penalty, TV broadcast time slots and Shaymin's form.
+static void FieldSystem_HandleElapsedTimeEvents(FieldSystem *fieldSystem, s32 minutesElapsed, const RTCTime *rtcTime)
 {
-    BerryPatches_ElapseTime(fieldSystem, param1);
-    SpecialEncounter_DecrementHoneyTreeTimers(fieldSystem->saveData, param1);
-    Underground_ProgressGiftPenalty(fieldSystem->saveData, param1, FieldSystem_HasPenalty(fieldSystem));
+    BerryPatches_ElapseTime(fieldSystem, minutesElapsed);
+    SpecialEncounter_DecrementHoneyTreeTimers(fieldSystem->saveData, minutesElapsed);
+    Underground_ProgressGiftPenalty(fieldSystem->saveData, minutesElapsed, FieldSystem_HasPenalty(fieldSystem));
 
     TVBroadcast *broadcast = SaveData_GetTVBroadcast(fieldSystem->saveData);
-    TVBroadcast_UpdateProgramTimeSlot(broadcast, param1, rtcTime->minute);
+    TVBroadcast_UpdateProgramTimeSlot(broadcast, minutesElapsed, rtcTime->minute);
 
     Party *party = SaveData_GetParty(fieldSystem->saveData);
-    Party_SetShayminForm(party, param1, rtcTime);
+    Party_SetShayminForm(party, minutesElapsed, rtcTime);
 }
 
 enum TimeOfDay FieldSystem_GetTimeOfDay(const FieldSystem *fieldSystem)

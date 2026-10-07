@@ -80,7 +80,7 @@
 #include "trainer_info.h"
 #include "comm_server_client.h"
 #include "field_system_apps.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "union_room.h"
 #include "union_room_trainers.h"
 #include "battle_salon.h"

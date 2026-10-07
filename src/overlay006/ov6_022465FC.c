@@ -15,7 +15,7 @@
 #include "rtc.h"
 #include "tv_segment.h"
 #include "tv_broadcast.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 
 #include "res/text/bank/tv_programs.h"
 

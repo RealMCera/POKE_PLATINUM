@@ -77,7 +77,7 @@
 #include "script_manager.h"
 #include "system.h"
 #include "unk_0202419C.h"
-#include "unk_020559DC.h"
+#include "field_system_time.h"
 #include "vram_transfer.h"
 
 #define FIELD_MAP_INIT_STATE_RESET         0
@@ -471,7 +471,7 @@ void FieldMap_ChangeZoneDistortionWorld(FieldSystem *fieldSystem, enum MapHeader
 static void ov5_021D134C(FieldSystem *fieldSystem, u8 param1)
 {
     if (FieldSystem_IsRunningTask(fieldSystem) == 0) {
-        sub_020559DC(fieldSystem);
+        FieldSystem_UpdateGameTime(fieldSystem);
     }
 
     AreaLightManager_UpdateActiveTemplate(fieldSystem->areaLightMan);
