@@ -5,7 +5,7 @@
 
 // Compact trainer profile exchanged with friends over Nintendo WFC. It is
 // registered as the player's own status data via NintendoWFC_SetStatusData and
-// received for each friend into the matching slot of UnkStruct_0207DFAC. The
+// received for each friend into the matching slot of WFCStatusBuffer. The
 // layout is fixed by the wire format, so fields must not be reordered.
 typedef struct WFCTrainerInfo {
     // Species and held item of each party slot, used to preview the friend's
@@ -19,7 +19,7 @@ typedef struct WFCTrainerInfo {
     // Whether the player has obtained the National Pokédex.
     u8 isNationalDexObtained;
     // Communication app state, shared so that both sides can tell whether they
-    // are running a compatible activity (see ov65_0222DD20 and unk_0207DFAC.c).
+    // are running a compatible activity (see ov65_0222DD20 and wfc_host_match.c).
     u8 commState;
     u8 unk_1C;
     // Trainer appearance and gender, used to draw the friend's sprite.

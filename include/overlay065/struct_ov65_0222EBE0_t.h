@@ -26,7 +26,7 @@
 
 struct UnkStruct_ov65_0222EBE0_t {
     WiFiList *unk_00;
-    UnkStruct_0207DFAC *unk_04;
+    WFCStatusBuffer *unk_04;
     int unk_08;
     u8 unk_0C[32];
     u8 unk_2C[32];

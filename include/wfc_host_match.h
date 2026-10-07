@@ -1,0 +1,6 @@
+#ifndef POKEPLATINUM_WFC_HOST_MATCH_H
+#define POKEPLATINUM_WFC_HOST_MATCH_H
+
+BOOL WFCHostMatch_IsCompatible(int hostFriendIdx);
+
+#endif // POKEPLATINUM_WFC_HOST_MATCH_H
