@@ -64,7 +64,7 @@ struct MixRecordsComm {
     u8 unk_3B8[8][2]; // Unused.
     TrainerInfo *trainerInfo[5][2]; // Per-player trainer info (current/previous).
     int spriteStates[5]; // Per-player sprite transition state.
-    int syncSaveState; // Save-sync state machine (see sub_02038EDC).
+    int syncSaveState; // Save-sync state machine (see CommSyncSave_Update).
     u16 paletteCycleAngle; // Angle used to pulse the record-icon palette.
     u16 *paletteBuffer; // Palette buffer for the trainer sprites.
     u8 unk_410; // Unused.

@@ -151,7 +151,7 @@ pokeplatinum_c = files(
     'communication_system.c',
     'comm_tool.c',
     'comm_manager.c',
-    'unk_02038ED4.c',
+    'comm_sync_save.c',
     'unk_02038F8C.c',
     'wifi_list_util.c',
     'wifi_friend_registration.c',

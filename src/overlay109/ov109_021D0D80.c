@@ -51,7 +51,7 @@
 #include "trainer_info.h"
 #include "unk_0202419C.h"
 #include "comm_tool.h"
-#include "unk_02038ED4.h"
+#include "comm_sync_save.h"
 #include "pokemon_info_display.h"
 #include "union_room_comm.h"
 #include "vram_transfer.h"
@@ -1351,7 +1351,7 @@ static int ov109_021D1A6C(UnkStruct_ov109_021D0F70 *param0)
 {
     if (CommTiming_IsSyncState(202)) {
         ov109_021D3B70(param0, param0->unk_28->unk_0C);
-        sub_02038ED4(&param0->unk_04);
+        CommSyncSave_Reset(&param0->unk_04);
         param0->unk_DC8 = Window_AddWaitDial(&param0->unk_C9C.unk_0C[0], 1 + 9);
         param0->unk_00 = 45;
     }
@@ -1361,7 +1361,7 @@ static int ov109_021D1A6C(UnkStruct_ov109_021D0F70 *param0)
 
 static int ov109_021D1AA8(UnkStruct_ov109_021D0F70 *param0)
 {
-    int v0 = sub_02038EDC(
+    int v0 = CommSyncSave_Update(
         param0->unk_CC->context.saveData, 2, &param0->unk_04);
 
     if (v0) {

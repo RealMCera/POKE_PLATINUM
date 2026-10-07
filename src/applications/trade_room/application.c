@@ -72,7 +72,7 @@
 #include "touch_screen.h"
 #include "trainer_info.h"
 #include "comm_tool.h"
-#include "unk_02038ED4.h"
+#include "comm_sync_save.h"
 #include "unk_02038F8C.h"
 #include "wifi_friend_registration.h"
 #include "pokemon_info_display.h"
@@ -656,11 +656,11 @@ static int TradeRoom_ConnectAndSyncParties(TradeRoom *tradeRoom)
         }
         break;
     case TRADE_CONNECT_INIT_SYNC_SAVE:
-        sub_02038ED4(&tradeRoom->syncSaveState);
+        CommSyncSave_Reset(&tradeRoom->syncSaveState);
         tradeRoom->connectStep++;
         break;
     case TRADE_CONNECT_SYNC_SAVE:
-        if (sub_02038EDC(tradeRoom->saveData, 2, &tradeRoom->syncSaveState)) {
+        if (CommSyncSave_Update(tradeRoom->saveData, 2, &tradeRoom->syncSaveState)) {
             tradeRoom->connectStep++;
         }
         break;

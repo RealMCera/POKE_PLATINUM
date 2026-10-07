@@ -51,7 +51,7 @@
 #include "text.h"
 #include "trainer_info.h"
 #include "comm_tool.h"
-#include "unk_02038ED4.h"
+#include "comm_sync_save.h"
 #include "union_room.h"
 #include "union_room_trainers.h"
 #include "mix_records_comm.h"
@@ -1041,7 +1041,7 @@ static int ov59_021D1DC8(MixRecordsComm *param0, int param1)
 
     JournalEntry_SaveData(param0->appArgs->journalEntry, journalEntryOnlineEvent, JOURNAL_ONLINE_EVENT);
     GameRecords_IncrementTrainerScore(param0->appArgs->records, TRAINER_SCORE_EVENT_UNK_20);
-    sub_02038ED4(&param0->syncSaveState);
+    CommSyncSave_Reset(&param0->syncSaveState);
 
     param0->state = 28;
     return param1;
@@ -1053,7 +1053,7 @@ static int ov59_021D1E0C(MixRecordsComm *param0, int param1)
         (void)0;
     }
 
-    if (sub_02038EDC(param0->appArgs->saveData, 2, &param0->syncSaveState)) {
+    if (CommSyncSave_Update(param0->appArgs->saveData, 2, &param0->syncSaveState)) {
         Sound_StopEffect(1624, 8);
         ov59_021D2628(param0, 13, 0);
         ov59_021D19B0(param0, 29);

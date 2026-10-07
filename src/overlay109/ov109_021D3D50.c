@@ -52,7 +52,7 @@
 #include "text.h"
 #include "trainer_info.h"
 #include "comm_tool.h"
-#include "unk_02038ED4.h"
+#include "comm_sync_save.h"
 #include "union_room.h"
 #include "union_room_comm.h"
 #include "vram_transfer.h"
@@ -1049,7 +1049,7 @@ static int ov109_021D4CC8(UnkStruct_ov109_021D5140 *param0, int param1)
     journalEntryOnlineEvent = JournalEntry_CreateEventMisc(95, ONLINE_EVENT_SPIN_TRADE);
     JournalEntry_SaveData(param0->unk_0C->context.journalEntry, journalEntryOnlineEvent, JOURNAL_ONLINE_EVENT);
     GameRecords_IncrementTrainerScore(param0->unk_0C->context.records, TRAINER_SCORE_EVENT_UNK_20);
-    sub_02038ED4(&param0->unk_414);
+    CommSyncSave_Reset(&param0->unk_414);
     param0->unk_3B8 = 28;
 
     return param1;
@@ -1061,7 +1061,7 @@ static int ov109_021D4D20(UnkStruct_ov109_021D5140 *param0, int param1)
         (void)0;
     }
 
-    if (sub_02038EDC(param0->unk_0C->context.saveData, 2, &param0->unk_414)) {
+    if (CommSyncSave_Update(param0->unk_0C->context.saveData, 2, &param0->unk_414)) {
         Sound_StopEffect(1624, 8);
         ov109_021D55A8(param0, 13, 0);
         ov109_021D48EC(param0, 29);
