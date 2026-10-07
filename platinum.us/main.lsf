@@ -353,7 +353,7 @@ Static main
 	Object main.nef.p/src_poketch_memory.c.o
 	Object main.nef.p/src_clear_save_data.c.o
 	Object main.nef.p/src_save_corrupted.c.o
-	Object main.nef.p/src_unk_0209A74C.c.o
+	Object main.nef.p/src_fatal_error_screen.c.o
 	Object main.nef.p/src_unk_0209AA74.c.o
 	Object main.nef.p/src_shop_misc.c.o
 	Object main.nef.p/src_pokedex_memory.c.o

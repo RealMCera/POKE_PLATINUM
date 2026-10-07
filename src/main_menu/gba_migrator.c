@@ -56,7 +56,7 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "trainer_info.h"
-#include "unk_0209A74C.h"
+#include "fatal_error_screen.h"
 #include "vram_transfer.h"
 #include "yes_no_touch_menu.h"
 
@@ -1860,7 +1860,7 @@ static int GBAMigrator_Main(ApplicationManager *appMan, int *state)
             SaveData_SaveStateCancel(migrator->saveData);
         }
 
-        sub_0209A8E0(HEAP_ID_MIGRATE_FROM_GBA);
+        FatalErrorScreen_ShowGbaPakError(HEAP_ID_MIGRATE_FROM_GBA);
     }
 
     migrator->unk_0C++;

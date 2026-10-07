@@ -335,7 +335,7 @@ pokeplatinum_c = files(
     'poketch_memory.c',
     'clear_save_data.c',
     'save_corrupted.c',
-    'unk_0209A74C.c',
+    'fatal_error_screen.c',
     'unk_0209AA74.c',
     'shop_misc.c',
     'pokedex_memory.c',
