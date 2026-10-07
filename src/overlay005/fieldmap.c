@@ -423,7 +423,7 @@ static BOOL FieldMap_ChangeZone(FieldSystem *fieldSystem)
 
     RadarChain_Clear(fieldSystem->chain);
     FieldBGM_TryFadeOut(fieldSystem, FieldBGM_GetEffective(fieldSystem, fieldSystem->location->mapHeaderID), 1);
-    sub_0203A418(fieldSystem);
+    MapHeaderData_AddMapObjects(fieldSystem);
 
     if (fieldSystem->unk_04->unk_0C != NULL) {
         ov5_021D5F7C(
@@ -461,7 +461,7 @@ void FieldMap_ChangeZoneDistortionWorld(FieldSystem *fieldSystem, enum MapHeader
     MapObjectMan_UpdateObjectsForMapChange(fieldSystem->mapObjMan, oldMapHeaderID, mapHeaderID, objEventCount, objEventList);
 
     FieldBGM_TryFadeOut(fieldSystem, FieldBGM_GetEffective(fieldSystem, fieldSystem->location->mapHeaderID), 1);
-    sub_0203A418(fieldSystem);
+    MapHeaderData_AddMapObjects(fieldSystem);
 
     if (fieldSystem->unk_04->unk_0C != NULL) {
         ov5_021D5F7C(fieldSystem->unk_04->unk_0C, FieldOverworldState_GetWeather(fieldState));
