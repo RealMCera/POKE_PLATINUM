@@ -49,7 +49,7 @@ void EasyChatTask_Start(FieldTask *task, u16 *result)
 
     EasyChatSentence_InitWithType(&state->sentence, EASY_CHAT_SENTENCE_TYPE_UNION_ROOM);
     MiscSaveBlock_IntroMsg(state->miscSaveBlock, &state->sentence);
-    sub_02097520(state->easyChatArgs);
+    EasyChatArgs_SetForceConfirm(state->easyChatArgs);
 
     state->state = 0;
     FieldTask_InitCall(task, EasyChatTask_Update, state);

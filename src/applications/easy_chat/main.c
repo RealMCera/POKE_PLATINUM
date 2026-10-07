@@ -1042,7 +1042,7 @@ static void ov20_021D1C90(EasyChatApp *easyChatApp, int *param1)
 {
     switch (*param1) {
     case 0:
-        if (ov20_021D1E70(easyChatApp) || sub_02097568(easyChatApp->args)) {
+        if (ov20_021D1E70(easyChatApp) || EasyChatArgs_ForceConfirm(easyChatApp->args)) {
             if (EasyChat_IsEntryComplete(easyChatApp)) {
                 ov20_021D1ED4(&easyChatApp->unk_66, 1, 0);
                 ov20_021D21A0(easyChatApp->unk_14, EASY_CHAT_SYSTASK_18);

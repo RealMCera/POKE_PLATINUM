@@ -14,6 +14,11 @@
 #include "system_flags.h"
 #include "vars_flags.h"
 
+// Allocates and initializes the arguments for an Easy Chat session. `type`
+// selects the kind of content being edited (one word, two words, or a
+// sentence); `instructionBankEntry` is the message bank entry for the
+// instruction displayed at the top of the application. The remaining fields are
+// populated from `saveData`.
 EasyChatArgs *EasyChatArgs_New(u32 type, u32 instructionBankEntry, SaveData *saveData, enum HeapID heapID)
 {
     EasyChatArgs *args = Heap_Alloc(heapID, sizeof(EasyChatArgs));
@@ -23,7 +28,7 @@ EasyChatArgs *EasyChatArgs_New(u32 type, u32 instructionBankEntry, SaveData *sav
     args->pokedex = SaveData_GetPokedex(saveData);
     args->unlockedWords = SaveData_GetUnlockedEasyChatWords(saveData);
     args->isGameCompleted = SystemFlag_CheckGameCompleted(SaveData_GetVarsFlags(saveData));
-    args->unk_05 = FALSE;
+    args->forceConfirm = FALSE;
     args->isUnmodified = TRUE;
     args->wasUpdated = FALSE;
     args->frame = Options_Frame(SaveData_GetOptions(saveData));
@@ -60,15 +65,18 @@ void EasyChatArgs_SetSentence(EasyChatArgs *args, const EasyChatSentence *senten
     args->sentence = *sentence;
 }
 
+// Marks the content as untouched, clearing any previously recorded update.
 void EasyChatArgs_FlagAsUnmodified(EasyChatArgs *args)
 {
     args->isUnmodified = TRUE;
     args->wasUpdated = FALSE;
 }
 
-void sub_02097520(EasyChatArgs *args)
+// Requests that the application always show the confirmation prompt when the
+// player tries to leave, even if the content was not changed.
+void EasyChatArgs_SetForceConfirm(EasyChatArgs *args)
 {
-    args->unk_05 = TRUE;
+    args->forceConfirm = TRUE;
 }
 
 BOOL EasyChatArgs_IsUnmodified(const EasyChatArgs *args)
@@ -127,11 +135,15 @@ BOOL EasyChatArgs_IsGameCompleted(const EasyChatArgs *args)
     return args->isGameCompleted;
 }
 
-BOOL sub_02097568(const EasyChatArgs *args)
+// Returns whether the application should always show the confirmation prompt on
+// exit, regardless of whether the content was changed.
+BOOL EasyChatArgs_ForceConfirm(const EasyChatArgs *args)
 {
-    return args->unk_05;
+    return args->forceConfirm;
 }
 
+// Copies the stored content into the caller's buffers, according to the args'
+// type. Only the buffer matching the type is written.
 void EasyChatArgs_GetContent(const EasyChatArgs *args, u16 *outWords, EasyChatSentence *outSentence)
 {
     switch (args->type) {
@@ -148,6 +160,8 @@ void EasyChatArgs_GetContent(const EasyChatArgs *args, u16 *outWords, EasyChatSe
     }
 }
 
+// Returns TRUE if the given content matches the stored content. Only the buffer
+// matching the args' type is compared.
 BOOL EasyChatArgs_Compare(const EasyChatArgs *args, const u16 *words, const EasyChatSentence *sentence)
 {
     switch (args->type) {
@@ -161,6 +175,8 @@ BOOL EasyChatArgs_Compare(const EasyChatArgs *args, const u16 *words, const Easy
     }
 }
 
+// Records the player's confirmed content. `wasUpdated` is set if it differs
+// from the previous content, and the args are no longer considered unmodified.
 void EasyChatArgs_UpdateContent(EasyChatArgs *args, const u16 *words, const EasyChatSentence *sentence)
 {
     args->wasUpdated = !EasyChatArgs_Compare(args, words, sentence);

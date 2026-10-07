@@ -86,7 +86,7 @@ void FrontierEasyChat_Start(FieldTask *param0)
     v1->coloredArrow = ColoredArrow_New(HEAP_ID_FIELD3);
     v1->easyChatArgs = EasyChatArgs_New(EASY_CHAT_TYPE_SENTENCE, EasyChat_Text_ChooseWordOrPhrase, v1->fieldSystem->saveData, HEAP_ID_FIELD3);
 
-    sub_02097520(v1->easyChatArgs);
+    EasyChatArgs_SetForceConfirm(v1->easyChatArgs);
     Window_Init(&(v1->messageWindow));
     Window_Init(&(v1->sentenceListWindow));
     Window_Init(&(v1->confirmWindow));
