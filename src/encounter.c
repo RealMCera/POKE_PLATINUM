@@ -50,20 +50,24 @@
 #include "field_blackout.h"
 #include "vars_flags.h"
 
+// State for a battle encounter driven by a FieldTask. The task plays the
+// encounter transition, runs the battle, then applies the result to the field.
 typedef struct Encounter {
-    int *resultMaskPtr;
-    int introEffectID;
-    int battleBGM;
-    int unk_0C;
-    FieldBattleDTO *dto;
+    int *resultMaskPtr; // Written with the battle result so the caller can observe it.
+    int introEffectID; // Cut-in effect played when the encounter starts.
+    int battleBGM; // Music played during the battle.
+    int unk_0C; // Set by Encounter_NewVsWiFi; never read.
+    FieldBattleDTO *dto; // Battle data transferred to and from the battle system.
 } Encounter;
 
+// Variant of Encounter used for wild battles. It tracks its own task state so
+// that the Poké Radar chain and roamer state can be updated after the battle.
 typedef struct WildEncounter {
-    int state;
-    int introEffectID;
-    int battleBGM;
-    int *resultMaskPtr;
-    FieldBattleDTO *dto;
+    int state; // Task state, advanced manually rather than via FieldTask_GetState.
+    int introEffectID; // Cut-in effect played when the encounter starts.
+    int battleBGM; // Music played during the battle.
+    int *resultMaskPtr; // Written with the battle result so the caller can observe it.
+    FieldBattleDTO *dto; // Battle data transferred to and from the battle system.
 } WildEncounter;
 
 static Encounter *NewEncounter(FieldBattleDTO *dto, int introEffectID, int battleBGM, int *resultMaskPtr);
@@ -76,7 +80,7 @@ static BOOL CheckPlayerWonEncounter(Encounter *encounter);
 static void UpdateFieldSystemFromDTO(const FieldBattleDTO *dto, FieldSystem *fieldSystem);
 static void StartEncounter(FieldTask *task, FieldBattleDTO *dto, int introEffectID, int battleBGM, int *resultMaskPtr);
 static void SetLinkBattleResult(int resultMask, FieldSystem *fieldSystem);
-static int sub_020516C8(const BattleRegulation *regulation, int battleType);
+static int Encounter_GetRecordingType(const BattleRegulation *regulation, int battleType);
 static void UpdateGameRecords(FieldSystem *fieldSystem, FieldBattleDTO *dto);
 static void UpdateJournal(FieldSystem *fieldSystem, FieldBattleDTO *dto);
 
@@ -339,6 +343,8 @@ static void FreeWildEncounter(WildEncounter *encounter)
     Heap_Free(encounter);
 }
 
+// Starts a wild encounter. An active Safari Game uses the Safari flow, which
+// tracks the remaining Safari Balls; otherwise the standard wild flow runs.
 void Encounter_NewVsWild(FieldSystem *fieldSystem, FieldBattleDTO *dto)
 {
     if (SystemFlag_CheckSafariGameActive(SaveData_GetVarsFlags(fieldSystem->saveData)) != FALSE) {
@@ -350,6 +356,8 @@ void Encounter_NewVsWild(FieldSystem *fieldSystem, FieldBattleDTO *dto)
     }
 }
 
+// Same as Encounter_NewVsWild, but jumps the given task into the encounter
+// instead of creating a new one.
 void Encounter_StartVsWild(FieldSystem *fieldSystem, FieldTask *task, FieldBattleDTO *dto)
 {
     if (SystemFlag_CheckSafariGameActive(SaveData_GetVarsFlags(fieldSystem->saveData)) != FALSE) {
@@ -721,6 +729,10 @@ void Encounter_NewCatchingTutorial(FieldTask *task)
     FieldTask_InitCall(task, FieldTask_CatchingTutorialEncounter, encounter);
 }
 
+// Chooses the battle type from the requested trainers: two distinct enemies
+// with no partner is a tag double battle, two distinct enemies with a partner
+// is a trainer battle with an AI partner, two identical enemies is a trainer
+// double battle, and a single enemy is a standard trainer battle.
 void Encounter_NewVsTrainer(FieldTask *taskMan, int enemyTrainer1ID, int enemyTrainer2ID, int partnerTrainerID, enum HeapID heapID, int *resultMaskPtr)
 {
     u32 battleType;
@@ -768,26 +780,35 @@ void Encounter_NewVsLink(FieldTask *task, const u8 *partyOrder, int battleType)
     FieldTask_InitCall(task, FieldTask_LinkEncounter, encounter);
 }
 
-static int sub_020516C8(const BattleRegulation *regulation, int battleType)
+// Maps a battle regulation and battle type to the recording type stored in the
+// battle recording. The base value selects the battle format (single, double,
+// or multi battle); a predefined regulation then offsets it so that the
+// recording can restore the regulation the battle was fought under.
+static int Encounter_GetRecordingType(const BattleRegulation *regulation, int battleType)
 {
-    int v0;
-    int v1 = BattleRegulation_GetIndex(regulation);
+    int recordingType;
+    int regulationIndex = BattleRegulation_GetIndex(regulation);
 
     if (battleType & BATTLE_TYPE_2vs2) {
-        v0 = (UnkEnum_0202F510_14);
+        recordingType = (UnkEnum_0202F510_14);
     } else if (battleType & BATTLE_TYPE_DOUBLES) {
-        v0 = (UnkEnum_0202F510_07);
+        recordingType = (UnkEnum_0202F510_07);
     } else {
-        v0 = (UnkEnum_0202F510_00);
+        recordingType = (UnkEnum_0202F510_00);
     }
 
-    if (v1 != 0xFF) {
-        v0 += 1 + v1;
+    // 0xFF means the regulation is not one of the predefined rules, so the
+    // default recording type for the format is used.
+    if (regulationIndex != 0xFF) {
+        recordingType += 1 + regulationIndex;
     }
 
-    return v0;
+    return recordingType;
 }
 
+// Starts a WiFi battle. wifiBattleType selects the format: 0 is a single link
+// battle, 1 is a double link battle, and anything else is a multi battle
+// against the Battle Frontier.
 void Encounter_NewVsWiFi(FieldTask *task, int param1, int normalizedLevel, int wifiBattleType)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
@@ -855,7 +876,7 @@ void Encounter_NewVsLinkWithRecording(FieldSystem *fieldSystem, const u8 *partyO
 
     int recordingResultCode;
     BattleRecording_New(fieldSystem->saveData, HEAP_ID_FIELD2, &recordingResultCode);
-    dto->recordingType = sub_020516C8(fieldSystem->battleRegulation, battleType);
+    dto->recordingType = Encounter_GetRecordingType(fieldSystem->battleRegulation, battleType);
 
     Encounter *encounter = NewEncounter(dto, EncEffects_CutInEffect(dto), EncEffects_BGM(dto), NULL);
     FieldSystem_CreateTask(fieldSystem, FieldTask_LinkEncounterWithRecording, encounter);
@@ -868,7 +889,7 @@ void Encounter_NewVsLinkWithRecordingAndParty(FieldSystem *fieldSystem, const Pa
 
     int recordingResultCode;
     BattleRecording_New(fieldSystem->saveData, HEAP_ID_FIELD2, &recordingResultCode);
-    dto->recordingType = sub_020516C8(fieldSystem->battleRegulation, battleType);
+    dto->recordingType = Encounter_GetRecordingType(fieldSystem->battleRegulation, battleType);
 
     Encounter *encounter = NewEncounter(dto, EncEffects_CutInEffect(dto), EncEffects_BGM(dto), NULL);
     FieldSystem_CreateTask(fieldSystem, FieldTask_LinkEncounterWithRecording, encounter);
