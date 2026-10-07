@@ -33,7 +33,7 @@
 #include "comm_server_client.h"
 #include "unk_020363E8.h"
 #include "colosseum.h"
-#include "unk_02099500.h"
+#include "comm_field_cmd.h"
 
 static void FieldCommManager_RunTask(SysTask *task, void *unused);
 static void FieldCommManager_SetTask(FieldCommTask task, int time);

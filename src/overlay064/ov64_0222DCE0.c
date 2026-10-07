@@ -61,7 +61,7 @@
 #include "text.h"
 #include "trainer_info.h"
 #include "wifi_friend_registration.h"
-#include "unk_020890F4.h"
+#include "number_entry_app.h"
 #include "vars_flags.h"
 #include "vram_transfer.h"
 #include "wifi_list.h"
@@ -181,7 +181,7 @@ typedef struct {
 typedef struct {
     ApplicationManager *appMan;
     NamingScreenArgs *unk_04;
-    UnkStruct_02089438 *unk_08;
+    NumberEntryArgs *unk_08;
 } UnkStruct_ov64_02230444;
 
 typedef struct {
@@ -2469,7 +2469,7 @@ static int ov64_0223044C(UnkStruct_ov64_02230444 *param0, UnkStruct_ov64_0222DFD
         v0[2] = 4;
         v0[3] = 0;
 
-        param0->unk_08 = sub_02089400(heapID, 12, v0, SaveData_GetOptions(param2->saveData), 0, 0);
+        param0->unk_08 = NumberEntryArgs_New(heapID, 12, v0, SaveData_GetOptions(param2->saveData), 0, 0);
         ov64_0222DFD0(param1);
         param0->appMan = ApplicationManager_New(&gNamingScreenAppTemplate, param0->unk_04, heapID);
         param2->unk_04 = 1;
@@ -2482,7 +2482,7 @@ static int ov64_0223044C(UnkStruct_ov64_02230444 *param0, UnkStruct_ov64_0222DFD
         ApplicationManager_Free(param0->appMan);
 
         if (param0->unk_04->returnCode == NAMING_SCREEN_CODE_OK) {
-            param0->appMan = ApplicationManager_New(&Unk_020F2DBC, param0->unk_08, heapID);
+            param0->appMan = ApplicationManager_New(&gNumberEntryAppTemplate, param0->unk_08, heapID);
             param2->unk_04 = 2;
         } else {
             ov64_0222E074(param2, 0, 0);
@@ -2495,13 +2495,13 @@ static int ov64_0223044C(UnkStruct_ov64_02230444 *param0, UnkStruct_ov64_0222DFD
         }
 
         ApplicationManager_Free(param0->appMan);
-        ov64_0222E07C(param2, param0->unk_04->textInputStr, param0->unk_08->unk_1C);
+        ov64_0222E07C(param2, param0->unk_04->textInputStr, param0->unk_08->numberString);
         ov64_0222E074(param2, 0, 6);
         param2->unk_04 = 3;
         break;
     case 3:
         NamingScreenArgs_Free(param0->unk_04);
-        sub_02089438(param0->unk_08);
+        NumberEntryArgs_Free(param0->unk_08);
         ov64_0222DF48(param1, heapID);
         return 1;
     case 4:

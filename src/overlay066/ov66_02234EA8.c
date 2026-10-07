@@ -11,7 +11,7 @@
 #include "graphics.h"
 #include "heap.h"
 #include "narc.h"
-#include "unk_020996D0.h"
+#include "wifi_earth_place.h"
 
 static void ov66_02234F2C(NARC *param0, u32 param1, u16 param2, u8 param3, fx32 *param4);
 
@@ -77,8 +77,8 @@ static void ov66_02234F2C(NARC *param0, u32 param1, u16 param2, u8 param3, fx32 
         u32 v7, v8;
         int v9, v10;
 
-        v9 = sub_020996D4(param2);
-        v8 = sub_02099764(v9);
+        v9 = WiFiEarthPlace_GetIndexByCountry(param2);
+        v8 = WiFiEarthPlace_GetNarcMemberIndex(v9);
         v5 = LoadMemberFromOpenNARC_OutFileSize(param0, v8, 0, param1, 0, &v7);
         v6 = (UnkStruct_ov69_0225C980 *)v5;
         v10 = v7 / 4;

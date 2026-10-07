@@ -214,7 +214,7 @@
 #include "mailbox.h"
 #include "wifi_menu.h"
 #include "unk_020985E4.h"
-#include "unk_02099500.h"
+#include "comm_field_cmd.h"
 #include "frontier_easy_chat.h"
 #include "unk_0209B344.h"
 #include "union_room_spin_trade.h"

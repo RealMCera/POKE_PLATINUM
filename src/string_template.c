@@ -29,7 +29,7 @@
 #include "string_gf.h"
 #include "trainer_info.h"
 #include "unk_02017038.h"
-#include "unk_020996D0.h"
+#include "wifi_earth_place.h"
 
 #include "res/text/bank/common_strings.h"
 #include "res/text/bank/menu_entries.h"
@@ -445,7 +445,7 @@ void StringTemplate_SetCountryName(StringTemplate *template, u32 idx, u32 countr
 
 void StringTemplate_SetCityName(StringTemplate *template, u32 idx, u32 country, u32 city)
 {
-    u32 bankID = sub_02099720(country);
+    u32 bankID = WiFiEarthPlace_GetMessageBankByCountry(country);
     if (bankID && city) {
         SetArgFromArchive(template, idx, city, bankID);
     }

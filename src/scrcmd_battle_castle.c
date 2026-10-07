@@ -30,7 +30,7 @@
 #include "savedata.h"
 #include "script_manager.h"
 #include "battle_tower.h"
-#include "unk_02099500.h"
+#include "comm_field_cmd.h"
 
 #include "constdata/const_020F410C.h"
 

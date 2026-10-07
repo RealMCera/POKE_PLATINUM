@@ -21,7 +21,7 @@
 // groups (for example a Friend Code as XXXX-XXXX-XXXX), and moves a cursor
 // between the slots to enter a number. The screen is driven by a small phase
 // state machine (see sPhaseFuncs) and reports the entered number back to the
-// launching application through args.unk_1C.
+// launching application through args.numberString.
 
 // Records `param1` as the highlighted group and caches the slot ranges of both
 // the new and the previous group. NumberEntry_AnimateSelection uses the two
@@ -62,21 +62,21 @@ void NumberEntry_InitLayout(NumberEntryScreen *param0)
     // groupRanges[g] = [first slot, one past last slot) for group g.
     for (v0 = 0; v0 < 4 + 1; v0++) {
         param0->groupRanges[v0][0] = v1;
-        v1 += param0->args.unk_04[v0];
+        v1 += param0->args.digitsPerGroup[v0];
         param0->groupRanges[v0][1] = v1;
     }
 
-    // args.unk_24 is the number of pre-filled groups; highlight the group after
+    // args.prefilledGroupCount is the number of pre-filled groups; highlight the group after
     // them (1-based).
-    NumberEntry_SetSelectedGroup(param0, param0->args.unk_24 + 1);
+    NumberEntry_SetSelectedGroup(param0, param0->args.prefilledGroupCount + 1);
 
     // Count the non-empty groups and the total number of digit slots.
     for (v0 = 0; v0 < 4; v0++) {
-        if (param0->args.unk_04[v0] == 0) {
+        if (param0->args.digitsPerGroup[v0] == 0) {
             break;
         }
 
-        param0->digitCount += param0->args.unk_04[v0];
+        param0->digitCount += param0->args.digitsPerGroup[v0];
         param0->dividerCount++;
     }
 
@@ -88,7 +88,7 @@ void NumberEntry_InitLayout(NumberEntryScreen *param0)
     // Centre each group's row, accounting for the wider spacing of the
     // currently selected group.
     for (v0 = 0; v0 < 4; v0++) {
-        v2 = 8 * param0->dividerCount + (8 * (param0->digitCount - param0->args.unk_04[v0]) + 32 * param0->args.unk_04[v0]);
+        v2 = 8 * param0->dividerCount + (8 * (param0->digitCount - param0->args.digitsPerGroup[v0]) + 32 * param0->args.digitsPerGroup[v0]);
 
         param0->groupXPos[v0 + 1] = 112 - v2 / 2;
     }
@@ -98,7 +98,7 @@ void NumberEntry_InitLayout(NumberEntryScreen *param0)
 
     // A separator sits after the last slot of each group except the last one.
     for (v0 = 0; v0 < param0->dividerCount; v0++) {
-        v3 += param0->args.unk_04[v0];
+        v3 += param0->args.digitsPerGroup[v0];
         param0->dividers[v0].value = v3 - 1;
     }
 
@@ -107,16 +107,16 @@ void NumberEntry_InitLayout(NumberEntryScreen *param0)
 
     // Tag every slot with its 1-based group number.
     do {
-        for (v4 = 0; v4 < param0->args.unk_04[v5]; v4++) {
+        for (v4 = 0; v4 < param0->args.digitsPerGroup[v5]; v4++) {
             param0->digits[v0].group = v5 + 1;
             v0++;
         }
         v5++;
     } while (v0 < param0->digitCount);
 
-    // The first args.unk_24 groups are pre-filled and cannot be edited.
-    for (v0 = 0; v0 < param0->args.unk_24; v0++) {
-        param0->prefilledDigitCount += param0->args.unk_04[v0];
+    // The first args.prefilledGroupCount groups are pre-filled and cannot be edited.
+    for (v0 = 0; v0 < param0->args.prefilledGroupCount; v0++) {
+        param0->prefilledDigitCount += param0->args.digitsPerGroup[v0];
     }
 }
 
@@ -142,11 +142,11 @@ BOOL NumberEntry_Setup(NumberEntryScreen *param0)
     NumberEntryGraphics_UpdateDigitTouchRects(param0);
     NumberEntryGraphics_InitFont(param0);
     NumberEntryGraphics_CreateButtonLabels(param0);
-    NumberEntryGraphics_InitMessageWindow(param0->graphics.bgConfig, &param0->graphics.messageWindow, 4, 2, 21, 27, 2, 100, param0->args.unk_2C);
+    NumberEntryGraphics_InitMessageWindow(param0->graphics.bgConfig, &param0->graphics.messageWindow, 4, 2, 21, 27, 2, 100, param0->args.messageEntry);
 
     // When the screen is used for a Wi-Fi connection, load the connection
     // strength icon palette.
-    if (param0->args.unk_30 != 0) {
+    if (param0->args.showNetworkIcon != 0) {
         NNSG2dPaletteData *v0;
         void *v1 = NetworkIcon_GetPalette(HEAP_ID_101);
 
@@ -520,7 +520,7 @@ void NumberEntry_ProcessInput(NumberEntryScreen *param0)
 }
 
 // OK button: fill any empty slots with 0, concatenate every digit into
-// args.unk_1C, and advance to the fade-out phase.
+// args.numberString, and advance to the fade-out phase.
 void NumberEntry_Confirm(NumberEntryScreen *param0)
 {
     int v0;
@@ -538,7 +538,7 @@ void NumberEntry_Confirm(NumberEntryScreen *param0)
 
         v1 = param0->digits[v0].value - 1;
         String_FormatInt(v2, v1, 1, 1, 1);
-        String_Concat(param0->args.unk_1C, v2);
+        String_Concat(param0->args.numberString, v2);
     }
 
     String_Free(v2);

@@ -146,7 +146,7 @@ void NumberEntryGraphics_Free(NumberEntryScreen *param0)
 }
 
 // Creates a sprite for every digit slot and group divider, laid out left to
-// right. The leading locked slots are pre-filled from args.unk_28, one decimal
+// right. The leading locked slots are pre-filled from args.prefilledDigits, one decimal
 // digit per slot.
 void NumberEntryGraphics_CreateDigitSprites(NumberEntryScreen *param0)
 {
@@ -174,7 +174,7 @@ void NumberEntryGraphics_CreateDigitSprites(NumberEntryScreen *param0)
     v2.resources[5] = SPRITE_RESOURCE_NONE;
 
     // Fill the locked leading slots from the least significant digit up.
-    u32 v5 = param0->args.unk_28;
+    u32 v5 = param0->args.prefilledDigits;
     for (i = param0->prefilledDigitCount - 1; i >= 0; i--) {
         param0->digits[i].value = (v5 % 10) + 1;
         v5 /= 10;

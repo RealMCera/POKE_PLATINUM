@@ -28,7 +28,7 @@
 #include "unk_02030CE8.h"
 #include "comm_server_client.h"
 #include "unk_02038FFC.h"
-#include "unk_020890F4.h"
+#include "number_entry_app.h"
 #include "vars_flags.h"
 #include "wifi_overlays.h"
 
@@ -87,10 +87,10 @@ static const struct {
     int unk_0C;
 } Unk_ov98_02249B4C[] = {
     { ov98_02246FBC, ov98_02246FC0, &Unk_ov98_02249B3C, 0x0 },
-    { ov98_02246FC4, ov98_02246FFC, &Unk_020F2DBC, 0x0 },
-    { ov98_02247070, ov98_022470B8, &Unk_020F2DBC, 0x0 },
-    { ov98_022470F8, ov98_02247134, &Unk_020F2DBC, 0x0 },
-    { ov98_022470F8, ov98_02247134, &Unk_020F2DBC, 0x0 },
+    { ov98_02246FC4, ov98_02246FFC, &gNumberEntryAppTemplate, 0x0 },
+    { ov98_02247070, ov98_022470B8, &gNumberEntryAppTemplate, 0x0 },
+    { ov98_022470F8, ov98_02247134, &gNumberEntryAppTemplate, 0x0 },
+    { ov98_022470F8, ov98_02247134, &gNumberEntryAppTemplate, 0x0 },
     { ov98_02247168, ov98_02247198, &Unk_ov98_02249B2C, 0x1 }
 };
 
@@ -348,27 +348,27 @@ void *ov98_02246FC4(UnkStruct_ov98_02246E88 *param0)
     v0[2] = 4;
     v0[3] = 4;
 
-    param0->unk_98 = sub_02089400(HEAP_ID_108, 16, v0, SaveData_GetOptions(param0->saveData), 4, 0);
+    param0->unk_98 = NumberEntryArgs_New(HEAP_ID_108, 16, v0, SaveData_GetOptions(param0->saveData), 4, 0);
     return param0->unk_98;
 }
 
 void ov98_02246FFC(UnkStruct_ov98_02246E88 *param0)
 {
-    UnkStruct_02089438 *v0 = param0->unk_98;
-    if (ov98_02249A80(v0->unk_1C, HEAP_ID_108)) {
+    NumberEntryArgs *v0 = param0->unk_98;
+    if (ov98_02249A80(v0->numberString, HEAP_ID_108)) {
         ov98_02246FAC(param0, 1);
     } else if (ov98_02246FB4(param0) == 2) {
-        if (String_Compare(param0->unk_114, v0->unk_1C) != 0) {
+        if (String_Compare(param0->unk_114, v0->numberString) != 0) {
             ov98_02246FAC(param0, 3);
         } else {
             ov98_02246FAC(param0, 0);
         }
     } else {
-        String_Copy(param0->unk_114, v0->unk_1C);
+        String_Copy(param0->unk_114, v0->numberString);
         ov98_02246FAC(param0, 2);
     }
 
-    sub_02089438(v0);
+    NumberEntryArgs_Free(v0);
     ov98_02246E88(param0, 0, 0);
 }
 
@@ -381,17 +381,17 @@ void *ov98_02247070(UnkStruct_ov98_02246E88 *param0)
     v0[2] = 0;
     v0[3] = 0;
 
-    param0->unk_98 = sub_0208941C(HEAP_ID_108, 7, v0, SaveData_GetOptions(param0->saveData), 5, 1, 1, param0->unk_7C);
+    param0->unk_98 = NumberEntryArgs_NewWithPrefilled(HEAP_ID_108, 7, v0, SaveData_GetOptions(param0->saveData), 5, 1, 1, param0->unk_7C);
     return param0->unk_98;
 }
 
 void ov98_022470B8(UnkStruct_ov98_02246E88 *param0)
 {
-    UnkStruct_02089438 *v0 = param0->unk_98;
+    NumberEntryArgs *v0 = param0->unk_98;
     BOOL v1;
-    param0->unk_10C = String_AtoI(v0->unk_1C, &v1) % 10000;
+    param0->unk_10C = String_AtoI(v0->numberString, &v1) % 10000;
     GF_ASSERT(v1);
-    sub_02089438(v0);
+    NumberEntryArgs_Free(v0);
     ov98_02246E88(param0, 0, 0);
 }
 
@@ -404,17 +404,17 @@ void *ov98_022470F8(UnkStruct_ov98_02246E88 *param0)
     v0[2] = 0;
     v0[3] = 0;
 
-    param0->unk_98 = sub_02089400(HEAP_ID_108, 4, v0, SaveData_GetOptions(param0->saveData), 6, 0);
+    param0->unk_98 = NumberEntryArgs_New(HEAP_ID_108, 4, v0, SaveData_GetOptions(param0->saveData), 6, 0);
     return param0->unk_98;
 }
 
 void ov98_02247134(UnkStruct_ov98_02246E88 *param0)
 {
-    UnkStruct_02089438 *v0 = param0->unk_98;
+    NumberEntryArgs *v0 = param0->unk_98;
     BOOL v1;
-    param0->unk_108 = String_AtoI(v0->unk_1C, &v1);
+    param0->unk_108 = String_AtoI(v0->numberString, &v1);
     GF_ASSERT(v1);
-    sub_02089438(v0);
+    NumberEntryArgs_Free(v0);
     ov98_02246E88(param0, 0, 0);
 }
 

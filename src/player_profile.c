@@ -22,7 +22,7 @@
 #include "string_gf.h"
 #include "system_data.h"
 #include "trainer_info.h"
-#include "unk_020996D0.h"
+#include "wifi_earth_place.h"
 #include "wifi_history_save_data.h"
 
 #include "res/text/bank/country_names.h"
@@ -148,7 +148,7 @@ int PlayerProfile_GetRegion(const PlayerProfile *profile)
     }
 
     // Reject a region that does not exist for the given country.
-    if (sub_020996F4(profile->country) < profile->region) {
+    if (WiFiEarthPlace_GetRegionLimit(profile->country) < profile->region) {
         return 0;
     }
 

@@ -1,4 +1,4 @@
-#include "unk_02099500.h"
+#include "comm_field_cmd.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -27,25 +27,52 @@
 #include "union_room.h"
 
 static int CommPacketSizeOf_TrainerCase(void);
-static int sub_02099548(void);
-static int sub_0209954C(void);
+static int CommPacketSizeOf_ConnectionConfirm(void);
+static int CommPacketSizeOf_DrawingConnAck(void);
+
+// Packet-size callbacks for commands that are received but ignored. The comm
+// system still needs to know how many bytes to consume, so each of these
+// returns the size of the payload the sender used.
 
 static int CommPacketSizeOf_3Bytes_Unused(void)
 {
     return 3;
 }
 
-static int sub_02099504(void)
+// Command 130: the Union Room's generic command envelope (a u32 sub-command
+// followed by up to 20 bytes of payload).
+static int CommPacketSizeOf_UnionRoomCommand(void)
 {
     return 24;
 }
 
-static int sub_02099508(void)
+// Command 131: one serialized party (six 236-byte Pokémon plus four u16
+// fields).
+static int CommPacketSizeOf_UnionRoomPartyData(void)
 {
     return 236 * 6 + 4 * 2;
 }
 
-static const CommCmdTable Unk_020F68A4[] = {
+// Command table for the field (overworld) communication system. It covers the
+// commands used by the Underground, the Union Room, the Colosseum and the
+// Battle Frontier facilities. CommCmd_Init indexes the table by
+// (command - 22), so entry N handles command N + 22; the trailing comments mark
+// the command number of selected entries.
+//
+// Most entries dispatch to a handler defined in the owning subsystem (see the
+// includes above). The block at the end of the table covers commands that are
+// received but ignored: they use CommFieldCmd_NoOp as the handler and only
+// declare a packet size so the comm system can consume the payload. The
+// non-trivial ignored commands are:
+//   112 - connection-confirm handshake (4 bytes)
+//   116 - mixed record (3008 bytes)
+//   118 - drawing canvas chunk (1008 bytes)
+//   119 - drawing player status (10 bytes)
+//   120 - drawing all-player statuses (50 bytes)
+//   126 - drawing connection acknowledgement (4 bytes)
+//   130 - Union Room generic command envelope (24 bytes)
+//   131 - Union Room serialized party (1424 bytes)
+static const CommCmdTable sCommFieldCmdTable[] = {
     { CommPlayer_RecvLocation, CommPacketSizeOf_RecvLocation, NULL },
     { CommPlayer_RecvLocationAndInit, CommPacketSizeOf_RecvLocationAndInit, NULL },
     { UndergroundMan_ProcessVendorTalkRequest, CommPacketSizeOf_NetId, NULL },
@@ -132,77 +159,90 @@ static const CommCmdTable Unk_020F68A4[] = {
     { UnionRoom_HandleTrainerCase, CommPacketSizeOf_TrainerCase, UnionRoom_GetTrainerCaseBuffer },
     { Colosseum_HandleReceivedParty, Colosseum_PartyExchangeSize, Colosseum_GetPartyExchangeBuffer },
     { Colosseum_HandleReceivedSlot, CommPacketSizeOf_NetId, NULL },
-    { sub_02099510, CommPacketSizeOf_NetId, NULL },
-    { sub_02099510, CommPacketSizeOf_NetId, NULL },
-    { sub_02099510, CommPacketSizeOf_NetId, NULL },
-    { sub_02099510, CommPacketSizeOf_Nothing, NULL },
-    { sub_02099510, sub_02099548, NULL },
-    { sub_02099510, CommPacketSizeOf_Nothing, NULL },
-    { sub_02099510, CommPacketSizeOf_Nothing, NULL },
-    { sub_02099510, CommPacketSizeOf_Nothing, NULL },
-    { sub_02099510, sub_02099530, NULL },
-    { sub_02099510, CommPacketSizeOf_NetId, NULL },
-    { sub_02099510, sub_02099538, NULL },
-    { sub_02099510, sub_02099540, NULL },
-    { sub_02099510, sub_02099544, NULL },
-    { sub_02099510, CommPacketSizeOf_NetId, NULL },
-    { sub_02099510, CommPacketSizeOf_NetId, NULL },
-    { sub_02099510, CommPacketSizeOf_NetId, NULL },
-    { sub_02099510, CommPacketSizeOf_Nothing, NULL },
-    { sub_02099510, CommPacketSizeOf_Nothing, NULL },
-    { sub_02099510, sub_0209954C, NULL },
-    { sub_02099510, CommPacketSizeOf_Nothing, NULL },
-    { sub_02099510, CommPacketSizeOf_Nothing, NULL },
-    { sub_02099510, CommPacketSizeOf_Nothing, NULL },
-    { sub_02099510, sub_02099504, NULL },
-    { sub_02099510, sub_02099508, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_NetId, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_NetId, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_NetId, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_Nothing, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_ConnectionConfirm, NULL }, // 112
+    { CommFieldCmd_NoOp, CommPacketSizeOf_Nothing, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_Nothing, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_Nothing, NULL },
+    { CommFieldCmd_NoOp, CommFieldCmd_PacketSizeOf_RecordData, NULL }, // 116
+    { CommFieldCmd_NoOp, CommPacketSizeOf_NetId, NULL },
+    { CommFieldCmd_NoOp, CommFieldCmd_PacketSizeOf_DrawingChunk, NULL }, // 118
+    { CommFieldCmd_NoOp, CommFieldCmd_PacketSizeOf_DrawingPlayerStatus, NULL }, // 119
+    { CommFieldCmd_NoOp, CommFieldCmd_PacketSizeOf_DrawingAllStatuses, NULL }, // 120
+    { CommFieldCmd_NoOp, CommPacketSizeOf_NetId, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_NetId, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_NetId, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_Nothing, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_Nothing, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_DrawingConnAck, NULL }, // 126
+    { CommFieldCmd_NoOp, CommPacketSizeOf_Nothing, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_Nothing, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_Nothing, NULL },
+    { CommFieldCmd_NoOp, CommPacketSizeOf_UnionRoomCommand, NULL }, // 130
+    { CommFieldCmd_NoOp, CommPacketSizeOf_UnionRoomPartyData, NULL }, // 131
     { BattleHall_ProcessSelectedSpeciesMsg, CommPacketSizeOf_Variable, NULL },
     { BattleCastle_ProcessSpeciesCheckMsg, CommPacketSizeOf_Variable, NULL },
     { BattleArcade_ProcessSpeciesCheckMsg, CommPacketSizeOf_Variable, NULL }
 };
 
-void sub_02099510(int param0, int param1, void *param2, void *param3)
+// Placeholder handler for commands that are received but have no effect. It is
+// shared by every command table in the game that needs to reserve an entry.
+void CommFieldCmd_NoOp(int param0, int param1, void *param2, void *param3)
 {
     return;
 }
 
+// Registers the field command table. `param0` is the field system passed back
+// to every handler as its context.
 void CommFieldCmd_Init(void *param0)
 {
-    int v0 = sizeof(Unk_020F68A4) / sizeof(CommCmdTable);
-    CommCmd_Init(Unk_020F68A4, v0, param0);
+    int v0 = sizeof(sCommFieldCmdTable) / sizeof(CommCmdTable);
+    CommCmd_Init(sCommFieldCmdTable, v0, param0);
 }
 
+// Command 88: the trainer case exchanged when a player joins the field.
 static int CommPacketSizeOf_TrainerCase(void)
 {
     return sizeof(TrainerCase);
 }
 
-int sub_02099530(void)
+// Command 116: one player's mixed record (a 3000-byte record plus a checksum
+// and an LCRNG seed).
+int CommFieldCmd_PacketSizeOf_RecordData(void)
 {
     return 3000 + 8;
 }
 
-int sub_02099538(void)
+// Command 118: one 1000-byte slice of the shared drawing canvas plus its
+// checksum and index.
+int CommFieldCmd_PacketSizeOf_DrawingChunk(void)
 {
     return 1008;
 }
 
-int sub_02099540(void)
+// Command 119: a single player's pen/cursor status.
+int CommFieldCmd_PacketSizeOf_DrawingPlayerStatus(void)
 {
     return 10;
 }
 
-int sub_02099544(void)
+// Command 120: all five players' pen/cursor statuses relayed at once.
+int CommFieldCmd_PacketSizeOf_DrawingAllStatuses(void)
 {
     return 10 * 5;
 }
 
-static int sub_02099548(void)
+// Command 112: the connection-confirm handshake.
+static int CommPacketSizeOf_ConnectionConfirm(void)
 {
     return 4;
 }
 
-static int sub_0209954C(void)
+// Command 126: the drawing session's connection acknowledgement.
+static int CommPacketSizeOf_DrawingConnAck(void)
 {
     return 4;
 }

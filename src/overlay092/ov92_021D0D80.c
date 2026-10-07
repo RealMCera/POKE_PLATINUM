@@ -36,7 +36,7 @@
 #include "system.h"
 #include "text.h"
 #include "unk_0202419C.h"
-#include "unk_020996D0.h"
+#include "wifi_earth_place.h"
 #include "wifi_history_save_data.h"
 
 #include "res/text/bank/country_names.h"
@@ -446,7 +446,7 @@ int ov92_021D0EB8(ApplicationManager *appMan, int *param1)
         if (ov92_021D1B70(v0, 3, 1) == 1) {
             v0->country2 = 0;
 
-            ov92_021D1CF4(v0, &v0->unk_B824, &Unk_ov92_021D2914, &Unk_ov92_021D29C8, 694, sub_02099780(0), sub_0209979C(0));
+            ov92_021D1CF4(v0, &v0->unk_B824, &Unk_ov92_021D2914, &Unk_ov92_021D29C8, 694, WiFiEarthPlace_GetRegionList(0), WiFiEarthPlace_GetRegionCount(0));
             *param1 = 8;
         }
         break;
@@ -461,7 +461,7 @@ int ov92_021D0EB8(ApplicationManager *appMan, int *param1)
         Sound_PlayEffect(SE_CONFIRM_sseq_3);
 
         if (v5 != 0xfffffffe) {
-            v5 = sub_02099780(0)[v5];
+            v5 = WiFiEarthPlace_GetRegionList(0)[v5];
         }
 
         switch (v5) {
@@ -486,8 +486,8 @@ int ov92_021D0EB8(ApplicationManager *appMan, int *param1)
             v0->region2 = 0;
 
             {
-                u32 v6 = sub_020996D4(v0->country2);
-                ov92_021D1CF4(v0, &v0->unk_B824, &Unk_ov92_021D2914, &Unk_ov92_021D29C8, sub_0209972C(v6), sub_02099780(v6), sub_0209979C(v6));
+                u32 v6 = WiFiEarthPlace_GetIndexByCountry(v0->country2);
+                ov92_021D1CF4(v0, &v0->unk_B824, &Unk_ov92_021D2914, &Unk_ov92_021D29C8, WiFiEarthPlace_GetMessageBank(v6), WiFiEarthPlace_GetRegionList(v6), WiFiEarthPlace_GetRegionCount(v6));
             }
             *param1 = 10;
         }
@@ -503,8 +503,8 @@ int ov92_021D0EB8(ApplicationManager *appMan, int *param1)
         Sound_PlayEffect(SE_CONFIRM_sseq_3);
 
         if (v7 != 0xfffffffe) {
-            u32 v8 = sub_020996D4(v0->country2);
-            v7 = sub_02099780(v8)[v7];
+            u32 v8 = WiFiEarthPlace_GetIndexByCountry(v0->country2);
+            v7 = WiFiEarthPlace_GetRegionList(v8)[v7];
         }
 
         switch (v7) {
@@ -744,10 +744,10 @@ static void ov92_021D1530(UnkStruct_ov92_021D1B24 *param0)
         int v11, v13;
 
         int v12 = 1;
-        v11 = sub_020996D0();
+        v11 = WiFiEarthPlace_GetCount();
 
         while (v12 < v11) {
-            v9 = sub_02099764(v12);
+            v9 = WiFiEarthPlace_GetNarcMemberIndex(v12);
             v6 = LoadMemberFromOpenNARC_OutFileSize(v0, v9, 0, param0->heapID, 0, &v8);
             v7 = (UnkStruct_ov69_0225C980 *)v6;
             v13 = v8 / 4;
@@ -755,7 +755,7 @@ static void ov92_021D1530(UnkStruct_ov92_021D1B24 *param0)
             v7++;
 
             for (int i = 1; i < v13; i++) {
-                ov92_021D1634(param0, param0->unk_0C.unk_00, v7->unk_00, v7->unk_02, sub_02099748(v12), i);
+                ov92_021D1634(param0, param0->unk_0C.unk_00, v7->unk_00, v7->unk_02, WiFiEarthPlace_GetCountry(v12), i);
                 param0->unk_0C.unk_00++;
                 v7++;
             }
@@ -801,7 +801,7 @@ static void ov92_021D16A8(UnkStruct_ov92_021D1B24 *param0)
 
 static int ov92_021D16F8(int param0)
 {
-    return sub_020996D4(param0);
+    return WiFiEarthPlace_GetIndexByCountry(param0);
 }
 
 static void ov92_021D1700(UnkStruct_ov92_021D1B24 *param0)
@@ -1487,7 +1487,7 @@ BOOL ov92_021D27E8(int param0, int param1, String *param2, String *param3, enum 
         v2 = 1;
     }
 
-    v0 = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, sub_0209972C(v1), heapID);
+    v0 = MessageLoader_Init(MSG_LOADER_PRELOAD_ENTIRE_BANK, NARC_INDEX_MSGDATA__PL_MSG, WiFiEarthPlace_GetMessageBank(v1), heapID);
 
     MessageLoader_GetString(v0, param1, param3);
     MessageLoader_Free(v0);

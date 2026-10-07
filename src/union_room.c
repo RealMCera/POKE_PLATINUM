@@ -33,7 +33,7 @@
 #include "trainer_info.h"
 #include "comm_server_client.h"
 #include "union_room_drawing_comm.h"
-#include "unk_02099500.h"
+#include "comm_field_cmd.h"
 
 #include "constdata/const_020ED570.h"
 #include "res/text/bank/country_names.h"

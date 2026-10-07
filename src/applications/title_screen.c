@@ -208,8 +208,8 @@ typedef struct TitleScreenAppData {
     int exitFadeTimer;
 } TitleScreenAppData;
 
-extern const ApplicationManagerTemplate Unk_020F8A48;
-extern const ApplicationManagerTemplate Unk_020F8AB4;
+extern const ApplicationManagerTemplate gClearSaveDataAppTemplate;
+extern const ApplicationManagerTemplate gSaveCorruptedAppTemplate;
 extern const ApplicationManagerTemplate gOpeningCutsceneAppTemplate;
 
 static BOOL TitleScreen_Init(ApplicationManager *appMan, int *state);
@@ -461,10 +461,10 @@ static BOOL TitleScreen_Exit(ApplicationManager *appMan, int *state)
     switch (nextApp) {
     default:
     case NEXT_APP_START_MENU:
-        EnqueueApplication(FS_OVERLAY_ID_NONE, &Unk_020F8AB4);
+        EnqueueApplication(FS_OVERLAY_ID_NONE, &gSaveCorruptedAppTemplate);
         break;
     case NEXT_APP_CLEAR_SAVE_FILE:
-        EnqueueApplication(FS_OVERLAY_ID_NONE, &Unk_020F8A48);
+        EnqueueApplication(FS_OVERLAY_ID_NONE, &gClearSaveDataAppTemplate);
         break;
     case NEXT_APP_REPLAY_OPENING:
         Sound_SetScene(SOUND_SCENE_NONE);

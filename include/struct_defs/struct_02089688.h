@@ -52,7 +52,7 @@ typedef struct {
     NumberEntryScreen_SelectionAction selectionAction;
     // Arguments supplied by the launching application (digit counts per group,
     // prompt message, pre-filled digits, ...).
-    UnkStruct_02089438 args;
+    NumberEntryArgs args;
     // Number of group separators (number of groups - 1).
     int dividerCount;
     // Number of leading digit slots that are pre-filled and cannot be changed.

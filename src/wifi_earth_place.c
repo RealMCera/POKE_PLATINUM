@@ -1,9 +1,15 @@
-#include "unk_020996D0.h"
+#include "wifi_earth_place.h"
 
 #include <nitro.h>
 #include <string.h>
 
-static const u8 Unk_020F6EB8[] = {
+// This module owns the Wi-Fi Earth (Geonet) place table: the mapping from a
+// Country_Text_* ID to the country's 3D place data in wifi_earth_place.narc,
+// its region-name text bank, and the list of region message IDs shown in the
+// region picker. The table is also used to validate a player profile's stored
+// country/region pair.
+
+static const u8 sRegionList_Argentina[] = {
     0x1,
     0x3,
     0x4,
@@ -30,7 +36,7 @@ static const u8 Unk_020F6EB8[] = {
     0x18
 };
 
-static const u8 Unk_020F6E18[] = {
+static const u8 sRegionList_Australia[] = {
     0x1,
     0x2,
     0x3,
@@ -40,7 +46,7 @@ static const u8 Unk_020F6E18[] = {
     0x7
 };
 
-static const u8 Unk_020F6EE8[] = {
+static const u8 sRegionList_Brazil[] = {
     0x1,
     0x3,
     0x4,
@@ -70,7 +76,7 @@ static const u8 Unk_020F6EE8[] = {
     0x1B
 };
 
-static const u8 Unk_020F6E34[] = {
+static const u8 sRegionList_Canada[] = {
     0x1,
     0x2,
     0x3,
@@ -86,7 +92,7 @@ static const u8 Unk_020F6E34[] = {
     0xD
 };
 
-static const u8 Unk_020F6F04[] = {
+static const u8 sRegionList_China[] = {
     0x1,
     0x2,
     0x3,
@@ -120,7 +126,7 @@ static const u8 Unk_020F6F04[] = {
     0x1F
 };
 
-static const u8 Unk_020F6E54[] = {
+static const u8 sRegionList_Germany[] = {
     0x1,
     0x2,
     0x3,
@@ -139,7 +145,7 @@ static const u8 Unk_020F6E54[] = {
     0xF
 };
 
-static const u8 Unk_020F6E64[] = {
+static const u8 sRegionList_Spain[] = {
     0x1,
     0x2,
     0x3,
@@ -159,7 +165,7 @@ static const u8 Unk_020F6E64[] = {
     0x5
 };
 
-static const u8 Unk_020F6E10[] = {
+static const u8 sRegionList_Finland[] = {
     0x1,
     0x3,
     0x2,
@@ -168,7 +174,7 @@ static const u8 Unk_020F6E10[] = {
     0x6
 };
 
-static const u8 Unk_020F6EA0[] = {
+static const u8 sRegionList_France[] = {
     0x2,
     0x1,
     0x4,
@@ -193,7 +199,7 @@ static const u8 Unk_020F6EA0[] = {
     0x14
 };
 
-static const u8 Unk_020F6E28[] = {
+static const u8 sRegionList_UnitedKingdom[] = {
     0x2,
     0x1,
     0x3,
@@ -208,7 +214,7 @@ static const u8 Unk_020F6E28[] = {
     0xC
 };
 
-static const u8 Unk_020F6F24[] = {
+static const u8 sRegionList_India[] = {
     0x1,
     0x2,
     0x3,
@@ -246,7 +252,7 @@ static const u8 Unk_020F6F24[] = {
     0x23
 };
 
-static const u8 Unk_020F6E8C[] = {
+static const u8 sRegionList_Italy[] = {
     0x1,
     0x2,
     0x3,
@@ -269,7 +275,7 @@ static const u8 Unk_020F6E8C[] = {
     0x14
 };
 
-static const u8 Unk_020F6F48[] = {
+static const u8 sRegionList_Japan[] = {
     0x1A,
     0x8,
     0x5,
@@ -322,7 +328,7 @@ static const u8 Unk_020F6F48[] = {
     0x16
 };
 
-static const u8 Unk_020F6E78[] = {
+static const u8 sRegionList_Norway[] = {
     0x1,
     0x2,
     0x3,
@@ -345,7 +351,7 @@ static const u8 Unk_020F6E78[] = {
     0x13
 };
 
-static const u8 Unk_020F6E44[] = {
+static const u8 sRegionList_Poland[] = {
     0x1,
     0x2,
     0x5,
@@ -364,7 +370,7 @@ static const u8 Unk_020F6E44[] = {
     0x10
 };
 
-static const u8 Unk_020F6E20[] = {
+static const u8 sRegionList_Russia[] = {
     0x1,
     0x2,
     0x3,
@@ -374,7 +380,7 @@ static const u8 Unk_020F6E20[] = {
     0x4
 };
 
-static const u8 Unk_020F6ED0[] = {
+static const u8 sRegionList_Sweden[] = {
     0x1,
     0x2,
     0x3,
@@ -401,7 +407,7 @@ static const u8 Unk_020F6ED0[] = {
     0x18
 };
 
-static const u8 Unk_020F6F7C[] = {
+static const u8 sRegionList_UnitedStates[] = {
     0x1,
     0x2,
     0x3,
@@ -455,7 +461,7 @@ static const u8 Unk_020F6F7C[] = {
     0x33
 };
 
-static const u8 Unk_020F7094[] = {
+static const u8 sRegionList_World[] = {
     0x1,
     0x2,
     0x3,
@@ -691,99 +697,116 @@ static const u8 Unk_020F7094[] = {
     0x0
 };
 
-typedef struct {
-    u8 unk_00;
-    u8 unk_01;
-    u16 unk_02;
-    const u8 *unk_04;
-    u32 unk_08;
-} UnkStruct_020F6FB0;
+// One country's entry in the Wi-Fi Earth (Geonet) place table. Each country
+// maps to a member of wifi_earth_place.narc holding its 3D place data, a text
+// bank of region names, and the list of region message IDs within that bank.
+typedef struct WiFiEarthPlace {
+    u8 country; // Country_Text_* ID; 0 is the "None" entry covering the whole world.
+    u8 narcMemberIndex; // Member of wifi_earth_place.narc holding the country's place data.
+    u16 messageBankID; // Text bank containing the country's region names.
+    const u8 *regionList; // Region message IDs within messageBankID, in menu order.
+    u32 regionCount; // Number of entries in regionList.
+} WiFiEarthPlace;
 
-static const UnkStruct_020F6FB0 Unk_020F6FB0[] = {
-    { 0x0, 0x12, 0x2B6, Unk_020F7094, 0x82 },
-    { 0x9, 0x0, 0x2A4, Unk_020F6EB8, 0x18 },
-    { 0xC, 0x1, 0x2A5, Unk_020F6E18, 0x7 },
-    { 0x1C, 0x2, 0x2A6, Unk_020F6EE8, 0x1B },
-    { 0x24, 0x3, 0x2A7, Unk_020F6E34, 0xD },
-    { 0x2B, 0x4, 0x2A8, Unk_020F6F04, 0x1F },
-    { 0x4D, 0x5, 0x2A9, Unk_020F6E54, 0x10 },
-    { 0xC1, 0x6, 0x2AA, Unk_020F6E64, 0x11 },
-    { 0x46, 0x7, 0x2AB, Unk_020F6E10, 0x6 },
-    { 0x47, 0x8, 0x2AC, Unk_020F6EA0, 0x16 },
-    { 0xDB, 0x9, 0x2AD, Unk_020F6E28, 0xC },
-    { 0x5E, 0xA, 0x2AE, Unk_020F6F24, 0x23 },
-    { 0x65, 0xB, 0x2AF, Unk_020F6E8C, 0x14 },
-    { 0x67, 0xC, 0x2B0, Unk_020F6F48, 0x32 },
-    { 0x9C, 0xD, 0x2B1, Unk_020F6E78, 0x14 },
-    { 0xA6, 0xE, 0x2B2, Unk_020F6E44, 0x10 },
-    { 0xAC, 0xF, 0x2B3, Unk_020F6E20, 0x7 },
-    { 0xC7, 0x10, 0x2B4, Unk_020F6ED0, 0x18 },
-    { 0xDC, 0x11, 0x2B5, Unk_020F6F7C, 0x33 }
+// The table is ordered by narcMemberIndex; entry 0 (country 0) is the world
+// overview, whose region list spans every city.
+static const WiFiEarthPlace sWiFiEarthPlaces[] = {
+    { 0x0, 0x12, 0x2B6, sRegionList_World, 0x82 },
+    { 0x9, 0x0, 0x2A4, sRegionList_Argentina, 0x18 },
+    { 0xC, 0x1, 0x2A5, sRegionList_Australia, 0x7 },
+    { 0x1C, 0x2, 0x2A6, sRegionList_Brazil, 0x1B },
+    { 0x24, 0x3, 0x2A7, sRegionList_Canada, 0xD },
+    { 0x2B, 0x4, 0x2A8, sRegionList_China, 0x1F },
+    { 0x4D, 0x5, 0x2A9, sRegionList_Germany, 0x10 },
+    { 0xC1, 0x6, 0x2AA, sRegionList_Spain, 0x11 },
+    { 0x46, 0x7, 0x2AB, sRegionList_Finland, 0x6 },
+    { 0x47, 0x8, 0x2AC, sRegionList_France, 0x16 },
+    { 0xDB, 0x9, 0x2AD, sRegionList_UnitedKingdom, 0xC },
+    { 0x5E, 0xA, 0x2AE, sRegionList_India, 0x23 },
+    { 0x65, 0xB, 0x2AF, sRegionList_Italy, 0x14 },
+    { 0x67, 0xC, 0x2B0, sRegionList_Japan, 0x32 },
+    { 0x9C, 0xD, 0x2B1, sRegionList_Norway, 0x14 },
+    { 0xA6, 0xE, 0x2B2, sRegionList_Poland, 0x10 },
+    { 0xAC, 0xF, 0x2B3, sRegionList_Russia, 0x7 },
+    { 0xC7, 0x10, 0x2B4, sRegionList_Sweden, 0x18 },
+    { 0xDC, 0x11, 0x2B5, sRegionList_UnitedStates, 0x33 }
 };
 
-u32 sub_020996D0(void)
+// Returns the number of entries in the Wi-Fi Earth place table.
+u32 WiFiEarthPlace_GetCount(void)
 {
-    return NELEMS(Unk_020F6FB0);
+    return NELEMS(sWiFiEarthPlaces);
 }
 
-u32 sub_020996D4(u32 param0)
+// Returns the table index for a Country_Text_* ID, or 0 if the country is not
+// present (index 0 is the world entry).
+u32 WiFiEarthPlace_GetIndexByCountry(u32 country)
 {
-    u32 v0;
+    u32 i;
 
-    for (v0 = 0; v0 < NELEMS(Unk_020F6FB0); v0++) {
-        if (Unk_020F6FB0[v0].unk_00 == param0) {
-            return v0;
+    for (i = 0; i < NELEMS(sWiFiEarthPlaces); i++) {
+        if (sWiFiEarthPlaces[i].country == country) {
+            return i;
         }
     }
 
     return 0;
 }
 
-u32 sub_020996F4(u32 param0)
+// Returns the region count for a country plus one. Callers use this as an
+// upper bound when validating a region ID; region 0 means "no region", so the
+// extra entry accounts for it. Returns 0 for an unknown country.
+u32 WiFiEarthPlace_GetRegionLimit(u32 country)
 {
-    u32 v0;
+    u32 i;
 
-    for (v0 = 0; v0 < NELEMS(Unk_020F6FB0); v0++) {
-        if (Unk_020F6FB0[v0].unk_00 == param0) {
-            return Unk_020F6FB0[v0].unk_08 + 1;
+    for (i = 0; i < NELEMS(sWiFiEarthPlaces); i++) {
+        if (sWiFiEarthPlaces[i].country == country) {
+            return sWiFiEarthPlaces[i].regionCount + 1;
         }
     }
 
     return 0;
 }
 
-u32 sub_02099720(u32 param0)
+// Returns the region-name text bank for a Country_Text_* ID.
+u32 WiFiEarthPlace_GetMessageBankByCountry(u32 country)
 {
-    u32 v0 = sub_020996D4(param0);
-    return sub_0209972C(v0);
+    u32 index = WiFiEarthPlace_GetIndexByCountry(country);
+    return WiFiEarthPlace_GetMessageBank(index);
 }
 
-u32 sub_0209972C(u32 param0)
+// Returns the region-name text bank for a table index.
+u32 WiFiEarthPlace_GetMessageBank(u32 index)
 {
-    GF_ASSERT(param0 < NELEMS(Unk_020F6FB0));
-    return Unk_020F6FB0[param0].unk_02;
+    GF_ASSERT(index < NELEMS(sWiFiEarthPlaces));
+    return sWiFiEarthPlaces[index].messageBankID;
 }
 
-u32 sub_02099748(u32 param0)
+// Returns the Country_Text_* ID for a table index.
+u32 WiFiEarthPlace_GetCountry(u32 index)
 {
-    GF_ASSERT(param0 < NELEMS(Unk_020F6FB0));
-    return Unk_020F6FB0[param0].unk_00;
+    GF_ASSERT(index < NELEMS(sWiFiEarthPlaces));
+    return sWiFiEarthPlaces[index].country;
 }
 
-u32 sub_02099764(u32 param0)
+// Returns the wifi_earth_place.narc member holding a country's place data.
+u32 WiFiEarthPlace_GetNarcMemberIndex(u32 index)
 {
-    GF_ASSERT(param0 < NELEMS(Unk_020F6FB0));
-    return Unk_020F6FB0[param0].unk_01;
+    GF_ASSERT(index < NELEMS(sWiFiEarthPlaces));
+    return sWiFiEarthPlaces[index].narcMemberIndex;
 }
 
-const u8 *sub_02099780(u32 param0)
+// Returns the region message-ID list for a table index.
+const u8 *WiFiEarthPlace_GetRegionList(u32 index)
 {
-    GF_ASSERT(param0 < NELEMS(Unk_020F6FB0));
-    return Unk_020F6FB0[param0].unk_04;
+    GF_ASSERT(index < NELEMS(sWiFiEarthPlaces));
+    return sWiFiEarthPlaces[index].regionList;
 }
 
-u32 sub_0209979C(u32 param0)
+// Returns the number of regions listed for a table index.
+u32 WiFiEarthPlace_GetRegionCount(u32 index)
 {
-    GF_ASSERT(param0 < NELEMS(Unk_020F6FB0));
-    return Unk_020F6FB0[param0].unk_08;
+    GF_ASSERT(index < NELEMS(sWiFiEarthPlaces));
+    return sWiFiEarthPlaces[index].regionCount;
 }
