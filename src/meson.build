@@ -345,7 +345,7 @@ pokeplatinum_c = files(
     'frontier_comm_cmd.c',
     'union_room_comm.c',
     'union_room_spin_trade.c',
-    'unk_0209C370.c',
+    'battle_subscreen_cursor.c',
     'wifi_comm.c',
     'unk_020EDBAC.c',
     'rowan_intro_app_template.c',
