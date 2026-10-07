@@ -21,7 +21,7 @@
 #include "string_gf.h"
 #include "string_template.h"
 #include "system.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 static void ov83_0223CC30(BgConfig **param0, enum HeapID heapID);
 static void ov83_0223CCCC(BgConfig **param0);

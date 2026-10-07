@@ -37,7 +37,7 @@
 #include "sys_task_manager.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 #include "res/trainers/classes/field_encounteffect.naix"
 

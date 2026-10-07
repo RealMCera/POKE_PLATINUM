@@ -10,7 +10,7 @@
 #include "pokemon_sprite.h"
 #include "rtc.h"
 #include "spl.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 typedef struct UnkStruct_ov77_021D6CFC_t {
     PokemonSpriteManager *unk_00;

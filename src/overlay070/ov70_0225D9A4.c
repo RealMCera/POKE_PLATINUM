@@ -71,7 +71,7 @@
 #include "touch_screen_actions.h"
 #include "trainer_info.h"
 #include "type_icon.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "vram_transfer.h"
 
 typedef struct {

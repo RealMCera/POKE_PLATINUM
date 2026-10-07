@@ -91,7 +91,7 @@ pokeplatinum_c = files(
     'font_manager.c',
     'touch_screen_actions.c',
     'billboard_gfx_sequence.c',
-    'unk_0202419C.c',
+    'g3_buffer.c',
     'hardware_palette.c',
     'g3d_pipeline.c',
     'boot.c',

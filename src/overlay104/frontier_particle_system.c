@@ -5,7 +5,7 @@
 #include "camera.h"
 #include "heap.h"
 #include "particle_system.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 static u32 AllocTexVram(u32 size, BOOL is4x4comp);
 static u32 AllocPaletteVram(u32 size, BOOL is4pltt);

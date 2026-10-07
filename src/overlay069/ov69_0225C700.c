@@ -48,7 +48,7 @@
 #include "sys_task_manager.h"
 #include "system.h"
 #include "text.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "wifi_earth_place.h"
 #include "vram_transfer.h"
 #include "wifi_history_save_data.h"

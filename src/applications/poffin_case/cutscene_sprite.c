@@ -6,7 +6,7 @@
 #include "gx_layers.h"
 #include "pokemon.h"
 #include "pokemon_sprite.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 static void SetupCamera(PoffinCutsceneMonSprite *monSprite, enum HeapID heapID);
 static void SetupSprite(PoffinCutsceneMonSprite *monSprite, PoffinCutscenePokemon *mon, enum HeapID heapID);

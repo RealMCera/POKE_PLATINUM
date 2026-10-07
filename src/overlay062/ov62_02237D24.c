@@ -45,7 +45,7 @@
 #include "touch_screen.h"
 #include "touch_screen_actions.h"
 #include "font_oam.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "image_clips.h"
 #include "player_profile.h"
 #include "vs_recorder_ring.h"

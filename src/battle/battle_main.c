@@ -79,7 +79,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "trainer_info.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "battle_recording.h"
 #include "comm_server_client.h"
 #include "comm_tool.h"

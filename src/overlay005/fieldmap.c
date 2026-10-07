@@ -76,7 +76,7 @@
 #include "screen_fade.h"
 #include "script_manager.h"
 #include "system.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "field_system_time.h"
 #include "vram_transfer.h"
 

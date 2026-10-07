@@ -13,7 +13,7 @@
 #include "heap.h"
 #include "particle_system.h"
 #include "spl.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 // Graphics and particle-system setup for the evolution cutscene. The scene
 // draws a 3D background on engine A's BG0 layer and overlays SPL particle

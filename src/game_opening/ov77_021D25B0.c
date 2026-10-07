@@ -31,7 +31,7 @@
 #include "sys_task.h"
 #include "sys_task_manager.h"
 #include "system.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 #include "vram_transfer.h"
 
 FS_EXTERN_OVERLAY(game_opening);

@@ -24,7 +24,7 @@
 #include "sprite_transfer.h"
 #include "sprite_util.h"
 #include "system.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 static void ov22_02255634(void);
 static void ov22_02255654(void);

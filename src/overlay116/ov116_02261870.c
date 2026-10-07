@@ -23,7 +23,7 @@
 #include "string_gf.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_0202419C.h"
+#include "g3_buffer.h"
 
 static inline void inline_ov116_02261940(UnkStruct_ov116_0226501C *param0);
 static inline void inline_ov116_02261940_1(void);
