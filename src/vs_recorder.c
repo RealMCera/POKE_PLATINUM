@@ -308,7 +308,7 @@ static BOOL VsRecorder_RunBattlePlayback(VsRecorderAppData *param0, enum HeapID 
     } break;
     case 2: {
         Sound_SetPlayerVolume(1, 127);
-        sub_02005464(1);
+        Sound_SetChatotCryPlaybackDisabled(1);
 
         if (VsRecorder_IsFrontierBrain(param0->battleDTO->trainer[1].header.trainerType) == 1) {
             Sound_SetSceneAndPlayBGM(SOUND_SCENE_BATTLE, BATTLE_FRONTIER_BRAIN_sseq, 1);
@@ -339,7 +339,7 @@ static BOOL VsRecorder_RunBattlePlayback(VsRecorderAppData *param0, enum HeapID 
         {
             u16 bgmID;
 
-            sub_02005464(0);
+            Sound_SetChatotCryPlaybackDisabled(0);
             Sound_SetScene(SOUND_SCENE_NONE);
 
             bgmID = FieldBGM_GetEffective(param0->fieldSystem, param0->fieldSystem->location->mapHeaderID);

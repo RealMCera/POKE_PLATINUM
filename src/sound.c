@@ -12,6 +12,24 @@
 #include "sound_playback.h"
 #include "sound_system.h"
 
+// High-level wrapper around the Nitro sound library.
+//
+// The game drives audio through a small set of "sound scenes". A scene selects
+// which sound effects, banks and wave archives are resident in the sound heap,
+// and which BGM should play. Sound_SetSceneAndPlayBGM() is the main entry point:
+// it records the scene, loads the scene's sound data, and dispatches to a
+// scene-specific BGM player (field, battle, contest, WiFi, dress-up, cutscene,
+// ...). Field BGM is special-cased because it can be paused and resumed across
+// scene changes (e.g. when entering a battle) rather than being torn down.
+//
+// Sequence loading is layered on top of the heap-state snapshots kept by
+// sound_system.c. Each scene saves/restores a heap state (persistent data, BGM
+// bank, BGM, SFX, ...) so that switching scenes only reloads what changed.
+//
+// Volume is handled at two levels: per-handle/sequence volume (fades, initial
+// volume, voice-chat attenuation) and per-wave-out-channel volume for raw
+// waveform playback (Pokemon cries, Chatot cries, reversed samples).
+
 #define BGM_PLAYER_NORMAL_CHANNELS 0x7FF
 #define BGM_PLAYER_EXTRA_CHANNELS  0x7FFF
 
@@ -22,9 +40,9 @@ static void Sound_LoadSoundEffectsForSceneWithState(u8 scene);
 static void Sound_Impl_PlayFieldBGM(u16 bgmID, int unused);
 static void Sound_Impl_ResumeAndSwitchFieldBGM(u16 bgmID, u16 unused);
 static void Sound_Impl_PlayBattleBGM(u16 bgmID, int unused);
-static void sub_020048AC(u16 bgmID, int unused);
+static void Sound_Impl_PlayWiFiBGM(u16 bgmID, int unused);
 static void Sound_Impl_PlayContestBGM(u16 bgmID, int unused);
-static void sub_020048F0(u16 bgmID, int unused);
+static void Sound_Impl_PlayDressUpBGM(u16 bgmID, int unused);
 static void Sound_Impl_LoadSubSceneSoundData(u8 scene);
 static void Sound_Impl_PlayCutsceneBGM(u8 scene, u16 bgmID, int unused);
 static void Sound_Impl_ReverseBuffer(u8 *buffer, u32 size);
@@ -244,6 +262,9 @@ int Sound_LoadSoundEffectsForScene(u8 scene)
     return result;
 }
 
+// Switches to `scene` and starts its BGM. Returns FALSE without doing anything
+// if the requested scene is already active. The scene determines both the sound
+// data loaded into the heap and which BGM player is used.
 BOOL Sound_SetSceneAndPlayBGM(u8 scene, u16 bgmID, int unused)
 {
     u8 *mainScene = SoundSystem_GetParam(SOUND_SYSTEM_PARAM_MAIN_SCENE);
@@ -272,13 +293,13 @@ BOOL Sound_SetSceneAndPlayBGM(u8 scene, u16 bgmID, int unused)
         Sound_Impl_PlayBattleBGM(bgmID, unused);
         break;
     case 11:
-        sub_020048AC(bgmID, unused);
+        Sound_Impl_PlayWiFiBGM(bgmID, unused);
         break;
     case SOUND_SCENE_CONTEST:
         Sound_Impl_PlayContestBGM(bgmID, unused);
         break;
     case SOUND_SCENE_7:
-        sub_020048F0(bgmID, unused);
+        Sound_Impl_PlayDressUpBGM(bgmID, unused);
         break;
     case SOUND_SCENE_SUB_BAG:
     case 52:
@@ -404,6 +425,9 @@ static void Sound_Impl_ResumeAndSwitchFieldBGM(u16 bgmID, u16 unused)
     Sound_SetFieldBGMBankState(FIELD_BGM_BANK_STATE_IDLE);
 }
 
+// Loads the bank and wave archive needed by the field BGM. Only runs when the
+// field BGM bank is marked for switching (or no bank is active yet); the loaded
+// data is snapshotted into the BGM heap state so it can be restored later.
 void Sound_LoadSoundDataForFieldBGM(u16 seqID, u16 currentBankID)
 {
     u8 *bankState = SoundSystem_GetParam(SOUND_SYSTEM_PARAM_FIELD_BGM_BANK_STATE);
@@ -441,14 +465,17 @@ static void Sound_Impl_PlayBattleBGM(u16 bgmID, int unused)
     Sound_PlayBGM(bgmID);
 }
 
-static void sub_020048AC(u16 param0, int param1)
+// Plays the BGM for the WiFi/communication scene (SOUND_SCENE_11).
+// Unlike the other scene players, it clears any pending BGM pause flags so
+// that the communication BGM always starts from a clean state.
+static void Sound_Impl_PlayWiFiBGM(u16 bgmID, int unused)
 {
     UNUSED(SoundSystem_GetParam(SOUND_SYSTEM_PARAM_HEAP_STATE_PERSISTENT));
 
     Sound_StopWaveOutAndSequences();
     Sound_ClearBGMPauseFlags();
     Sound_LoadSoundEffectsForSceneWithState(SOUND_SCENE_FIELD);
-    Sound_PlayBGM(param0);
+    Sound_PlayBGM(bgmID);
 }
 
 void Sound_Impl_PlayContestBGM(u16 bgmID, int unused)
@@ -461,7 +488,8 @@ void Sound_Impl_PlayContestBGM(u16 bgmID, int unused)
     Sound_PlayBGM(bgmID);
 }
 
-void sub_020048F0(u16 bgmID, int unused)
+// Plays the BGM for the contest dress-up scene (SOUND_SCENE_7).
+void Sound_Impl_PlayDressUpBGM(u16 bgmID, int unused)
 {
     UNUSED(SoundSystem_GetParam(SOUND_SYSTEM_PARAM_HEAP_STATE_PERSISTENT));
 
@@ -573,11 +601,13 @@ void Sound_ClearBGMPauseFlags(void)
     *bgmPaused = FALSE;
 }
 
+// Fades the given handle's volume to `targetVolume` over `frames`.
 void Sound_FadeVolumeForHandle(enum SoundHandleType handleType, int targetVolume, int frames)
 {
     NNS_SndPlayerMoveVolume(SoundSystem_GetSoundHandle(handleType), targetVolume, frames);
 }
 
+// Sets the starting volume for a handle, clamped to the valid volume range.
 void Sound_SetInitialVolumeForHandle(enum SoundHandleType handleType, int volume)
 {
     if (volume < SOUND_VOLUME_MIN) {
@@ -1369,10 +1399,12 @@ void Sound_Set2PokemonCriesAllowed(BOOL allowed)
     *param = allowed;
 }
 
-void sub_02005464(BOOL param0)
+// Disables playback of recorded Chatot cries while set. Used by the VS
+// recorder to silence Chatot cries during battle recording.
+void Sound_SetChatotCryPlaybackDisabled(BOOL disabled)
 {
-    u8 *v0 = SoundSystem_GetParam(SOUND_SYSTEM_PARAM_54);
+    u8 *param = SoundSystem_GetParam(SOUND_SYSTEM_PARAM_54);
 
-    *v0 = param0;
+    *param = disabled;
     return;
 }

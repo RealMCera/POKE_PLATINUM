@@ -204,7 +204,7 @@ void Sound_WaveData_AccumulateAmplitudes(const SNDWaveData *data, u8 *amplitudes
 void Sound_ConfigureBGMChannelsAndReverb(enum SoundChannelConfig config);
 void Sound_SetPlayerVolume(int playerID, int volume);
 void Sound_Set2PokemonCriesAllowed(BOOL allowed);
-void sub_02005464(BOOL param0);
+void Sound_SetChatotCryPlaybackDisabled(BOOL disabled);
 
 static inline u16 Sound_GetCurrentBGM1(void *p)
 {
