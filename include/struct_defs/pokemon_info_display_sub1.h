@@ -3,9 +3,10 @@
 
 #include "string_gf.h"
 
-typedef struct PokemonInfoDisplayStruct_sub1 {
-    int unk_00;
-    String *unk_04;
-} PokemonInfoDisplayStruct_sub1;
+// One line of the trainer memo: the 1-based row it is drawn on and its text.
+typedef struct PokemonInfoDisplayLine {
+    int line;
+    String *text;
+} PokemonInfoDisplayLine;
 
 #endif // POKEPLATINUM_STRUCT_DEF_POKEMON_INFO_DISPLAY_SUB1_H

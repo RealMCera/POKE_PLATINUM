@@ -75,7 +75,7 @@
 #include "unk_02038ED4.h"
 #include "unk_02038F8C.h"
 #include "wifi_friend_registration.h"
-#include "unk_02092494.h"
+#include "pokemon_info_display.h"
 #include "vars_flags.h"
 #include "vram_transfer.h"
 #include "wifi_list.h"

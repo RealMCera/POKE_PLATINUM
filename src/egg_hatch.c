@@ -34,7 +34,7 @@
 #include "sound_playback.h"
 #include "system.h"
 #include "trainer_info.h"
-#include "unk_02092494.h"
+#include "pokemon_info_display.h"
 #include "vram_transfer.h"
 
 FS_EXTERN_OVERLAY(egg_hatch_cutscene);

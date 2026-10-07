@@ -18,7 +18,7 @@
 #include "save_player.h"
 #include "system_flags.h"
 #include "trainer_info.h"
-#include "unk_02092494.h"
+#include "pokemon_info_display.h"
 #include "vars_flags.h"
 
 BOOL ScrCmd_SetClearInCatchingShowFlag(ScriptContext *ctx)

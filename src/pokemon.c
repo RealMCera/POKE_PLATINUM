@@ -51,7 +51,7 @@
 #include "trainer_data.h"
 #include "trainer_info.h"
 #include "special_met_location.h"
-#include "unk_02092494.h"
+#include "pokemon_info_display.h"
 
 #include "res/pokemon/regional_pokedex_size.h"
 #include "res/trainers/classes/trbgra.naix"

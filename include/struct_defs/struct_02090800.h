@@ -9,15 +9,15 @@
 
 typedef struct {
     enum HeapID heapID;
-    MessageLoader *unk_04;
-    StringTemplate *unk_08;
-    Pokemon *unk_0C;
-    BOOL unk_10;
-    PokemonInfoDisplayStruct_sub1 unk_14;
-    PokemonInfoDisplayStruct_sub1 unk_1C;
-    PokemonInfoDisplayStruct_sub1 unk_24;
-    PokemonInfoDisplayStruct_sub1 unk_2C;
-    PokemonInfoDisplayStruct_sub1 unk_34;
+    MessageLoader *messageLoader;
+    StringTemplate *stringTemplate;
+    Pokemon *mon;
+    BOOL monOTMatches;
+    PokemonInfoDisplayLine natureText;
+    PokemonInfoDisplayLine metInfoText;
+    PokemonInfoDisplayLine ivsText;
+    PokemonInfoDisplayLine flavorText;
+    PokemonInfoDisplayLine friendshipText;
 } PokemonInfoDisplayStruct;
 
 #endif // POKEPLATINUM_STRUCT_02090800_H
