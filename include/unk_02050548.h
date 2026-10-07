@@ -1,6 +1,0 @@
-#ifndef POKEPLATINUM_UNK_02050548_H
-#define POKEPLATINUM_UNK_02050548_H
-
-void BattleArcade_ProcessSpeciesCheckMsg(int param0, int param1, void *param2, void *param3);
-
-#endif // POKEPLATINUM_UNK_02050548_H
