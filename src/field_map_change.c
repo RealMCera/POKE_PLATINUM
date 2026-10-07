@@ -377,7 +377,7 @@ static void FieldMapChange_CreateObjects(FieldSystem *fieldSystem)
 
     fieldSystem->playerAvatar = PlayerAvatar_New(fieldSystem->mapObjMan, fieldSystem->location->x, fieldSystem->location->z, fieldSystem->location->faceDirection, playerData->playerState, gender, 0, playerData);
 
-    sub_0203A418(fieldSystem);
+    MapHeaderData_AddMapObjects(fieldSystem);
     MapObjectMan_StopAllMovement(fieldSystem->mapObjMan);
 }
 

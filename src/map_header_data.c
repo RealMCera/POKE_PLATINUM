@@ -15,22 +15,34 @@
 #include "map_object.h"
 #include "narc.h"
 
+// Map-header event and encounter data.
+//
+// MapHeaderData_Load reads the map header's event archive and splits it into
+// the four event lists (background, object, warp, and coordinate events), then
+// loads the map's wild encounters and init scripts. The accessors below expose
+// those lists to the field system; the Set* functions mutate individual events
+// in place, which scripts use to move warps or NPCs at runtime.
+
 static void MapHeaderData_LoadEvents(MapHeaderData *data, enum MapHeaderID mapHeaderID);
 static void MapHeaderData_ParseEvents(MapHeaderData *data);
 static void MapHeaderData_LoadInitScripts(MapHeaderData *data, int headerID);
 
+// Allocates the map-header data for the field system.
 void MapHeaderData_Init(FieldSystem *fieldSystem, enum HeapID heapID)
 {
     GF_ASSERT(fieldSystem->mapHeaderData == NULL);
     fieldSystem->mapHeaderData = Heap_Alloc(heapID, sizeof(MapHeaderData));
 }
 
+// Frees the map-header data.
 void MapHeaderData_Free(FieldSystem *fieldSystem)
 {
     GF_ASSERT(fieldSystem->mapHeaderData != NULL);
     Heap_Free(fieldSystem->mapHeaderData);
 }
 
+// Loads all map-header data for the given map: events, wild encounters, and
+// init scripts.
 void MapHeaderData_Load(FieldSystem *fieldSystem, enum MapHeaderID mapHeaderID)
 {
     GF_ASSERT(fieldSystem->mapHeaderData != NULL);
@@ -41,6 +53,7 @@ void MapHeaderData_Load(FieldSystem *fieldSystem, enum MapHeaderID mapHeaderID)
     MapHeaderData_LoadInitScripts(fieldSystem->mapHeaderData, mapHeaderID);
 }
 
+// Reads the map's event archive into the temporary buffer.
 static void MapHeaderData_LoadEvents(MapHeaderData *data, enum MapHeaderID mapHeaderID)
 {
     int eventsID = MapHeader_GetEventsArchiveID(mapHeaderID);
@@ -48,7 +61,8 @@ static void MapHeaderData_LoadEvents(MapHeaderData *data, enum MapHeaderID mapHe
     NARC_ReadWholeMemberByIndexPair(data->tmpEventsBuf, NARC_INDEX_FIELDDATA__EVENTDATA__ZONE_EVENT, eventsID);
 }
 
-void sub_0203A418(FieldSystem *fieldSystem)
+// Instantiates the map objects described by the loaded object events.
+void MapHeaderData_AddMapObjects(FieldSystem *fieldSystem)
 {
     int numObjectEvents = fieldSystem->mapHeaderData->numObjectEvents;
 
@@ -59,16 +73,20 @@ void sub_0203A418(FieldSystem *fieldSystem)
     }
 }
 
+// Returns the map's background events.
 const BgEvent *MapHeaderData_GetBgEvents(const FieldSystem *fieldSystem)
 {
     return fieldSystem->mapHeaderData->bgEvents;
 }
 
+// Returns the number of background events on the map.
 int MapHeaderData_GetNumBgEvents(const FieldSystem *fieldSystem)
 {
     return fieldSystem->mapHeaderData->numBgEvents;
 }
 
+// Returns the warp event at the given index, or NULL if the index is out of
+// range.
 const WarpEvent *MapHeaderData_GetWarpEventByIndex(const FieldSystem *fieldSystem, int index)
 {
     return (index >= fieldSystem->mapHeaderData->numWarpEvents)
@@ -76,6 +94,8 @@ const WarpEvent *MapHeaderData_GetWarpEventByIndex(const FieldSystem *fieldSyste
         : &fieldSystem->mapHeaderData->warpEvents[index];
 }
 
+// Returns the index of the warp event at the given position, or -1 if there is
+// none.
 int MapHeaderData_GetIndexOfWarpEventAtPos(const FieldSystem *fieldSystem, int x, int z)
 {
     for (int i = 0; i < fieldSystem->mapHeaderData->numWarpEvents; i++) {
@@ -88,26 +108,31 @@ int MapHeaderData_GetIndexOfWarpEventAtPos(const FieldSystem *fieldSystem, int x
     return -1;
 }
 
+// Returns the number of coordinate events on the map.
 int MapHeaderData_GetNumCoordEvents(const FieldSystem *fieldSystem)
 {
     return fieldSystem->mapHeaderData->numCoordEvents;
 }
 
+// Returns the map's coordinate events.
 const CoordEvent *MapHeaderData_GetCoordEvents(const FieldSystem *fieldSystem)
 {
     return fieldSystem->mapHeaderData->coordEvents;
 }
 
+// Returns the number of object events on the map.
 u32 MapHeaderData_GetNumObjectEvents(const FieldSystem *fieldSystem)
 {
     return fieldSystem->mapHeaderData->numObjectEvents;
 }
 
+// Returns the map's object events.
 const ObjectEvent *MapHeaderData_GetObjectEvents(const FieldSystem *fieldSystem)
 {
     return fieldSystem->mapHeaderData->objectEvents;
 }
 
+// Moves the object event with the given local ID to the given position.
 BOOL MapHeaderData_SetObjectEventPos(FieldSystem *fieldSystem, int localID, u16 x, u16 z)
 {
     int i;
@@ -126,6 +151,7 @@ BOOL MapHeaderData_SetObjectEventPos(FieldSystem *fieldSystem, int localID, u16 
     return FALSE;
 }
 
+// Sets the facing direction of the object event with the given local ID.
 BOOL MapHeaderData_SetObjectEventDir(FieldSystem *fieldSystem, int localID, int dir)
 {
     int i;
@@ -143,6 +169,7 @@ BOOL MapHeaderData_SetObjectEventDir(FieldSystem *fieldSystem, int localID, int 
     return FALSE;
 }
 
+// Sets the movement type of the object event with the given local ID.
 BOOL MapHeaderData_SetObjectEventMovementType(FieldSystem *fieldSystem, int localID, int movementType)
 {
     int i;
@@ -160,6 +187,7 @@ BOOL MapHeaderData_SetObjectEventMovementType(FieldSystem *fieldSystem, int loca
     return FALSE;
 }
 
+// Moves the warp event at the given index to the given position.
 BOOL MapHeaderData_SetWarpEventPos(FieldSystem *fieldSystem, u16 index, u16 x, u16 z)
 {
     WarpEvent *warpEvent = fieldSystem->mapHeaderData->warpEvents;
@@ -168,6 +196,7 @@ BOOL MapHeaderData_SetWarpEventPos(FieldSystem *fieldSystem, u16 index, u16 x, u
     return TRUE;
 }
 
+// Sets the destination map header of the warp event at the given index.
 BOOL MapHeaderData_SetWarpEventDestHeaderID(FieldSystem *fieldSystem, u16 index, u16 destHeaderID)
 {
     WarpEvent *warpEvents = fieldSystem->mapHeaderData->warpEvents;
@@ -175,6 +204,7 @@ BOOL MapHeaderData_SetWarpEventDestHeaderID(FieldSystem *fieldSystem, u16 index,
     return TRUE;
 }
 
+// Sets the destination warp point of the warp event at the given index.
 BOOL MapHeaderData_SetWarpEventDestWarpID(FieldSystem *fieldSystem, u16 index, u16 destWarpID)
 {
     WarpEvent *warpEvents = fieldSystem->mapHeaderData->warpEvents;
@@ -182,6 +212,7 @@ BOOL MapHeaderData_SetWarpEventDestWarpID(FieldSystem *fieldSystem, u16 index, u
     return TRUE;
 }
 
+// Moves the background event at the given index to the given position.
 BOOL MapHeaderData_SetBgEventPos(FieldSystem *fieldSystem, u16 index, u16 x, u16 z)
 {
     BgEvent *bgEvent = MapHeaderData_GetBgEvents(fieldSystem);
@@ -205,6 +236,8 @@ BOOL MapHeaderData_SetBgEventPos(FieldSystem *fieldSystem, u16 index, u16 x, u16
         events += sizeof(T) * (dataNumTEvents);        \
     } while (0)
 
+// Splits the raw event buffer into the four event lists. Each list is preceded
+// by a u32 count; the list pointers point into the buffer.
 static void MapHeaderData_ParseEvents(MapHeaderData *data)
 {
     const u8 *events = (const u8 *)data->tmpEventsBuf;
@@ -215,6 +248,8 @@ static void MapHeaderData_ParseEvents(MapHeaderData *data)
     CONSUME_EVENTS(CoordEvent, data->coordEvents, data->numCoordEvents);
 }
 
+// Loads the wild encounters for the given map, or clears them if the map has
+// none.
 void MapHeaderData_LoadWildEncounters(WildEncounters *data, enum MapHeaderID mapHeaderID)
 {
     memset(data, 0, sizeof(WildEncounters));
@@ -226,11 +261,13 @@ void MapHeaderData_LoadWildEncounters(WildEncounters *data, enum MapHeaderID map
     }
 }
 
+// Returns the map's wild encounters.
 const WildEncounters *MapHeaderData_GetWildEncounters(const FieldSystem *fieldSystem)
 {
     return &fieldSystem->mapHeaderData->wildEncounters;
 }
 
+// Reads the map's init scripts into the data buffer.
 static void MapHeaderData_LoadInitScripts(MapHeaderData *data, int headerID)
 {
     int initScriptsID = MapHeader_GetInitScriptsArchiveID(headerID);
@@ -241,12 +278,14 @@ static void MapHeaderData_LoadInitScripts(MapHeaderData *data, int headerID)
     NARC_ReadWholeMemberByIndexPair(data->initScripts, NARC_INDEX_FIELDDATA__SCRIPT__SCR_SEQ, initScriptsID);
 }
 
+// Returns the raw bytes of the map's init scripts.
 const u8 *MapHeaderData_GetInitScriptBytes(const FieldSystem *fieldSystem)
 {
     GF_ASSERT(fieldSystem->mapHeaderData != NULL);
     return (const u8 *)&fieldSystem->mapHeaderData->initScripts;
 }
 
+// Returns TRUE if no object event is placed at the given position.
 BOOL MapHeaderData_IsPosFreeOfObjectEvents(const FieldSystem *fieldSystem, u16 x, u16 z)
 {
     const MapHeaderData *data = fieldSystem->mapHeaderData;

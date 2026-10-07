@@ -7,6 +7,8 @@
 #include "field/field_system_decl.h"
 #include "overlay006/wild_encounters.h"
 
+// A background event: an interactable tile (sign, hidden item, etc.) at a fixed
+// position. `script` is the script run when the player interacts with it.
 typedef struct BgEvent {
     u16 script;
     u16 type;
@@ -17,6 +19,7 @@ typedef struct BgEvent {
     u8 padding[2];
 } BgEvent;
 
+// An object event: an NPC or other map object placed on the map.
 typedef struct ObjectEvent {
     u16 localID;
     u16 graphicsID;
@@ -33,6 +36,7 @@ typedef struct ObjectEvent {
     fx32 y;
 } ObjectEvent;
 
+// A warp event: a tile that warps the player to another map or warp point.
 typedef struct WarpEvent {
     u16 x;
     u16 z;
@@ -41,6 +45,8 @@ typedef struct WarpEvent {
     u8 unused[4];
 } WarpEvent;
 
+// A coordinate event: a rectangular trigger region that runs a script when the
+// player steps onto it.
 typedef struct CoordEvent {
     u16 script;
     u16 x;
@@ -52,6 +58,8 @@ typedef struct CoordEvent {
     u16 var;
 } CoordEvent;
 
+// The runtime map-header data for the current map. The event lists point into
+// tmpEventsBuf, which holds the raw event archive read from the ROM.
 typedef struct MapHeaderData {
     u32 numBgEvents;
     u32 numObjectEvents;
@@ -69,7 +77,7 @@ typedef struct MapHeaderData {
 void MapHeaderData_Init(FieldSystem *fieldSystem, enum HeapID heapID);
 void MapHeaderData_Free(FieldSystem *fieldSystem);
 void MapHeaderData_Load(FieldSystem *fieldSystem, enum MapHeaderID mapHeaderID);
-void sub_0203A418(FieldSystem *fieldSystem);
+void MapHeaderData_AddMapObjects(FieldSystem *fieldSystem);
 const BgEvent *MapHeaderData_GetBgEvents(const FieldSystem *fieldSystem);
 int MapHeaderData_GetNumBgEvents(const FieldSystem *fieldSystem);
 const WarpEvent *MapHeaderData_GetWarpEventByIndex(const FieldSystem *fieldSystem, int index);
