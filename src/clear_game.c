@@ -48,6 +48,8 @@
 
 #include "res/text/bank/common_strings.h"
 
+// State carried across the clearing sequence: the Hall of Fame/credits data,
+// the message window used for the save messages, and the save delay counter.
 typedef struct ClearGameStruct {
     BOOL gameCompleted;
     HallOfFameDisplayData displayData;
@@ -59,9 +61,9 @@ typedef struct ClearGameStruct {
     int delay;
 } ClearGameStruct;
 
-static void sub_02052F28(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct);
-static void sub_02052FA8(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct);
-static void sub_02053028(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct, int saveResult);
+static void ClearGame_InitDisplay(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct);
+static void ClearGame_PrintSavingMessage(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct);
+static void ClearGame_PrintSaveResultMessage(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct, int saveResult);
 static void ClearGame_FreeStringDestroyDialClearWindow(ClearGameStruct *clearGameStruct);
 static void ClearGame_FreeStringRemoveWindowFreeTilemapBuffer(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct);
 static BOOL ClearGame_FieldMessageFinishedPrinting(ClearGameStruct *clearGameStruct);
@@ -85,6 +87,9 @@ static void ClearGame_AddHallOfFameEntry(FieldSystem *fieldSystem, BOOL gameComp
     Heap_Free(hallOfFame);
 }
 
+// Runs the post-game clearing sequence as a field task. The sequence shows the
+// Hall of Fame, saves the game (unless the save must not be overwritten), then
+// fades out and hands off to the end credits before resetting the system.
 static BOOL FieldTask_DoClearGameSequence(FieldTask *task)
 {
     FieldSystem *fieldSystem = FieldTask_GetFieldSystem(task);
@@ -94,21 +99,25 @@ static BOOL FieldTask_DoClearGameSequence(FieldTask *task)
 
     switch (*state) {
     case 0:
+        // Show the Hall of Fame before the game is saved.
         FieldTask_StartHallOfFame(fieldSystem, displayData);
         (*state)++;
         break;
     case 1:
+        // Wait for the Hall of Fame app to exit, then set up the save message
+        // display and fade the screen in.
         if (!FieldSystem_IsRunningApplication(fieldSystem)) {
             Heap_Create(HEAP_ID_APPLICATION, HEAP_ID_FIELD1, HEAP_SIZE_FIELD1);
-            sub_02052F28(fieldSystem, clearGameStruct);
+            ClearGame_InitDisplay(fieldSystem, clearGameStruct);
             StartScreenFade(FADE_MAIN_ONLY, FADE_TYPE_BRIGHTNESS_IN, FADE_TYPE_BRIGHTNESS_IN, COLOR_BLACK, 8, 1, HEAP_ID_FIELD3);
             (*state)++;
         }
         break;
     case 2:
+        // Once faded in, save the game unless an overwrite check forbids it.
         if (IsScreenFadeDone()) {
             if (SaveData_OverwriteCheck(fieldSystem->saveData) == FALSE) {
-                sub_02052FA8(fieldSystem, clearGameStruct);
+                ClearGame_PrintSavingMessage(fieldSystem, clearGameStruct);
                 (*state)++;
             } else {
                 (*state) = 7;
@@ -116,6 +125,7 @@ static BOOL FieldTask_DoClearGameSequence(FieldTask *task)
         }
         break;
     case 3:
+        // Wait for the "Saving..." message to finish printing.
         if (ClearGame_FieldMessageFinishedPrinting(clearGameStruct)) {
             (*state)++;
         }
@@ -123,15 +133,19 @@ static BOOL FieldTask_DoClearGameSequence(FieldTask *task)
     case 4: {
         int saveResult;
 
+        // Heal the party, write the save, record the Hall of Fame entry, and
+        // print the save result message.
         Party_HealAllMembers(SaveData_GetParty(fieldSystem->saveData));
         SaveData_SetFullSaveRequired();
         saveResult = SaveData_Save(fieldSystem->saveData);
         ClearGame_AddHallOfFameEntry(fieldSystem, clearGameStruct->gameCompleted);
         ClearGame_FreeStringDestroyDialClearWindow(clearGameStruct);
-        sub_02053028(fieldSystem, clearGameStruct, saveResult);
+        ClearGame_PrintSaveResultMessage(fieldSystem, clearGameStruct, saveResult);
         (*state)++;
     } break;
     case 5:
+        // Wait for the save result message, then play the save jingle and hold
+        // it on screen for a short delay.
         if (ClearGame_FieldMessageFinishedPrinting(clearGameStruct)) {
             Sound_PlayEffect(SEQ_SE_DP_SAVE_sseq);
             clearGameStruct->delay = 18;
@@ -139,6 +153,7 @@ static BOOL FieldTask_DoClearGameSequence(FieldTask *task)
         }
         break;
     case 6:
+        // Count down the delay before fading out.
         if (clearGameStruct->delay) {
             clearGameStruct->delay--;
         } else {
@@ -146,10 +161,12 @@ static BOOL FieldTask_DoClearGameSequence(FieldTask *task)
         }
         break;
     case 7:
+        // Fade the screen out.
         StartScreenFade(FADE_MAIN_ONLY, FADE_TYPE_BRIGHTNESS_OUT, FADE_TYPE_BRIGHTNESS_OUT, COLOR_BLACK, 8, 1, HEAP_ID_FIELD3);
         (*state)++;
         break;
     case 8:
+        // Tear down the message display and start the end credits.
         if (IsScreenFadeDone()) {
             ClearGame_FreeStringRemoveWindowFreeTilemapBuffer(fieldSystem, clearGameStruct);
             FieldSystem_StartEndCredits(fieldSystem, &(clearGameStruct->playerInfo));
@@ -157,6 +174,7 @@ static BOOL FieldTask_DoClearGameSequence(FieldTask *task)
         }
         break;
     case 9:
+        // Wait for the credits to finish, then reset the system to the title.
         if (!FieldSystem_IsRunningApplication(fieldSystem)) {
             Heap_Free(clearGameStruct);
             Heap_Destroy(HEAP_ID_FIELD1);
@@ -211,7 +229,9 @@ void ClearGame(FieldTask *task)
     FieldTask_InitCall(task, FieldTask_DoClearGameSequence, clearGameStruct);
 }
 
-static void sub_02052F28(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct)
+// Sets up the graphics banks, display modes and BG layer used to show the save
+// message, and initializes the message window.
+static void ClearGame_InitDisplay(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct)
 {
     static const GXBanks v0 = {
         GX_VRAM_BG_128_B,
@@ -262,7 +282,9 @@ static void sub_02052F28(FieldSystem *fieldSystem, ClearGameStruct *clearGameStr
     Bg_CopyTilemapBufferToVRAM(fieldSystem->bgConfig, 3);
 }
 
-static void sub_02052FA8(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct)
+// Prints the "Saving... Don't turn off the power." message and shows a wait
+// dial while the save is written.
+static void ClearGame_PrintSavingMessage(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct)
 {
     Options *options = SaveData_GetOptions(fieldSystem->saveData);
 
@@ -287,7 +309,9 @@ static void ClearGame_FreeStringDestroyDialClearWindow(ClearGameStruct *clearGam
     FieldMessage_ClearWindow(&clearGameStruct->window);
 }
 
-static void sub_02053028(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct, int saveResult)
+// Prints the outcome of the save: "<player> saved the game." on success, or
+// "Save error." otherwise.
+static void ClearGame_PrintSaveResultMessage(FieldSystem *fieldSystem, ClearGameStruct *clearGameStruct, int saveResult)
 {
     MessageLoader *msgLoader = MessageLoader_Init(MSG_LOADER_LOAD_ON_DEMAND, NARC_INDEX_MSGDATA__PL_MSG, TEXT_BANK_COMMON_STRINGS, HEAP_ID_FIELD1);
 
