@@ -29,7 +29,7 @@
 #include "string_gf.h"
 #include "string_template.h"
 #include "trainer_info.h"
-#include "unk_02017038.h"
+#include "special_met_location.h"
 #include "field_system_time.h"
 #include "unk_02092494.h"
 

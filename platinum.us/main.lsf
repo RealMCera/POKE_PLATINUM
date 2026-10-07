@@ -64,7 +64,7 @@ Static main
 	Object main.nef.p/src_poffin_types.c.o
 	Object main.nef.p/src_yes_no_touch_menu.c.o
 	Object main.nef.p/src_pokemon_anim.c.o
-	Object main.nef.p/src_unk_02017038.c.o
+	Object main.nef.p/src_special_met_location.c.o
 	Object main.nef.p/src_easy3d_object.c.o
 	Object main.nef.p/src_play_time_manager.c.o
 	Object main.nef.p/src_wifi_lobby.c.o
