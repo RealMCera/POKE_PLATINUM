@@ -50,7 +50,7 @@
 #include "touch_pad.h"
 #include "trainer_info.h"
 #include "unk_0202419C.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "unk_02038ED4.h"
 #include "unk_02092494.h"
 #include "union_room_comm.h"

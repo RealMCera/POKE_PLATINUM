@@ -88,7 +88,7 @@
 #include "tv_segment.h"
 #include "battle_recording.h"
 #include "comm_server_client.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"
 #include "wifi_list.h"

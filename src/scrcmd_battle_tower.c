@@ -26,7 +26,7 @@
 #include "savedata.h"
 #include "script_manager.h"
 #include "trainer_info.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "battle_tower.h"
 #include "battle_tower_partner.h"
 #include "battle_salon.h"
@@ -285,7 +285,7 @@ BOOL ScrCmd_1E1(ScriptContext *ctx)
 
     if (sub_0205E6D8(ctx->fieldSystem->saveData) == 1) {
         // Debug build (VERSION_NONE game code): send through the comm tool.
-        if (sub_02036614(CommSys_CurNetId(), battleTower->unk_83E) == 1) {
+        if (CommTool_SendTempData(CommSys_CurNetId(), battleTower->unk_83E) == 1) {
             *destVar = 1;
         } else {
             return TRUE;

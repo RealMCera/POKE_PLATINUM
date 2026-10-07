@@ -28,7 +28,7 @@
 #include "trainer_info.h"
 #include "battle_recording.h"
 #include "comm_cmd.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 
 // Link battle communication. When a link battle starts, this module registers
 // the battle-specific communication commands and starts two SysTasks: a server

@@ -32,7 +32,7 @@
 #include "text.h"
 #include "trainer_info.h"
 #include "comm_server_client.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 
 #include "res/text/bank/unk_0353.h"
 
@@ -972,7 +972,7 @@ static void ov7_0224A97C(SysTask *task, void *param1)
             for (v2 = 1; v2 < CommClubMan_MaxPlayers(); v2++) {
                 if (CommSys_IsPlayerConnected(v2)) {
                     CommInfo_InitPlayer(v2);
-                    sub_02036594(5, v2);
+                    CommList_Set(5, v2);
                 }
             }
 
@@ -996,13 +996,13 @@ static void ov7_0224A97C(SysTask *task, void *param1)
             if (!CommInfo_CheckBattleRegulation()) {
                 CommClubMan_PrintMessage(pl_msg_00000353_00097, FALSE); // Players have chosen different rules. The same rules must be chosen.
                 CommClubMan_SetTask(CommClubTask_DifferentRegulation);
-                sub_02036594(4, commClubMan->unk_95);
+                CommList_Set(4, commClubMan->unk_95);
                 return;
             }
         }
 
         CommInfo_MarkDataRead(commClubMan->unk_95);
-        sub_02036594(2, commClubMan->unk_95);
+        CommList_Set(2, commClubMan->unk_95);
 
         if (CommClubMan_MaxPlayers() == CommInfo_CountReceived()) {
             commClubMan->connectedCnt = CommInfo_CountReceived();
@@ -1022,7 +1022,7 @@ static void ov7_0224A97C(SysTask *task, void *param1)
             for (v2 = 1; v2 < CommClubMan_MaxPlayers(); v2++) {
                 if (CommSys_IsPlayerConnected(v2)) {
                     CommInfo_InitPlayer(v2);
-                    sub_02036594(5, v2);
+                    CommList_Set(5, v2);
                 }
             }
 
@@ -1030,7 +1030,7 @@ static void ov7_0224A97C(SysTask *task, void *param1)
             CommClubMan_SetTask(ov7_0224ABE0);
         } else {
             CommInfo_InitPlayer(commClubMan->unk_95);
-            sub_02036594(3, commClubMan->unk_95);
+            CommList_Set(3, commClubMan->unk_95);
             ov7_0224A5D0();
             CommClubMan_SetTask(ov7_0224ABE0);
         }

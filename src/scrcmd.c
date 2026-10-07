@@ -198,7 +198,7 @@
 #include "underground.h"
 #include "image_clips.h"
 #include "comm_server_client.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "unk_02038FFC.h"
 #include "field_system_apps.h"
 #include "scrcmd_battle_tower.h"

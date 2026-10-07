@@ -28,7 +28,7 @@
 #include "savedata.h"
 #include "script_manager.h"
 #include "underground.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "unk_02038FFC.h"
 #include "field_system_apps.h"
 #include "battle_tower_partner.h"
@@ -299,7 +299,7 @@ static BOOL BattleSalon_CommTask(FieldTask *param0)
     BattleSalonCommTask *v3 = FieldTask_GetEnv(param0);
 
     // Wait until the link partner's data has arrived.
-    const void *v1 = sub_0203664C(1 - CommSys_CurNetId());
+    const void *v1 = CommTool_GetReceivedTempData(1 - CommSys_CurNetId());
 
     if (v1 == NULL) {
         return 0;

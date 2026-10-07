@@ -45,7 +45,7 @@
 #include "touch_screen.h"
 #include "trainer_info.h"
 #include "comm_server_client.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "union_room.h"
 #include "union_room_trainers.h"
 #include "union_room_drawing_comm.h"

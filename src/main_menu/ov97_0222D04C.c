@@ -18,7 +18,7 @@
 #include "sys_task_manager.h"
 #include "trainer_info.h"
 #include "comm_server_client.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 
 typedef void (*UnkFuncPtr_ov97_0222D0A4)(void);
 

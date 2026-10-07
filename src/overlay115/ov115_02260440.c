@@ -31,7 +31,7 @@
 #include "overlay_manager.h"
 #include "screen_fade.h"
 #include "system.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "vram_transfer.h"
 
 typedef struct UnkStruct_ov115_0226095C_t {

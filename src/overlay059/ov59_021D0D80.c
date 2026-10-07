@@ -50,7 +50,7 @@
 #include "system.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "unk_02038ED4.h"
 #include "union_room.h"
 #include "union_room_trainers.h"

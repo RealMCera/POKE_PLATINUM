@@ -24,7 +24,7 @@
 #include "unk_0203266C.h"
 #include "comm_cmd.h"
 #include "comm_server_client.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "wireless_manager.h"
 
 // The communication system is the transport layer shared by every multiplayer
@@ -599,7 +599,7 @@ BOOL CommSys_Update(void)
     }
 
     CommManager_DisplayError(0);
-    sub_0203650C();
+    CommTiming_Update();
 
     return TRUE;
 }

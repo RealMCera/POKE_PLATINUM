@@ -28,7 +28,7 @@
 #include "savedata.h"
 #include "sound.h"
 #include "tv_segment.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "battle_tower.h"
 
 #include "constdata/const_020EA358.h"
@@ -222,7 +222,7 @@ BOOL FrontierScrCmd_89(FrontierScriptContext *param0)
         break;
     }
 
-    if (sub_02036614(CommSys_CurNetId(), battleTower->unk_83E) == 1) {
+    if (CommTool_SendTempData(CommSys_CurNetId(), battleTower->unk_83E) == 1) {
         *v4 = 1;
     } else {
         *v4 = 0;
@@ -261,7 +261,7 @@ static BOOL ov104_0223942C(FrontierScriptContext *param0)
 static BOOL ov104_02239464(FrontierScriptContext *param0, BattleTower *battleTower, SaveData *saveData, u16 param3, u16 param4)
 {
     u16 *v0;
-    const void *v1 = sub_0203664C(1 - CommSys_CurNetId());
+    const void *v1 = CommTool_GetReceivedTempData(1 - CommSys_CurNetId());
 
     if (v1 == NULL) {
         return 0;

@@ -13,7 +13,7 @@
 #include "communication_system.h"
 #include "heap.h"
 #include "overlay_manager.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 
 BOOL PoffinBerrySelection_RunSubApplication(ApplicationManager **appManPtr)
 {

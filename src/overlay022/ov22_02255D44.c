@@ -72,7 +72,7 @@
 #include "touch_pad.h"
 #include "trainer_info.h"
 #include "image_clips.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "contest_util.h"
 #include "contest_comm.h"
 #include "yes_no_touch_menu.h"

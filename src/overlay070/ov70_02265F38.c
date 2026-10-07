@@ -25,7 +25,7 @@
 #include "sound_playback.h"
 #include "string_gf.h"
 #include "system.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 
 typedef struct {
     u8 unk_00;
@@ -500,7 +500,7 @@ BOOL ov70_02265F38(UnkStruct_ov70_02263344 *param0, UnkStruct_ov70_0225DEE8 *par
         ov70_02266CF0(&v0->unk_3C, param1, 0);
 
         v0->unk_0C = ov66_0222E344(v2);
-        v15 = sub_02036614(CommSys_CurNetId(), &v0->unk_0C);
+        v15 = CommTool_SendTempData(CommSys_CurNetId(), &v0->unk_0C);
 
         if (v15 == 1) {
             ov70_02262E88(param0, 14);
@@ -527,7 +527,7 @@ BOOL ov70_02265F38(UnkStruct_ov70_02263344 *param0, UnkStruct_ov70_0225DEE8 *par
 
             for (v16 = 0; v16 < v17; v16++) {
                 if (v18 != v16) {
-                    v19 = sub_0203664C(v16);
+                    v19 = CommTool_GetReceivedTempData(v16);
 
                     if (v19 != NULL) {
                         ov66_0222E24C(v2, v19[0], v16);

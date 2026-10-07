@@ -16,7 +16,7 @@
 #include "communication_system.h"
 #include "heap.h"
 #include "overlay_manager.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 
 static const ApplicationManagerTemplate Unk_ov117_022668F8 = {
     ov117_02260668,

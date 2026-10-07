@@ -80,7 +80,7 @@
 #include "font_oam.h"
 #include "email.h"
 #include "comm_server_client.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "wifi_friend_registration.h"
 #include "unk_0207DFAC.h"
 #include "wifi_comm.h"
@@ -4180,7 +4180,7 @@ static int ov65_0223229C(UnkStruct_ov65_0222EBE0 *param0, int param1)
         u16 v0 = ov65_0222DD20(param0, &param0->unk_04->unk_00);
         BOOL v1;
 
-        v1 = sub_02036614(CommSys_CurNetId(), &v0);
+        v1 = CommTool_SendTempData(CommSys_CurNetId(), &v0);
 
         if (v1) {
             param0->unk_3A8 = 51;
@@ -4201,7 +4201,7 @@ static int ov65_022322DC(UnkStruct_ov65_0222EBE0 *param0, int param1)
         v1 = 0;
     }
 
-    v0 = sub_0203664C(v1);
+    v0 = CommTool_GetReceivedTempData(v1);
 
     if (ov65_022321A8(param0)) {
         (void)0;

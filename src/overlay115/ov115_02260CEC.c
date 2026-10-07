@@ -48,7 +48,7 @@
 #include "trainer_info.h"
 #include "font_oam.h"
 #include "unk_0202419C.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "vram_transfer.h"
 
 typedef struct {

@@ -41,7 +41,7 @@
 #include "text.h"
 #include "trainer_case.h"
 #include "trainer_info.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "field_system_apps.h"
 #include "map_object_animation.h"
 

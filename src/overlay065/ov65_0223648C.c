@@ -54,7 +54,7 @@
 #include "system.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "wifi_comm.h"
 #include "vram_transfer.h"
 
@@ -1915,7 +1915,7 @@ static BOOL ov65_02237E24(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
         u16 v0 = param0->unk_00.unk_00->unk_00.unk_1B;
         BOOL v1;
 
-        v1 = sub_02036614(CommSys_CurNetId(), &v0);
+        v1 = CommTool_SendTempData(CommSys_CurNetId(), &v0);
 
         if (v1 == 1) {
             param0->unk_00.unk_05 = 16;
@@ -1939,7 +1939,7 @@ static BOOL ov65_02237E54(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
 
     for (v0 = 0; v0 < v1; v0++) {
         if (v2 != v0) {
-            v3 = sub_0203664C(v0);
+            v3 = CommTool_GetReceivedTempData(v0);
 
             if (v3 != NULL) {
                 if (v3[0] == param0->unk_00.unk_00->unk_00.unk_1B) {
@@ -2410,7 +2410,7 @@ static BOOL ov65_0223846C(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
             return 0;
         }
 
-        v2 = sub_02036614(CommSys_CurNetId(), &v1);
+        v2 = CommTool_SendTempData(CommSys_CurNetId(), &v1);
 
         if (v2 == 1) {
             param0->unk_00.unk_05 = 12;
@@ -2434,7 +2434,7 @@ static BOOL ov65_022384BC(UnkStruct_ov65_022367A8 *param0, WiFiCommAppArgs *para
 
     for (v0 = 0; v0 < v1; v0++) {
         if (v2 != v0) {
-            v3 = sub_0203664C(v0);
+            v3 = CommTool_GetReceivedTempData(v0);
 
             if (v3 != NULL) {
                 if (v3[0] == param0->unk_00.unk_00->unk_00.unk_1B) {

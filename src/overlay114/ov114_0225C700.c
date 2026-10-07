@@ -49,7 +49,7 @@
 #include "system.h"
 #include "text.h"
 #include "trainer_info.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "wifi_friend_registration.h"
 #include "contest_util.h"
 #include "vram_transfer.h"

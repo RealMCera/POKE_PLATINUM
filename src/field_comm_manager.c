@@ -31,7 +31,7 @@
 #include "trainer_info.h"
 #include "underground.h"
 #include "comm_server_client.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "colosseum.h"
 #include "comm_field_cmd.h"
 

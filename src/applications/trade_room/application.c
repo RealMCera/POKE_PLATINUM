@@ -71,7 +71,7 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "trainer_info.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "unk_02038ED4.h"
 #include "unk_02038F8C.h"
 #include "wifi_friend_registration.h"

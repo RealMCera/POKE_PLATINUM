@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "savedata.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 
 void sub_02038ED4(int *param0)
 {

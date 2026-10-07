@@ -13,7 +13,7 @@
 #include "communication_information.h"
 #include "communication_system.h"
 #include "heap.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 
 // Commands 0..21 are shared by every comm application and are handled by the
 // built-in table below. Application-specific commands start at 22 and are
@@ -59,8 +59,8 @@ static const CommCmdTable sBuiltInCmdTable[] = {
     { CommCmd_16, CommPacketSizeOf_NetId, NULL },
     { CommCmd_17, CommPacketSizeOf_NetId, NULL },
     { CommCmd_18, CommPacketSizeOf_Two, NULL },
-    { sub_02036574, sub_02036590, NULL },
-    { sub_02036670, CommTool_TempDataSize, NULL },
+    { CommList_RecvEntry, CommList_EntrySize, NULL },
+    { CommTool_RecvTempData, CommTool_TempDataSize, NULL },
     { CommManager_DisconnectWifi, CommPacketSizeOf_Nothing, NULL }
 };
 

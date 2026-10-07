@@ -56,7 +56,7 @@
 #include "trainer_info.h"
 #include "tv_segment.h"
 #include "image_clips.h"
-#include "unk_020363E8.h"
+#include "comm_tool.h"
 #include "contest_util.h"
 #include "contest_comm.h"
 #include "vars_flags.h"
