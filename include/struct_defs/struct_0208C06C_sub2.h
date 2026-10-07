@@ -8,7 +8,7 @@
 typedef struct {
     BOOL unk_00;
     int unk_04;
-    UnkStruct_0208B878 *unk_08;
+    VsRecorderRing *unk_08;
     SysTask *unk_0C;
 } UnkStruct_0208C06C_sub2;
 

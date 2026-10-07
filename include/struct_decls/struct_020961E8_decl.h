@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_020961E8_DECL_H
 #define POKEPLATINUM_STRUCT_020961E8_DECL_H
 
-typedef struct UnkStruct_020961E8_t UnkStruct_020961E8;
+typedef struct MixRecordsComm MixRecordsComm;
 
 #endif // POKEPLATINUM_STRUCT_020961E8_DECL_H

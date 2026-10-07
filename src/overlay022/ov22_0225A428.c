@@ -43,7 +43,7 @@ static s32 ov22_0225A8B4(Window *param0, enum NarcID narcID, int param2, int par
 static void ov22_0225A914(UnkStruct_ov22_0225A914 *param0, SpriteList *param1, SpriteResourceCollection **param2, int param3, NARC *param4);
 static void ov22_0225A9C8(UnkStruct_ov22_0225A914 *param0, int param1);
 static void ov22_0225AA10(UnkStruct_ov22_0225A914 *param0, SpriteResourceCollection **param1);
-static void ov22_0225AB54(UnkStruct_ov22_0225AB54 *param0, SpriteList *param1, SpriteResourceCollection **param2, int param3, BgConfig *param4, UnkStruct_02095C60 *param5, NARC *param6);
+static void ov22_0225AB54(UnkStruct_ov22_0225AB54 *param0, SpriteList *param1, SpriteResourceCollection **param2, int param3, BgConfig *param4, ContestScoringCommState *param5, NARC *param6);
 static void ov22_0225AC58(UnkStruct_ov22_0225AB54 *param0, SpriteResourceCollection **param1);
 static void ov22_0225AC8C(UnkStruct_ov22_0225AB54 *param0);
 static void ov22_0225AD5C(UnkStruct_ov22_0225AB54 *param0);
@@ -369,7 +369,7 @@ static void ov22_0225AAF4(SpriteResource **param0, SpriteResourceCollection **pa
     SpriteResourcesHeader_Init(param2, SpriteResource_GetID(param0[0]), SpriteResource_GetID(param0[1]), SpriteResource_GetID(param0[2]), SpriteResource_GetID(param0[3]), 0xffffffff, 0xffffffff, 0, param3, param1[0], param1[1], param1[2], param1[3], NULL, NULL);
 }
 
-static void ov22_0225AB54(UnkStruct_ov22_0225AB54 *param0, SpriteList *param1, SpriteResourceCollection **param2, int param3, BgConfig *param4, UnkStruct_02095C60 *param5, NARC *param6)
+static void ov22_0225AB54(UnkStruct_ov22_0225AB54 *param0, SpriteList *param1, SpriteResourceCollection **param2, int param3, BgConfig *param4, ContestScoringCommState *param5, NARC *param6)
 {
     SpriteResourcesHeader v0;
     SpriteListTemplate v1;
@@ -395,8 +395,8 @@ static void ov22_0225AB54(UnkStruct_ov22_0225AB54 *param0, SpriteList *param1, S
     param0->unk_1C = param3;
     param0->unk_20 = param3 * 30;
     param0->unk_2C = param5;
-    param0->unk_2C->unk_00.unk_00 = param3;
-    param0->unk_2C->unk_08.unk_00 = param3;
+    param0->unk_2C->localValue.value = param3;
+    param0->unk_2C->sendValue.value = param3;
     param0->unk_90 = 0;
 
     ov22_0225ACE4(param0);
@@ -441,8 +441,8 @@ static void ov22_0225AC8C(UnkStruct_ov22_0225AB54 *param0)
 
 static void ov22_0225ACBC(UnkStruct_ov22_0225AB54 *param0)
 {
-    if (param0->unk_1C != param0->unk_2C->unk_00.unk_00) {
-        param0->unk_1C = param0->unk_2C->unk_00.unk_00;
+    if (param0->unk_1C != param0->unk_2C->localValue.value) {
+        param0->unk_1C = param0->unk_2C->localValue.value;
 
         if (param0->unk_1C <= 10) {
             ov22_0225ADC0(param0, &param0->unk_30);

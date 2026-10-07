@@ -1,10 +1,11 @@
 #ifndef POKEPLATINUM_STRUCT_02095B28_H
 #define POKEPLATINUM_STRUCT_02095B28_H
 
+// A value exchanged during visual competition scoring.
 typedef struct {
-    u32 unk_00;
-    u8 unk_04;
+    u32 value; // score or timer value
+    u8 finished; // set once the contestant has finished scoring
     u8 padding_05[3];
-} UnkStruct_02095B28;
+} ContestCommValue;
 
 #endif // POKEPLATINUM_STRUCT_02095B28_H

@@ -48,77 +48,77 @@
 #include "unk_020363E8.h"
 #include "union_room.h"
 #include "union_room_trainers.h"
-#include "unk_02095E98.h"
+#include "union_room_drawing_comm.h"
 #include "vram_transfer.h"
 #include "wireless_manager.h"
 #include "yes_no_touch_menu.h"
 
 typedef struct {
-    int (*unk_00)(UnkStruct_02095EAC *, int);
+    int (*unk_00)(UnionRoomDrawing *, int);
     int unk_04;
 } UnkStruct_ov58_021D3180;
 
 static void ov58_021D115C(void *param0);
 static void ov58_021D1184(void);
 static void ov58_021D11A4(BgConfig *param0);
-static void ov58_021D12C4(UnkStruct_02095EAC *param0);
-static void ov58_021D13B4(UnkStruct_02095EAC *param0);
+static void ov58_021D12C4(UnionRoomDrawing *param0);
+static void ov58_021D13B4(UnionRoomDrawing *param0);
 static void ov58_021D13F0(BgConfig *param0);
-static void ov58_021D142C(UnkStruct_02095EAC *param0, NARC *param1);
+static void ov58_021D142C(UnionRoomDrawing *param0, NARC *param1);
 static void ov58_021D1524(void);
-static void ov58_021D1554(UnkStruct_02095EAC *param0, NARC *param1);
-static void ov58_021D16D8(UnkStruct_02095EAC *param0);
-static void ov58_021D18AC(UnkStruct_02095EAC *param0, ApplicationManager *appMan);
-static void ov58_021D19D4(UnkStruct_02095EAC *param0);
+static void ov58_021D1554(UnionRoomDrawing *param0, NARC *param1);
+static void ov58_021D16D8(UnionRoomDrawing *param0);
+static void ov58_021D18AC(UnionRoomDrawing *param0, ApplicationManager *appMan);
+static void ov58_021D19D4(UnionRoomDrawing *param0);
 static void ov58_021D1A10(Sprite *param0, int param1, int param2);
-static void ov58_021D1A80(UnkStruct_02095EAC *param0);
-static int ov58_021D1CF4(UnkStruct_02095EAC *param0, int param1);
-static void ov58_021D1D40(UnkStruct_02095EAC *param0);
-static int ov58_021D1DFC(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D1E4C(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D1FB0(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D1FD4(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D206C(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D20A8(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D20C8(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D20F4(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D2130(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D2180(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D223C(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D2270(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D2298(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D22DC(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D22FC(UnkStruct_02095EAC *param0, int param1);
+static void ov58_021D1A80(UnionRoomDrawing *param0);
+static int ov58_021D1CF4(UnionRoomDrawing *param0, int param1);
+static void ov58_021D1D40(UnionRoomDrawing *param0);
+static int ov58_021D1DFC(UnionRoomDrawing *param0, int param1);
+static int ov58_021D1E4C(UnionRoomDrawing *param0, int param1);
+static int ov58_021D1FB0(UnionRoomDrawing *param0, int param1);
+static int ov58_021D1FD4(UnionRoomDrawing *param0, int param1);
+static int ov58_021D206C(UnionRoomDrawing *param0, int param1);
+static int ov58_021D20A8(UnionRoomDrawing *param0, int param1);
+static int ov58_021D20C8(UnionRoomDrawing *param0, int param1);
+static int ov58_021D20F4(UnionRoomDrawing *param0, int param1);
+static int ov58_021D2130(UnionRoomDrawing *param0, int param1);
+static int ov58_021D2180(UnionRoomDrawing *param0, int param1);
+static int ov58_021D223C(UnionRoomDrawing *param0, int param1);
+static int ov58_021D2270(UnionRoomDrawing *param0, int param1);
+static int ov58_021D2298(UnionRoomDrawing *param0, int param1);
+static int ov58_021D22DC(UnionRoomDrawing *param0, int param1);
+static int ov58_021D22FC(UnionRoomDrawing *param0, int param1);
 static void ov58_021D25A8(Window *param0, const u8 *param1, int param2, int param3, int *param4, int *param5, int param6, int param7);
 static void ov58_021D2720(UnkStruct_ov58_021D2820 *param0, UnkStruct_ov58_021D2754 *param1);
 static void ov58_021D2754(Window *param0, UnkStruct_ov58_021D2820 *param1, UnkStruct_ov58_021D2754 *param2, int param3);
-static void ov58_021D2820(UnkStruct_02095EAC *param0);
+static void ov58_021D2820(UnionRoomDrawing *param0);
 static void ov58_021D2888(u16 *param0);
-static void ov58_021D28E4(Window *param0, int param1, u32 param2, UnkStruct_02095EAC *param3);
-static void ov58_021D29C8(UnkStruct_02095EAC *param0);
-static int ov58_021D2A54(UnkStruct_02095EAC *param0);
-static void ov58_021D2A98(UnkStruct_02095EAC *param0, int param1, int param2);
+static void ov58_021D28E4(Window *param0, int param1, u32 param2, UnionRoomDrawing *param3);
+static void ov58_021D29C8(UnionRoomDrawing *param0);
+static int ov58_021D2A54(UnionRoomDrawing *param0);
+static void ov58_021D2A98(UnionRoomDrawing *param0, int param1, int param2);
 static int ov58_021D2B0C(int param0);
-static void ov58_021D2B2C(UnkStruct_02095EAC *param0);
+static void ov58_021D2B2C(UnionRoomDrawing *param0);
 static int ov58_021D28C8(void);
-static int ov58_021D2320(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D23C8(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D2380(UnkStruct_02095EAC *param0, int param1);
+static int ov58_021D2320(UnionRoomDrawing *param0, int param1);
+static int ov58_021D23C8(UnionRoomDrawing *param0, int param1);
+static int ov58_021D2380(UnionRoomDrawing *param0, int param1);
 static int ov58_021D2A30(void);
-static int ov58_021D1DBC(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D1D64(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D1DC8(UnkStruct_02095EAC *param0, int param1);
+static int ov58_021D1DBC(UnionRoomDrawing *param0, int param1);
+static int ov58_021D1D64(UnionRoomDrawing *param0, int param1);
+static int ov58_021D1DC8(UnionRoomDrawing *param0, int param1);
 static void ov58_021D1CAC(Sprite **param0, int param1);
 static void ov58_021D1CDC(Sprite **param0, BOOL param1);
 static void ov58_021D2528(Window *param0, void *param1, int param2, int param3, int param4, int param5, int param6, int param7, int param8, int param9);
-static void ov58_021D2B3C(UnkStruct_02095EAC *param0, int param1);
-static int ov58_021D2B5C(UnkStruct_02095EAC *param0);
-static int ov58_021D22D8(UnkStruct_02095EAC *param0, int param1);
-static void ov58_021D2CB0(UnkStruct_02095EAC *param0, int param1);
-static void ov58_021D2CB8(UnkStruct_02095EAC *param0, int param1);
-static BOOL ov58_021D2CEC(UnkStruct_02095EAC *param0, YesNoTouchMenuParams *param1);
-static void ov58_021D2D10(UnkStruct_02095EAC *param0);
-static int ov58_021D2D30(UnkStruct_02095EAC *param0);
+static void ov58_021D2B3C(UnionRoomDrawing *param0, int param1);
+static int ov58_021D2B5C(UnionRoomDrawing *param0);
+static int ov58_021D22D8(UnionRoomDrawing *param0, int param1);
+static void ov58_021D2CB0(UnionRoomDrawing *param0, int param1);
+static void ov58_021D2CB8(UnionRoomDrawing *param0, int param1);
+static BOOL ov58_021D2CEC(UnionRoomDrawing *param0, YesNoTouchMenuParams *param1);
+static void ov58_021D2D10(UnionRoomDrawing *param0);
+static int ov58_021D2D30(UnionRoomDrawing *param0);
 static void ov58_021D2D4C(UnkStruct_ov58_021D2820 *param0, TouchPadDataBuffer *param1, int param2, int param3);
 
 static UnkStruct_ov58_021D3180 Unk_ov58_021D3180[] = {
@@ -150,7 +150,7 @@ static UnkStruct_ov58_021D3180 Unk_ov58_021D3180[] = {
 
 int ov58_021D0D80(ApplicationManager *appMan, int *param1)
 {
-    UnkStruct_02095EAC *v0;
+    UnionRoomDrawing *v0;
     NARC *v1;
 
     switch (*param1) {
@@ -165,8 +165,8 @@ int ov58_021D0D80(ApplicationManager *appMan, int *param1)
 
         Heap_Create(HEAP_ID_APPLICATION, HEAP_ID_DRAWING, HEAP_SIZE_DRAWING);
 
-        v0 = ApplicationManager_NewData(appMan, sizeof(UnkStruct_02095EAC), HEAP_ID_DRAWING);
-        memset(v0, 0, sizeof(UnkStruct_02095EAC));
+        v0 = ApplicationManager_NewData(appMan, sizeof(UnionRoomDrawing), HEAP_ID_DRAWING);
+        memset(v0, 0, sizeof(UnionRoomDrawing));
         v0->unk_00 = BgConfig_New(HEAP_ID_DRAWING);
 
         v0->unk_0C = StringTemplate_Default(HEAP_ID_DRAWING);
@@ -204,7 +204,7 @@ int ov58_021D0D80(ApplicationManager *appMan, int *param1)
 
         GX_SetDispSelect(GX_DISP_SELECT_SUB_MAIN);
 
-        sub_02095E98(v0);
+        UnionRoomDrawing_RegisterCommHandlers(v0);
         CommManager_SetErrorHandling(0, 1);
 
         if (CommSys_CurNetId() == 0) {
@@ -233,13 +233,13 @@ int ov58_021D0D80(ApplicationManager *appMan, int *param1)
 
 int ov58_021D0F08(ApplicationManager *appMan, int *param1)
 {
-    UnkStruct_02095EAC *v0 = ApplicationManager_Data(appMan);
+    UnionRoomDrawing *v0 = ApplicationManager_Data(appMan);
 
-    if ((CommSys_CurNetId() == 0) && (v0->unk_9418 != 0)) {
-        v0->unk_9418 &= WirelessManager_GetConnectedBitmap();
+    if ((CommSys_CurNetId() == 0) && (v0->ackedNetIds != 0)) {
+        v0->ackedNetIds &= WirelessManager_GetConnectedBitmap();
     }
 
-    v0->unk_364 = *param1;
+    v0->appState = *param1;
 
     ov58_021D2CB8(v0, *param1);
 
@@ -293,7 +293,7 @@ int ov58_021D0F08(ApplicationManager *appMan, int *param1)
 
 int ov58_021D1018(ApplicationManager *appMan, int *param1)
 {
-    UnkStruct_02095EAC *v0 = ApplicationManager_Data(appMan);
+    UnionRoomDrawing *v0 = ApplicationManager_Data(appMan);
     UnkStruct_0203DDFC *v1 = (UnkStruct_0203DDFC *)ApplicationManager_Args(appMan);
     int v2;
     void *journalEntryOnlineEvent;
@@ -507,13 +507,13 @@ static void ov58_021D11A4(BgConfig *param0)
     Bg_ClearTilesRange(5, 32, 0, HEAP_ID_DRAWING);
 }
 
-static void ov58_021D12C4(UnkStruct_02095EAC *param0)
+static void ov58_021D12C4(UnionRoomDrawing *param0)
 {
     int v0;
 
     for (v0 = 0; v0 < 5; v0++) {
         param0->unk_14[v0] = String_Init(7 + 1, HEAP_ID_DRAWING);
-        param0->unk_43E6[v0].unk_08_3 = 0;
+        param0->drawingStatus[v0].unk_08_3 = 0;
         param0->unk_4418[v0].unk_02 = 0;
         param0->unk_398[v0][0] = NULL;
         param0->unk_398[v0][1] = NULL;
@@ -523,11 +523,11 @@ static void ov58_021D12C4(UnkStruct_02095EAC *param0)
     param0->unk_2C = String_Init(40 * 2, HEAP_ID_DRAWING);
     param0->unk_43DA = 0;
     param0->unk_43DB = 1;
-    param0->unk_9458 = 1;
+    param0->drawingState = 1;
     param0->unk_945C = 0;
-    param0->unk_37C = 2;
-    param0->unk_380 = WirelessManager_GetConnectedBitmap();
-    param0->unk_9460 = 0;
+    param0->connectedCount = 2;
+    param0->connectedBitmap = WirelessManager_GetConnectedBitmap();
+    param0->clientReadySent = 0;
     param0->unk_9464 = 0;
     param0->unk_368 = 0;
     param0->unk_9468 = 0;
@@ -546,7 +546,7 @@ static void ov58_021D12C4(UnkStruct_02095EAC *param0)
     param0->unk_378 = 0;
 }
 
-static void ov58_021D13B4(UnkStruct_02095EAC *param0)
+static void ov58_021D13B4(UnionRoomDrawing *param0)
 {
     int v0;
 
@@ -572,7 +572,7 @@ static void ov58_021D13F0(BgConfig *param0)
     Heap_Free(param0);
 }
 
-static void ov58_021D142C(UnkStruct_02095EAC *param0, NARC *param1)
+static void ov58_021D142C(UnionRoomDrawing *param0, NARC *param1)
 {
     BgConfig *v0 = param0->unk_00;
 
@@ -603,7 +603,7 @@ static void ov58_021D1524(void)
     PlttTransfer_Clear();
 }
 
-static void ov58_021D1554(UnkStruct_02095EAC *param0, NARC *param1)
+static void ov58_021D1554(UnionRoomDrawing *param0, NARC *param1)
 {
     int v0;
 
@@ -648,7 +648,7 @@ static const u16 Unk_ov58_021D2EEC[][3] = {
     { 0x34, 0x9, 0x21 }
 };
 
-static void ov58_021D16D8(UnkStruct_02095EAC *param0)
+static void ov58_021D16D8(UnionRoomDrawing *param0)
 {
     int v0;
 
@@ -715,12 +715,12 @@ static void ov58_021D16D8(UnkStruct_02095EAC *param0)
     GXLayers_EngineBToggleLayers(GX_PLANEMASK_OBJ, 1);
 }
 
-static void ov58_021D18AC(UnkStruct_02095EAC *param0, ApplicationManager *appMan)
+static void ov58_021D18AC(UnionRoomDrawing *param0, ApplicationManager *appMan)
 {
     Window_Add(param0->unk_00, &param0->unk_33C, 0, 2, 1, 27, 4, 13, 1 + (18 + 12) + 9);
     Window_FillTilemap(&param0->unk_33C, 0xf0f);
-    Window_Add(param0->unk_00, &param0->unk_32C, 1, 1, 2, 30, 15, 0, 1);
-    Window_FillTilemap(&param0->unk_32C, 0x202);
+    Window_Add(param0->unk_00, &param0->drawingWindow, 1, 1, 2, 30, 15, 0, 1);
+    Window_FillTilemap(&param0->drawingWindow, 0x202);
     Window_Add(param0->unk_00, &param0->unk_34C, 1, 25, 21, 7, 2, 13, 1 + 30 * 15);
     Window_FillTilemap(&param0->unk_34C, 0x0);
 
@@ -741,7 +741,7 @@ static void ov58_021D18AC(UnkStruct_02095EAC *param0, ApplicationManager *appMan
     }
 }
 
-static void ov58_021D19D4(UnkStruct_02095EAC *param0)
+static void ov58_021D19D4(UnionRoomDrawing *param0)
 {
     int v0;
 
@@ -750,7 +750,7 @@ static void ov58_021D19D4(UnkStruct_02095EAC *param0)
     }
 
     Window_Remove(&param0->unk_34C);
-    Window_Remove(&param0->unk_32C);
+    Window_Remove(&param0->drawingWindow);
     Window_Remove(&param0->unk_33C);
 }
 
@@ -791,7 +791,7 @@ static const TouchScreenRect Unk_ov58_021D2DDC[] = {
     { 0xFF, 0x0, 0x0, 0x0 }
 };
 
-static void ov58_021D1A80(UnkStruct_02095EAC *param0)
+static void ov58_021D1A80(UnionRoomDrawing *param0)
 {
     int v0 = -1, v1;
     int v2 = 0;
@@ -817,20 +817,20 @@ static void ov58_021D1A80(UnkStruct_02095EAC *param0)
         case 8:
             if (param0->unk_368 == 4) {
                 if (CommSys_CurNetId() == 0) {
-                    if (param0->unk_380 != WirelessManager_GetConnectedBitmap()) {
+                    if (param0->connectedBitmap != WirelessManager_GetConnectedBitmap()) {
                         Sound_PlayEffect(SEQ_SE_DP_CUSTOM06_sseq);
                         break;
                     }
 
                     CommManager_SetMaxNumConnections(CommSys_ConnectedCount());
-                    param0->unk_9458 = 2;
+                    param0->drawingState = 2;
                     ov58_021D2A98(param0, 1, TEXT_SPEED_FAST);
                     ov58_021D2CB0(param0, 5);
                     ov58_021D1CDC(param0->unk_2AC, 1);
                     v2 = 1;
                     Sound_PlayEffect(SE_CONFIRM_sseq_3);
                 } else {
-                    if (param0->unk_43E6[0].unk_09 == 2) {
+                    if (param0->drawingStatus[0].unk_09 == 2) {
                         Sound_PlayEffect(SEQ_SE_DP_CUSTOM06_sseq);
                     } else {
                         ov58_021D2A98(param0, 1, TEXT_SPEED_FAST);
@@ -876,10 +876,10 @@ static void ov58_021D1A80(UnkStruct_02095EAC *param0)
         int v5;
 
         if (WriteAutoSamplingDataToBuffer(&v4, TOUCH_PAD_EXTERNAL_BUFFER_WRITE_METHOD_ALL_DATA_WITHOUT_WRAPPING, 64) == 1) {
-            ov58_021D2D4C(&param0->unk_43DC, &v4, param0->unk_43DA, param0->unk_43DB);
+            ov58_021D2D4C(&param0->localDrawingStatus, &v4, param0->unk_43DA, param0->unk_43DB);
 
             if (v2 == 1) {
-                param0->unk_43DC.unk_08_3 = 0;
+                param0->localDrawingStatus.unk_08_3 = 0;
             }
         }
     }
@@ -907,7 +907,7 @@ static void ov58_021D1CDC(Sprite **param0, BOOL param1)
     }
 }
 
-static int ov58_021D1CF4(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D1CF4(UnionRoomDrawing *param0, int param1)
 {
     ov58_021D1A80(param0);
 
@@ -920,20 +920,20 @@ static int ov58_021D1CF4(UnkStruct_02095EAC *param0, int param1)
     }
 
     ov58_021D2820(param0);
-    ov58_021D2754(&param0->unk_32C, param0->unk_43E6, param0->unk_4418, 1);
+    ov58_021D2754(&param0->drawingWindow, param0->drawingStatus, param0->unk_4418, 1);
 
     return param1;
 }
 
-static void ov58_021D1D40(UnkStruct_02095EAC *param0)
+static void ov58_021D1D40(UnionRoomDrawing *param0)
 {
     ov58_021D2820(param0);
-    ov58_021D2754(&param0->unk_32C, param0->unk_43E6, param0->unk_4418, 0);
+    ov58_021D2754(&param0->drawingWindow, param0->drawingStatus, param0->unk_4418, 0);
 }
 
-static int ov58_021D1D64(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D1D64(UnionRoomDrawing *param0, int param1)
 {
-    if (CommSys_CurNetId() == param0->unk_384) {
+    if (CommSys_CurNetId() == param0->drawingPlayerNetId) {
         ov58_021D2A98(param0, 13, TEXT_SPEED_INSTANT);
     } else {
         ov58_021D2A98(param0, 0, TEXT_SPEED_INSTANT);
@@ -949,13 +949,13 @@ static int ov58_021D1D64(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D1DBC(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D1DBC(UnionRoomDrawing *param0, int param1)
 {
     ov58_021D1D40(param0);
     return param1;
 }
 
-static int ov58_021D1DC8(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D1DC8(UnionRoomDrawing *param0, int param1)
 {
     G2_BlendNone();
 
@@ -968,7 +968,7 @@ static int ov58_021D1DC8(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D1DFC(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D1DFC(UnionRoomDrawing *param0, int param1)
 {
     if (ov58_021D2B0C(param0->unk_30)) {
         YesNoTouchMenuParams v0;
@@ -991,13 +991,13 @@ static int ov58_021D1DFC(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D1E4C(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D1E4C(UnionRoomDrawing *param0, int param1)
 {
     int v0;
 
-    param0->unk_43DC.unk_08_3 = 0;
+    param0->localDrawingStatus.unk_08_3 = 0;
 
-    if ((param0->unk_43E6[0].unk_09 == 2) && (CommSys_CurNetId() != 0)) {
+    if ((param0->drawingStatus[0].unk_09 == 2) && (CommSys_CurNetId() != 0)) {
         ov58_021D1D40(param0);
 
         if (ov58_021D2D30(param0)) {
@@ -1007,7 +1007,7 @@ static int ov58_021D1E4C(UnkStruct_02095EAC *param0, int param1)
         return param1;
     }
 
-    if ((CommSys_CurNetId() == 0) && (param0->unk_9418 != 0)) {
+    if ((CommSys_CurNetId() == 0) && (param0->ackedNetIds != 0)) {
         ov58_021D1D40(param0);
         return param1;
     }
@@ -1025,34 +1025,34 @@ static int ov58_021D1E4C(UnkStruct_02095EAC *param0, int param1)
             ov58_021D2CB0(param0, 13);
             ov58_021D2A98(param0, 4, TEXT_SPEED_FAST);
         } else {
-            UnkStruct_02095FE4 v1;
+            UnionRoomDrawingConnAck v1;
 
-            MI_CpuClear8(&v1, sizeof(UnkStruct_02095FE4));
-            v1.unk_02 = 0;
-            v1.unk_00 = CommSys_CurNetId();
+            MI_CpuClear8(&v1, sizeof(UnionRoomDrawingConnAck));
+            v1.type = 0;
+            v1.netId = CommSys_CurNetId();
 
             param0->unk_9420 = 1;
             param0->unk_941E = 0;
 
             ov58_021D2CB0(param0, 7);
 
-            CommSys_SendData(126, &v1, sizeof(UnkStruct_02095FE4));
+            CommSys_SendData(126, &v1, sizeof(UnionRoomDrawingConnAck));
             Window_EraseMessageBox(&param0->unk_33C, 1);
         }
 
         ov58_021D2D10(param0);
-        Window_CopyToVRAM(&param0->unk_32C);
+        Window_CopyToVRAM(&param0->drawingWindow);
         break;
     case YES_NO_TOUCH_MENU_NO:
         ov58_021D2CB0(param0, 4);
         ov58_021D1CDC(param0->unk_2AC, 0);
         Window_EraseMessageBox(&param0->unk_33C, 1);
         ov58_021D2D10(param0);
-        Window_CopyToVRAM(&param0->unk_32C);
+        Window_CopyToVRAM(&param0->drawingWindow);
 
         if (CommSys_CurNetId() == 0) {
             CommManager_SetMaxNumConnections(CommSys_ConnectedCount() + 1);
-            param0->unk_9458 = 1;
+            param0->drawingState = 1;
         }
         break;
     }
@@ -1062,9 +1062,9 @@ static int ov58_021D1E4C(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D1FB0(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D1FB0(UnionRoomDrawing *param0, int param1)
 {
-    param0->unk_43DC.unk_08_3 = 0;
+    param0->localDrawingStatus.unk_08_3 = 0;
     param0->unk_941E = 0;
 
     ov58_021D1D40(param0);
@@ -1072,11 +1072,11 @@ static int ov58_021D1FB0(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D1FD4(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D1FD4(UnionRoomDrawing *param0, int param1)
 {
-    param0->unk_43DC.unk_08_3 = 0;
+    param0->localDrawingStatus.unk_08_3 = 0;
 
-    if ((param0->unk_941C != CommSys_ConnectedCount()) || (param0->unk_941C != ov58_021D2A30())) {
+    if ((param0->ackedCount != CommSys_ConnectedCount()) || (param0->ackedCount != ov58_021D2A30())) {
         param0->unk_941E = 0;
 
         ov58_021D2CB0(param0, 9);
@@ -1088,14 +1088,14 @@ static int ov58_021D1FD4(UnkStruct_02095EAC *param0, int param1)
     param0->unk_941E++;
 
     if (param0->unk_941E > 30) {
-        UnkStruct_02095FE4 v0;
+        UnionRoomDrawingConnAck v0;
 
-        MI_CpuClear8(&v0, sizeof(UnkStruct_02095FE4));
+        MI_CpuClear8(&v0, sizeof(UnionRoomDrawingConnAck));
 
-        v0.unk_02 = 1;
-        v0.unk_00 = CommSys_CurNetId();
+        v0.type = 1;
+        v0.netId = CommSys_CurNetId();
 
-        CommSys_SendData(126, &v0, sizeof(UnkStruct_02095FE4));
+        CommSys_SendData(126, &v0, sizeof(UnionRoomDrawingConnAck));
         param0->unk_941E = 0;
         ov58_021D2CB0(param0, 10);
     }
@@ -1105,9 +1105,9 @@ static int ov58_021D1FD4(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D206C(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D206C(UnionRoomDrawing *param0, int param1)
 {
-    param0->unk_43DC.unk_08_3 = 0;
+    param0->localDrawingStatus.unk_08_3 = 0;
     param0->unk_9420 = 0;
 
     ov58_021D2CB0(param0, 4);
@@ -1117,7 +1117,7 @@ static int ov58_021D206C(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D20A8(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D20A8(UnionRoomDrawing *param0, int param1)
 {
     u8 v0;
 
@@ -1128,7 +1128,7 @@ static int ov58_021D20A8(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D20C8(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D20C8(UnionRoomDrawing *param0, int param1)
 {
     if (ov58_021D2B0C(param0->unk_30)) {
         param0->unk_374 = 0;
@@ -1140,7 +1140,7 @@ static int ov58_021D20C8(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D20F4(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D20F4(UnionRoomDrawing *param0, int param1)
 {
     if (++param0->unk_374 > 60) {
         StartScreenFade(FADE_BOTH_SCREENS, FADE_TYPE_CIRCLE_OUT, FADE_TYPE_CIRCLE_OUT, COLOR_BLACK, 16, 1, HEAP_ID_DRAWING);
@@ -1151,7 +1151,7 @@ static int ov58_021D20F4(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D2130(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D2130(UnionRoomDrawing *param0, int param1)
 {
     if (ov58_021D2B0C(param0->unk_30)) {
         YesNoTouchMenuParams v0;
@@ -1174,11 +1174,11 @@ static int ov58_021D2130(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D2180(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D2180(UnionRoomDrawing *param0, int param1)
 {
     int v0 = YesNoTouchMenu_ProcessInput(param0->unk_9454);
 
-    if ((param0->unk_37C != ov58_021D2A30()) || (param0->unk_9418 != 0)) {
+    if ((param0->connectedCount != ov58_021D2A30()) || (param0->ackedNetIds != 0)) {
         ov58_021D1D40(param0);
         return param1;
     }
@@ -1199,7 +1199,7 @@ static int ov58_021D2180(UnkStruct_02095EAC *param0, int param1)
 
         if (CommSys_CurNetId() == 0) {
             CommManager_SetMaxNumConnections(CommSys_ConnectedCount() + 1);
-            param0->unk_9458 = 1;
+            param0->drawingState = 1;
         }
         break;
     }
@@ -1208,7 +1208,7 @@ static int ov58_021D2180(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D223C(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D223C(UnionRoomDrawing *param0, int param1)
 {
     StringTemplate_SetPlayerName(param0->unk_0C, 0, CommInfo_TrainerInfo(0));
 
@@ -1219,7 +1219,7 @@ static int ov58_021D223C(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D2270(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D2270(UnionRoomDrawing *param0, int param1)
 {
     if (ov58_021D2B0C(param0->unk_30)) {
         ov58_021D2CB0(param0, 17);
@@ -1230,7 +1230,7 @@ static int ov58_021D2270(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D2298(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D2298(UnionRoomDrawing *param0, int param1)
 {
     if (CommTiming_IsSyncState(200) || (CommSys_ConnectedCount() == 1)) {
         StartScreenFade(FADE_BOTH_SCREENS, FADE_TYPE_CIRCLE_OUT, FADE_TYPE_CIRCLE_OUT, COLOR_BLACK, 16, 1, HEAP_ID_DRAWING);
@@ -1241,12 +1241,12 @@ static int ov58_021D2298(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D22D8(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D22D8(UnionRoomDrawing *param0, int param1)
 {
     return param1;
 }
 
-static int ov58_021D22DC(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D22DC(UnionRoomDrawing *param0, int param1)
 {
     ov58_021D2A98(param0, 5, TEXT_SPEED_FAST);
     ov58_021D2CB0(param0, 20);
@@ -1255,7 +1255,7 @@ static int ov58_021D22DC(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D22FC(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D22FC(UnionRoomDrawing *param0, int param1)
 {
     if (ov58_021D2B0C(param0->unk_30)) {
         ov58_021D2CB0(param0, 12);
@@ -1265,7 +1265,7 @@ static int ov58_021D22FC(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D2320(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D2320(UnionRoomDrawing *param0, int param1)
 {
     if ((param0->unk_30 != 0xff) && (ov58_021D2B0C(param0->unk_30) == 0)) {
         Text_RemovePrinter(param0->unk_30);
@@ -1285,7 +1285,7 @@ static int ov58_021D2320(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D2380(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D2380(UnionRoomDrawing *param0, int param1)
 {
     if ((param0->unk_9414 != 0) && (CommSys_ConnectedCount() != param0->unk_9414)) {
         param0->unk_9414 = 0;
@@ -1300,7 +1300,7 @@ static int ov58_021D2380(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-static int ov58_021D23C8(UnkStruct_02095EAC *param0, int param1)
+static int ov58_021D23C8(UnionRoomDrawing *param0, int param1)
 {
     if ((param0->unk_9414 != 0) && (CommSys_ConnectedCount() != param0->unk_9414)) {
         param0->unk_9414 = 0;
@@ -1311,7 +1311,7 @@ static int ov58_021D23C8(UnkStruct_02095EAC *param0, int param1)
         ov58_021D2CB0(param0, 4);
 
         if (CommSys_CurNetId() == 0) {
-            param0->unk_9458 = 1;
+            param0->drawingState = 1;
             ov58_021D2B3C(param0, 1);
         }
     }
@@ -1320,7 +1320,7 @@ static int ov58_021D23C8(UnkStruct_02095EAC *param0, int param1)
     return param1;
 }
 
-void ov58_021D2434(UnkStruct_02095EAC *param0, int param1, u8 param2)
+void ov58_021D2434(UnionRoomDrawing *param0, int param1, u8 param2)
 {
     switch (param1) {
     case 1:
@@ -1331,8 +1331,8 @@ void ov58_021D2434(UnkStruct_02095EAC *param0, int param1, u8 param2)
         ov58_021D1CDC(param0->unk_2AC, 0);
         StringTemplate_SetPlayerName(param0->unk_0C, 0, CommInfo_TrainerInfo(param2));
 
-        param0->unk_384 = param2;
-        param0->unk_9418 = 0;
+        param0->drawingPlayerNetId = param2;
+        param0->ackedNetIds = 0;
         break;
     case 3:
         ov58_021D2B2C(param0);
@@ -1349,13 +1349,13 @@ void ov58_021D2434(UnkStruct_02095EAC *param0, int param1, u8 param2)
         }
 
         if (CommSys_CurNetId() == 0) {
-            param0->unk_9418 &= 0xffff ^ param2;
+            param0->ackedNetIds &= 0xffff ^ param2;
         }
 
         if ((param0->unk_368 == 6) || (param0->unk_368 == 14)) {
             ov58_021D2D10(param0);
 
-            Window_CopyToVRAM(&param0->unk_32C);
+            Window_CopyToVRAM(&param0->drawingWindow);
         }
 
         ov58_021D1CDC(param0->unk_2AC, 0);
@@ -1557,10 +1557,10 @@ static void ov58_021D2754(Window *param0, UnkStruct_ov58_021D2820 *param1, UnkSt
     }
 }
 
-static void ov58_021D2820(UnkStruct_02095EAC *param0)
+static void ov58_021D2820(UnionRoomDrawing *param0)
 {
     int v0;
-    UnkStruct_ov58_021D2820 *v1 = param0->unk_43E6;
+    UnkStruct_ov58_021D2820 *v1 = param0->drawingStatus;
 
     for (v0 = 0; v0 < 5; v0++) {
         if (v0 != CommSys_CurNetId()) {
@@ -1611,7 +1611,7 @@ static int ov58_021D28C8(void)
     return v1;
 }
 
-static void ov58_021D28E4(Window *param0, int param1, u32 param2, UnkStruct_02095EAC *param3)
+static void ov58_021D28E4(Window *param0, int param1, u32 param2, UnionRoomDrawing *param3)
 {
     int v0, v1 = CommSys_CurNetId();
     int v2;
@@ -1647,17 +1647,17 @@ static void ov58_021D28E4(Window *param0, int param1, u32 param2, UnkStruct_0209
     }
 }
 
-static void ov58_021D29C8(UnkStruct_02095EAC *param0)
+static void ov58_021D29C8(UnionRoomDrawing *param0)
 {
     if (CommSys_CurNetId() == 0) {
         if (CommSys_IsServerQueueEmpty()) {
-            param0->unk_43DC.unk_09 = param0->unk_9458;
-            param0->unk_9421[0] = param0->unk_43DC;
-            CommSys_SendDataServer(120, param0->unk_9421, 10 * 5);
+            param0->localDrawingStatus.unk_09 = param0->drawingState;
+            param0->drawingStatusBroadcast[0] = param0->localDrawingStatus;
+            CommSys_SendDataServer(120, param0->drawingStatusBroadcast, 10 * 5);
         }
     } else {
         if (CommSys_IsQueueEmpty()) {
-            CommSys_SendData(119, &param0->unk_43DC, 10);
+            CommSys_SendData(119, &param0->localDrawingStatus, 10);
         }
     }
 }
@@ -1680,7 +1680,7 @@ int ov58_021D2A4C(void)
     return ov58_021D2A30();
 }
 
-static int ov58_021D2A54(UnkStruct_02095EAC *param0)
+static int ov58_021D2A54(UnionRoomDrawing *param0)
 {
     int v0, v1 = 0;
 
@@ -1698,7 +1698,7 @@ static int ov58_021D2A54(UnkStruct_02095EAC *param0)
     return v1;
 }
 
-static void ov58_021D2A98(UnkStruct_02095EAC *param0, int param1, int param2)
+static void ov58_021D2A98(UnionRoomDrawing *param0, int param1, int param2)
 {
     String *v0 = String_Init(40 * 2, HEAP_ID_DRAWING);
 
@@ -1733,12 +1733,12 @@ static int ov58_021D2B0C(int param0)
     return 0;
 }
 
-static void ov58_021D2B2C(UnkStruct_02095EAC *param0)
+static void ov58_021D2B2C(UnionRoomDrawing *param0)
 {
     Window_EraseMessageBox(&param0->unk_33C, 0);
 }
 
-static void ov58_021D2B3C(UnkStruct_02095EAC *param0, int param1)
+static void ov58_021D2B3C(UnionRoomDrawing *param0, int param1)
 {
     if (CommSys_CurNetId() == 0) {
         int v0 = CommSys_ConnectedCount() + param1;
@@ -1751,7 +1751,7 @@ static void ov58_021D2B3C(UnkStruct_02095EAC *param0, int param1)
     }
 }
 
-static int ov58_021D2B5C(UnkStruct_02095EAC *param0)
+static int ov58_021D2B5C(UnionRoomDrawing *param0)
 {
     int v0 = ov58_021D2A30();
 
@@ -1779,7 +1779,7 @@ static int ov58_021D2B5C(UnkStruct_02095EAC *param0)
         UnionRoom_BroadcastActivity(1);
 
         if (v0 < param0->unk_378) {
-            if (param0->unk_9458 == 2) {
+            if (param0->drawingState == 2) {
                 ov58_021D2B3C(param0, 0);
             } else {
                 ov58_021D2B3C(param0, 1);
@@ -1792,14 +1792,14 @@ static int ov58_021D2B5C(UnkStruct_02095EAC *param0)
     }
 
     if (v0 < param0->unk_378) {
-        param0->unk_37C = CommSys_ConnectedCount();
-        param0->unk_380 = WirelessManager_GetConnectedBitmap();
+        param0->connectedCount = CommSys_ConnectedCount();
+        param0->connectedBitmap = WirelessManager_GetConnectedBitmap();
 
         if (param0->unk_9468) {
-            if (!(param0->unk_380 & param0->unk_946C)) {
+            if (!(param0->connectedBitmap & param0->unk_946C)) {
                 ov58_021D2B3C(param0, 1);
 
-                param0->unk_9458 = 1;
+                param0->drawingState = 1;
                 param0->unk_9468 = 0;
                 param0->unk_946C = 0;
             }
@@ -1808,22 +1808,22 @@ static int ov58_021D2B5C(UnkStruct_02095EAC *param0)
 
     param0->unk_378 = ov58_021D2A30();
 
-    if (param0->unk_37C < CommSys_ConnectedCount()) {
-        param0->unk_9458 = 2;
+    if (param0->connectedCount < CommSys_ConnectedCount()) {
+        param0->drawingState = 2;
         param0->unk_9468 = 1;
-        param0->unk_946C = param0->unk_380 ^ WirelessManager_GetConnectedBitmap();
+        param0->unk_946C = param0->connectedBitmap ^ WirelessManager_GetConnectedBitmap();
         GF_ASSERT((param0->unk_946C == 2) || (param0->unk_946C == 4) || (param0->unk_946C == 8) || (param0->unk_946C == 16));
     }
 
     return 1;
 }
 
-static void ov58_021D2CB0(UnkStruct_02095EAC *param0, int param1)
+static void ov58_021D2CB0(UnionRoomDrawing *param0, int param1)
 {
     param0->unk_36C = param1;
 }
 
-static void ov58_021D2CB8(UnkStruct_02095EAC *param0, int param1)
+static void ov58_021D2CB8(UnionRoomDrawing *param0, int param1)
 {
     if (param0->unk_368 != param0->unk_36C) {
         if (param1 != 2) {
@@ -1836,7 +1836,7 @@ static void ov58_021D2CB8(UnkStruct_02095EAC *param0, int param1)
     }
 }
 
-static BOOL ov58_021D2CEC(UnkStruct_02095EAC *param0, YesNoTouchMenuParams *param1)
+static BOOL ov58_021D2CEC(UnionRoomDrawing *param0, YesNoTouchMenuParams *param1)
 {
     if (!param0->unk_945C) {
         YesNoTouchMenu_InitWithParams(param0->unk_9454, param1);
@@ -1847,7 +1847,7 @@ static BOOL ov58_021D2CEC(UnkStruct_02095EAC *param0, YesNoTouchMenuParams *para
     }
 }
 
-static void ov58_021D2D10(UnkStruct_02095EAC *param0)
+static void ov58_021D2D10(UnionRoomDrawing *param0)
 {
     if (param0->unk_945C) {
         YesNoTouchMenu_Reset(param0->unk_9454);
@@ -1855,7 +1855,7 @@ static void ov58_021D2D10(UnkStruct_02095EAC *param0)
     }
 }
 
-static int ov58_021D2D30(UnkStruct_02095EAC *param0)
+static int ov58_021D2D30(UnionRoomDrawing *param0)
 {
     int v0 = TouchScreen_CheckRectanglePressed(Unk_ov58_021D2DD4);
 

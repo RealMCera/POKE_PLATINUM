@@ -28,8 +28,8 @@ typedef struct {
     UnkStruct_ov62_0223118C unk_14;
     UnkStruct_ov62_02233750 unk_52C;
     UnkStruct_ov62_022307C0 unk_534;
-    UnkStruct_0208B878 *unk_6F0;
-    UnkStruct_0208B878 *unk_6F4;
+    VsRecorderRing *unk_6F0;
+    VsRecorderRing *unk_6F4;
     UnkStruct_ov62_02230C28 unk_6F8[6];
     const UnkStruct_020F3DCC *unk_818;
     const UnkStruct_020F3DCC *unk_81C[5];

@@ -57,7 +57,7 @@ static u8 *sub_02095B04(int param0, void *param1, int param2)
     Contest *v0 = param1;
 
     GF_ASSERT(param2 < 1024);
-    return v0->unk_969[param0];
+    return v0->commRecvBuf[param0];
 }
 
 static int sub_02095B24(void)
@@ -67,7 +67,7 @@ static int sub_02095B24(void)
 
 static int sub_02095B28(void)
 {
-    return sizeof(UnkStruct_02095B28);
+    return sizeof(ContestCommValue);
 }
 
 static void sub_02095B2C(int param0, int param1, void *param2, void *param3)
@@ -86,9 +86,9 @@ static void sub_02095B30(int param0, int param1, void *param2, void *param3)
     v3 = param2;
     v2 = v3[v1];
 
-    MI_CpuCopy8(param2, v0->unk_00.unk_E8[v2], v1);
+    MI_CpuCopy8(param2, v0->data.photos[v2], v1);
 
-    v0->unk_568++;
+    v0->commRecvCount++;
 }
 
 BOOL sub_02095B5C(Contest *param0, int param1, const ContestPhoto *param2)
@@ -126,10 +126,10 @@ static void sub_02095B9C(int param0, int param1, void *param2, void *param3)
     GF_ASSERT(v2 < 1024);
 
     for (v4 = 0; v4 < 4; v4++) {
-        MI_CpuCopy8(&v3[v1 * v4], v0->unk_00.unk_E8[v4], v1);
+        MI_CpuCopy8(&v3[v1 * v4], v0->data.photos[v4], v1);
     }
 
-    v0->unk_568++;
+    v0->commRecvCount++;
 }
 
 BOOL sub_02095BEC(Contest *param0, ContestPhoto **param1)
@@ -144,7 +144,7 @@ BOOL sub_02095BEC(Contest *param0, ContestPhoto **param1)
 
     GF_ASSERT(v2 < 1024);
 
-    v0 = param0->unk_569;
+    v0 = param0->commSendBuf;
 
     for (v4 = 0; v4 < 4; v4++) {
         MI_CpuCopy8(param1[v4], &v0[v1 * v4], v1);
@@ -162,23 +162,23 @@ BOOL sub_02095BEC(Contest *param0, ContestPhoto **param1)
 static void sub_02095C48(int param0, int param1, void *param2, void *param3)
 {
     Contest *v0 = param3;
-    MI_CpuCopy8(param2, &v0->unk_1984.unk_00, param1);
+    MI_CpuCopy8(param2, &v0->scoringCommState.localValue, param1);
 }
 
-BOOL sub_02095C60(UnkStruct_02095C60 *param0, u32 param1)
+BOOL sub_02095C60(ContestScoringCommState *param0, u32 param1)
 {
-    if (param0->unk_16 == 0) {
-        param0->unk_00.unk_00 = param1;
+    if (param0->isLinkContest == 0) {
+        param0->localValue.value = param1;
         return 1;
     }
 
-    if (param0->unk_14 != param0->unk_15) {
+    if (param0->leaderContestantID != param0->netID) {
         return 0;
     }
 
-    param0->unk_08.unk_00 = param1;
+    param0->sendValue.value = param1;
 
-    if (CommSys_SendData(34, &param0->unk_08, sizeof(UnkStruct_02095B28)) == 1) {
+    if (CommSys_SendData(34, &param0->sendValue, sizeof(ContestCommValue)) == 1) {
         return 1;
     }
 
@@ -188,20 +188,20 @@ BOOL sub_02095C60(UnkStruct_02095C60 *param0, u32 param1)
 static void sub_02095C98(int param0, int param1, void *param2, void *param3)
 {
     Contest *v0 = param3;
-    UnkStruct_02095B28 *v1 = param2;
-    v0->unk_1984.unk_10[param0] = v1->unk_04;
+    ContestCommValue *v1 = param2;
+    v0->scoringCommState.receivedValues[param0] = v1->finished;
 }
 
-BOOL sub_02095CA8(UnkStruct_02095C60 *param0, int param1)
+BOOL sub_02095CA8(ContestScoringCommState *param0, int param1)
 {
-    if (param0->unk_16 == 0) {
-        param0->unk_10[0] = param1;
+    if (param0->isLinkContest == 0) {
+        param0->receivedValues[0] = param1;
         return 1;
     }
 
-    param0->unk_08.unk_04 = param1;
+    param0->sendValue.finished = param1;
 
-    if (CommSys_SendData(35, &param0->unk_08, sizeof(UnkStruct_02095B28)) == 1) {
+    if (CommSys_SendData(35, &param0->sendValue, sizeof(ContestCommValue)) == 1) {
         return 1;
     }
 

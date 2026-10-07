@@ -19,7 +19,7 @@ typedef struct {
     u8 padding_1E[2];
     ManagedSprite *unk_20;
     FontOAM *unk_24;
-    UnkStruct_0208B878 *unk_28;
+    VsRecorderRing *unk_28;
     BOOL *unk_2C;
     BOOL *unk_30;
 } UnkStruct_ov62_022354A4;

@@ -17,7 +17,10 @@
 #include "trainer_info.h"
 #include "yes_no_touch_menu.h"
 
-struct UnkStruct_02095EAC_t {
+// State for the Union Room drawing (oekaki) app (overlay058). The app lets up
+// to five players share a canvas; the comm handlers in
+// union_room_drawing_comm.c operate on this struct.
+struct UnionRoomDrawing {
     BgConfig *unk_00;
     BOOL unk_04;
     UnkStruct_0203DDFC *unk_08;
@@ -37,43 +40,43 @@ struct UnkStruct_02095EAC_t {
     Sprite *unk_274[14];
     Sprite *unk_2AC[12];
     Window unk_2DC[5];
-    Window unk_32C;
+    Window drawingWindow; // 30x15-tile canvas the players draw on
     Window unk_33C;
     Window unk_34C;
     Window *unk_35C[2];
-    int unk_364;
+    int appState; // top-level app state, mirrored from the app's *param1
     int unk_368;
     int unk_36C;
     int unk_370;
     int unk_374;
     int unk_378;
-    int unk_37C;
-    int unk_380;
-    int unk_384;
+    int connectedCount; // connected player count snapshot
+    int connectedBitmap; // connected net-ID bitmap snapshot
+    int drawingPlayerNetId; // net ID of the player currently drawing
     u8 unk_388[8][2];
     TrainerInfo *unk_398[8][2];
     u8 unk_3D8[16384];
     u16 unk_43D8;
     u8 unk_43DA;
     u8 unk_43DB;
-    UnkStruct_ov58_021D2820 unk_43DC;
-    UnkStruct_ov58_021D2820 unk_43E6[5];
+    UnkStruct_ov58_021D2820 localDrawingStatus; // this player's pen/cursor status
+    UnkStruct_ov58_021D2820 drawingStatus[5]; // every player's pen/cursor status
     UnkStruct_ov58_021D2754 unk_4418[5];
     u8 *unk_442C;
-    int unk_4430;
-    u8 unk_4434[14400];
-    UnkStruct_02095EAC_sub1 unk_7C74;
-    UnkStruct_02095EAC_sub1 unk_8064[5];
+    int sendChunkIndex; // index of the canvas chunk currently being streamed
+    u8 drawingTiles[14400]; // canvas tile data (30 * 15 tiles of 32 bytes)
+    UnionRoomDrawingChunk sendChunk; // chunk currently being streamed to clients
+    UnionRoomDrawingChunk recvChunks[5]; // per-net-ID receive buffers for incoming chunks
     s32 unk_9414;
-    u32 unk_9418;
-    u16 unk_941C;
+    u32 ackedNetIds; // server: net IDs that accepted the join handshake
+    u16 ackedCount; // client: connected count reported by the server
     s16 unk_941E;
     u8 unk_9420;
-    UnkStruct_ov58_021D2820 unk_9421[5];
+    UnkStruct_ov58_021D2820 drawingStatusBroadcast[5]; // server: statuses relayed to all players
     YesNoTouchMenu *unk_9454;
-    int unk_9458;
+    int drawingState; // 1 = idle/ready, 2 = drawing in progress
     int unk_945C;
-    int unk_9460;
+    int clientReadySent; // server: a client has reported ready
     int unk_9464;
     int unk_9468;
     int unk_946C;

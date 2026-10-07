@@ -23,7 +23,7 @@
 #include "sys_task_manager.h"
 #include "touch_screen.h"
 #include "font_oam.h"
-#include "unk_0208B284.h"
+#include "vs_recorder_ring.h"
 
 static BOOL ov62_02235278(UnkStruct_0208C06C *param0);
 static BOOL ov62_02235308(UnkStruct_0208C06C *param0);
@@ -99,8 +99,8 @@ static BOOL ov62_02235324(UnkStruct_0208C06C *param0)
     case 0:
         param0->unk_14.unk_40 = 0;
         param0->unk_0C = 0;
-        sub_0208B9E0(param0->unk_6F0, 0);
-        sub_0208B9E0(param0->unk_6F4, 0);
+        VsRecorderRing_SetVisible(param0->unk_6F0, 0);
+        VsRecorderRing_SetVisible(param0->unk_6F4, 0);
         ov62_02234540(param0, 1);
         param0->unk_08++;
         break;
@@ -144,7 +144,7 @@ static BOOL ov62_02235444(UnkStruct_0208C06C *param0)
 
     if (v0) {
         if (param0->unk_14.unk_30 == 1) {
-            sub_0208B9E0(param0->unk_6F0, 0);
+            VsRecorderRing_SetVisible(param0->unk_6F0, 0);
             ov62_0222FB60(param0, 0);
         } else {
             ov62_0222FB60(param0, 1);
@@ -166,7 +166,7 @@ static BOOL ov62_02235478(UnkStruct_0208C06C *param0)
 
     if (v0) {
         if (param0->unk_14.unk_30 == 1) {
-            sub_0208B9E0(param0->unk_6F0, 0);
+            VsRecorderRing_SetVisible(param0->unk_6F0, 0);
             ov62_0222FB60(param0, 0);
         } else {
             ov62_0222FB60(param0, 1);
@@ -202,7 +202,7 @@ void ov62_022354A4(SysTask *param0, void *param1)
         }
 
         if (v0->unk_28) {
-            sub_0208B8B8(v0->unk_28, v1 + (15 + 1), v2);
+            VsRecorderRing_SetTargetPosition(v0->unk_28, v1 + (15 + 1), v2);
             if (v0->unk_1C == 2) {
                 *(v0->unk_30) = 1;
             }

@@ -18,7 +18,7 @@ typedef struct {
     int unk_14;
     int unk_18;
     int unk_1C;
-    UnkStruct_02095C60 *unk_20;
+    ContestScoringCommState *unk_20;
     NARC *unk_24;
 } UnkStruct_ov22_02256BAC;
 

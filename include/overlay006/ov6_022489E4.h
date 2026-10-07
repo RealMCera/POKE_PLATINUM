@@ -19,7 +19,7 @@ BOOL ov6_02248B70(Contest *param0, Pokemon **param1);
 void ov6_02248BC0(int param0, int param1, void *param2, void *param3);
 BOOL ov6_02248BE8(Contest *param0, int param1, const UnkStruct_ov6_02248BE8 *param2);
 void ov6_02248C28(int param0, int param1, void *param2, void *param3);
-BOOL ov6_02248C68(Contest *param0, int param1, const UnkStruct_020954F0 *param2);
+BOOL ov6_02248C68(Contest *param0, int param1, const ContestJudge *param2);
 void ov6_02248CBC(int param0, int param1, void *param2, void *param3);
 BOOL ov6_02248CE8(Contest *param0, int param1, const String *param2);
 void ov6_02248D38(int param0, int param1, void *param2, void *param3);

@@ -57,7 +57,7 @@
 #include "font_oam.h"
 #include "battle_recording.h"
 #include "unk_02030A80.h"
-#include "unk_0208B284.h"
+#include "vs_recorder_ring.h"
 
 static void ov62_022349E4(String *param0, enum HeapID heapID);
 
@@ -167,8 +167,8 @@ void ov62_022317CC(UnkStruct_0208C06C *param0, int param1)
     PaletteData_LoadBufferFromFileStart(v0, NARC_INDEX_RESOURCE__ENG__BATT_REC__BATT_REC_GRA, ov62_02231710(param0, 3), HEAP_ID_102, PLTTBUF_SUB_BG, PALETTE_SIZE_BYTES * (8 + 1), PLTT_DEST(0));
     PaletteData_LoadBufferFromFileStart(v0, NARC_INDEX_RESOURCE__ENG__BATT_REC__BATT_REC_GRA, ov62_02231710(param0, 0), HEAP_ID_102, PLTTBUF_MAIN_BG, PALETTE_SIZE_BYTES, PLTT_DEST(14));
     PaletteData_LoadBufferFromFileStart(v0, NARC_INDEX_RESOURCE__ENG__BATT_REC__BATT_REC_GRA, ov62_02231710(param0, 0), HEAP_ID_102, PLTTBUF_SUB_BG, PALETTE_SIZE_BYTES, PLTT_DEST(14));
-    sub_0208B63C(param0->unk_6F0, param0->unk_14.unk_48);
-    sub_0208B63C(param0->unk_6F0, param0->unk_14.unk_48);
+    VsRecorderRing_LoadColorPalette(param0->unk_6F0, param0->unk_14.unk_48);
+    VsRecorderRing_LoadColorPalette(param0->unk_6F0, param0->unk_14.unk_48);
     SpriteManager_UnloadPlttObjById(v2, 9999);
     SpriteManager_UnloadPlttObjById(v2, 10000);
     SpriteSystem_LoadPaletteBufferFromOpenNarc(v0, 2, v1, v2, v3, ov62_02231710(param0, 2), 0, 3, NNS_G2D_VRAM_TYPE_2DMAIN, 9999);
@@ -2396,17 +2396,17 @@ void ov62_02234314(void)
     Bg_SetPriority(BG_LAYER_SUB_3, 1);
 }
 
-void ov62_02234358(UnkStruct_0208C06C *param0, UnkStruct_0208B878 *param1, s16 param2, s16 param3)
+void ov62_02234358(UnkStruct_0208C06C *param0, VsRecorderRing *param1, s16 param2, s16 param3)
 {
     if (param0->unk_14.unk_30 == 0) {
-        sub_0208B9E0(param1, 1);
+        VsRecorderRing_SetVisible(param1, 1);
     }
 
-    sub_0208B8B0(param1, 1);
+    VsRecorderRing_SetActive(param1, 1);
 
     {
-        sub_0208B948(param1, param2, param3);
-        sub_0208B8B8(param1, param2, param3);
+        VsRecorderRing_SetPosition(param1, param2, param3);
+        VsRecorderRing_SetTargetPosition(param1, param2, param3);
     }
 }
 
@@ -2437,15 +2437,15 @@ static void ov62_022343D8(SysTask *param0, void *param1)
         SysTask_Done(param0);
         v0->unk_41D8.unk_04 = 0;
         v0->unk_41D8.unk_00 = 0;
-        sub_0208BA54(v0->unk_41D8.unk_08);
-        sub_0208BA08(v0->unk_41D8.unk_08, 0, 0);
-        sub_0208B8B0(v0->unk_41D8.unk_08, 0);
-        sub_0208B9E0(v0->unk_41D8.unk_08, 0);
+        VsRecorderRing_StopAnim(v0->unk_41D8.unk_08);
+        VsRecorderRing_SetOrbitRadii(v0->unk_41D8.unk_08, 0, 0);
+        VsRecorderRing_SetActive(v0->unk_41D8.unk_08, 0);
+        VsRecorderRing_SetVisible(v0->unk_41D8.unk_08, 0);
         return;
     }
 
     v1 = (6 + (v0->unk_41D8.unk_04 * 2));
-    sub_0208BA08(v0->unk_41D8.unk_08, v1, v1);
+    VsRecorderRing_SetOrbitRadii(v0->unk_41D8.unk_08, v1, v1);
 }
 
 static void ov62_02234440(UnkStruct_0208C06C *param0)
@@ -2471,11 +2471,11 @@ static void ov62_02234440(UnkStruct_0208C06C *param0)
     param0->unk_41D8.unk_04 = 0;
 
     TouchScreen_GetTapState(&v0, &v1);
-    sub_0208BA30(param0->unk_41D8.unk_08);
-    sub_0208B8B0(param0->unk_41D8.unk_08, 1);
-    sub_0208B9E0(param0->unk_41D8.unk_08, 1);
-    sub_0208B8B8(param0->unk_41D8.unk_08, v0, v1 + v2);
-    sub_0208B948(param0->unk_41D8.unk_08, v0, v1 + v2);
+    VsRecorderRing_StartAnim(param0->unk_41D8.unk_08);
+    VsRecorderRing_SetActive(param0->unk_41D8.unk_08, 1);
+    VsRecorderRing_SetVisible(param0->unk_41D8.unk_08, 1);
+    VsRecorderRing_SetTargetPosition(param0->unk_41D8.unk_08, v0, v1 + v2);
+    VsRecorderRing_SetPosition(param0->unk_41D8.unk_08, v0, v1 + v2);
 
     param0->unk_41D8.unk_0C = SysTask_Start(ov62_022343D8, param0, 4096);
 
@@ -2483,7 +2483,7 @@ static void ov62_02234440(UnkStruct_0208C06C *param0)
         ov62_022343D8(param0->unk_41D8.unk_0C, param0);
     } else {
         param0->unk_41D8.unk_00 = 0;
-        sub_0208B9E0(param0->unk_41D8.unk_08, 0);
+        VsRecorderRing_SetVisible(param0->unk_41D8.unk_08, 0);
         GF_ASSERT(FALSE);
     }
 }

@@ -1,16 +1,20 @@
 #ifndef POKEPLATINUM_STRUCT_02095C60_H
 #define POKEPLATINUM_STRUCT_02095C60_H
 
+#include "constants/contests.h"
+
 #include "struct_defs/struct_02095B28.h"
 
+// Communication state for the visual competition scoring: the local score,
+// the packet being sent, and the scores received from the other contestants.
 typedef struct {
-    UnkStruct_02095B28 unk_00;
-    UnkStruct_02095B28 unk_08;
-    u8 unk_10[4];
-    u8 unk_14;
-    u8 unk_15;
-    u8 unk_16;
-    u8 unk_17;
-} UnkStruct_02095C60;
+    ContestCommValue localValue; // used directly when not in a link contest
+    ContestCommValue sendValue; // packet sent by the leader
+    u8 receivedValues[CONTEST_NUM_PARTICIPANTS];
+    u8 leaderContestantID;
+    u8 netID;
+    u8 isLinkContest;
+    u8 connectionCount;
+} ContestScoringCommState;
 
 #endif // POKEPLATINUM_STRUCT_02095C60_H

@@ -26,7 +26,7 @@
 #include "touch_screen.h"
 #include "font_oam.h"
 #include "unk_02030A80.h"
-#include "unk_0208B284.h"
+#include "vs_recorder_ring.h"
 #include "vars_flags.h"
 #include "wifi_battle_tower_save.h"
 
@@ -622,7 +622,7 @@ static BOOL ov62_02237884(UnkStruct_0208C06C *param0)
         ov62_02231454(param0);
         ov62_02234540(param0, 0);
         ov62_0223376C(param0, 0);
-        sub_0208B9E0(param0->unk_6F0, 0);
+        VsRecorderRing_SetVisible(param0->unk_6F0, 0);
         ov62_02234314();
         Bg_SetPriority(BG_LAYER_SUB_2, 2);
         ov62_02236E14(param0);

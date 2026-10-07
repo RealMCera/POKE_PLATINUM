@@ -15,7 +15,7 @@
 #include "savedata_misc.h"
 #include "sound.h"
 #include "system.h"
-#include "unk_0208B284.h"
+#include "vs_recorder_ring.h"
 #include "vs_recorder.h"
 
 #include "constdata/const_020F3050.h"
@@ -114,12 +114,12 @@ static int sub_0208BF6C(ApplicationManager *appMan, int *param1)
         (*param1)++;
         break;
     case 2: {
-        if (sub_0208B988(v0->unk_6F0) == 0) {
+        if (VsRecorderRing_Shutdown(v0->unk_6F0) == 0) {
             (*param1)++;
         }
     } break;
     case 3: {
-        if (sub_0208B988(v0->unk_6F4) == 0) {
+        if (VsRecorderRing_Shutdown(v0->unk_6F4) == 0) {
             (*param1)++;
         }
     } break;

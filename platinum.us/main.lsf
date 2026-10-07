@@ -312,7 +312,7 @@ Static main
 	Object main.nef.p/src_unk_020890F4.c.o
 	Object main.nef.p/src_number_entry_screen.c.o
 	Object main.nef.p/src_number_entry_graphics.c.o
-	Object main.nef.p/src_unk_0208B284.c.o
+	Object main.nef.p/src_vs_recorder_ring.c.o
 	Object main.nef.p/src_vs_recorder.c.o
 	Object main.nef.p/src_unk_0208BEBC.c.o
 	Object main.nef.p/src_unk_0208C010.c.o
@@ -328,8 +328,8 @@ Static main
 	Object main.nef.p/src_unk_02094EDC.c.o
 	Object main.nef.p/src_unk_02095AF0.c.o
 	Object main.nef.p/src_applications_trade_room_comm.c.o
-	Object main.nef.p/src_unk_02095E98.c.o
-	Object main.nef.p/src_unk_020961E8.c.o
+	Object main.nef.p/src_union_room_drawing_comm.c.o
+	Object main.nef.p/src_mix_records_comm.c.o
 	Object main.nef.p/src_item_use_pokemon.c.o
 	Object main.nef.p/src_berry_tag_data.c.o
 	Object main.nef.p/src_berry_data.c.o

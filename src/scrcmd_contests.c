@@ -382,7 +382,7 @@ BOOL ScrCmd_GetShouldSkipAwardCeremony(ScriptContext *ctx)
     u16 *destSkipAwardCeremony = ScriptContext_GetVarPointer(ctx);
     int winningContestantEntryNum, isLinkContest, v4, isPracticeCompetition, v6;
 
-    sub_02094BB4(*contest, &winningContestantEntryNum, &isLinkContest, &v4, &isPracticeCompetition, &v6);
+    Contest_GetResults(*contest, &winningContestantEntryNum, &isLinkContest, &v4, &isPracticeCompetition, &v6);
 
     if (isLinkContest == TRUE || v4 == 1 || isPracticeCompetition == TRUE || v6 == 1) {
         *destSkipAwardCeremony = TRUE;

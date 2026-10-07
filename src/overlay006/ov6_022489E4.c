@@ -28,21 +28,21 @@ void ov6_022489E4(int param0, int param1, void *param2, void *param3)
 {
     Contest *v0 = param3;
 
-    MI_CpuCopy8(param2, v0->unk_168[param0], param1);
-    v0->unk_568++;
+    MI_CpuCopy8(param2, v0->leaderElectionRecvBuf[param0], param1);
+    v0->commRecvCount++;
 
-    if (v0->unk_568 >= v0->unk_00.connectionCount) {
+    if (v0->commRecvCount >= v0->data.connectionCount) {
         UnkStruct_ov6_02248A94 *v1[4];
         int v2;
         u8 v3;
 
-        for (v2 = 0; v2 < v0->unk_00.connectionCount; v2++) {
-            v1[v2] = (void *)v0->unk_168[v2];
+        for (v2 = 0; v2 < v0->data.connectionCount; v2++) {
+            v1[v2] = (void *)v0->leaderElectionRecvBuf[v2];
         }
 
-        v0->unk_00.unk_10C = ov6_02248A94(v1, v0->unk_00.connectionCount, &v3);
-        v0->unk_00.unk_10D = v3;
-        v0->unk_00.unk_112 = v1[v0->unk_00.unk_10C]->unk_02;
+        v0->data.leaderContestantID = ov6_02248A94(v1, v0->data.connectionCount, &v3);
+        v0->data.leaderElectionResult = v3;
+        v0->data.npcPhotoPreset = v1[v0->data.leaderContestantID]->unk_02;
     }
 }
 
@@ -50,9 +50,9 @@ BOOL ov6_02248A64(Contest *param0)
 {
     UnkStruct_ov6_02248A94 v0;
 
-    v0.unk_00 = param0->unk_00.unk_115;
-    v0.unk_01 = param0->unk_00.playerContestantID;
-    v0.unk_02 = param0->unk_00.unk_112;
+    v0.unk_00 = param0->data.leaderElectionValue;
+    v0.unk_01 = param0->data.playerContestantID;
+    v0.unk_02 = param0->data.npcPhotoPreset;
 
     if (CommSys_SendData(26, &v0, sizeof(UnkStruct_ov6_02248A94)) == 1) {
         return 1;
@@ -86,9 +86,9 @@ void ov6_02248AC8(int param0, int param1, void *param2, void *param3)
     v3 = param2;
     v2 = v3[v1];
 
-    MI_CpuCopy8(param2, v0->unk_00.contestMons[v2], v1);
+    MI_CpuCopy8(param2, v0->data.contestMons[v2], v1);
 
-    v0->unk_568++;
+    v0->commRecvCount++;
 }
 
 BOOL ov6_02248AF0(Contest *param0, int param1, const Pokemon *param2)
@@ -124,10 +124,10 @@ void ov6_02248B30(int param0, int param1, void *param2, void *param3)
     v3 = param2;
 
     for (v4 = 0; v4 < 4; v4++) {
-        MI_CpuCopy8(&v3[v1 * v4], v0->unk_00.contestMons[v4], v1);
+        MI_CpuCopy8(&v3[v1 * v4], v0->data.contestMons[v4], v1);
     }
 
-    v0->unk_568++;
+    v0->commRecvCount++;
 }
 
 BOOL ov6_02248B70(Contest *param0, Pokemon **param1)
@@ -139,7 +139,7 @@ BOOL ov6_02248B70(Contest *param0, Pokemon **param1)
 
     v1 = Pokemon_StructSize();
     v2 = v1 * 4;
-    v0 = param0->unk_569;
+    v0 = param0->commSendBuf;
 
     for (v4 = 0; v4 < 4; v4++) {
         MI_CpuCopy8(param1[v4], &v0[v1 * v4], v1);
@@ -165,9 +165,9 @@ void ov6_02248BC0(int param0, int param1, void *param2, void *param3)
     v3 = param2;
     v2 = v3[v1];
 
-    MI_CpuCopy8(param2, &v0->unk_00.unk_10[v2], v1);
+    MI_CpuCopy8(param2, &v0->data.opponentData[v2], v1);
 
-    v0->unk_568++;
+    v0->commRecvCount++;
 }
 
 BOOL ov6_02248BE8(Contest *param0, int param1, const UnkStruct_ov6_02248BE8 *param2)
@@ -198,33 +198,33 @@ void ov6_02248C28(int param0, int param1, void *param2, void *param3)
     u8 *v2;
     int v3;
 
-    v1 = sizeof(UnkStruct_020954F0) * (1 + 2) + 1;
+    v1 = sizeof(ContestJudge) * (1 + 2) + 1;
     v2 = param2;
 
     for (v3 = 0; v3 < (1 + 2); v3++) {
-        MI_CpuCopy8(&v2[sizeof(UnkStruct_020954F0) * v3], &v0->unk_00.unk_C0[v3], sizeof(UnkStruct_020954F0));
+        MI_CpuCopy8(&v2[sizeof(ContestJudge) * v3], &v0->data.judges[v3], sizeof(ContestJudge));
     }
 
-    v0->unk_00.unk_10E = v2[v1 - 1];
-    v0->unk_568++;
+    v0->data.bonusJudgeIndex = v2[v1 - 1];
+    v0->commRecvCount++;
 }
 
-BOOL ov6_02248C68(Contest *param0, int param1, const UnkStruct_020954F0 *param2)
+BOOL ov6_02248C68(Contest *param0, int param1, const ContestJudge *param2)
 {
     u8 *v0;
     int v1;
     int v2;
     int v3;
-    const UnkStruct_020954F0 *v4 = param2;
-    v1 = sizeof(UnkStruct_020954F0) * (1 + 2) + 1;
+    const ContestJudge *v4 = param2;
+    v1 = sizeof(ContestJudge) * (1 + 2) + 1;
     v0 = Heap_Alloc(HEAP_ID_20, v1);
 
     for (v3 = 0; v3 < (1 + 2); v3++) {
-        MI_CpuCopy8(v4, &v0[sizeof(UnkStruct_020954F0) * v3], sizeof(UnkStruct_020954F0));
+        MI_CpuCopy8(v4, &v0[sizeof(ContestJudge) * v3], sizeof(ContestJudge));
         v4++;
     }
 
-    v0[v1 - 1] = param0->unk_00.unk_10E;
+    v0[v1 - 1] = param0->data.bonusJudgeIndex;
 
     if (CommSys_SendData(30, v0, v1) == 1) {
         v2 = 1;
@@ -249,10 +249,10 @@ void ov6_02248CBC(int param0, int param1, void *param2, void *param3)
     v2 = v4[1];
     v5 = (u16 *)(&v4[v3]);
 
-    String_Clear(v0->unk_00.trainerNames[contestantID]);
-    String_CopyChars(v0->unk_00.trainerNames[contestantID], v5);
+    String_Clear(v0->data.trainerNames[contestantID]);
+    String_CopyChars(v0->data.trainerNames[contestantID], v5);
 
-    v0->unk_568++;
+    v0->commRecvCount++;
 }
 
 BOOL ov6_02248CE8(Contest *contest, int param1, const String *trainerNames)
@@ -297,7 +297,7 @@ void ov6_02248D38(int param0, int param1, void *param2, void *param3)
 
     MI_CpuCopy8(param2, v0->chatotCry[v2], v1);
 
-    v0->unk_568++;
+    v0->commRecvCount++;
 }
 
 BOOL ov6_02248D64(Contest *param0, int param1, void *param2)
@@ -307,7 +307,7 @@ BOOL ov6_02248D64(Contest *param0, int param1, void *param2)
     int v2;
 
     v1 = ChatotCry_SaveSize();
-    v0 = param0->unk_569;
+    v0 = param0->commSendBuf;
 
     if (param2 != NULL) {
         MI_CpuCopy8(param2, v0, v1);
@@ -337,11 +337,11 @@ void ov6_02248DA0(int param0, int param1, void *param2, void *param3)
     v3 = param2;
     contestantID = v3[v1];
 
-    contest->unk_00.trainerGenders[contestantID] = v4->trainerGender;
-    contest->unk_00.unk_FC[contestantID] = v4->unk_01;
-    contest->unk_00.monContestFame[contestantID] = v4->monContestFame;
-    contest->unk_00.contestantObjEventGFX[contestantID] = v4->contestantObjEventGFX;
-    contest->unk_568++;
+    contest->data.trainerGenders[contestantID] = v4->trainerGender;
+    contest->data.cameraFlashVariant[contestantID] = v4->unk_01;
+    contest->data.monContestFame[contestantID] = v4->monContestFame;
+    contest->data.contestantObjEventGFX[contestantID] = v4->contestantObjEventGFX;
+    contest->commRecvCount++;
 }
 
 BOOL ov6_02248DD8(Contest *param0, int param1, const UnkStruct_ov6_02248DD8 *param2)

@@ -138,9 +138,9 @@ int VisualCompetitionScoring_Init(ApplicationManager *appMan, int *param1)
 
     v0->unk_08 = ov17_0223F140(HEAP_ID_22);
     v0->unk_00 = ApplicationManager_Args(appMan);
-    v0->unk_00->unk_150 = v0;
-    v0->unk_00->unk_154 = 0;
-    v0->unk_0C.unk_00 = &v0->unk_00->unk_00;
+    v0->unk_00->appContext = v0;
+    v0->unk_00->activeAppID = 0;
+    v0->unk_0C.unk_00 = &v0->unk_00->data;
 
     ov17_0223D390(v0);
     v0->unk_0C.unk_44 = PaletteData_New(HEAP_ID_22);
@@ -663,7 +663,7 @@ static int ov17_0223D640(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     default:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             return 1;
         }
         break;
@@ -683,7 +683,7 @@ static int ov17_0223D6B8(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     default:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             return 1;
         }
         break;
@@ -706,7 +706,7 @@ static int ov17_0223D71C(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     default:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             return 1;
         }
         break;
@@ -724,7 +724,7 @@ static int ov17_0223D78C(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     default:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             return 1;
         }
         break;
@@ -742,7 +742,7 @@ static int ov17_0223D7DC(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     default:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             return 1;
         }
         break;
@@ -780,7 +780,7 @@ static int ov17_0223D82C(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     default:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             return 1;
         }
         break;
@@ -802,7 +802,7 @@ static int ov17_0223D8DC(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     case 2:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             param1->unk_00++;
         }
         break;
@@ -843,12 +843,12 @@ static int ov17_0223D99C(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     case 1:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             param1->unk_00++;
         }
         break;
     case 2:
-        switch (param0->unk_00->unk_00.competitionType) {
+        switch (param0->unk_00->data.competitionType) {
         case CONTEST_COMPETITION_LINK_OR_OFFICIAL:
             param0->unk_E0.unk_07 = 7;
             break;
@@ -866,7 +866,7 @@ static int ov17_0223D99C(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     default:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             return 1;
         }
         break;
@@ -884,7 +884,7 @@ static int ov17_0223DA78(UnkStruct_ov17_02247A48 *param0, UnkStruct_ov17_0223D60
         }
         break;
     default:
-        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->unk_00.connectionCount - param0->unk_00->unk_15B - 1, param0->unk_00->unk_00.playerContestantID, param0->unk_00->unk_00.unk_10C) == 1) {
+        if (ov17_0224F4B8(&param0->unk_4F8, param0->unk_00->data.connectionCount - param0->unk_00->gameCodeMismatchCount - 1, param0->unk_00->data.playerContestantID, param0->unk_00->data.leaderContestantID) == 1) {
             return 3;
         }
         break;

@@ -33,7 +33,7 @@
 #include "font_oam.h"
 #include "unk_0202419C.h"
 #include "image_clips.h"
-#include "unk_0208B284.h"
+#include "vs_recorder_ring.h"
 #include "vs_recorder.h"
 #include "unk_0208C010.h"
 #include "vram_transfer.h"
@@ -100,26 +100,26 @@ void ov62_0222F2C0(UnkStruct_0208C06C *param0)
     }
 
     {
-        UnkStruct_0208B284 v2;
+        VsRecorderRingConfig v2;
 
-        v2.unk_00 = 12;
+        v2.count = 12;
         v2.heapID = HEAP_ID_102;
-        v2.unk_08 = 1;
-        v2.unk_0C = param0->unk_00;
-        v2.unk_10 = (256 * FX32_ONE);
+        v2.vramType = 1;
+        v2.mode = param0->unk_00;
+        v2.subscreenOffset = (256 * FX32_ONE);
 
-        param0->unk_6F0 = sub_0208B284(v2, param0->unk_14.unk_04, param0->unk_14.unk_08, param0->unk_14.unk_14);
-        sub_0208B878(param0->unk_6F0, param0->unk_14.unk_48);
-        sub_0208B8B0(param0->unk_6F0, 0);
-        sub_0208B9E0(param0->unk_6F0, 0);
+        param0->unk_6F0 = VsRecorderRing_New(v2, param0->unk_14.unk_04, param0->unk_14.unk_08, param0->unk_14.unk_14);
+        VsRecorderRing_Init(param0->unk_6F0, param0->unk_14.unk_48);
+        VsRecorderRing_SetActive(param0->unk_6F0, 0);
+        VsRecorderRing_SetVisible(param0->unk_6F0, 0);
 
-        v2.unk_08 = 2;
-        v2.unk_10 = (256 * FX32_ONE);
+        v2.vramType = 2;
+        v2.subscreenOffset = (256 * FX32_ONE);
 
-        param0->unk_6F4 = sub_0208B284(v2, param0->unk_14.unk_04, param0->unk_14.unk_08, param0->unk_14.unk_14);
-        sub_0208B878(param0->unk_6F4, param0->unk_14.unk_48);
-        sub_0208B8B0(param0->unk_6F4, 0);
-        sub_0208B9E0(param0->unk_6F4, 0);
+        param0->unk_6F4 = VsRecorderRing_New(v2, param0->unk_14.unk_04, param0->unk_14.unk_08, param0->unk_14.unk_14);
+        VsRecorderRing_Init(param0->unk_6F4, param0->unk_14.unk_48);
+        VsRecorderRing_SetActive(param0->unk_6F4, 0);
+        VsRecorderRing_SetVisible(param0->unk_6F4, 0);
     }
 
     {
@@ -756,8 +756,8 @@ static void ov62_0222FE1C(u32 param0, enum TouchScreenButtonState param1, void *
         s16 v2, v3;
 
         ov62_02230E74(v0->unk_534.unk_C8[param0].unk_00, &v2, &v3);
-        sub_0208B948(v0->unk_6F0, v2 + (15 + 1), v3);
-        sub_0208B8B8(v0->unk_6F0, v2 + (15 + 1), v3);
+        VsRecorderRing_SetPosition(v0->unk_6F0, v2 + (15 + 1), v3);
+        VsRecorderRing_SetTargetPosition(v0->unk_6F0, v2 + (15 + 1), v3);
 
         v0->unk_86C = v0->unk_818[v0->unk_534.unk_1B0].unk_18;
         ov62_0222FB60(v0, v0->unk_818[v0->unk_534.unk_1B0].unk_14);
@@ -766,7 +766,7 @@ static void ov62_0222FE1C(u32 param0, enum TouchScreenButtonState param1, void *
             VsRecorder_SetPlaybackRequest(v0->unk_868, 0, 0);
         } else {
             ov62_02230014(v0);
-            sub_0208B9E0(v0->unk_6F0, 1);
+            VsRecorderRing_SetVisible(v0->unk_6F0, 1);
         }
 
         if (v0->unk_86C == 999) {

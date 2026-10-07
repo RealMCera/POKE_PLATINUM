@@ -5,11 +5,12 @@
 #include "palette.h"
 #include "sprite_system.h"
 
+// Rendering handles shared by every sprite in a Vs. Recorder ring.
 typedef struct {
-    NARC *unk_00;
-    SpriteSystem *unk_04;
-    SpriteManager *unk_08;
-    PaletteData *unk_0C;
-} UnkStruct_0208B878_sub1;
+    NARC *narc;
+    SpriteSystem *spriteSystem;
+    SpriteManager *spriteManager;
+    PaletteData *paletteData;
+} VsRecorderRingResources;
 
 #endif // POKEPLATINUM_STRUCT_0208B878_SUB1_H

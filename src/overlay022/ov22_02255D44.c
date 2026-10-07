@@ -99,7 +99,7 @@ typedef struct {
     int unk_728;
     enum PokemonContestType contestType;
     int unk_730;
-    UnkStruct_02095C60 *unk_734;
+    ContestScoringCommState *unk_734;
     const Options *options;
     u32 unk_73C;
     String *unk_740;
@@ -146,7 +146,7 @@ static void ov22_02256B24(UnkStruct_ov22_02259C58 *param0, void *param1);
 static void ov22_02256B44(UnkStruct_ov22_02259C58 *param0, void *param1);
 static void ov22_02256B78(UnkStruct_ov22_02259C58 *param0, void *param1);
 static void ov22_02256BAC(UnkStruct_ov22_02255D44 *param0, const Options *options);
-static void ov22_02256BF4(UnkStruct_ov22_02255D44 *param0, int param1, int param2, UnkStruct_02095C60 *param3, const Options *options);
+static void ov22_02256BF4(UnkStruct_ov22_02255D44 *param0, int param1, int param2, ContestScoringCommState *param3, const Options *options);
 static void ov22_02256C38(UnkStruct_ov22_02255D44 *param0);
 static void ov22_02256C48(UnkStruct_ov22_02255D44 *param0, BOOL *param1);
 static void ov22_02256C70(SysTask *param0, void *param1);
@@ -421,8 +421,8 @@ int VisualCompetition_Init(ApplicationManager *appMan, int *param1)
     v0->contestRank = appArgs->contestRank;
     v0->unk_728 = appArgs->competitionType;
     v0->contestType = appArgs->contestType;
-    v0->unk_730 = appArgs->unk_08;
-    v0->unk_734 = appArgs->unk_1C;
+    v0->unk_730 = appArgs->npcPhotoPreset;
+    v0->unk_734 = appArgs->scoringCommState;
 
     EnableTouchPad();
     v1 = InitializeTouchPad(4);
@@ -444,7 +444,7 @@ int VisualCompetition_Init(ApplicationManager *appMan, int *param1)
     v0->unk_3C8 = ov22_02254DE0(700, HEAP_ID_13);
     v0->options = appArgs->options;
 
-    if (v0->unk_734->unk_16 == 0) {
+    if (v0->unk_734->isLinkContest == 0) {
         v0->unk_720 = ov22_02257580(appArgs->contestRank);
     } else {
         v0->unk_720 = 20;
@@ -454,14 +454,14 @@ int VisualCompetition_Init(ApplicationManager *appMan, int *param1)
     ov22_022567FC(v0);
     ov22_02256948(v0, 0);
     ov22_02256A28(v0);
-    ov22_02256BF4(v0, v0->unk_720, appArgs->unk_08, appArgs->unk_1C, appArgs->options);
+    ov22_02256BF4(v0, v0->unk_720, appArgs->npcPhotoPreset, appArgs->scoringCommState, appArgs->options);
     ov22_022589E0(&v0->unk_4FC, &v0->unk_458, &v0->unk_3CC, &v0->unk_00, &v0->unk_5C4, 0);
 
     v0->unk_714 = YesNoTouchMenu_New(HEAP_ID_13);
     v0->unk_718 = Window_New(HEAP_ID_13, 1);
     v0->unk_70C = 0;
 
-    SetLockTextWithAutoScroll(v0->unk_734->unk_16);
+    SetLockTextWithAutoScroll(v0->unk_734->isLinkContest);
 
     return 1;
 }
@@ -527,13 +527,13 @@ int VisualCompetition_Main(ApplicationManager *appMan, int *param1)
         }
         break;
     case 8:
-        if (v0->unk_734->unk_16) {
+        if (v0->unk_734->isLinkContest) {
             CommTiming_StartSync(2);
         }
         (*param1)++;
         break;
     case 9:
-        if (v0->unk_734->unk_16) {
+        if (v0->unk_734->isLinkContest) {
             if (CommTiming_IsSyncState(2)) {
                 (*param1)++;
             }
@@ -560,7 +560,7 @@ int VisualCompetition_Main(ApplicationManager *appMan, int *param1)
         if (v0->unk_70C == 3) {
             sub_02095CA8(v0->unk_734, 1);
 
-            if (v0->unk_734->unk_16) {
+            if (v0->unk_734->isLinkContest) {
                 ov22_0225A628(&v0->unk_5C4, 26, 385, 46);
             }
 
@@ -631,7 +631,7 @@ int VisualCompetition_Exit(ApplicationManager *appMan, int *param1)
     u32 v1;
     VisualCompetitionAppArgs *appArgs = ApplicationManager_Args(appMan);
 
-    ov22_02256FD8(appArgs->unk_04, &v0->unk_458, v0->contestRank, appArgs->trainerInfo);
+    ov22_02256FD8(appArgs->photo, &v0->unk_458, v0->contestRank, appArgs->trainerInfo);
 
     YesNoTouchMenu_Free(v0->unk_714);
     Windows_Delete(v0->unk_718, 1);
@@ -932,7 +932,7 @@ static void ov22_02256BAC(UnkStruct_ov22_02255D44 *param0, const Options *option
     ov22_0225A428(&param0->unk_5C4, &v0, 1 | 2 | 4 | 8);
 }
 
-static void ov22_02256BF4(UnkStruct_ov22_02255D44 *param0, int param1, int param2, UnkStruct_02095C60 *param3, const Options *options)
+static void ov22_02256BF4(UnkStruct_ov22_02255D44 *param0, int param1, int param2, ContestScoringCommState *param3, const Options *options)
 {
     UnkStruct_ov22_02256BAC v0;
     BOOL v1;
@@ -1371,7 +1371,7 @@ static u32 ov22_022573EC(UnkStruct_ov22_02255D44 *param0, u32 param1)
 
     StringTemplate_Format(param0->unk_744, param0->unk_740, v3);
 
-    if (param0->unk_734->unk_16 == 0) {
+    if (param0->unk_734->isLinkContest == 0) {
         v2 = Options_TextFrameDelay(param0->options);
     } else {
         v2 = TEXT_SPEED_FAST;
@@ -1614,19 +1614,19 @@ static void ov22_022577A0(UnkStruct_ov22_02255D44 *param0)
     int v0;
     int v1 = 0;
 
-    if (param0->unk_734->unk_16 == 0) {
+    if (param0->unk_734->isLinkContest == 0) {
         ov22_0225A6CC(&param0->unk_5C4, 0);
         return;
     }
 
-    if (param0->unk_734->unk_14 == param0->unk_734->unk_15) {
+    if (param0->unk_734->leaderContestantID == param0->unk_734->netID) {
         for (v0 = 0; v0 < 4; v0++) {
-            if (param0->unk_734->unk_10[v0] == 1) {
+            if (param0->unk_734->receivedValues[v0] == 1) {
                 v1++;
             }
         }
 
-        if (param0->unk_734->unk_17 <= v1) {
+        if (param0->unk_734->connectionCount <= v1) {
             ov22_0225A6CC(&param0->unk_5C4, 0);
         }
     }

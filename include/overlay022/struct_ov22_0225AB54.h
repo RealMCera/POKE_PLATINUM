@@ -18,7 +18,7 @@ typedef struct {
     int unk_20;
     SysTask *unk_24;
     SysTask *unk_28;
-    UnkStruct_02095C60 *unk_2C;
+    ContestScoringCommState *unk_2C;
     UnkStruct_ov22_0225AE9C unk_30;
     BOOL unk_90;
 } UnkStruct_ov22_0225AB54;

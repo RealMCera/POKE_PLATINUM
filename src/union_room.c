@@ -32,7 +32,7 @@
 #include "trainer_case.h"
 #include "trainer_info.h"
 #include "comm_server_client.h"
-#include "unk_02095E98.h"
+#include "union_room_drawing_comm.h"
 #include "unk_02099500.h"
 
 #include "constdata/const_020ED570.h"
@@ -229,7 +229,7 @@ static void UnionRoom_StateConnect(UnionRoom *param0)
                 CommManager_ConnectUnion(param0->connectionID);
             }
         } else if (param0->pendingRequest == 2) {
-            sub_02095E98(NULL);
+            UnionRoomDrawing_RegisterCommHandlers(NULL);
             CommManager_StartDrawClient(param0->connectionID);
         }
 

@@ -12,15 +12,16 @@
 #include "pokemon.h"
 #include "trainer_info.h"
 
+// Arguments passed to the visual competition app.
 typedef struct VisualCompetitionAppArgs {
     Pokemon *mon;
-    ContestPhoto *unk_04;
-    int unk_08;
+    ContestPhoto *photo;
+    int npcPhotoPreset;
     enum PokemonContestRank contestRank;
     int competitionType;
     enum PokemonContestType contestType;
     const FashionCase *fashionCase;
-    UnkStruct_02095C60 *unk_1C;
+    ContestScoringCommState *scoringCommState;
     const Options *options;
     const TrainerInfo *trainerInfo;
 } VisualCompetitionAppArgs;

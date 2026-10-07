@@ -133,8 +133,8 @@ void ov17_02243C28(UnkStruct_ov17_02246F24 *param0)
 
     v0.unk_00 = Unk_ov17_022539E4;
     v0.unk_04 = NELEMS(Unk_ov17_022539E4);
-    v0.playerContestantID = param0->unk_00->unk_00.playerContestantID;
-    v0.unk_08 = param0->unk_00->unk_00.unk_10C;
+    v0.playerContestantID = param0->unk_00->data.playerContestantID;
+    v0.unk_08 = param0->unk_00->data.leaderContestantID;
     v0.isLinkContest = param0->unk_00->isLinkContest;
 
     ov17_0224F18C(&param0->unk_BF8, &v0);
@@ -348,7 +348,7 @@ static void ov17_02243F68(SysTask *param0, void *param1)
         break;
 
     case 2:
-        if (v0->contestantID == v0->unk_00->unk_00->unk_00.playerContestantID) {
+        if (v0->contestantID == v0->unk_00->unk_00->data.playerContestantID) {
             Sound_PlayEffect(SEQ_SE_DP_CON_031_sseq);
         }
 

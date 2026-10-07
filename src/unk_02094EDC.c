@@ -386,7 +386,7 @@ const UnkStruct_020F568C Unk_020F568C[CONTEST_EFFECT_MAX] = {
 
 BOOL sub_02094EDC(Contest *contest)
 {
-    if (contest->isLinkContest == FALSE || (contest->isLinkContest == TRUE && contest->unk_00.unk_10C == contest->unk_00.playerContestantID)) {
+    if (contest->isLinkContest == FALSE || (contest->isLinkContest == TRUE && contest->data.leaderContestantID == contest->data.playerContestantID)) {
         return TRUE;
     }
 
@@ -504,7 +504,7 @@ void sub_02094F04(Contest *contest, enum HeapID heapID, int param2, enum Pokemon
                 continue;
             }
 
-            contest->unk_00.unk_10[v0] = v9[v2[v4]];
+            contest->data.opponentData[v0] = v9[v2[v4]];
 
             for (v1 = v4; v2[v1] != 0xff; v1++) {
                 v2[v1] = v2[v1 + 1];
@@ -516,13 +516,13 @@ void sub_02094F04(Contest *contest, enum HeapID heapID, int param2, enum Pokemon
         if (v10 > 0) {
             v4 = 4 - param2;
             v4 += Contest_GetRNGNext(contest) % param2;
-            contest->unk_00.unk_10[v4] = v12;
+            contest->data.opponentData[v4] = v12;
         }
     } else {
         GF_ASSERT(v3 >= 4);
 
         for (v0 = 0; v0 < 4; v0++) {
-            contest->unk_00.unk_10[v0] = v9[v2[v0]];
+            contest->data.opponentData[v0] = v9[v2[v0]];
         }
     }
 
@@ -540,54 +540,54 @@ void sub_020951B0(Contest *contest, enum HeapID heapID)
 
     v2 = LoadMemberFromNARC(NARC_INDEX_CONTEST__DATA__CONTEST_DATA, 2, FALSE, heapID, TRUE);
 
-    switch (contest->unk_00.competitionType) {
+    switch (contest->data.competitionType) {
     case CONTEST_COMPETITION_VISUAL:
     case CONTEST_COMPETITION_DANCE:
     case CONTEST_COMPETITION_ACTING:
         v4 = 0;
         break;
     default:
-        v4 = contest->unk_00.connectionCount;
+        v4 = contest->data.connectionCount;
         break;
     }
 
     for (i = v4; i < CONTEST_NUM_PARTICIPANTS; i++) {
-        switch (contest->unk_00.unk_112) {
+        switch (contest->data.npcPhotoPreset) {
         case 0:
-            v5 = contest->unk_00.unk_10[i].unk_22;
+            v5 = contest->data.opponentData[i].unk_22;
             break;
         case 1:
-            v5 = contest->unk_00.unk_10[i].unk_23;
+            v5 = contest->data.opponentData[i].unk_23;
             break;
         case 2:
-            v5 = contest->unk_00.unk_10[i].unk_24;
+            v5 = contest->data.opponentData[i].unk_24;
             break;
         case 3:
-            v5 = contest->unk_00.unk_10[i].unk_25;
+            v5 = contest->data.opponentData[i].unk_25;
             break;
         case 4:
-            v5 = contest->unk_00.unk_10[i].unk_26;
+            v5 = contest->data.opponentData[i].unk_26;
             break;
         case 5:
-            v5 = contest->unk_00.unk_10[i].unk_27;
+            v5 = contest->data.opponentData[i].unk_27;
             break;
         case 6:
-            v5 = contest->unk_00.unk_10[i].unk_28;
+            v5 = contest->data.opponentData[i].unk_28;
             break;
         case 7:
-            v5 = contest->unk_00.unk_10[i].unk_29;
+            v5 = contest->data.opponentData[i].unk_29;
             break;
         case 8:
-            v5 = contest->unk_00.unk_10[i].unk_2A;
+            v5 = contest->data.opponentData[i].unk_2A;
             break;
         case 9:
-            v5 = contest->unk_00.unk_10[i].unk_2B;
+            v5 = contest->data.opponentData[i].unk_2B;
             break;
         case 10:
-            v5 = contest->unk_00.unk_10[i].unk_2C;
+            v5 = contest->data.opponentData[i].unk_2C;
             break;
         case 11:
-            v5 = contest->unk_00.unk_10[i].unk_2D;
+            v5 = contest->data.opponentData[i].unk_2D;
             break;
         default:
             GF_ASSERT(FALSE);
@@ -597,15 +597,15 @@ void sub_020951B0(Contest *contest, enum HeapID heapID)
 
         v3 = &v2[v5];
 
-        ContestPhoto_Init(contest->unk_00.unk_E8[i]);
-        ContestPhoto_SetPhotoMonFromMon(contest->unk_00.unk_E8[i], contest->unk_00.contestMons[i], v3->unk_51);
+        ContestPhoto_Init(contest->data.photos[i]);
+        ContestPhoto_SetPhotoMonFromMon(contest->data.photos[i], contest->data.contestMons[i], v3->unk_51);
 
         for (v1 = 0; v1 < v3->unk_50; v1++) {
-            ContestPhoto_AddAccessoryWithData(contest->unk_00.unk_E8[i], v1, v3->unk_00[v1].unk_00, v3->unk_00[v1].unk_01, v3->unk_00[v1].unk_02, v3->unk_00[v1].unk_03);
+            ContestPhoto_AddAccessoryWithData(contest->data.photos[i], v1, v3->unk_00[v1].unk_00, v3->unk_00[v1].unk_01, v3->unk_00[v1].unk_02, v3->unk_00[v1].unk_03);
         }
 
-        ContestPhoto_SetBackdrop(contest->unk_00.unk_E8[i], v3->unk_52);
-        ContestPhoto_SetContestRank(contest->unk_00.unk_E8[i], contest->unk_00.contestRank);
+        ContestPhoto_SetBackdrop(contest->data.photos[i], v3->unk_52);
+        ContestPhoto_SetContestRank(contest->data.photos[i], contest->data.contestRank);
     }
 
     Heap_Free(v2);
@@ -616,10 +616,10 @@ void sub_02095338(Contest *contest)
     int i;
 
     for (i = 0; i < CONTEST_NUM_PARTICIPANTS; i++) {
-        ContestPhoto_Init(contest->unk_00.unk_E8[i]);
-        ContestPhoto_SetPhotoMonFromMon(contest->unk_00.unk_E8[i], contest->unk_00.contestMons[i], -1);
-        ContestPhoto_SetBackdrop(contest->unk_00.unk_E8[i], 0);
-        ContestPhoto_SetContestRank(contest->unk_00.unk_E8[i], contest->unk_00.contestRank);
+        ContestPhoto_Init(contest->data.photos[i]);
+        ContestPhoto_SetPhotoMonFromMon(contest->data.photos[i], contest->data.contestMons[i], -1);
+        ContestPhoto_SetBackdrop(contest->data.photos[i], 0);
+        ContestPhoto_SetContestRank(contest->data.photos[i], contest->data.contestRank);
     }
 }
 
@@ -690,45 +690,45 @@ void sub_020954F0(Contest *contest, enum HeapID heapID, int param2, enum Pokemon
     u8 v2 = 0, v3 = 0;
     u16 v4;
     int v5;
-    UnkStruct_020954F0 *v6;
+    ContestJudge *v6;
     u8 *v7, *v8;
 
     v6 = LoadMemberFromNARC(NARC_INDEX_CONTEST__DATA__CONTEST_DATA, 1, 0, heapID, 1);
-    v5 = NARC_GetMemberSizeByIndexPair(NARC_INDEX_CONTEST__DATA__CONTEST_DATA, 1) / sizeof(UnkStruct_020954F0);
+    v5 = NARC_GetMemberSizeByIndexPair(NARC_INDEX_CONTEST__DATA__CONTEST_DATA, 1) / sizeof(ContestJudge);
     v7 = Heap_AllocAtEnd(heapID, v5 + 1);
     v8 = Heap_AllocAtEnd(heapID, v5 + 1);
 
     for (v0 = 0; v0 < v5; v0++) {
-        if (contestRank != v6[v0].unk_04_10) {
+        if (contestRank != v6[v0].contestRank) {
             continue;
         }
 
-        if (contestType == CONTEST_TYPE_COOL && v6[v0].unk_04_0) {
-            if (v6[v0].unk_04_0 > 1) {
+        if (contestType == CONTEST_TYPE_COOL && v6[v0].cool) {
+            if (v6[v0].cool > 1) {
                 v8[v3++] = v0;
             } else {
                 v7[v2++] = v0;
             }
-        } else if (contestType == CONTEST_TYPE_BEAUTY && v6[v0].unk_04_2) {
-            if (v6[v0].unk_04_2 > 1) {
+        } else if (contestType == CONTEST_TYPE_BEAUTY && v6[v0].beauty) {
+            if (v6[v0].beauty > 1) {
                 v8[v3++] = v0;
             } else {
                 v7[v2++] = v0;
             }
-        } else if (contestType == CONTEST_TYPE_CUTE && v6[v0].unk_04_4) {
-            if (v6[v0].unk_04_4 > 1) {
+        } else if (contestType == CONTEST_TYPE_CUTE && v6[v0].cute) {
+            if (v6[v0].cute > 1) {
                 v8[v3++] = v0;
             } else {
                 v7[v2++] = v0;
             }
-        } else if (contestType == CONTEST_TYPE_SMART && v6[v0].unk_04_6) {
-            if (v6[v0].unk_04_6 > 1) {
+        } else if (contestType == CONTEST_TYPE_SMART && v6[v0].smart) {
+            if (v6[v0].smart > 1) {
                 v8[v3++] = v0;
             } else {
                 v7[v2++] = v0;
             }
-        } else if (contestType == CONTEST_TYPE_TOUGH && v6[v0].unk_04_8) {
-            if (v6[v0].unk_04_8 > 1) {
+        } else if (contestType == CONTEST_TYPE_TOUGH && v6[v0].tough) {
+            if (v6[v0].tough > 1) {
                 v8[v3++] = v0;
             } else {
                 v7[v2++] = v0;
@@ -742,20 +742,20 @@ void sub_020954F0(Contest *contest, enum HeapID heapID, int param2, enum Pokemon
     GF_ASSERT(v2 >= 2);
 
     for (v0 = 0; v0 < 2; v0++) {
-        contest->unk_00.unk_C0[v0] = v6[v7[v0]];
+        contest->data.judges[v0] = v6[v7[v0]];
     }
 
     GF_ASSERT(v3 >= 1);
     v4 = Contest_GetRNGNext(contest) % v3;
-    contest->unk_00.unk_C0[2] = v6[v8[v4]];
+    contest->data.judges[2] = v6[v8[v4]];
 
     {
-        UnkStruct_020954F0 v9;
+        ContestJudge v9;
 
-        contest->unk_00.unk_10E = param2;
-        v9 = contest->unk_00.unk_C0[param2];
-        contest->unk_00.unk_C0[param2] = contest->unk_00.unk_C0[2];
-        contest->unk_00.unk_C0[2] = v9;
+        contest->data.bonusJudgeIndex = param2;
+        v9 = contest->data.judges[param2];
+        contest->data.judges[param2] = contest->data.judges[2];
+        contest->data.judges[2] = v9;
     }
 
     Heap_Free(v8);
@@ -919,7 +919,7 @@ int Contest_ContestantEntryNumToContestantID(int contestantEntryNum)
 
 BOOL Contest_IsPracticeCompetition(Contest *contest)
 {
-    switch (contest->unk_00.competitionType) {
+    switch (contest->data.competitionType) {
     case CONTEST_COMPETITION_PRACTICE_VISUAL:
     case CONTEST_COMPETITION_PRACTICE_DANCE:
     case CONTEST_COMPETITION_PRACTICE_ACTING:
@@ -942,12 +942,12 @@ int sub_02095928(Contest *contest, int param1)
     };
 
     v0 = 0;
-    v1 = contest->unk_00.unk_118[param1].unk_00;
+    v1 = contest->data.results[param1].visualScore;
 
     if (contest->isLinkContest == TRUE) {
         v3 = v4[CONTEST_RANK_LINK];
     } else {
-        v3 = v4[contest->unk_00.contestRank];
+        v3 = v4[contest->data.contestRank];
     }
 
     for (v2 = 0; v2 < 8; v2++) {
@@ -974,7 +974,7 @@ int sub_0209598C(Contest *contest, int param1)
     };
 
     v0 = 0;
-    v1 = contest->unk_00.unk_118[param1].unk_02;
+    v1 = contest->data.results[param1].danceScore;
 
     if (v1 == 0) {
         return 0;
@@ -983,7 +983,7 @@ int sub_0209598C(Contest *contest, int param1)
     if (contest->isLinkContest == TRUE) {
         v3 = v4[CONTEST_RANK_LINK];
     } else {
-        v3 = v4[contest->unk_00.contestRank];
+        v3 = v4[contest->data.contestRank];
     }
 
     v0 = 1;

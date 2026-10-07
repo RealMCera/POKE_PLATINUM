@@ -25,7 +25,7 @@
 #include "text.h"
 #include "touch_screen.h"
 #include "font_oam.h"
-#include "unk_0208B284.h"
+#include "vs_recorder_ring.h"
 
 static void ov62_02234A10(UnkStruct_0208C06C *param0);
 static void ov62_02234A90(UnkStruct_0208C06C *param0);
@@ -75,8 +75,8 @@ static BOOL ov62_02234AB4(UnkStruct_0208C06C *param0)
         PaletteData_BlendMulti(param0->unk_14.unk_14, PLTTBUF_MAIN_BG, 0xBFFF, 16, ov62_022316D0(param0));
         PaletteData_BlendMulti(param0->unk_14.unk_14, PLTTBUF_SUB_OBJ, 0x3FFE, 16, ov62_022316D0(param0));
         PaletteData_BlendMulti(param0->unk_14.unk_14, PLTTBUF_SUB_BG, 0xFFFF, 16, ov62_022316D0(param0));
-        sub_0208BA30(param0->unk_6F4);
-        sub_0208BA30(param0->unk_6F0);
+        VsRecorderRing_StartAnim(param0->unk_6F4);
+        VsRecorderRing_StartAnim(param0->unk_6F0);
         param0->unk_08++;
         break;
     case 1:
@@ -84,10 +84,10 @@ static BOOL ov62_02234AB4(UnkStruct_0208C06C *param0)
             break;
         }
 
-        sub_0208B948(param0->unk_6F4, 256 / 2, 16);
-        sub_0208B8B8(param0->unk_6F4, 256 / 2, 192 + 24);
-        sub_0208B9E0(param0->unk_6F4, 1);
-        sub_0208B8B0(param0->unk_6F4, 1);
+        VsRecorderRing_SetPosition(param0->unk_6F4, 256 / 2, 16);
+        VsRecorderRing_SetTargetPosition(param0->unk_6F4, 256 / 2, 192 + 24);
+        VsRecorderRing_SetVisible(param0->unk_6F4, 1);
+        VsRecorderRing_SetActive(param0->unk_6F4, 1);
         Sound_PlayEffect(SEQ_SE_PL_BREC11_2_sseq);
         param0->unk_08++;
         break;
@@ -97,10 +97,10 @@ static BOOL ov62_02234AB4(UnkStruct_0208C06C *param0)
         }
 
         param0->unk_0C = 0;
-        sub_0208B948(param0->unk_6F0, 256 / 2, -16);
-        sub_0208B8B8(param0->unk_6F0, 256 / 2, 192 / 2);
-        sub_0208B9E0(param0->unk_6F0, 1);
-        sub_0208B8B0(param0->unk_6F0, 1);
+        VsRecorderRing_SetPosition(param0->unk_6F0, 256 / 2, -16);
+        VsRecorderRing_SetTargetPosition(param0->unk_6F0, 256 / 2, 192 / 2);
+        VsRecorderRing_SetVisible(param0->unk_6F0, 1);
+        VsRecorderRing_SetActive(param0->unk_6F0, 1);
         param0->unk_08++;
         break;
     case 3:
@@ -109,7 +109,7 @@ static BOOL ov62_02234AB4(UnkStruct_0208C06C *param0)
         }
 
         ov62_02234A10(param0);
-        sub_0208B9E0(param0->unk_6F4, 0);
+        VsRecorderRing_SetVisible(param0->unk_6F4, 0);
 
         param0->unk_0C = 0;
         param0->unk_08++;
@@ -133,9 +133,9 @@ static BOOL ov62_02234AB4(UnkStruct_0208C06C *param0)
     case 6:
         if (TouchScreen_Touched() == 1) {
             ov62_02234A90(param0);
-            sub_0208B9E0(param0->unk_6F0, 0);
-            sub_0208BA54(param0->unk_6F4);
-            sub_0208BA54(param0->unk_6F0);
+            VsRecorderRing_SetVisible(param0->unk_6F0, 0);
+            VsRecorderRing_StopAnim(param0->unk_6F4);
+            VsRecorderRing_StopAnim(param0->unk_6F0);
             param0->unk_08++;
         }
         break;
@@ -168,10 +168,10 @@ static BOOL ov62_02234CDC(UnkStruct_0208C06C *param0)
                 Graphics_LoadTilemapToBgLayerFromOpenNARC(param0->unk_14.unk_00, 55, param0->unk_14.unk_10, 5, 0, 0, 0, HEAP_ID_102);
             }
 
-            sub_0208B948(param0->unk_6F0, 256 / 2, 192 + 32);
-            sub_0208B8B8(param0->unk_6F0, 256 / 2, 192 + 32);
-            sub_0208B9E0(param0->unk_6F0, 0);
-            sub_0208B8B0(param0->unk_6F0, 1);
+            VsRecorderRing_SetPosition(param0->unk_6F0, 256 / 2, 192 + 32);
+            VsRecorderRing_SetTargetPosition(param0->unk_6F0, 256 / 2, 192 + 32);
+            VsRecorderRing_SetVisible(param0->unk_6F0, 0);
+            VsRecorderRing_SetActive(param0->unk_6F0, 1);
             ov62_0222FB44(param0, param0->unk_838.unk_04, 1, param0->unk_10);
             break;
         }
@@ -225,10 +225,10 @@ static BOOL ov62_02234EF8(UnkStruct_0208C06C *param0)
 {
     switch (param0->unk_08) {
     case 0:
-        sub_0208B948(param0->unk_6F0, 256 / 2, 192 / 2);
-        sub_0208B8B8(param0->unk_6F0, 256 / 2, 192 / 2);
-        sub_0208B9E0(param0->unk_6F0, 1);
-        sub_0208B8B0(param0->unk_6F0, 1);
+        VsRecorderRing_SetPosition(param0->unk_6F0, 256 / 2, 192 / 2);
+        VsRecorderRing_SetTargetPosition(param0->unk_6F0, 256 / 2, 192 / 2);
+        VsRecorderRing_SetVisible(param0->unk_6F0, 1);
+        VsRecorderRing_SetActive(param0->unk_6F0, 1);
         param0->unk_0C++;
         PaletteData_BlendMulti(param0->unk_14.unk_14, PLTTBUF_SUB_BG, 0x2, 16 - param0->unk_0C, param0->unk_14.unk_44);
 
@@ -265,7 +265,7 @@ static BOOL ov62_02234FCC(UnkStruct_0208C06C *param0)
         s16 v1, v2;
 
         ov62_02230E74(param0->unk_534.unk_C8[0].unk_00, &v1, &v2);
-        sub_0208B8B8(param0->unk_6F0, v1 + (15 + 1), v2);
+        VsRecorderRing_SetTargetPosition(param0->unk_6F0, v1 + (15 + 1), v2);
     }
 
     return v0;
@@ -353,9 +353,9 @@ BOOL ov62_02235008(UnkStruct_0208C06C *param0)
             s16 v9, v10;
 
             ov62_02230E74(param0->unk_534.unk_C8[param0->unk_534.unk_1B0].unk_00, &v9, &v10);
-            sub_0208B948(param0->unk_6F0, v9 + (15 + 1), v10);
-            sub_0208B8B8(param0->unk_6F0, v9 + (15 + 1), v10);
-            sub_0208B9E0(param0->unk_6F0, 0);
+            VsRecorderRing_SetPosition(param0->unk_6F0, v9 + (15 + 1), v10);
+            VsRecorderRing_SetTargetPosition(param0->unk_6F0, v9 + (15 + 1), v10);
+            VsRecorderRing_SetVisible(param0->unk_6F0, 0);
             ov62_0222FF7C(param0);
             Heap_Free(v0);
         }

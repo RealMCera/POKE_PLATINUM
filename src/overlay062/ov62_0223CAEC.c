@@ -39,7 +39,7 @@
 #include "touch_screen_actions.h"
 #include "font_oam.h"
 #include "unk_02030A80.h"
-#include "unk_0208B284.h"
+#include "vs_recorder_ring.h"
 #include "vs_recorder.h"
 
 typedef struct {
@@ -665,7 +665,7 @@ static BOOL ov62_0223D644(UnkStruct_0208C06C *param0)
         Bg_SetPriority(BG_LAYER_SUB_3, 2);
 
         ov62_0223376C(param0, 0);
-        sub_0208B9E0(param0->unk_6F0, 0);
+        VsRecorderRing_SetVisible(param0->unk_6F0, 0);
         param0->unk_08++;
         break;
     default:
@@ -692,8 +692,8 @@ static BOOL ov62_0223D744(UnkStruct_0208C06C *param0)
     switch (param0->unk_08) {
     case 0:
         ov62_02234358(param0, param0->unk_6F0, 128, 96);
-        sub_0208B9E0(param0->unk_6F0, 1);
-        sub_0208BA08(param0->unk_6F0, 24, 24);
+        VsRecorderRing_SetVisible(param0->unk_6F0, 1);
+        VsRecorderRing_SetOrbitRadii(param0->unk_6F0, 24, 24);
         ov62_02231AAC(param0, 279);
         Sound_PlayEffect(SEQ_SE_PL_BREC80_sseq);
         param0->unk_08++;
@@ -708,7 +708,7 @@ static BOOL ov62_0223D744(UnkStruct_0208C06C *param0)
             Sound_StopEffect(1381, 0);
             ov62_02231B8C(param0);
             ov62_022348B8(param0, 4, v1->unk_0C, v1->unk_04);
-            sub_0208B9E0(param0->unk_6F0, 0);
+            VsRecorderRing_SetVisible(param0->unk_6F0, 0);
             param0->unk_08 = 5;
         } else {
             {
@@ -738,7 +738,7 @@ static BOOL ov62_0223D744(UnkStruct_0208C06C *param0)
         if (ov61_0222BB48(ov62_0224112C(param0), &v1) == 1) {
             Sound_StopEffect(1381, 0);
             ov62_022348B8(param0, 5, v1->unk_0C, v1->unk_04);
-            sub_0208B9E0(param0->unk_6F0, 0);
+            VsRecorderRing_SetVisible(param0->unk_6F0, 0);
             param0->unk_08 = 5;
         } else {
             BOOL v2 = 0;
@@ -756,7 +756,7 @@ static BOOL ov62_0223D744(UnkStruct_0208C06C *param0)
             if (v2) {
                 ov62_022348B8(param0, 5, 0, 0);
                 param0->unk_14.unk_4F0.unk_0C = 300;
-                sub_0208B9E0(param0->unk_6F0, 0);
+                VsRecorderRing_SetVisible(param0->unk_6F0, 0);
                 param0->unk_08 = 5;
             } else {
                 Sound_StopEffect(1381, 0);
@@ -801,8 +801,8 @@ static BOOL ov62_0223D744(UnkStruct_0208C06C *param0)
         break;
     default:
         ov62_0223CBE0(param0);
-        sub_0208B9E0(param0->unk_6F0, 0);
-        sub_0208BA08(param0->unk_6F0, 0, 0);
+        VsRecorderRing_SetVisible(param0->unk_6F0, 0);
+        VsRecorderRing_SetOrbitRadii(param0->unk_6F0, 0, 0);
         ov62_0222FB60(param0, 5);
         break;
     }
@@ -883,7 +883,7 @@ static BOOL ov62_0223DC6C(UnkStruct_0208C06C *param0)
 
         ov62_022334FC(&param0->unk_14.unk_48C, param0);
         ov62_02234540(param0, 0);
-        sub_0208B9E0(param0->unk_6F4, 0);
+        VsRecorderRing_SetVisible(param0->unk_6F4, 0);
         GXLayers_EngineBToggleLayers(GX_PLANEMASK_BG2, 0);
         GXLayers_EngineAToggleLayers(GX_PLANEMASK_BG2, 0);
         param0->unk_08++;

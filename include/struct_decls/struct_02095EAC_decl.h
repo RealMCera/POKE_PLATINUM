@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_02095EAC_DECL_H
 #define POKEPLATINUM_STRUCT_02095EAC_DECL_H
 
-typedef struct UnkStruct_02095EAC_t UnkStruct_02095EAC;
+typedef struct UnionRoomDrawing UnionRoomDrawing;
 
 #endif // POKEPLATINUM_STRUCT_02095EAC_DECL_H

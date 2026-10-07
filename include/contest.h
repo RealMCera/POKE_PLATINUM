@@ -18,22 +18,22 @@
 #include "trainer_info.h"
 
 typedef struct Contest {
-    UnkStruct_02095C48_sub1 unk_00;
+    ContestData data; // contest state shared with the competition apps
     Party *party;
-    void *chatotCry[CONTEST_NUM_PARTICIPANTS];
-    void *unk_150;
-    u8 unk_154;
+    void *chatotCry[CONTEST_NUM_PARTICIPANTS]; // per-contestant Chatot cry data
+    void *appContext; // context of the competition app currently running
+    u8 activeAppID; // which competition app is running (0=visual scoring, 1=dance, 2=acting, 3=final scoring)
     u8 isLinkContest;
-    u8 unk_156[4];
-    u8 linkState;
-    u8 unk_15B;
-    int unk_15C;
+    u8 contestantOrder[CONTEST_NUM_PARTICIPANTS]; // order contestants are presented in
+    u8 linkState; // state of the active communication task
+    u8 gameCodeMismatchCount; // connected players whose game code differs from ours
+    int commContestantIndex; // contestant currently being synced by the comm task
     int padding_160;
     SysTask *commTask;
-    u8 unk_168[4][256];
-    u8 unk_568;
-    u8 unk_569[1024];
-    u8 unk_969[4][1024];
+    u8 leaderElectionRecvBuf[CONTEST_NUM_PARTICIPANTS][256]; // leader-election packets
+    u8 commRecvCount; // packets received for the current sync step
+    u8 commSendBuf[1024]; // buffer for large outgoing packets
+    u8 commRecvBuf[CONTEST_NUM_PARTICIPANTS][1024]; // per-player incoming packets
     u8 padding_1969[3];
     const Options *options;
     SaveData *saveData;
@@ -44,7 +44,7 @@ typedef struct Contest {
     u8 isNatDexObtained;
     u8 padding_197F;
     ImageClips *imageClips;
-    UnkStruct_02095C60 unk_1984;
+    ContestScoringCommState scoringCommState; // visual competition scoring comm state
     VisualCompetitionAppArgs *visualCompetitionAppArgs;
     ContestCameraFlashTask *cameraFlashTask;
     u32 rngSeed;
@@ -79,7 +79,7 @@ void Contest_SetRibbonName(Contest *contest, StringTemplate *string, u32 idx, in
 u32 Contest_CalcFirstTimeVictoryAccessoryReward(Contest *contest);
 void Contest_StartCameraFlashTask(Contest *contest, int contestantEntryNum);
 BOOL Contest_CameraFlashTaskDone(Contest *contest);
-void sub_02094BB4(Contest *contest, int *destWinningContestantEntryNum, BOOL *destIsLinkContest, int *param3, BOOL *isPracticeCompetition, int *param5);
+void Contest_GetResults(Contest *contest, int *destWinningContestantEntryNum, BOOL *destIsLinkContest, int *destWinnerIsNPC, BOOL *destIsPracticeCompetition, int *destIsSingleCompetition);
 void Contest_EndContest(Contest *contest, SaveData *saveData, u32 mapID, JournalEntry *journalEntry);
 u16 Contest_GetRNGNext(Contest *contest);
 u16 Contest_GetSeededRNGNext(u32 seed, u32 *destRNGVal);

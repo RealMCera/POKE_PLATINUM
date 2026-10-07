@@ -89,7 +89,7 @@ int ov62_0223429C(Window *param0, String *param1);
 void ov62_022342BC(UnkStruct_0208C06C *param0);
 BOOL ov62_022342CC(UnkStruct_0208C06C *param0);
 void ov62_02234314(void);
-void ov62_02234358(UnkStruct_0208C06C *param0, UnkStruct_0208B878 *param1, s16 param2, s16 param3);
+void ov62_02234358(UnkStruct_0208C06C *param0, VsRecorderRing *param1, s16 param2, s16 param3);
 int ov62_0223438C(u64 param0);
 void ov62_022343B8(UnkStruct_0208C06C *param0, int param1, int param2);
 void ov62_02234520(UnkStruct_0208C06C *param0);
