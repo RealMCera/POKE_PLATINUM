@@ -27,7 +27,7 @@
 #include "system_flags.h"
 #include "email.h"
 #include "comm_server_client.h"
-#include "unk_02038FFC.h"
+#include "wifi_list_util.h"
 #include "number_entry_app.h"
 #include "vars_flags.h"
 #include "wifi_overlays.h"

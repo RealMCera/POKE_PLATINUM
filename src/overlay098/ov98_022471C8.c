@@ -46,7 +46,7 @@
 #include "text.h"
 #include "touch_pad.h"
 #include "email.h"
-#include "unk_02038FFC.h"
+#include "wifi_list_util.h"
 #include "vram_transfer.h"
 #include "wifi_list.h"
 

@@ -119,7 +119,7 @@
 #include "tv_segment.h"
 #include "wifi_lobby.h"
 #include "image_clips.h"
-#include "unk_02038FFC.h"
+#include "wifi_list_util.h"
 #include "field_system_time.h"
 #include "union_room.h"
 #include "vars_flags.h"

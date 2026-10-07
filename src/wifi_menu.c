@@ -30,7 +30,7 @@
 #include "heap.h"
 #include "poffin_berry_selection_context.h"
 #include "system_flags.h"
-#include "unk_02038FFC.h"
+#include "wifi_list_util.h"
 #include "field_system_apps.h"
 #include "vars_flags.h"
 #include "wifi_overlays.h"
