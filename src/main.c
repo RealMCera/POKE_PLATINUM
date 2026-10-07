@@ -28,7 +28,7 @@
 #include "timer.h"
 #include "touch_pad.h"
 #include "unk_0202419C.h"
-#include "unk_02038FFC.h"
+#include "wifi_list_util.h"
 #include "unk_02039814.h"
 #include "unk_02039A64.h"
 #include "fatal_error_screen.h"
@@ -84,7 +84,7 @@ void NitroMain(void)
     SoundSystem_Init(SaveData_GetChatotCry(sApplication.args.saveData), SaveData_GetOptions(sApplication.args.saveData));
     Timer_Start();
 
-    if (sub_02038FFC(HEAP_ID_APPLICATION) == DWC_INIT_RESULT_DESTROY_OTHER_SETTING) {
+    if (WiFiList_InitDWC(HEAP_ID_APPLICATION) == DWC_INIT_RESULT_DESTROY_OTHER_SETTING) {
         sub_02039A64(HEAP_ID_APPLICATION, 0);
     }
 

@@ -10,7 +10,7 @@
 #include "rtc.h"
 #include "savedata.h"
 #include "string_gf.h"
-#include "unk_02038FFC.h"
+#include "wifi_list_util.h"
 
 int WiFiList_SaveSize(void)
 {
@@ -31,7 +31,7 @@ void WiFiList_Init(WiFiList *wiFiList)
         wiFiList->friendEntries[v0].gender = 2;
     }
 
-    sub_02039034(wiFiList);
+    WiFiList_InitUserData(wiFiList);
 }
 
 DWCUserData *WiFiList_GetUserData(WiFiList *wiFiList)

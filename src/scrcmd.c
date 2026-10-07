@@ -199,7 +199,7 @@
 #include "image_clips.h"
 #include "comm_server_client.h"
 #include "comm_tool.h"
-#include "unk_02038FFC.h"
+#include "wifi_list_util.h"
 #include "field_system_apps.h"
 #include "scrcmd_battle_tower.h"
 #include "battle_tower_partner.h"

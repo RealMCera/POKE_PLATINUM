@@ -29,7 +29,7 @@
 #include "script_manager.h"
 #include "underground.h"
 #include "comm_tool.h"
-#include "unk_02038FFC.h"
+#include "wifi_list_util.h"
 #include "field_system_apps.h"
 #include "battle_tower_partner.h"
 #include "wifi_battle_tower_save.h"
