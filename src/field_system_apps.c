@@ -1155,7 +1155,7 @@ void FieldSystem_OpenPalPad(FieldSystem *fieldSystem, SaveData *saveData)
 
 void FieldSystem_OpenVsRecorder(FieldSystem *fieldSystem, SaveData *saveData)
 {
-    FieldSystem_StartChildProcess(fieldSystem, &Unk_020F2FCC, fieldSystem);
+    FieldSystem_StartChildProcess(fieldSystem, &gVsRecorderAppTemplate, fieldSystem);
 }
 
 static BOOL FieldTask_NamingScreen(FieldTask *taskMan)

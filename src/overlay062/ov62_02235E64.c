@@ -27,7 +27,7 @@
 #include "touch_screen_actions.h"
 #include "font_oam.h"
 #include "battle_recording.h"
-#include "unk_0208BA78.h"
+#include "vs_recorder.h"
 
 typedef struct {
     int unk_00;
@@ -506,7 +506,7 @@ static BOOL ov62_022366D4(UnkStruct_0208C06C *param0)
         ov62_022314A8(param0);
         ov62_02234540(param0, 0);
         ov62_022300C8(param0, *(param0->unk_10));
-        sub_0208BA84(param0->unk_868, 1, 0);
+        VsRecorder_SetPlaybackRequest(param0->unk_868, 1, 0);
         param0->unk_08++;
         break;
     default:

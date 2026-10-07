@@ -742,7 +742,7 @@ static void PartyMenu_SelectChooseWithLimit(PartyMenuApplication *application, i
         Sprite_SetExplicitPalette2(application->sprites[PARTY_MENU_SPRITE_CURSOR_NORMAL], 0);
 
         if (i == application->partyMenu->maxSelectionSlots - 1) {
-            sub_0207FD68(application, 6);
+            PartyMenu_SetCursorToSlot(application, 6);
         }
 
         *partyMenuState = PARTY_MENU_STATE_DEFAULT;

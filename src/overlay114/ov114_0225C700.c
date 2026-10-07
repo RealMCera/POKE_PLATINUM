@@ -3533,13 +3533,13 @@ static void ov114_0225F890(UnkStruct_ov114_0225E854 *param0)
         case 1:
             switch (param0->unk_07) {
             case UnkEnum_ov66_022324D0_00:
-                sub_0202B1F8(v0, v4, 1);
+                WiFiList_AddFriendPlazaGame0Count(v0, v4, 1);
                 break;
             case UnkEnum_ov66_022324D0_01:
-                sub_0202B220(v0, v4, 1);
+                WiFiList_AddFriendPlazaGame1Count(v0, v4, 1);
                 break;
             case UnkEnum_ov66_022324D0_02:
-                sub_0202B248(v0, v4, 1);
+                WiFiList_AddFriendPlazaGame2Count(v0, v4, 1);
                 break;
             }
             break;

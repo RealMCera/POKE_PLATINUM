@@ -1873,8 +1873,8 @@ static int ov65_0222F62C(UnkStruct_ov65_0222EBE0 *param0)
                 param0->unk_4C[v0] = v6;
                 param0->unk_CC[v0] = v5->unk_21;
 
-                sub_0202AE2C(param0->unk_00, v0, 7, v5->unk_1D);
-                sub_0202AE2C(param0->unk_00, v0, 8, v5->unk_1E);
+                WiFiList_SetFriendField(param0->unk_00, v0, 7, v5->unk_1D);
+                WiFiList_SetFriendField(param0->unk_00, v0, 8, v5->unk_1E);
                 v1++;
             }
         }
@@ -2254,7 +2254,7 @@ static void ov65_0222FD70(UnkStruct_ov65_0222EBE0 *param0)
         if (NintendoWFC_GetHostFriendIdx() == -1) {
             MessageLoader_GetString(param0->unk_168, v3, param0->unk_170);
         } else {
-            v1 = sub_0202AD2C(param0->unk_00, NintendoWFC_GetHostFriendIdx(), 8);
+            v1 = WiFiList_GetFriendField(param0->unk_00, NintendoWFC_GetHostFriendIdx(), 8);
 
             if (0 == v1) {
                 v0 = TEXT_COLOR(5, 6, 0);
@@ -2262,7 +2262,7 @@ static void ov65_0222FD70(UnkStruct_ov65_0222EBE0 *param0)
                 v0 = TEXT_COLOR(3, 4, 0);
             }
 
-            String_CopyChars(param0->unk_170, sub_0202AEF0(param0->unk_00, NintendoWFC_GetHostFriendIdx()));
+            String_CopyChars(param0->unk_170, WiFiList_GetFriendPlayerName(param0->unk_00, NintendoWFC_GetHostFriendIdx()));
         }
     } else {
         MessageLoader_GetString(param0->unk_168, v3, param0->unk_170);
@@ -2351,7 +2351,7 @@ static int ov65_0222FFAC(UnkStruct_ov65_0222EBE0 *param0, int param1)
             v5 = 0x61;
         }
 
-        param0->unk_115A = sub_0202AFB4(param0->unk_00);
+        param0->unk_115A = WiFiList_GetFriendListSize(param0->unk_00);
 
         ov65_02235060(&param0->unk_3EC, 54, v3, param0->unk_15C, v5, param0->unk_115A);
         v4 = ov65_02235380(&param0->unk_3EC, v5);
@@ -4418,7 +4418,7 @@ static int ov65_02232698(UnkStruct_ov65_0222EBE0 *param0, int param1)
     }
 
     if (!CommManager_IsInitialized()) {
-        sub_0202B0F8(param0->unk_00);
+        WiFiList_CompactFriendList(param0->unk_00);
         ov65_02232B58(param0, 27, 1);
 
         param0->unk_3A8 = 60;
@@ -4725,7 +4725,7 @@ static void ov65_02232DC0(UnkStruct_ov65_0222EBE0 *param0, int param1)
     if (param1 != -1) {
         TrainerInfo *v0 = TrainerInfo_New(HEAP_ID_54);
 
-        TrainerInfo_SetName(v0, sub_0202AEF0(param0->unk_00, param1));
+        TrainerInfo_SetName(v0, WiFiList_GetFriendPlayerName(param0->unk_00, param1));
         StringTemplate_SetPlayerName(param0->unk_164, 0, v0);
         Heap_Free(v0);
     }
@@ -5215,7 +5215,7 @@ static void ov65_0223370C(UnkStruct_ov65_0222EBE0 *param0)
         v6 = (param0->unk_BE0.unk_70 * 8) + v0 + 1;
 
         if (param0->unk_BE0.unk_50[v6 - 1] != 0) {
-            v2 = sub_0202AD2C(param0->unk_00, v6 - 1, 8);
+            v2 = WiFiList_GetFriendField(param0->unk_00, v6 - 1, 8);
 
             if (v2 == 0) {
                 v3 = 1;
@@ -5278,7 +5278,7 @@ static void ov65_02233874(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
     int v1;
     int v2;
 
-    v1 = sub_0202AD2C(param0->unk_00, param0->unk_BE0.unk_71 - 1, 8);
+    v1 = WiFiList_GetFriendField(param0->unk_00, param0->unk_BE0.unk_71 - 1, 8);
 
     if (v1 == 1) {
         v2 = 4 + 3;
@@ -5309,7 +5309,7 @@ static void ov65_02233940(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
     int v0 = param0->unk_BE0.unk_71 - 1;
     TextColor color;
 
-    if (sub_0202AD2C(param0->unk_00, v0, 8) == 0) {
+    if (WiFiList_GetFriendField(param0->unk_00, v0, 8) == 0) {
         color = TEXT_COLOR(5, 6, 0);
     } else {
         color = TEXT_COLOR(3, 4, 0);
@@ -5326,7 +5326,7 @@ static void ov65_02233940(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
     Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_170, 104, 8, TEXT_SPEED_NO_TRANSFER, color, NULL);
 
     TrainerInfo *trainerInfo = TrainerInfo_New(HEAP_ID_54);
-    TrainerInfo_SetName(trainerInfo, sub_0202AF34(param0->unk_00, v0));
+    TrainerInfo_SetName(trainerInfo, WiFiList_GetFriendGroupName(param0->unk_00, v0));
     StringTemplate_SetPlayerName(param0->unk_BE0.unk_00, 0, trainerInfo);
     Heap_Free(trainerInfo);
     MessageLoader_GetString(param0->unk_168, 43, param0->unk_178);
@@ -5340,12 +5340,12 @@ static void ov65_02233940(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
     MessageLoader_GetString(param0->unk_168, 44, param0->unk_178);
     Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_178, 8, 56, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
 
-    StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, sub_0202AD2C(param0->unk_00, v0, 1), 4, PADDING_MODE_SPACES, CHARSET_MODE_EN);
+    StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, WiFiList_GetFriendField(param0->unk_00, v0, 1), 4, PADDING_MODE_SPACES, CHARSET_MODE_EN);
     MessageLoader_GetString(param0->unk_168, 45, param0->unk_170);
     StringTemplate_Format(param0->unk_BE0.unk_00, param0->unk_178, param0->unk_170);
     Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_178, 120, 56, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
 
-    StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, sub_0202AD2C(param0->unk_00, v0, 2), 4, PADDING_MODE_SPACES, CHARSET_MODE_EN);
+    StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, WiFiList_GetFriendField(param0->unk_00, v0, 2), 4, PADDING_MODE_SPACES, CHARSET_MODE_EN);
     MessageLoader_GetString(param0->unk_168, 46, param0->unk_170);
     StringTemplate_Format(param0->unk_BE0.unk_00, param0->unk_178, param0->unk_170);
     xOffset = 232 - Font_CalcStringWidth(FONT_SYSTEM, param0->unk_178, 0);
@@ -5354,7 +5354,7 @@ static void ov65_02233940(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
     MessageLoader_GetString(param0->unk_168, 47, param0->unk_178);
     Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_178, 8, 80, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
 
-    StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, sub_0202AD2C(param0->unk_00, v0, 3), 4, PADDING_MODE_SPACES, CHARSET_MODE_EN);
+    StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, WiFiList_GetFriendField(param0->unk_00, v0, 3), 4, PADDING_MODE_SPACES, CHARSET_MODE_EN);
     MessageLoader_GetString(param0->unk_168, 48, param0->unk_170);
     StringTemplate_Format(param0->unk_BE0.unk_00, param0->unk_178, param0->unk_170);
     xOffset = 232 - Font_CalcStringWidth(FONT_SYSTEM, param0->unk_178, 0);
@@ -5364,7 +5364,7 @@ static void ov65_02233940(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
         MessageLoader_GetString(param0->unk_168, 49, param0->unk_178);
         Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_178, 8, 104, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
 
-        StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, sub_0202AD2C(param0->unk_00, v0, 9), 4, PADDING_MODE_SPACES, CHARSET_MODE_EN);
+        StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, WiFiList_GetFriendField(param0->unk_00, v0, 9), 4, PADDING_MODE_SPACES, CHARSET_MODE_EN);
         MessageLoader_GetString(param0->unk_168, 50, param0->unk_170);
         StringTemplate_Format(param0->unk_BE0.unk_00, param0->unk_178, param0->unk_170);
         xOffset = 232 - Font_CalcStringWidth(FONT_SYSTEM, param0->unk_178, 0);
@@ -5374,11 +5374,11 @@ static void ov65_02233940(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
     MessageLoader_GetString(param0->unk_168, 51, param0->unk_178);
     Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_178, 8, 128, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
 
-    u32 v4 = sub_0202AD2C(param0->unk_00, v0, 6);
+    u32 v4 = WiFiList_GetFriendField(param0->unk_00, v0, 6);
     if (v4 != 0) {
         StringTemplate_SetNumber(param0->unk_BE0.unk_00, 2, v4, 2, PADDING_MODE_NONE, CHARSET_MODE_EN);
-        StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, sub_0202AD2C(param0->unk_00, v0, 4), 4, PADDING_MODE_NONE, CHARSET_MODE_EN);
-        StringTemplate_SetMonthName(param0->unk_BE0.unk_00, 1, sub_0202AD2C(param0->unk_00, v0, 5));
+        StringTemplate_SetNumber(param0->unk_BE0.unk_00, 0, WiFiList_GetFriendField(param0->unk_00, v0, 4), 4, PADDING_MODE_NONE, CHARSET_MODE_EN);
+        StringTemplate_SetMonthName(param0->unk_BE0.unk_00, 1, WiFiList_GetFriendField(param0->unk_00, v0, 5));
         MessageLoader_GetString(param0->unk_168, 74, param0->unk_170);
         StringTemplate_Format(param0->unk_BE0.unk_00, param0->unk_178, param0->unk_170);
         xOffset = 232 - Font_CalcStringWidth(FONT_SYSTEM, param0->unk_178, 0);
@@ -5574,7 +5574,7 @@ static void ov65_0223449C(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
         MessageLoader_GetString(param0->unk_168, 71, param0->unk_170);
         StringTemplate_Format(param0->unk_BE0.unk_00, param0->unk_178, param0->unk_170);
         Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_178, 8, 24, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
-        ov65_02234708(param0, 72, sub_0202AD2C(v1, v0, 10), 164, 24);
+        ov65_02234708(param0, 72, WiFiList_GetFriendField(v1, v0, 10), 164, 24);
     }
 
     {
@@ -5582,7 +5582,7 @@ static void ov65_0223449C(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
         MessageLoader_GetString(param0->unk_168, 71, param0->unk_170);
         StringTemplate_Format(param0->unk_BE0.unk_00, param0->unk_178, param0->unk_170);
         Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_178, 8, 48, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
-        ov65_02234708(param0, 72, sub_0202AD2C(v1, v0, 11), 164, 48);
+        ov65_02234708(param0, 72, WiFiList_GetFriendField(v1, v0, 11), 164, 48);
     }
 
     {
@@ -5590,7 +5590,7 @@ static void ov65_0223449C(UnkStruct_ov65_0222EBE0 *param0, enum HeapID heapID)
         MessageLoader_GetString(param0->unk_168, 71, param0->unk_170);
         StringTemplate_Format(param0->unk_BE0.unk_00, param0->unk_178, param0->unk_170);
         Text_AddPrinterWithParamsAndColor(&param0->unk_BE0.unk_1FC, FONT_SYSTEM, param0->unk_178, 8, 72, TEXT_SPEED_NO_TRANSFER, TEXT_COLOR(1, 2, 0), NULL);
-        ov65_02234708(param0, 72, sub_0202AD2C(v1, v0, 12), 164, 72);
+        ov65_02234708(param0, 72, WiFiList_GetFriendField(v1, v0, 12), 164, 72);
     }
 }
 
@@ -5772,7 +5772,7 @@ static void ov65_02234900(UnkStruct_ov65_0222EBE0 *param0, Window *param1, u32 p
     Window_FillTilemap(param1, 0);
 
     v2 = Unk_ov65_02238934[param3];
-    v0 = sub_0202AD2C(param0->unk_00, param2 - 1, 8);
+    v0 = WiFiList_GetFriendField(param0->unk_00, param2 - 1, 8);
 
     if (v0 == 0) {
         v1 = TEXT_COLOR(5, 6, 0);
@@ -6095,7 +6095,7 @@ static void ov65_02234F68(UnkStruct_ov65_0222EBE0 *param0, int param1)
     if (param1 != -1) {
         TrainerInfo *v0 = TrainerInfo_New(HEAP_ID_54);
 
-        TrainerInfo_SetName(v0, sub_0202AEF0(param0->unk_00, param1));
+        TrainerInfo_SetName(v0, WiFiList_GetFriendPlayerName(param0->unk_00, param1));
         StringTemplate_SetPlayerName(param0->unk_BE0.unk_00, 0, v0);
         Heap_Free(v0);
     }

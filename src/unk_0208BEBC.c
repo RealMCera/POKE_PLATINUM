@@ -16,7 +16,7 @@
 #include "sound.h"
 #include "system.h"
 #include "unk_0208B284.h"
-#include "unk_0208BA78.h"
+#include "vs_recorder.h"
 
 #include "constdata/const_020F3050.h"
 #include "constdata/const_020F3060.h"
@@ -48,7 +48,7 @@ static int sub_0208BEBC(ApplicationManager *appMan, int *param1, int param2)
     UnkStruct_0208C06C *v0;
 
     Heap_Create(HEAP_ID_APPLICATION, HEAP_ID_102, 0x55000);
-    v0 = sub_0208BA78(appMan);
+    v0 = VsRecorder_GetState(appMan);
     ov62_02230060(v0);
     Sound_SetPlayerVolume(1, (127 / 3));
 
@@ -90,7 +90,7 @@ static int sub_0208BF44(ApplicationManager *appMan, int *param1)
 static int sub_0208BF50(ApplicationManager *appMan, int *param1)
 {
     BOOL v0 = 0;
-    UnkStruct_0208C06C *v1 = sub_0208BA78(appMan);
+    UnkStruct_0208C06C *v1 = VsRecorder_GetState(appMan);
 
     v1->unk_10 = param1;
     v0 = ov62_0222F910(v1, param1);
@@ -100,7 +100,7 @@ static int sub_0208BF50(ApplicationManager *appMan, int *param1)
 
 static int sub_0208BF6C(ApplicationManager *appMan, int *param1)
 {
-    UnkStruct_0208C06C *v0 = sub_0208BA78(appMan);
+    UnkStruct_0208C06C *v0 = VsRecorder_GetState(appMan);
 
     switch (*param1) {
     case 0:

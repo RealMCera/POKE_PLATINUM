@@ -581,7 +581,7 @@ static int ov83_0223BCEC(PoffinBerrySelectionData *param0, UnkStruct_ov83_0223B7
                 switch (v6) {
                 case 0:
                 case 1:
-                    sub_0202B1D0(v3, v7, 1);
+                    WiFiList_AddFriendPoffinSessions(v3, v7, 1);
                     break;
                 default:
                     break;

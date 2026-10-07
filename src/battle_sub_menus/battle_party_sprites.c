@@ -360,10 +360,10 @@ static void LoadHeldMailSpriteData(BattleParty *battleParty)
     NARC *narc = NARC_ctor(NARC_INDEX_GRAPHIC__PL_PLIST_GRA, battleParty->context->heapID);
     SpriteSystem *spriteSystem = BattleSystem_GetSpriteSystem(battleParty->context->battleSys);
 
-    SpriteSystem_LoadPaletteBufferFromOpenNarc(battleParty->palette, PLTTBUF_SUB_OBJ, spriteSystem, battleParty->spriteManager, narc, sub_02081934(), FALSE, 1, NNS_G2D_VRAM_TYPE_2DSUB, HELD_MAIL_PLTT_RESOURCE_ID);
-    SpriteSystem_LoadCellResObjFromOpenNarc(spriteSystem, battleParty->spriteManager, narc, sub_02081938(), FALSE, HELD_MAIL_CELL_RESOURCE_ID);
-    SpriteSystem_LoadAnimResObjFromOpenNarc(spriteSystem, battleParty->spriteManager, narc, sub_0208193C(), FALSE, HELD_MAIL_ANIM_RESOURCE_ID);
-    SpriteSystem_LoadCharResObjFromOpenNarc(spriteSystem, battleParty->spriteManager, narc, sub_02081930(), FALSE, NNS_G2D_VRAM_TYPE_2DSUB, HELD_MAIL_CHAR_RESOURCE_ID);
+    SpriteSystem_LoadPaletteBufferFromOpenNarc(battleParty->palette, PLTTBUF_SUB_OBJ, spriteSystem, battleParty->spriteManager, narc, PartyMenu_GetIconPaletteResourceID(), FALSE, 1, NNS_G2D_VRAM_TYPE_2DSUB, HELD_MAIL_PLTT_RESOURCE_ID);
+    SpriteSystem_LoadCellResObjFromOpenNarc(spriteSystem, battleParty->spriteManager, narc, PartyMenu_GetIconCellResourceID(), FALSE, HELD_MAIL_CELL_RESOURCE_ID);
+    SpriteSystem_LoadAnimResObjFromOpenNarc(spriteSystem, battleParty->spriteManager, narc, PartyMenu_GetIconAnimResourceID(), FALSE, HELD_MAIL_ANIM_RESOURCE_ID);
+    SpriteSystem_LoadCharResObjFromOpenNarc(spriteSystem, battleParty->spriteManager, narc, PartyMenu_GetIconCharResourceID(), FALSE, NNS_G2D_VRAM_TYPE_2DSUB, HELD_MAIL_CHAR_RESOURCE_ID);
     NARC_dtor(narc);
 }
 

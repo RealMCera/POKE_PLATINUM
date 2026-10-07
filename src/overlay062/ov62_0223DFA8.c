@@ -43,7 +43,7 @@
 #include "battle_recording.h"
 #include "unk_02030A80.h"
 #include "unk_0208B284.h"
-#include "unk_0208BA78.h"
+#include "vs_recorder.h"
 
 typedef struct {
     int unk_00;
@@ -1059,7 +1059,7 @@ static BOOL ov62_0223F348(UnkStruct_0208C06C *param0)
             }
         } else if (param0->unk_86C == 200) {
             v0->unk_0C = 2;
-            if (sub_0208BE68(param0) == 1) {
+            if (VsRecorder_CheckFirstArrivalBattlePark(param0) == 1) {
                 if (ov61_0222B44C(ov62_0224112C(param0)) == 1) {
                     param0->unk_08++;
                 }
@@ -1554,7 +1554,7 @@ static BOOL ov62_0223FF90(UnkStruct_0208C06C *param0)
         ov62_02234540(param0, 0);
         ov62_022300C8(param0, *(param0->unk_10));
 
-        sub_0208BA84(param0->unk_868, 1, 0);
+        VsRecorder_SetPlaybackRequest(param0->unk_868, 1, 0);
 
         param0->unk_08++;
         break;

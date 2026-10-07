@@ -6,7 +6,7 @@
 #include "struct_defs/struct_0208C06C.h"
 #include "struct_defs/struct_020F3DCC.h"
 
-#include "unk_0208BA78.h"
+#include "vs_recorder.h"
 
 static const UnkStruct_020F3DCC Unk_020F3DCC[5];
 static const UnkStruct_020F3DCC Unk_020F3D18[5];
@@ -220,13 +220,13 @@ const UnkStruct_020F3DCC *sub_0208C010(int param0)
 const UnkStruct_020F3DCC *sub_0208C034(UnkStruct_0208C06C *param0, int param1)
 {
     if (param1 == 0) {
-        if (sub_0208BE68(param0) == 0) {
+        if (VsRecorder_CheckFirstArrivalBattlePark(param0) == 0) {
             return &Unk_020F3D18[0];
         }
     }
 
     if (param1 == 3) {
-        if (sub_0208BE68(param0) == 0) {
+        if (VsRecorder_CheckFirstArrivalBattlePark(param0) == 0) {
             return &Unk_020F355C[0];
         }
     }

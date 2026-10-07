@@ -70,6 +70,15 @@
 
 FS_EXTERN_OVERLAY(party_menu_form_change);
 
+// The party menu is the screen used to inspect and act on the player's party:
+// choosing a Pokémon for battle, using an item or field move on one, teaching a
+// move, giving or taking a held item, entering a Contest, and so on. This file
+// owns the application lifecycle (init/main/exit), the per-frame state machine,
+// input handling, and the drawing of the six member panels. The window, sprite,
+// context-menu and form-change helpers live in the sibling party_menu modules.
+
+// Screen-space layout for one member panel: the tilemap origin of the panel
+// itself plus the positions of its species icon and Poké Ball sprite.
 typedef struct MemberPanelTemplate {
     u16 panelX;
     u16 panelY;
@@ -79,6 +88,8 @@ typedef struct MemberPanelTemplate {
     u16 ballSpriteY;
 } MemberPanelTemplate;
 
+// Cursor positions in the grid menu. Slots 0-5 are the party members; 6 and 7
+// are the on-screen CONFIRM and CANCEL buttons.
 enum PartyMenuCursorPosition {
     POS_MEMBER_0 = 0,
     POS_MEMBER_1,
@@ -93,26 +104,26 @@ enum PartyMenuCursorPosition {
 static BOOL PartyMenu_Init(ApplicationManager *appMan, int *state);
 static BOOL PartyMenu_Main(ApplicationManager *appMan, int *state);
 static BOOL PartyMenu_Exit(ApplicationManager *appMan, int *state);
-static int sub_0207E490(PartyMenuApplication *application);
-static int sub_0207E518(PartyMenuApplication *application);
+static int PartyMenu_HandleStartState(PartyMenuApplication *application);
+static int PartyMenu_HandleDefaultState(PartyMenuApplication *application);
 static int HandleUseItem(PartyMenuApplication *application);
-static int sub_0207E5F4(PartyMenuApplication *application);
+static int PartyMenu_HandleGiveItemState(PartyMenuApplication *application);
 static int WaitForPrinter(PartyMenuApplication *application);
 static int WaitABPressBeforeFadeOut(PartyMenuApplication *application);
 static int DrawYesNoChoice(PartyMenuApplication *application);
-static int sub_0207E714(PartyMenuApplication *application);
+static int PartyMenu_HandleYesNoChoice(PartyMenuApplication *application);
 static int HandleTeachMove(PartyMenuApplication *application);
 static int PartyMenu_UseHPTransferFieldMove(PartyMenuApplication *application);
-static void sub_0207E898(void *param0);
+static void PartyMenu_VBlankCallback(void *param0);
 static void SetVRAMBanks(void);
 static void InitBgMainLayer0(BgConfig *bgConfig);
 static void InitBgs(BgConfig *bgConfig);
-static void sub_0207EA24(BgConfig *param0);
+static void PartyMenu_FreeBgs(BgConfig *param0);
 static void LoadGraphics(PartyMenuApplication *application, NARC *narc);
 static PartyMenuApplication *NewPartyMenuApplication(ApplicationManager *appMan);
 static void SetupRequestedMode(PartyMenuApplication *application);
 static void SetupRequestedModePanels(PartyMenuApplication *application);
-static u8 sub_0207F984(PartyMenuApplication *application, u8 param1);
+static u8 PartyMenu_IsMultiBattlePartnerSlot(PartyMenuApplication *application, u8 param1);
 static u8 PartyMenu_HandleInput(PartyMenuApplication *application);
 static void InitAnimAndPaletteForSlot(PartyMenuApplication *application, u8 slot, u8 isSelected);
 static void SetupMenuCursor(PartyMenuApplication *application);
@@ -135,7 +146,7 @@ static int ResetWindowOnInput(PartyMenuApplication *application);
 static int UpdatePokemonFormWithItem(PartyMenuApplication *application);
 static void CheckContestEligibility(PartyMenuApplication *application, Pokemon *mon, u8 slot);
 static u32 CountEarnedRibbonsForContestType(Pokemon *mon, u8 contestType);
-static void sub_0207FE1C(PartyMenuApplication *application);
+static void PartyMenu_UpdateTouchScreenButtonAnim(PartyMenuApplication *application);
 static void CalculateWindowPosition(u8 param0, s16 *param1, s16 *param2);
 static int CheckForItemApplication(PartyMenuApplication *application);
 static u8 CheckDuplicateValues(PartyMenuApplication *application);
@@ -154,18 +165,18 @@ static void DrawMemberPanels_EnteringContest(PartyMenuApplication *application, 
 static void DrawMemberPanels_SelectingOrder(PartyMenuApplication *application, const MemberPanelTemplate *templates);
 static void DrawEmptyMemberPanel(PartyMenuApplication *application, u8 slot, s16 x, s16 y);
 static u8 PartyMenu_TryHandleDirectionPadInput(PartyMenuApplication *application);
-static u8 sub_0207FBE0(PartyMenuApplication *application, u8 *param1, u8 *param2, u8 param3);
-static u8 sub_0207FC30(PartyMenuApplication *application, u8 *param1, u8 *param2, const u8 *param3);
+static u8 PartyMenu_NavigateToOccupiedSlot(PartyMenuApplication *application, u8 *param1, u8 *param2, u8 param3);
+static u8 PartyMenu_FindFirstPresentSlotInOrder(PartyMenuApplication *application, u8 *param1, u8 *param2, const u8 *param3);
 static u8 PartyMenu_TryHandleTouchScreenButtons(PartyMenuApplication *application);
-static void sub_0207FFC8(PartyMenuApplication *application);
+static void PartyMenu_OpenContextMenu(PartyMenuApplication *application);
 static u8 GetContextMenuEntriesForPartyMon(PartyMenuApplication *application, u8 *buf);
-static u8 sub_020801F0(PartyMenuApplication *application, u8 *param1);
-static u8 sub_0208022C(PartyMenuApplication *application, u8 *param1);
-static u8 sub_0208027C(PartyMenuApplication *application, u8 *param1);
-static u8 sub_020802CC(PartyMenuApplication *application, u8 *param1);
-static u8 sub_0208031C(PartyMenuApplication *application, u8 *param1);
-static u8 sub_020801AC(PartyMenuApplication *application, u8 *param1);
-static u8 sub_020801B8(PartyMenuApplication *application, u8 *param1);
+static u8 PartyMenu_GetDefaultContextMenuEntries(PartyMenuApplication *application, u8 *param1);
+static u8 PartyMenu_GetBattleTowerContextMenuEntries(PartyMenuApplication *application, u8 *param1);
+static u8 PartyMenu_GetBattleHallContextMenuEntries(PartyMenuApplication *application, u8 *param1);
+static u8 PartyMenu_GetBattleCastleContextMenuEntries(PartyMenuApplication *application, u8 *param1);
+static u8 PartyMenu_GetSelectEggContextMenuEntries(PartyMenuApplication *application, u8 *param1);
+static u8 PartyMenu_GetBallSealContextMenuEntries(PartyMenuApplication *application, u8 *param1);
+static u8 PartyMenu_GetDaycareContextMenuEntries(PartyMenuApplication *application, u8 *param1);
 u8 PartyMenu_CheckBattleHallEligibility(PartyMenuApplication *application, u8 param1);
 u8 PartyMenu_CheckBattleCastleEligibility(PartyMenuApplication *application, u8 param1);
 static u8 CheckCanUseHPTransferFieldMove(PartyMenuApplication *application);
@@ -262,6 +273,8 @@ static const u16 sFieldMoves[FIELD_MOVE_MAX] = {
     [FIELD_MOVE_SOFTBOILED] = MOVE_SOFTBOILED,
 };
 
+// Application entry point: sets up the heap, BG layers, graphics, sprites and
+// windows, then prints the prompt appropriate to the requested mode.
 static BOOL PartyMenu_Init(ApplicationManager *appMan, int *state)
 {
     PartyMenuApplication *application; // must forward-declare to match
@@ -336,23 +349,26 @@ static BOOL PartyMenu_Init(ApplicationManager *appMan, int *state)
         GXLayers_EngineBToggleLayers(GX_PLANEMASK_BG0, FALSE);
     }
 
-    SetVBlankCallback(sub_0207E898, application);
+    SetVBlankCallback(PartyMenu_VBlankCallback, application);
     NetworkIcon_InitIfConnected();
     NARC_dtor(narc);
 
     return TRUE;
 }
 
+// Per-frame application callback. Runs the current state's handler, then
+// updates the member icons, touch-button effect and sprites. Returns TRUE once
+// the fade-out has finished so the application manager can tear the menu down.
 static BOOL PartyMenu_Main(ApplicationManager *appMan, int *state)
 {
     PartyMenuApplication *partyMenu = ApplicationManager_Data(appMan);
 
     switch (*state) {
     case PARTY_MENU_STATE_START:
-        *state = sub_0207E490(partyMenu);
+        *state = PartyMenu_HandleStartState(partyMenu);
         break;
     case PARTY_MENU_STATE_DEFAULT:
-        *state = sub_0207E518(partyMenu);
+        *state = PartyMenu_HandleDefaultState(partyMenu);
         break;
     case PARTY_MENU_STATE_HANDLE_PARTY_MENU_ACTION:
         if (HandleWindowInputEvent(partyMenu, state) == TRUE) {
@@ -375,7 +391,7 @@ static BOOL PartyMenu_Main(ApplicationManager *appMan, int *state)
         *state = PartyMenuCB_HandleSacredAsh(partyMenu);
         break;
     case PARTY_MENU_STATE_GIVE_ITEM:
-        *state = sub_0207E5F4(partyMenu);
+        *state = PartyMenu_HandleGiveItemState(partyMenu);
         break;
     case PARTY_MENU_STATE_SHOW_ITEM_SWAP_CONFIRMATION:
         *state = PartyMenu_ShowItemSwapConfirmation(partyMenu);
@@ -432,7 +448,7 @@ static BOOL PartyMenu_Main(ApplicationManager *appMan, int *state)
         *state = DrawYesNoChoice(partyMenu);
         break;
     case PARTY_MENU_STATE_27:
-        *state = sub_0207E714(partyMenu);
+        *state = PartyMenu_HandleYesNoChoice(partyMenu);
         break;
     case PARTY_MENU_STATE_SELECT_SWITCH_SLOT: {
         u8 v1 = SelectSwitchSlot(partyMenu);
@@ -473,13 +489,15 @@ static BOOL PartyMenu_Main(ApplicationManager *appMan, int *state)
 
     PartyMenu_UpdateMemberIcons(partyMenu);
     PartyMenu_UpdateTouchButtonEffect(partyMenu);
-    sub_0207FE1C(partyMenu);
+    PartyMenu_UpdateTouchScreenButtonAnim(partyMenu);
     SpriteSystem_DrawSprites(partyMenu->spriteMan);
 
     return FALSE;
 }
 
-static int sub_0207E490(PartyMenuApplication *application)
+// Waits for the opening fade to finish, then dispatches to the state that
+// matches the mode the menu was opened in (item use, move teaching, mail, ...).
+static int PartyMenu_HandleStartState(PartyMenuApplication *application)
 {
     if (IsScreenFadeDone() == TRUE) {
         if ((application->partyMenu->mode == PARTY_MENU_MODE_USE_ITEM) || (application->partyMenu->mode == PARTY_MENU_MODE_USE_EVO_ITEM)) {
@@ -509,7 +527,9 @@ static int sub_0207E490(PartyMenuApplication *application)
     return PARTY_MENU_STATE_START;
 }
 
-static int sub_0207E518(PartyMenuApplication *application)
+// The idle state: reads input and either advances to the action the player
+// chose or exits the menu.
+static int PartyMenu_HandleDefaultState(PartyMenuApplication *application)
 {
     u8 v0 = PartyMenu_HandleInput(application);
 
@@ -558,7 +578,8 @@ static int HandleUseItem(PartyMenuApplication *application)
     return PARTY_MENU_STATE_USE_ITEM;
 }
 
-static int sub_0207E5F4(PartyMenuApplication *application)
+// Handles input while choosing the Pokémon to give the held item to.
+static int PartyMenu_HandleGiveItemState(PartyMenuApplication *application)
 {
     u8 v0 = HandleSpecialInput(application);
 
@@ -627,7 +648,9 @@ static int DrawYesNoChoice(PartyMenuApplication *application)
     return PARTY_MENU_STATE_27;
 }
 
-static int sub_0207E714(PartyMenuApplication *application)
+// Runs the yes/no callbacks installed by the caller once the player answers the
+// confirmation prompt.
+static int PartyMenu_HandleYesNoChoice(PartyMenuApplication *application)
 {
     switch (Menu_ProcessInputAndHandleExit(application->contextMenu, 12)) {
     case 0:
@@ -663,6 +686,8 @@ static int HandleTeachMove(PartyMenuApplication *application)
     return PARTY_MENU_STATE_TEACH_MOVE;
 }
 
+// Application teardown: frees the sprites, windows, BG configuration and every
+// string/heap allocation made during init.
 static BOOL PartyMenu_Exit(ApplicationManager *appMan, int *state)
 {
     PartyMenuApplication *v0 = ApplicationManager_Data(appMan);
@@ -671,7 +696,7 @@ static BOOL PartyMenu_Exit(ApplicationManager *appMan, int *state)
     SetVBlankCallback(NULL, NULL);
     PartyMenu_CleanupSprites(v0);
     PartyMenu_RemoveWindows(v0);
-    sub_0207EA24(v0->bgConfig);
+    PartyMenu_FreeBgs(v0->bgConfig);
     DisableTouchPad();
     VramTransfer_Free();
 
@@ -700,7 +725,9 @@ static BOOL PartyMenu_Exit(ApplicationManager *appMan, int *state)
     return 1;
 }
 
-static void sub_0207E898(void *param0)
+// VBlank handler: flushes the queued BG updates, VRAM transfers and sprite OAM
+// to hardware once per frame.
+static void PartyMenu_VBlankCallback(void *param0)
 {
     PartyMenuApplication *v0 = param0;
 
@@ -854,7 +881,9 @@ static void InitBgs(BgConfig *bgConfig)
     Bg_ClearTilesRange(BG_LAYER_SUB_0, TILE_SIZE_4BPP, 0, HEAP_ID_PARTY_MENU);
 }
 
-static void sub_0207EA24(BgConfig *param0)
+// Disables every layer the menu uses, frees the tilemap buffers and the BG
+// configuration itself.
+static void PartyMenu_FreeBgs(BgConfig *param0)
 {
     GXLayers_EngineAToggleLayers(GX_PLANEMASK_BG0 | GX_PLANEMASK_BG1 | GX_PLANEMASK_BG2 | GX_PLANEMASK_BG3 | GX_PLANEMASK_OBJ, 0);
     GXLayers_EngineBToggleLayers(GX_PLANEMASK_BG0 | GX_PLANEMASK_BG1 | GX_PLANEMASK_OBJ, 0);
@@ -867,6 +896,9 @@ static void sub_0207EA24(BgConfig *param0)
     Heap_FreeExplicit(HEAP_ID_PARTY_MENU, param0);
 }
 
+// Switches BG0 between 2D and 3D for the form-change animation: entering 3D
+// frees the 2D tilemap and brings up the G3D pipeline, tearing down restores the
+// 2D layer.
 void PartyMenu_UpdateFormChangeGraphicsMode(PartyMenuApplication *application, BOOL isTeardown)
 {
     if (!isTeardown) {
@@ -1032,6 +1064,9 @@ static PartyMenuApplication *NewPartyMenuApplication(ApplicationManager *appMan)
     return application;
 }
 
+// Decides whether the Cancel button is available. The hide-cancel request is
+// encoded as a high bit on the mode, which is stripped here so the rest of the
+// code can compare modes directly.
 static void CheckCancellableMode(PartyMenuApplication *application)
 {
     if ((application->partyMenu->mode & PARTY_MENU_MODE_HIDE_CANCEL_FLAG) != 0) {
@@ -1082,7 +1117,9 @@ static void SetupRequestedMode(PartyMenuApplication *application)
     PartyMenu_PrintButtonText(application, flags);
 }
 
-u8 sub_0207EF04(PartyMenuApplication *application, u8 param1)
+// Whether the given party slot holds a Pokémon (used to skip empty slots while
+// navigating the cursor).
+u8 PartyMenu_IsMemberPresent(PartyMenuApplication *application, u8 param1)
 {
     return application->partyMembers[param1].isPresent;
 }
@@ -1111,6 +1148,7 @@ u8 PartyMenu_LoadMember(PartyMenuApplication *application, u8 slot)
     application->partyMembers[slot].isEgg = Pokemon_GetValue(mon, MON_DATA_IS_EGG, NULL);
     application->partyMembers[slot].form = Pokemon_GetValue(mon, MON_DATA_FORM, NULL);
 
+    // MON_DATA_NO_PRINT_GENDER is the inverse of the panel's hide flag.
     if (Pokemon_GetValue(mon, MON_DATA_NO_PRINT_GENDER, NULL) == TRUE) {
         application->partyMembers[slot].hideGenderMarker = FALSE;
     } else {
@@ -1407,6 +1445,9 @@ static void DrawEmptyMemberPanel(PartyMenuApplication *application, u8 slot, s16
     PartyMenu_DrawMemberBallSeal(application, slot);
 }
 
+// Picks the member panel palette: base 0, +4 when the slot is the cursor (or a
+// target in target-slot mode), +2 when the Pokémon has fainted, +1 for a
+// partner's slot in a multi battle.
 void PartyMenu_UpdateSlotPalette(PartyMenuApplication *application, u8 slot)
 {
     Pokemon *mon;
@@ -1425,7 +1466,7 @@ void PartyMenu_UpdateSlotPalette(PartyMenuApplication *application, u8 slot)
 
         if (Pokemon_GetValue(mon, MON_DATA_HP, 0) == 0) {
             palette += 2;
-        } else if (sub_0207F984(application, slot) == 1) {
+        } else if (PartyMenu_IsMultiBattlePartnerSlot(application, slot) == 1) {
             palette += 1;
         } else {
             palette += 0;
@@ -1435,7 +1476,9 @@ void PartyMenu_UpdateSlotPalette(PartyMenuApplication *application, u8 slot)
     Bg_LoadPalette(BG_LAYER_MAIN_2, &application->colors[PLTT_DEST(palette)], 8 * sizeof(u16), PLTT_OFFSET(3 + slot));
 }
 
-static u8 sub_0207F984(PartyMenuApplication *application, u8 param1)
+// In multi battles the odd-numbered slots belong to the partner trainer; they
+// are drawn with a distinct palette tint.
+static u8 PartyMenu_IsMultiBattlePartnerSlot(PartyMenuApplication *application, u8 param1)
 {
     if ((application->partyMenu->type == PARTY_MENU_TYPE_MULTI_BATTLE) && ((param1 & 1) != 0)) {
         return 1;
@@ -1452,7 +1495,11 @@ static void SetupMenuCursor(PartyMenuApplication *application)
     Sprite_SetPositionXY(application->sprites[PARTY_MENU_SPRITE_CURSOR_NORMAL], x, y);
 }
 
-static const u8 Unk_020F1BD4[][6] = {
+// Search orders used when leaving the CONFIRM/CANCEL buttons: each row lists
+// the party slots in the order they should be tested for a present Pokémon. The
+// row is picked from the side the cursor came from (prevPartySlot & 1) and
+// whether it is moving up or down.
+static const u8 sMemberSearchOrders[][6] = {
     { 0x0, 0x2, 0x4, 0x1, 0x3, 0x5 },
     { 0x1, 0x3, 0x5, 0x0, 0x2, 0x4 },
     { 0x4, 0x2, 0x0, 0x5, 0x3, 0x1 },
@@ -1498,9 +1545,9 @@ static u8 PartyMenu_TryHandleDirectionPadInput(PartyMenuApplication *application
 
     if (v0 == 6) {
         if (v1 == GRID_MENU_CURSOR_POSITION_DIRECTION_UP) {
-            v0 = sub_0207FC30(application, &v2, &v3, Unk_020F1BD4[2 + (application->prevPartySlot & 1)]);
+            v0 = PartyMenu_FindFirstPresentSlotInOrder(application, &v2, &v3, sMemberSearchOrders[2 + (application->prevPartySlot & 1)]);
         } else {
-            v0 = sub_0207FBE0(application, &v2, &v3, v1);
+            v0 = PartyMenu_NavigateToOccupiedSlot(application, &v2, &v3, v1);
         }
     } else if (v0 == 7) {
         if (application->partyMenu->mode != PARTY_MENU_MODE_SELECT_CONFIRM
@@ -1508,14 +1555,14 @@ static u8 PartyMenu_TryHandleDirectionPadInput(PartyMenuApplication *application
             && application->partyMenu->mode != PARTY_MENU_MODE_BATTLE_CASTLE
             && application->partyMenu->mode != PARTY_MENU_MODE_BATTLE_HALL
             && v1 == 0) {
-            v0 = sub_0207FC30(application, &v2, &v3, Unk_020F1BD4[2 + (application->prevPartySlot & 1)]);
+            v0 = PartyMenu_FindFirstPresentSlotInOrder(application, &v2, &v3, sMemberSearchOrders[2 + (application->prevPartySlot & 1)]);
         } else if (v1 == 1) {
-            v0 = sub_0207FC30(application, &v2, &v3, Unk_020F1BD4[(application->prevPartySlot & 1)]);
+            v0 = PartyMenu_FindFirstPresentSlotInOrder(application, &v2, &v3, sMemberSearchOrders[(application->prevPartySlot & 1)]);
         } else {
-            v0 = sub_0207FBE0(application, &v2, &v3, v1);
+            v0 = PartyMenu_NavigateToOccupiedSlot(application, &v2, &v3, v1);
         }
     } else {
-        v0 = sub_0207FBE0(application, &v2, &v3, v1);
+        v0 = PartyMenu_NavigateToOccupiedSlot(application, &v2, &v3, v1);
     }
 
     if ((v0 != application->currPartySlot) && (v0 != 0xff)) {
@@ -1551,7 +1598,10 @@ static u8 PartyMenu_TryHandleDirectionPadInput(PartyMenuApplication *application
     return FALSE;
 }
 
-static u8 sub_0207FBE0(PartyMenuApplication *application, u8 *param1, u8 *param2, u8 param3)
+// Steps the cursor in the given direction, skipping empty party slots, until it
+// lands on a present member or on the CONFIRM/CANCEL buttons (or runs off the
+// grid). Writes the resulting screen position to param1/param2.
+static u8 PartyMenu_NavigateToOccupiedSlot(PartyMenuApplication *application, u8 *param1, u8 *param2, u8 param3)
 {
     u8 v0 = application->currPartySlot;
 
@@ -1562,7 +1612,7 @@ static u8 sub_0207FBE0(PartyMenuApplication *application, u8 *param1, u8 *param2
             break;
         }
 
-        if (sub_0207EF04(application, v0) != 0) {
+        if (PartyMenu_IsMemberPresent(application, v0) != 0) {
             break;
         }
     }
@@ -1570,7 +1620,9 @@ static u8 sub_0207FBE0(PartyMenuApplication *application, u8 *param1, u8 *param2
     return v0;
 }
 
-static u8 sub_0207FC30(PartyMenuApplication *application, u8 *param1, u8 *param2, const u8 *param3)
+// Walks the supplied search order and returns the first slot that holds a
+// Pokémon, falling back to slot 0 if none do.
+static u8 PartyMenu_FindFirstPresentSlotInOrder(PartyMenuApplication *application, u8 *param1, u8 *param2, const u8 *param3)
 {
     u8 v0 = 0;
 
@@ -1579,7 +1631,7 @@ static u8 sub_0207FC30(PartyMenuApplication *application, u8 *param1, u8 *param2
             break;
         }
 
-        if (sub_0207EF04(application, param3[v0]) != 0) {
+        if (PartyMenu_IsMemberPresent(application, param3[v0]) != 0) {
             GridMenuCursor_CheckNavigation(application->cursorPosTable, param1, param2, NULL, NULL, param3[v0], GRID_MENU_CURSOR_POSITION_DIRECTION_NONE);
             return param3[v0];
         }
@@ -1613,8 +1665,8 @@ static u8 PartyMenu_TryHandleTouchScreenButtons(PartyMenuApplication *applicatio
         Sprite_SetDrawFlag(application->sprites[PARTY_MENU_SPRITE_CURSOR_NORMAL], TRUE);
         Sprite_SetPositionXY(application->sprites[PARTY_MENU_SPRITE_CURSOR_NORMAL], x, y);
 
-        application->unk_B0C = 1;
-        application->unk_B0D = application->currPartySlot;
+        application->touchButtonAnimState = 1;
+        application->touchButtonAnimSlot = application->currPartySlot;
 
         Sound_PlayEffect(SEQ_SE_DP_BUTTON9_sseq);
 
@@ -1628,7 +1680,10 @@ static u8 PartyMenu_TryHandleTouchScreenButtons(PartyMenuApplication *applicatio
     return FALSE;
 }
 
-void sub_0207FD68(PartyMenuApplication *application, u8 partySlot)
+// Moves the cursor to the given slot (or hides it for the CONFIRM/CANCEL
+// buttons) and refreshes the selection animation and palette of the old and new
+// slots.
+void PartyMenu_SetCursorToSlot(PartyMenuApplication *application, u8 partySlot)
 {
     if ((partySlot == 6) || (partySlot == 7)) {
         Sprite_SetDrawFlag(application->sprites[PARTY_MENU_SPRITE_CURSOR_NORMAL], FALSE);
@@ -1655,9 +1710,11 @@ void sub_0207FD68(PartyMenuApplication *application, u8 partySlot)
     }
 }
 
-static void sub_0207FE1C(PartyMenuApplication *application)
+// Plays the two-frame press animation on the touch-screen button of the slot
+// recorded when it was tapped.
+static void PartyMenu_UpdateTouchScreenButtonAnim(PartyMenuApplication *application)
 {
-    switch (application->unk_B0C) {
+    switch (application->touchButtonAnimState) {
     case 0:
         break;
     case 1:
@@ -1665,17 +1722,17 @@ static void sub_0207FE1C(PartyMenuApplication *application)
     {
         s16 v0, v1;
 
-        CalculateWindowPosition(application->unk_B0D, &v0, &v1);
+        CalculateWindowPosition(application->touchButtonAnimSlot, &v0, &v1);
         PartyMenu_InitTouchButtonEffect(application, v0, v1);
     }
-        DrawMemberTouchScreenButton(application, application->unk_B0D, 2);
+        DrawMemberTouchScreenButton(application, application->touchButtonAnimSlot, 2);
         Bg_ScheduleTilemapTransfer(application->bgConfig, 4);
-        application->unk_B0C++;
+        application->touchButtonAnimState++;
         break;
     case 2:
-        DrawMemberTouchScreenButton(application, application->unk_B0D, 1);
+        DrawMemberTouchScreenButton(application, application->touchButtonAnimSlot, 1);
         Bg_ScheduleTilemapTransfer(application->bgConfig, 4);
-        application->unk_B0C = 0;
+        application->touchButtonAnimState = 0;
         break;
     }
 }
@@ -1705,7 +1762,7 @@ static u8 PartyMenu_HandleInput(PartyMenuApplication *application)
         } else if (application->partyMenu->mode == PARTY_MENU_MODE_BALL_SEAL) {
             if (application->partyMembers[application->currPartySlot].isEgg == FALSE) {
                 Sound_PlayEffect(SE_CONFIRM_sseq_3);
-                sub_0207FFC8(application);
+                PartyMenu_OpenContextMenu(application);
                 return PARTY_MENU_INPUT_CONFIRM;
             } else {
                 Sound_PlayEffect(SEQ_SE_DP_CUSTOM06_sseq);
@@ -1713,11 +1770,11 @@ static u8 PartyMenu_HandleInput(PartyMenuApplication *application)
             }
         } else if (application->partyMenu->mode == PARTY_MENU_MODE_SELECT_EGG) {
             Sound_PlayEffect(SE_CONFIRM_sseq_3);
-            sub_0207FFC8(application);
+            PartyMenu_OpenContextMenu(application);
             return PARTY_MENU_INPUT_CONFIRM;
         } else {
             Sound_PlayEffect(SE_CONFIRM_sseq_3);
-            sub_0207FFC8(application);
+            PartyMenu_OpenContextMenu(application);
             return PARTY_MENU_INPUT_CONFIRM;
         }
     }
@@ -1746,7 +1803,10 @@ static u8 PartyMenu_HandleInput(PartyMenuApplication *application)
     return menuInput;
 }
 
-static void sub_0207FFC8(PartyMenuApplication *application)
+// Builds the context menu for the current slot. The set of entries depends on
+// the mode the menu was opened in; each helper fills the buffer with entry IDs
+// and returns how many it wrote.
+static void PartyMenu_OpenContextMenu(PartyMenuApplication *application)
 {
     u8 *v0;
     u8 v1;
@@ -1760,25 +1820,25 @@ static void sub_0207FFC8(PartyMenuApplication *application)
         break;
     case PARTY_MENU_MODE_SELECT_CONFIRM:
     case PARTY_MENU_MODE_BATTLE_TOWER:
-        v1 = sub_0208022C(application, v0);
+        v1 = PartyMenu_GetBattleTowerContextMenuEntries(application, v0);
         break;
     case PARTY_MENU_MODE_BALL_SEAL:
-        v1 = sub_020801AC(application, v0);
+        v1 = PartyMenu_GetBallSealContextMenuEntries(application, v0);
         break;
     case PARTY_MENU_MODE_DAYCARE:
-        v1 = sub_020801B8(application, v0);
+        v1 = PartyMenu_GetDaycareContextMenuEntries(application, v0);
         break;
     case PARTY_MENU_MODE_SELECT_EGG:
-        v1 = sub_0208031C(application, v0);
+        v1 = PartyMenu_GetSelectEggContextMenuEntries(application, v0);
         break;
     case PARTY_MENU_MODE_BATTLE_HALL:
-        v1 = sub_0208027C(application, v0);
+        v1 = PartyMenu_GetBattleHallContextMenuEntries(application, v0);
         break;
     case PARTY_MENU_MODE_BATTLE_CASTLE:
-        v1 = sub_020802CC(application, v0);
+        v1 = PartyMenu_GetBattleCastleContextMenuEntries(application, v0);
         break;
     default:
-        v1 = sub_020801F0(application, v0);
+        v1 = PartyMenu_GetDefaultContextMenuEntries(application, v0);
     }
 
     PartyMenu_DrawContextMenu(application, v0, v1);
@@ -1838,7 +1898,8 @@ static u8 GetContextMenuEntriesForPartyMon(PartyMenuApplication *application, u8
     return count;
 }
 
-static u8 sub_020801AC(PartyMenuApplication *application, u8 *param1)
+// Ball-seal mode: only the capsule action and Cancel.
+static u8 PartyMenu_GetBallSealContextMenuEntries(PartyMenuApplication *application, u8 *param1)
 {
     param1[0] = 14;
     param1[1] = 9;
@@ -1846,7 +1907,8 @@ static u8 sub_020801AC(PartyMenuApplication *application, u8 *param1)
     return 2;
 }
 
-static u8 sub_020801B8(PartyMenuApplication *application, u8 *param1)
+// Daycare mode: non-eggs get an extra entry; eggs only get Summary and Cancel.
+static u8 PartyMenu_GetDaycareContextMenuEntries(PartyMenuApplication *application, u8 *param1)
 {
     if (application->partyMembers[application->currPartySlot].isEgg == FALSE) {
         param1[0] = 8;
@@ -1862,7 +1924,9 @@ static u8 sub_020801B8(PartyMenuApplication *application, u8 *param1)
     return 2;
 }
 
-static u8 sub_020801F0(PartyMenuApplication *application, u8 *param1)
+// Default (field/Contest) menu: the extra entry is only offered to Pokémon that
+// are eligible for the current Contest.
+static u8 PartyMenu_GetDefaultContextMenuEntries(PartyMenuApplication *application, u8 *param1)
 {
     if (application->partyMembers[application->currPartySlot].isContestEligible == TRUE) {
         param1[0] = 13;
@@ -1878,7 +1942,9 @@ static u8 sub_020801F0(PartyMenuApplication *application, u8 *param1)
     return 2;
 }
 
-static u8 sub_0208022C(PartyMenuApplication *application, u8 *param1)
+// Battle Tower / selection menu: an already-entered Pokémon gets the
+// eligibility review entry instead of the Choose entry.
+static u8 PartyMenu_GetBattleTowerContextMenuEntries(PartyMenuApplication *application, u8 *param1)
 {
     switch (PartyMenu_CheckEligibility(application, application->currPartySlot)) {
     case 0:
@@ -1900,7 +1966,9 @@ static u8 sub_0208022C(PartyMenuApplication *application, u8 *param1)
     return 0;
 }
 
-static u8 sub_0208027C(PartyMenuApplication *application, u8 *param1)
+// Battle Hall menu: same entry layout as the Battle Tower, using the Battle
+// Hall eligibility rules.
+static u8 PartyMenu_GetBattleHallContextMenuEntries(PartyMenuApplication *application, u8 *param1)
 {
     switch (PartyMenu_CheckBattleHallEligibility(application, application->currPartySlot)) {
     case 0:
@@ -1922,7 +1990,9 @@ static u8 sub_0208027C(PartyMenuApplication *application, u8 *param1)
     return 0;
 }
 
-static u8 sub_020802CC(PartyMenuApplication *application, u8 *param1)
+// Battle Castle menu: same entry layout as the Battle Tower, using the Battle
+// Castle eligibility rules.
+static u8 PartyMenu_GetBattleCastleContextMenuEntries(PartyMenuApplication *application, u8 *param1)
 {
     switch (PartyMenu_CheckBattleCastleEligibility(application, application->currPartySlot)) {
     case 0:
@@ -1944,7 +2014,9 @@ static u8 sub_020802CC(PartyMenuApplication *application, u8 *param1)
     return 0;
 }
 
-static u8 sub_0208031C(PartyMenuApplication *application, u8 *param1)
+// Egg-selection menu: eggs get an extra entry; non-eggs only Summary and
+// Cancel.
+static u8 PartyMenu_GetSelectEggContextMenuEntries(PartyMenuApplication *application, u8 *param1)
 {
     if (application->partyMembers[application->currPartySlot].isEgg == TRUE) {
         param1[0] = 1;
@@ -2403,6 +2475,10 @@ static void CalculateWindowPosition(u8 application, s16 *param1, s16 *param2)
     *param2 = sTouchScreenButtonCoords[application][1] * 8 + ((5 * 8) >> 1);
 }
 
+// Returns the party slot whose touch-screen button was tapped, or
+// TOUCHSCREEN_INPUT_NONE. The rectangle hit is rejected unless the pixel under
+// the touch matches the button's background value, so taps on empty panels do
+// nothing.
 static int PartyMenu_GetTouchScreenPartyBallPressed(PartyMenuApplication *application)
 {
     int partySlot;
@@ -2474,6 +2550,9 @@ enum FieldMoveTransferHPTarget {
     HP_TRANSFER_EGG_TARGET
 };
 
+// Drives the HP-transfer field move (e.g. Milk Drink / Soft-Boiled): pick a
+// donor, then animate moving HP from the donor to the target one point at a
+// time.
 static int PartyMenu_UseHPTransferFieldMove(PartyMenuApplication *application)
 {
     switch (application->monHpTransfer[HP_TRANSFER_STATE]) {
@@ -2610,6 +2689,9 @@ static u8 CheckCanUseHPTransferFieldMove(PartyMenuApplication *application)
     return HP_TRANSFER_VALID_TARGET;
 }
 
+// Advances the HP-transfer animation by one point, redrawing the slot's HP
+// display. Returns TRUE once the transfer is complete (the buffered amount has
+// been moved or the target is full), committing the new HP to the Pokémon.
 static BOOL PartyMenu_HPTransferUpdateHP(PartyMenuApplication *application, u8 slot, s8 hpAmount)
 {
     application->partyMembers[slot].curHP += hpAmount;
@@ -3017,26 +3099,32 @@ static BOOL ShouldShowSubscreen(PartyMenuApplication *application)
     return TRUE;
 }
 
-u32 sub_02081930(void)
+// NARC member indices of the shared "icons" sprite set in PL_PLIST_GRA, used
+// for the held-item/mail sprites. Exposed so other menus can load the same
+// resources.
+u32 PartyMenu_GetIconCharResourceID(void)
 {
     return 20;
 }
 
-u32 sub_02081934(void)
+u32 PartyMenu_GetIconPaletteResourceID(void)
 {
     return 21;
 }
 
-u32 sub_02081938(void)
+u32 PartyMenu_GetIconCellResourceID(void)
 {
     return 19;
 }
 
-u32 sub_0208193C(void)
+u32 PartyMenu_GetIconAnimResourceID(void)
 {
     return 18;
 }
 
+// Splits the member-panel screen data (NARC member 22) into three 6-panel
+// strips: the lead panel, the normal back panels, and the empty panel. Each
+// panel is 16x6 tiles, stored row-major.
 void PartyMenu_LoadMemberPanelTilemaps(enum HeapID heapID, u16 *lead, u16 *back, u16 *none)
 {
     NNSG2dScreenData *screenData;

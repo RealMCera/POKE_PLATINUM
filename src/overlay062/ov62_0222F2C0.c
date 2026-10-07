@@ -34,7 +34,7 @@
 #include "unk_0202419C.h"
 #include "image_clips.h"
 #include "unk_0208B284.h"
-#include "unk_0208BA78.h"
+#include "vs_recorder.h"
 #include "unk_0208C010.h"
 #include "vram_transfer.h"
 
@@ -629,7 +629,7 @@ void ov62_0222FC1C(UnkStruct_0208C06C *param0)
     case 6:
         break;
     case 2:
-        sub_0208BA84(param0->unk_868, 0, 0);
+        VsRecorder_SetPlaybackRequest(param0->unk_868, 0, 0);
         ov62_0222FB60(param0, 2);
         break;
     case 4:
@@ -763,7 +763,7 @@ static void ov62_0222FE1C(u32 param0, enum TouchScreenButtonState param1, void *
         ov62_0222FB60(v0, v0->unk_818[v0->unk_534.unk_1B0].unk_14);
 
         if (v0->unk_818[v0->unk_534.unk_1B0].unk_14 == 2) {
-            sub_0208BA84(v0->unk_868, 0, 0);
+            VsRecorder_SetPlaybackRequest(v0->unk_868, 0, 0);
         } else {
             ov62_02230014(v0);
             sub_0208B9E0(v0->unk_6F0, 1);

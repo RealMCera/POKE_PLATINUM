@@ -296,7 +296,7 @@ pokeplatinum_c = files(
     'number_entry_screen.c',
     'number_entry_graphics.c',
     'unk_0208B284.c',
-    'unk_0208BA78.c',
+    'vs_recorder.c',
     'unk_0208BEBC.c',
     'unk_0208C010.c',
     'unk_0208C098.c',

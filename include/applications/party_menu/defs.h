@@ -373,8 +373,8 @@ struct PartyMenuApplication {
         PartyMenuCallback onYes;
         PartyMenuCallback onNo;
     } yesnoCallbacks;
-    u8 unk_B0C;
-    u8 unk_B0D;
+    u8 touchButtonAnimState;
+    u8 touchButtonAnimSlot;
     union {
         u8 stateAfterMessage;
         u8 sacredAshState;

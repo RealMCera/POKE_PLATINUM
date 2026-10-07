@@ -18,7 +18,7 @@ int sub_0203909C(SaveData *saveData, DWCFriendData *param1, int *param2)
 {
     int v0;
     DWCUserData *v1 = WiFiList_GetUserData(SaveData_GetWiFiList(saveData));
-    DWCFriendData *v2 = sub_0202AED8(SaveData_GetWiFiList(saveData), 0);
+    DWCFriendData *v2 = WiFiList_GetFriendData(SaveData_GetWiFiList(saveData), 0);
 
     *param2 = -1;
 
@@ -45,7 +45,7 @@ int sub_02039140(SaveData *saveData, u64 param1, int *param2)
 {
     int v0;
     DWCUserData *v1 = WiFiList_GetUserData(SaveData_GetWiFiList(saveData));
-    DWCFriendData *v2 = sub_0202AED8(SaveData_GetWiFiList(saveData), 0);
+    DWCFriendData *v2 = WiFiList_GetFriendData(SaveData_GetWiFiList(saveData), 0);
     DWCFriendData v3;
 
     if (!DWC_CheckFriendKey(v1, param1)) {
@@ -75,7 +75,7 @@ int sub_02039140(SaveData *saveData, u64 param1, int *param2)
 BOOL sub_020391DC(SaveData *saveData, int *param1, enum HeapID heapID)
 {
     int v0, v1 = 0, v2;
-    DWCFriendData *v3 = sub_0202AED8(SaveData_GetWiFiList(saveData), 0);
+    DWCFriendData *v3 = WiFiList_GetFriendData(SaveData_GetWiFiList(saveData), 0);
     DWCFriendData *v4;
 
     for (v0 = 0; v0 < CommSys_ConnectedCount(); v0++) {
@@ -114,7 +114,7 @@ BOOL sub_020391DC(SaveData *saveData, int *param1, enum HeapID heapID)
 void sub_02039298(SaveData *saveData, int param1, int param2, enum HeapID heapID, int param4)
 {
     WiFiList *v0 = SaveData_GetWiFiList(saveData);
-    DWCFriendData *v1 = sub_0202AED8(v0, param2);
+    DWCFriendData *v1 = WiFiList_GetFriendData(v0, param2);
     TrainerInfo *v2 = CommInfo_TrainerInfo(param1);
     DWCFriendData *v3;
     String *v4;
@@ -126,23 +126,23 @@ void sub_02039298(SaveData *saveData, int param1, int param2, enum HeapID heapID
 
     if (param4 == 0) {
         v4 = TrainerInfo_NameNewString(v2, heapID);
-        sub_0202AF0C(v0, param2, v4);
+        WiFiList_SetFriendPlayerName(v0, param2, v4);
         String_Free(v4);
-        sub_0202AE2C(v0, param2, 8, TrainerInfo_Gender(v2));
-        sub_0202AE2C(v0, param2, 0, TrainerInfo_ID(v2));
+        WiFiList_SetFriendField(v0, param2, 8, TrainerInfo_Gender(v2));
+        WiFiList_SetFriendField(v0, param2, 0, TrainerInfo_ID(v2));
     } else if (param4 == 1) {
-        if (sub_0202AD2C(v0, param2, 8) == 2) {
-            sub_0202AE2C(v0, param2, 8, TrainerInfo_Gender(v2));
-            sub_0202AE2C(v0, param2, 0, TrainerInfo_ID(v2));
+        if (WiFiList_GetFriendField(v0, param2, 8) == 2) {
+            WiFiList_SetFriendField(v0, param2, 8, TrainerInfo_Gender(v2));
+            WiFiList_SetFriendField(v0, param2, 0, TrainerInfo_ID(v2));
         }
     }
 
     v4 = String_Init(120, heapID);
 
     String_CopyChars(v4, sub_02032F54(param1));
-    sub_0202AF50(v0, param2, v4);
+    WiFiList_SetFriendGroupName(v0, param2, v4);
     String_Free(v4);
-    sub_0202AE2C(v0, param2, 7, TrainerInfo_Appearance(v2));
+    WiFiList_SetFriendField(v0, param2, 7, TrainerInfo_Appearance(v2));
     CommInfo_SavePlayerRecord(saveData);
 }
 
@@ -153,7 +153,7 @@ int sub_02039390(SaveData *saveData, int param1)
     WiFiList *v3 = SaveData_GetWiFiList(saveData);
 
     for (v0 = 0; v0 < 32; v0++) {
-        if (DWC_IsEqualFriendData(v2, sub_0202AED8(v3, v0))) {
+        if (DWC_IsEqualFriendData(v2, WiFiList_GetFriendData(v3, v0))) {
             return v0;
         }
     }

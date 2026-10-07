@@ -185,7 +185,7 @@ int NintendoWFC_Init(SaveData *saveData, enum HeapID heapID, int heapSize, int m
 
     if (saveData != NULL) {
         sNintendoWFCManager->userData = WiFiList_GetUserData(SaveData_GetWiFiList(sNintendoWFCManager->saveData));
-        sNintendoWFCManager->friends = sub_0202AED8(SaveData_GetWiFiList(sNintendoWFCManager->saveData), 0);
+        sNintendoWFCManager->friends = WiFiList_GetFriendData(SaveData_GetWiFiList(sNintendoWFCManager->saveData), 0);
     }
 
     sNintendoWFCManager->disconnectIfAlone = TRUE;
@@ -563,9 +563,9 @@ static void DummyFriendStatusCallback(int friendIdx, u8 status, const char *stat
 
 static void DeleteDuplicateFriendCallback(int deletedFriendIdx, int duplicateFriendIdx, void *userParam)
 {
-    MI_CpuCopy8(sNintendoWFCManager->friends, sub_0202AED8(SaveData_GetWiFiList(sNintendoWFCManager->saveData), 0), MAX_FRIENDS * sizeof(DWCFriendData));
+    MI_CpuCopy8(sNintendoWFCManager->friends, WiFiList_GetFriendData(SaveData_GetWiFiList(sNintendoWFCManager->saveData), 0), MAX_FRIENDS * sizeof(DWCFriendData));
 
-    sub_0202B270(SaveData_GetWiFiList(sNintendoWFCManager->saveData), deletedFriendIdx, duplicateFriendIdx);
+    WiFiList_MergeFriendData(SaveData_GetWiFiList(sNintendoWFCManager->saveData), deletedFriendIdx, duplicateFriendIdx);
     BattleFrontierSave_ClearFriendStats(SaveData_GetBattleFrontier(sNintendoWFCManager->saveData), deletedFriendIdx, duplicateFriendIdx);
 }
 

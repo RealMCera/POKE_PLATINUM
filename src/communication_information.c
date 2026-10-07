@@ -469,7 +469,7 @@ void CommInfo_SavePlayerRecord(SaveData *saveData)
         case 1:
             GF_ASSERT(v3 >= 0);
 
-            sub_0202B174(v0, v3, sCommInfo->playerRecord[netId].win, sCommInfo->playerRecord[netId].lose, sCommInfo->playerRecord[netId].trades);
+            WiFiList_AddFriendRecord(v0, v3, sCommInfo->playerRecord[netId].win, sCommInfo->playerRecord[netId].lose, sCommInfo->playerRecord[netId].trades);
             break;
         }
     }

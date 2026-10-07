@@ -181,10 +181,10 @@ static void InitItemIconSpriteResources(BattleCastleAppSpriteManager *spriteMan)
 {
     NARC *narc = NARC_ctor(NARC_INDEX_GRAPHIC__PL_PLIST_GRA, HEAP_ID_BATTLE_CASTLE_APP);
 
-    spriteMan->resources[2][0] = SpriteResourceCollection_AddTilesFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_CHAR], narc, sub_02081930(), FALSE, 2, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_BATTLE_CASTLE_APP);
-    spriteMan->resources[2][1] = SpriteResourceCollection_AddPalette(spriteMan->resourceCollection[SPRITE_RESOURCE_PLTT], NARC_INDEX_GRAPHIC__PL_PLIST_GRA, sub_02081934(), FALSE, 2, NNS_G2D_VRAM_TYPE_2DMAIN, 3, HEAP_ID_BATTLE_CASTLE_APP);
-    spriteMan->resources[2][2] = SpriteResourceCollection_AddFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_CELL], narc, sub_02081938(), FALSE, 2, SPRITE_RESOURCE_CELL, HEAP_ID_BATTLE_CASTLE_APP);
-    spriteMan->resources[2][3] = SpriteResourceCollection_AddFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_ANIM], narc, sub_0208193C(), FALSE, 2, SPRITE_RESOURCE_ANIM, HEAP_ID_BATTLE_CASTLE_APP);
+    spriteMan->resources[2][0] = SpriteResourceCollection_AddTilesFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_CHAR], narc, PartyMenu_GetIconCharResourceID(), FALSE, 2, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_BATTLE_CASTLE_APP);
+    spriteMan->resources[2][1] = SpriteResourceCollection_AddPalette(spriteMan->resourceCollection[SPRITE_RESOURCE_PLTT], NARC_INDEX_GRAPHIC__PL_PLIST_GRA, PartyMenu_GetIconPaletteResourceID(), FALSE, 2, NNS_G2D_VRAM_TYPE_2DMAIN, 3, HEAP_ID_BATTLE_CASTLE_APP);
+    spriteMan->resources[2][2] = SpriteResourceCollection_AddFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_CELL], narc, PartyMenu_GetIconCellResourceID(), FALSE, 2, SPRITE_RESOURCE_CELL, HEAP_ID_BATTLE_CASTLE_APP);
+    spriteMan->resources[2][3] = SpriteResourceCollection_AddFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_ANIM], narc, PartyMenu_GetIconAnimResourceID(), FALSE, 2, SPRITE_RESOURCE_ANIM, HEAP_ID_BATTLE_CASTLE_APP);
 
     NARC_dtor(narc);
 }

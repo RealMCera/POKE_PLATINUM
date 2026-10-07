@@ -139,10 +139,10 @@ static void InitItemSpriteResources(BattleArcadeAppSpriteManager *spriteMan)
 {
     NARC *narc = NARC_ctor(NARC_INDEX_GRAPHIC__PL_PLIST_GRA, HEAP_ID_BATTLE_ARCADE_APP);
 
-    spriteMan->resources[RESOURCE_ID_ITEM_SPRITES][SPRITE_RESOURCE_CHAR] = SpriteResourceCollection_AddTilesFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_CHAR], narc, sub_02081930(), FALSE, RESOURCE_ID_ITEM_SPRITES, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_BATTLE_ARCADE_APP);
-    spriteMan->resources[RESOURCE_ID_ITEM_SPRITES][SPRITE_RESOURCE_PLTT] = SpriteResourceCollection_AddPalette(spriteMan->resourceCollection[SPRITE_RESOURCE_PLTT], NARC_INDEX_GRAPHIC__PL_PLIST_GRA, sub_02081934(), FALSE, RESOURCE_ID_ITEM_SPRITES, NNS_G2D_VRAM_TYPE_2DMAIN, 3, HEAP_ID_BATTLE_ARCADE_APP);
-    spriteMan->resources[RESOURCE_ID_ITEM_SPRITES][SPRITE_RESOURCE_CELL] = SpriteResourceCollection_AddFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_CELL], narc, sub_02081938(), FALSE, RESOURCE_ID_ITEM_SPRITES, SPRITE_RESOURCE_CELL, HEAP_ID_BATTLE_ARCADE_APP);
-    spriteMan->resources[RESOURCE_ID_ITEM_SPRITES][SPRITE_RESOURCE_ANIM] = SpriteResourceCollection_AddFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_ANIM], narc, sub_0208193C(), FALSE, RESOURCE_ID_ITEM_SPRITES, SPRITE_RESOURCE_ANIM, HEAP_ID_BATTLE_ARCADE_APP);
+    spriteMan->resources[RESOURCE_ID_ITEM_SPRITES][SPRITE_RESOURCE_CHAR] = SpriteResourceCollection_AddTilesFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_CHAR], narc, PartyMenu_GetIconCharResourceID(), FALSE, RESOURCE_ID_ITEM_SPRITES, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_BATTLE_ARCADE_APP);
+    spriteMan->resources[RESOURCE_ID_ITEM_SPRITES][SPRITE_RESOURCE_PLTT] = SpriteResourceCollection_AddPalette(spriteMan->resourceCollection[SPRITE_RESOURCE_PLTT], NARC_INDEX_GRAPHIC__PL_PLIST_GRA, PartyMenu_GetIconPaletteResourceID(), FALSE, RESOURCE_ID_ITEM_SPRITES, NNS_G2D_VRAM_TYPE_2DMAIN, 3, HEAP_ID_BATTLE_ARCADE_APP);
+    spriteMan->resources[RESOURCE_ID_ITEM_SPRITES][SPRITE_RESOURCE_CELL] = SpriteResourceCollection_AddFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_CELL], narc, PartyMenu_GetIconCellResourceID(), FALSE, RESOURCE_ID_ITEM_SPRITES, SPRITE_RESOURCE_CELL, HEAP_ID_BATTLE_ARCADE_APP);
+    spriteMan->resources[RESOURCE_ID_ITEM_SPRITES][SPRITE_RESOURCE_ANIM] = SpriteResourceCollection_AddFrom(spriteMan->resourceCollection[SPRITE_RESOURCE_ANIM], narc, PartyMenu_GetIconAnimResourceID(), FALSE, RESOURCE_ID_ITEM_SPRITES, SPRITE_RESOURCE_ANIM, HEAP_ID_BATTLE_ARCADE_APP);
 
     NARC_dtor(narc);
 }

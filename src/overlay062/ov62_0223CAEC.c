@@ -40,7 +40,7 @@
 #include "font_oam.h"
 #include "unk_02030A80.h"
 #include "unk_0208B284.h"
-#include "unk_0208BA78.h"
+#include "vs_recorder.h"
 
 typedef struct {
     int unk_00;
@@ -614,7 +614,7 @@ static BOOL ov62_0223D5A4(UnkStruct_0208C06C *param0)
     v0->unk_1C = param0->unk_86C;
     v0->unk_10 = 3;
 
-    if (sub_0208BE68(param0) == 0) {
+    if (VsRecorder_CheckFirstArrivalBattlePark(param0) == 0) {
         v0->unk_10--;
     }
 

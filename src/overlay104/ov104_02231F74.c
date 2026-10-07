@@ -911,10 +911,10 @@ void BattleFrontier_LoadItemSpriteData(FrontierGraphics *graphics)
 {
     NARC *narc = NARC_ctor(NARC_INDEX_GRAPHIC__PL_PLIST_GRA, HEAP_ID_94);
 
-    SpriteSystem_LoadPaletteBufferFromOpenNarc(graphics->plttData, PLTTBUF_MAIN_OBJ, graphics->spriteSystem, graphics->spriteMan, narc, sub_02081934(), FALSE, 1, NNS_G2D_VRAM_TYPE_2DMAIN, ITEM_SPRITE_SECONDARY_RESOURCE_ID);
-    SpriteSystem_LoadCellResObjFromOpenNarc(graphics->spriteSystem, graphics->spriteMan, narc, sub_02081938(), FALSE, ITEM_SPRITE_SECONDARY_RESOURCE_ID);
-    SpriteSystem_LoadAnimResObjFromOpenNarc(graphics->spriteSystem, graphics->spriteMan, narc, sub_0208193C(), FALSE, ITEM_SPRITE_SECONDARY_RESOURCE_ID);
-    SpriteSystem_LoadCharResObjAtEndWithHardwareMappingType(graphics->spriteSystem, graphics->spriteMan, NARC_INDEX_GRAPHIC__PL_PLIST_GRA, sub_02081930(), FALSE, NNS_G2D_VRAM_TYPE_2DMAIN, ITEM_SPRITE_BASE_RESOURCE_ID);
+    SpriteSystem_LoadPaletteBufferFromOpenNarc(graphics->plttData, PLTTBUF_MAIN_OBJ, graphics->spriteSystem, graphics->spriteMan, narc, PartyMenu_GetIconPaletteResourceID(), FALSE, 1, NNS_G2D_VRAM_TYPE_2DMAIN, ITEM_SPRITE_SECONDARY_RESOURCE_ID);
+    SpriteSystem_LoadCellResObjFromOpenNarc(graphics->spriteSystem, graphics->spriteMan, narc, PartyMenu_GetIconCellResourceID(), FALSE, ITEM_SPRITE_SECONDARY_RESOURCE_ID);
+    SpriteSystem_LoadAnimResObjFromOpenNarc(graphics->spriteSystem, graphics->spriteMan, narc, PartyMenu_GetIconAnimResourceID(), FALSE, ITEM_SPRITE_SECONDARY_RESOURCE_ID);
+    SpriteSystem_LoadCharResObjAtEndWithHardwareMappingType(graphics->spriteSystem, graphics->spriteMan, NARC_INDEX_GRAPHIC__PL_PLIST_GRA, PartyMenu_GetIconCharResourceID(), FALSE, NNS_G2D_VRAM_TYPE_2DMAIN, ITEM_SPRITE_BASE_RESOURCE_ID);
     NARC_dtor(narc);
 }
 

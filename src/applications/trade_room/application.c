@@ -1806,7 +1806,7 @@ static int TradeRoom_HandleDeleteFriendConfirm(TradeRoom *tradeRoom)
     switch (TradeRoom_ProcessYesNoChoice(tradeRoom->bgConfig, &tradeRoom->yesNoMenu, &tradeRoom->yesNoMenuStep)) {
     case MENU_YES:
         BattleFrontierSave_ClearFriendStatsAndShift(SaveData_GetBattleFrontier(tradeRoom->saveData), tradeRoom->friendToDeleteSlot);
-        sub_0202AFD4(tradeRoom->wifiList, tradeRoom->friendToDeleteSlot);
+        WiFiList_DeleteFriend(tradeRoom->wifiList, tradeRoom->friendToDeleteSlot);
         sub_02039298(tradeRoom->saveData, tradeRoom->registrationTargetNetId, 32 - 1, HEAP_ID_TRADE_ROOM, 0);
         tradeRoom->subStepCallback = TradeRoom_ProcessPendingFriendRegistration;
         break;
@@ -1846,7 +1846,7 @@ static int TradeRoom_HandleFriendListMenuInput(TradeRoom *tradeRoom)
 
         TrainerInfo *trainerInfo = TrainerInfo_New(HEAP_ID_TRADE_ROOM);
 
-        TrainerInfo_SetName(trainerInfo, sub_0202AEF0(tradeRoom->wifiList, input));
+        TrainerInfo_SetName(trainerInfo, WiFiList_GetFriendPlayerName(tradeRoom->wifiList, input));
         StringTemplate_SetPlayerName(tradeRoom->palPadStrTemplate, 0, trainerInfo);
         Heap_Free(trainerInfo);
 
@@ -1872,7 +1872,7 @@ static int TradeRoom_BuildFriendListMenu(TradeRoom *tradeRoom)
 
     for (int i = 0; i < MAX_FRIENDS; i++) {
         if (WiFiList_IsValidFriendData(tradeRoom->wifiList, i)) {
-            String_CopyChars(str, sub_0202AEF0(tradeRoom->wifiList, i));
+            String_CopyChars(str, WiFiList_GetFriendPlayerName(tradeRoom->wifiList, i));
             StringList_AddFromString(tradeRoom->friendListChoices, str, i);
         }
     }

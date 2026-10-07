@@ -39,7 +39,7 @@ typedef struct {
     UnkStruct_0208C06C_sub1 unk_838;
     void *unk_860;
     u8 padding_864[4];
-    UnkStruct_0208BA84 *unk_868;
+    VsRecorderPlaybackRequest *unk_868;
     int unk_86C;
     BOOL unk_870;
     u32 unk_874;

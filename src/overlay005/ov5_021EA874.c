@@ -59,7 +59,7 @@ static void ov5_021EAF90(ListMenu *param0, u32 param1, u8 param2);
 static BOOL ov5_021EA874(UnkStruct_ov5_021EAE78 *param0)
 {
     int v0, v1 = 0;
-    DWCFriendData *v2 = sub_0202AED8(SaveData_GetWiFiList(param0->saveData), 0);
+    DWCFriendData *v2 = WiFiList_GetFriendData(SaveData_GetWiFiList(param0->saveData), 0);
     DWCFriendData *v3;
 
     if (0 == sub_020391DC(param0->saveData, param0->unk_4C, HEAP_ID_FIELD1)) {
@@ -268,7 +268,7 @@ static BOOL ov5_021EAB58(UnkStruct_ov5_021EAE78 *param0)
 
         for (v5 = 0; v5 < 32; v5++) {
             if (WiFiList_IsValidFriendData(v0, v5)) {
-                String_CopyChars(param0->unk_08, sub_0202AEF0(v0, v5));
+                String_CopyChars(param0->unk_08, WiFiList_GetFriendPlayerName(v0, v5));
                 StringList_AddFromString(param0->unk_00, param0->unk_08, v5);
             }
         }
@@ -314,7 +314,7 @@ static BOOL ov5_021EAC44(UnkStruct_ov5_021EAE78 *param0)
         WiFiList *v2 = SaveData_GetWiFiList(param0->saveData);
         TrainerInfo *v3 = TrainerInfo_New(HEAP_ID_FIELD1);
 
-        TrainerInfo_SetName(v3, sub_0202AEF0(v2, v1));
+        TrainerInfo_SetName(v3, WiFiList_GetFriendPlayerName(v2, v1));
         StringTemplate_SetPlayerName(param0->unk_38, 0, v3);
         Heap_Free(v3);
 
@@ -353,7 +353,7 @@ static BOOL ov5_021EAD38(UnkStruct_ov5_021EAE78 *param0)
         return 0;
     } else if (v4 == 0) {
         BattleFrontierSave_ClearFriendStatsAndShift(SaveData_GetBattleFrontier(param0->saveData), param0->unk_90);
-        sub_0202AFD4(v0, param0->unk_90);
+        WiFiList_DeleteFriend(v0, param0->unk_90);
         sub_02039298(param0->saveData, param0->unk_8C, 32 - 1, HEAP_ID_FIELD1, 0);
         param0->unk_48 = 1;
     } else {

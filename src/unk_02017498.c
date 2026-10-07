@@ -15,7 +15,7 @@
 #include "sound.h"
 #include "system.h"
 #include "comm_server_client.h"
-#include "unk_0208BA78.h"
+#include "vs_recorder.h"
 #include "wifi_overlays.h"
 
 static NNSFndHeapHandle Unk_021BF678;
@@ -97,7 +97,7 @@ int sub_02017524(ApplicationManager *appMan, int *param1)
     case 4: {
         const ApplicationManagerTemplate *v1;
 
-        v1 = sub_0208BE5C(v0->unk_00->unk_0C);
+        v1 = VsRecorder_GetAppTemplate(v0->unk_00->unk_0C);
         v0->appMan = ApplicationManager_New(v1, v0->unk_00->fieldSystem, HEAP_ID_116);
         (*param1)++;
     } break;

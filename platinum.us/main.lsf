@@ -313,7 +313,7 @@ Static main
 	Object main.nef.p/src_number_entry_screen.c.o
 	Object main.nef.p/src_number_entry_graphics.c.o
 	Object main.nef.p/src_unk_0208B284.c.o
-	Object main.nef.p/src_unk_0208BA78.c.o
+	Object main.nef.p/src_vs_recorder.c.o
 	Object main.nef.p/src_unk_0208BEBC.c.o
 	Object main.nef.p/src_unk_0208C010.c.o
 	Object main.nef.p/src_unk_0208C098.c.o

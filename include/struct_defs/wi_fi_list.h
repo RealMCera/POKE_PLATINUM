@@ -3,28 +3,31 @@
 
 #include <dwc.h>
 
-typedef struct {
-    u16 unk_00[8];
-    u16 unk_10[8];
-    u32 unk_20;
-    u16 unk_24;
-    u16 unk_26;
-    u16 unk_28;
+// Per-friend data kept alongside the DWC friend data: the friend's group and
+// player names, their trainer ID, their battle/trade/poffin/plaza-game records,
+// and the date they were last seen.
+typedef struct WiFiListFriend {
+    u16 groupName[8];
+    u16 playerName[8];
+    u32 trainerID;
+    u16 wins;
+    u16 losses;
+    u16 trades;
     u16 year;
     u8 month;
     u8 day;
-    u8 unk_2E;
-    u8 unk_2F;
-    u16 unk_30;
-    u16 unk_32;
-    u16 unk_34;
-    u16 unk_36;
-} UnkStruct_0202B370_sub1;
+    u8 gender;
+    u8 appearance;
+    u16 poffinSessions;
+    u16 plazaGame0Count;
+    u16 plazaGame1Count;
+    u16 plazaGame2Count;
+} WiFiListFriend;
 
 typedef struct WiFiList {
     DWCUserData userData;
     DWCFriendData friendData[32];
-    UnkStruct_0202B370_sub1 unk_1C0[32];
+    WiFiListFriend friendEntries[32];
 } WiFiList;
 
 #endif // POKEPLATINUM_STRUCT_DEF_WI_FI_LIST_H
