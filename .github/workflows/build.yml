@@ -28,20 +28,35 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v6
 
+      - name: Checkout Emerald authority
+        if: ${{ github.ref == 'refs/heads/rare-emerald' }}
+        uses: actions/checkout@v6
+        with:
+          repository: RealMCera/POKE_EMERALD
+          ref: 731ad5bfd6e6f265508d0efcca0ba42f9dcf5881
+          path: .rare_emerald/pokeemerald
+
       - name: Install Metroskrew
         run: sudo make skrew
 
       - name: Configure Repo
         run: make configure
 
+      - name: Generate Rare Emerald data
+        if: ${{ github.ref == 'refs/heads/rare-emerald' }}
+        run: |
+          python3 tools/rare_emerald/generate_from_pokeemerald.py .rare_emerald/pokeemerald --out rare_emerald/manifests
+          python3 tools/rare_emerald/apply.py .
+          cat rare_emerald/generated/status.json
+
       - name: Build Repo
         run: make check
 
-      - name: Upload Rare Emerald base ROM
+      - name: Upload Rare Emerald ROM
         if: ${{ github.ref == 'refs/heads/rare-emerald' }}
         uses: actions/upload-artifact@v7
         with:
-          name: rare-emerald-platinum-base-${{ github.sha }}
+          name: rare-emerald-platinum-${{ github.sha }}
           path: /var/tmp/pokeplatinum/*.nds
           if-no-files-found: error
           retention-days: 14
