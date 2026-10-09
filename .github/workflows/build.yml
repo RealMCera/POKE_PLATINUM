@@ -1,13 +1,14 @@
-name: build
+name: Rare Emerald build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, rare-emerald ]
     paths-ignore:
       - '**.md'
   pull_request:
     paths-ignore:
       - '**.md'
+  workflow_dispatch:
 
 env:
   LM_LICENSE_FILE: "${{ github.workspace }}/tools/cw/license.dat"
@@ -36,22 +37,31 @@ jobs:
       - name: Build Repo
         run: make check
 
+      - name: Upload Rare Emerald base ROM
+        if: ${{ github.ref == 'refs/heads/rare-emerald' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: rare-emerald-platinum-base-${{ github.sha }}
+          path: /var/tmp/pokeplatinum/*.nds
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Checkout xMAP
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: actions/checkout@v6
         with:
           path: 'xmap'
           ref: 'xmap'
 
       - name: Move xMAP
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           mkdir -p xmap
           cp "$BUILD"/*.xMAP xmap/platinumus.xMAP
           echo "XMAP_COMMIT_MSG=$( git log --format=%s ${GITHUB_SHA} )" >> $GITHUB_ENV
 
       - name: Update xMAP
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: EndBug/add-and-commit@v10
         with:
           cwd: "./xmap"
