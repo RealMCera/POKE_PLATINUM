@@ -47,6 +47,7 @@ jobs:
         run: |
           python3 tools/rare_emerald/generate_from_pokeemerald.py .rare_emerald/pokeemerald --out rare_emerald/manifests
           python3 tools/rare_emerald/apply.py .
+          python3 tools/rare_emerald/fix_trainer_json.py
           cat rare_emerald/generated/status.json
 
       - name: Build Repo
